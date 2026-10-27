@@ -30,12 +30,37 @@ _SYSTEM_PROMPTS: dict[str, str] = {
         "de causalité. Cette thématique est fréquemment articulée à celles portant sur "
         "l'agriculture, l'industrie, l'alimentation et la régulation sanitaire."
     ),
+    "purchase_power": (
+        "You are an assistant helping editors to aggregate claims about purchasing power and "
+        "household finances in French media, defined as follows:\n"
+        "Le thème couvre les débats publics portant sur l'argent des ménages français et sur les "
+        "finances publiques considérées sous l'angle de ce qu'elles coûtent ou rapportent aux "
+        "Français.\n"
+        "Il comprend quatre registres : ce que les ménages reçoivent (salaires, Smic, primes, "
+        "pensions de retraite, allocations chômage, prestations sociales et minima sociaux) ; ce "
+        "que les ménages dépensent (prix et inflation, alimentation, énergie et carburants, "
+        "logement et loyers, santé et mutuelles, transports, assurances, crédits et frais "
+        "bancaires) ; ce qui est prélevé (impôts, taxes, TVA, cotisations sociales, fiscalité du "
+        "patrimoine et des successions, fiscalité locale) ; ce qui est fait de cet argent "
+        "(dépense publique, dette et déficit, fonction publique et bureaucratie, fraude sociale et "
+        "fiscale, compétitivité et commerce extérieur, et les modèles économiques invoqués dans "
+        "le débat).\n"
+        "Le thème inclut aussi bien les affirmations chiffrées que les récits et accusations qui "
+        "les accompagnent (« on nous vole », « le travail ne paie plus », « l'État gaspille »), "
+        "ainsi que la contestation des chiffres officiels et des institutions qui les produisent. "
+        "Il inclut les contre-récits au même titre que les récits dominants.\n"
+        "Ne relèvent pas du thème : les emplois figurés du vocabulaire économique (inflation des "
+        "normes, gaspillage alimentaire, capitalisation boursière) ; l'économie d'autres pays sans "
+        "lien établi avec la France ; la vie financière des entreprises sans effet énoncé sur les "
+        "ménages ; les termes du dictionnaire employés dans un tout autre sens."
+    ),
 }
 
 _DOMAIN_LABELS: dict[str, str] = {
     "climate": "climate change",
     "insecurity": "immigration et insécurité liée à l'immigration",
     "environmental_health": "santé environnementale",
+    "purchase_power": "pouvoir d'achat et finances publiques",
 }
 
 _DOMAIN_EXAMPLES: dict[str, str] = {
@@ -75,6 +100,17 @@ _DOMAIN_EXAMPLES: dict[str, str] = {
         "sanitaires des PFAS sont minimisés malgré une exposition large et des effets avérés pour "
         "plusieurs molécules'."
     ),
+    "purchase_power": (
+        "'Les prélèvements obligatoires sont du vol', 'On nous prend la moitié de notre salaire' and "
+        "'Les Français travaillent la moitié de l\'année pour payer l\'État' are paraphrases of the "
+        "same framing of taxation as confiscation → should all merge into a single label like "
+        "'Les prélèvements sur les salaires sont présentés comme un vol de la moitié du revenu'.\n"
+        "  Similarly, 'L\'Insee truque les chiffres de l\'inflation', 'La vraie inflation est bien "
+        "supérieure à celle annoncée' and 'Les chiffres officiels des prix ne reflètent pas la "
+        "réalité des courses' are paraphrases of the same claim contesting official statistics → "
+        "should all merge into a single label like 'Les chiffres officiels de l\'inflation sont "
+        "présentés comme faussés ou sous-évalués'."
+    ),
 }
 
 
@@ -107,6 +143,13 @@ _RELEVANCE_CRITERIA: dict[str, str] = {
         "et pas seulement une mention incidente de l'environnement, de la pollution ou de la "
         "santé sans lien explicite avec une exposition à une substance chimique polluante"
     ),
+    "purchase_power": (
+        "l'argent des ménages français (revenus, prix, prélèvements) ou l'usage des finances "
+        "publiques sous l'angle de ce qu'elles coûtent ou rapportent aux Français en constitue "
+        "l'élément moteur, y compris la contestation des chiffres officiels — et pas seulement "
+        "un emploi figuré du vocabulaire économique, l'économie d'un autre pays sans lien avec la "
+        "France, ou la vie financière d'une entreprise sans effet énoncé sur les ménages"
+    ),
 }
 
 
@@ -134,6 +177,7 @@ _DEFAULT_STEP1_LABEL_CAP = "1 to 3"
 _STEP1_EXTRA_RULES: dict[str, str] = {
     "climate": "",
     "environmental_health": "",
+    "purchase_power": "",
     "insecurity": (
         "- Do NOT return labels that merely comment on how the topic is discussed or "
         "politicized (media-coverage criticism, political positioning/strategy, electoral "
@@ -179,6 +223,10 @@ _STEP2_MERGE_INSTRUCTIONS: dict[str, str] = {
         "Group labels that share the same core subject and overall message, even if the wording differs.\n"
         "Be AGGRESSIVE: if several labels all make a similar point about the same topic, collapse them into one.\n"
     ),
+    "purchase_power": (
+        "Group labels that share the same core subject and overall message, even if the wording differs.\n"
+        "Be AGGRESSIVE: if several labels all make a similar point about the same topic, collapse them into one.\n"
+    ),
     "insecurity": (
         "Merge two labels ONLY if they express the SAME underlying claim in different words — same "
         "subject, same causal/evaluative mechanism, and same conclusion. Do NOT merge labels that are "
@@ -206,6 +254,12 @@ _STEP2_MERGE_RULES: dict[str, str] = {
         "- Do NOT keep two labels if they could reasonably be covered by one.\n"
     ),
     "environmental_health": (
+        "- Merge any labels that share the same subject AND a closely related claim AND are on the same side of a debate.\n"
+        "- Write the merged label as a short, conversational French sentence starting with its subject.\n"
+        "- Prefer fewer, broader labels over many narrow ones.\n"
+        "- Do NOT keep two labels if they could reasonably be covered by one.\n"
+    ),
+    "purchase_power": (
         "- Merge any labels that share the same subject AND a closely related claim AND are on the same side of a debate.\n"
         "- Write the merged label as a short, conversational French sentence starting with its subject.\n"
         "- Prefer fewer, broader labels over many narrow ones.\n"

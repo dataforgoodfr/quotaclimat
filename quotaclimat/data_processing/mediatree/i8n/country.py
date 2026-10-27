@@ -202,6 +202,8 @@ BELGIUM_FLANDERS_CHANNELS= [
     "qmusic",
     "play",
     "vrt1",
+    "atv",
+    "tvl"
 ]
 
 BELGIUM_FLANDERS_TZ = "Europe/Brussels"

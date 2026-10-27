@@ -58,6 +58,27 @@ les théories du complot sur les motivations des scientifiques ou des acteurs de
 tout amalgame visant à associer l'action climatique à des agendas idéologiques sans rapport avec \
 les faits
 """.strip(),
+
+    "environmental_health": """
+La santé environnementale est ici définie comme l'ensemble des atteintes à la santé 
+humaine, animale et des écosystèmes liées à l'exposition à des substances chimiques 
+polluantes, en particulier les polluants persistants dans l'environnement (PFAS, 
+pesticides, métaux lourds tels que le cadmium ou le plomb, biocides), ainsi que les 
+controverses, politiques et pratiques de prévention qui leur sont associées.\n
+Sont notamment incluses les voies d'exposition par l'alimentation (résidus dans les 
+aliments), l'eau, l'air, les poussières et les sols, qu'elles résultent d'une proximité 
+directe (riverains de zones traitées, expositions professionnelles) ou d'une 
+contamination diffuse et persistante de l'environnement (sols agricoles, nappes 
+phréatiques, chaînes alimentaires). Les effets sur la vie du sol, la faune aquatique et 
+les insectes pollinisateurs sont également couverts, dans la mesure où ils affectent 
+indirectement la santé humaine (fertilité des sols, qualité de l'eau, pollinisation).\n
+Sont couverts aussi bien les effets sanitaires établis (cancers, troubles de la 
+reproduction, atteintes neurologiques ou immunitaires) que les incertitudes 
+scientifiques qui subsistent, notamment sur les expositions cumulées à plusieurs 
+substances (« effet cocktail ») et les difficultés méthodologiques à démontrer un lien 
+de causalité. Cette thématique est fréquemment articulée à celles portant sur 
+l'agriculture, l'industrie, l'alimentation et la régulation sanitaire.
+""".strip(),
 }
 
 

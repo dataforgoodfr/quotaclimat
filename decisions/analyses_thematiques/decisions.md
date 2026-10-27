@@ -27,120 +27,7 @@ Cinq étapes, de 0 à 4, chacune validée explicitement par l'équipe avant de p
    |---|---|---|---|---|
 
    L'impact dépend de l'aléa : hectares brûlés, personnes évacuées ou déplacées, victimes, dégâts matériels ou coût assuré, vigilance orange ou rouge, arrêtés de catastrophe naturelle, pic de pollution... Il sert à comparer les épisodes entre eux et à tester si le traitement médiatique est proportionné aux conséquences de l'événement ou relève d'un choix éditorial (piste X3).
-3. **Courbe des occurrences par jour.** La recherche sur internet laisse passer des événements. On trace donc le nombre d'occurrences par jour des mots du dictionnaire noyau sur une fenêtre large (plusieurs mois à deux ans), en audiovisuel (occurrences par heure de grille) et en presse (articles par jour). Chaque pic doit être rattaché à un événement de la liste ; un pic sans événement signale un oubli : on cherche ce qui s'est passé ce jour-là et on complète la liste. Modèle audiovisuel ci-dessous, à reprendre tel quel en remplaçant les bornes et le dictionnaire noyau (entrée `audiovisuel` du YAML) ; modèle presse plus bas, en articles par jour. Il compte les mots détectés dans `keywords_with_timestamp`, comme le job, et non une regex sur le texte. `keywords.start` est en heure de Paris. Le dénominateur est la grille en vigueur chaque jour (`program_metadata`), seule source d'heures disponible avant 2025 (`time_monitored` ne commence qu'en 2025).
-
-   ```sql
-   -- AV - V2 - Courbe journalière <sujet>, toutes chaînes confondues
-   --   Mesure : occurrences des mots du dictionnaire <thematique> par heure de grille
-   --   (un segment de 2 minutes peut contenir plusieurs occurrences). Maille : jour.
-   --   Tables : public.keywords (keywords_with_timestamp), public.program_metadata
-   WITH bornes(t0, t1) AS (
-       VALUES (date '2024-10-01', date '2026-10-26')
-   ),
-   jours AS (
-       SELECT d::date AS jour
-       FROM bornes b, generate_series(b.t0, b.t1 - 1, interval '1 day') AS d
-   ),
-   -- entrée <thematique> > keywords > french > audiovisuel de thematic_jobs_config.yml
-   dictionnaire_<thematique>(mot) AS (
-       VALUES ('mot 1'), ('mot 2')
-   ),
-   occurrences AS (
-       SELECT
-           k.start::date        AS jour,
-           COUNT(*)             AS nb_occurrences,  -- une ligne par mot détecté
-           COUNT(DISTINCT k.id) AS nb_segments      -- segments de 2 minutes concernés
-       FROM public.keywords k
-       CROSS JOIN bornes b
-       CROSS JOIN LATERAL json_array_elements(k.keywords_with_timestamp) AS kwt(e)
-       WHERE k.country = 'france'
-         AND k.start >= b.t0 AND k.start < b.t1
-         AND lower(kwt.e ->> 'keyword') IN (SELECT mot FROM dictionnaire_<thematique>)
-       GROUP BY 1
-   ),
-   heures AS (
-       -- grille en vigueur le jour donné, toutes chaînes
-       SELECT j.jour, SUM(pm.duration_minutes) / 60.0 AS nb_heures_grille
-       FROM jours j
-       JOIN public.program_metadata pm
-         ON pm.country = 'france'
-        AND pm.weekday = EXTRACT(ISODOW FROM j.jour)::int
-        AND j.jour BETWEEN CAST(pm.program_grid_start AS date) AND CAST(pm.program_grid_end AS date)
-       GROUP BY j.jour
-   )
-   SELECT
-       h.jour,
-       COALESCE(o.nb_occurrences, 0) AS nb_occurrences,
-       COALESCE(o.nb_segments, 0)    AS nb_segments,
-       h.nb_heures_grille,
-       COALESCE(o.nb_occurrences, 0) / NULLIF(h.nb_heures_grille, 0) AS occ_par_heure
-   FROM heures h
-   LEFT JOIN occurrences o USING (jour)
-   ORDER BY h.jour;
-   ```
-
-   Affichage : courbe, `jour` en x, `occ_par_heure` en y, annotée des événements (G2). Tester d'abord sur un mois : sur deux ans, la lecture de `keywords` est longue.
-
-   Modèle presse (base Print Media DB). Le job n'ayant pas encore tourné, la requête normalise elle-même le texte et les mots (§3.5) ; après l'extraction, les tables thématiques fournissent les colonnes `*_normalized` et les requêtes n'ont plus à normaliser. Le dénominateur est `stats_factiva_articles` (nombre d'articles par titre et par jour). Pas de filtre `word_count` ici : la courbe mesure l'agitation des médias sur tous les articles, comme son dénominateur.
-
-   ```sql
-   -- PE - V2 - Courbe journalière <sujet>, presse
-   --   Mesure : articles dont le titre, le chapô ou le corps contient un mot du dictionnaire
-   --   <thematique>, rapportés au nombre total d'articles du jour. Maille : jour (heure de Paris).
-   --   Tables : public.factiva_articles (hors DUP), public.stats_factiva_articles
-   WITH bornes(t0, t1) AS (
-       VALUES (date '2025-01-01', date '2026-10-26')
-   ),
-   -- entrée <thematique> > keywords > french > presse de thematic_jobs_config.yml, copiée telle quelle
-   dictionnaire_<thematique>(mot) AS (
-       VALUES ('mot 1'), ('mots 1')
-   ),
-   -- même regex que le job : expressions normalisées, mots entiers
-   motif AS (
-       SELECT '\y(' || string_agg(
-                  regexp_replace(
-                      translate(replace(replace(lower(mot), 'œ', 'oe'), 'æ', 'ae'),
-                                'àâäéèêëîïôöùûüÿç', 'aaaeeeeiioouuuyc'),
-                      '[''’‘‛ʼʹ´`′＇-]', ' ', 'g'),
-                  '|' ORDER BY length(mot) DESC) || ')\y' AS regex
-       FROM dictionnaire_<thematique>
-   ),
-   <thematique> AS (
-       SELECT
-           (a.publication_datetime AT TIME ZONE 'Europe/Paris')::date AS jour,
-           COUNT(*) AS nb_articles_<thematique>
-       FROM public.factiva_articles a
-       CROSS JOIN bornes b
-       CROSS JOIN motif m
-       WHERE a.publication_datetime >= b.t0::timestamp AT TIME ZONE 'Europe/Paris'
-         AND a.publication_datetime <  b.t1::timestamp AT TIME ZONE 'Europe/Paris'
-         AND a.duplicate_status <> 'DUP'
-         AND regexp_replace(
-                 translate(replace(replace(lower(concat_ws(' ', a.snippet, a.title, a.body)), 'œ', 'oe'), 'æ', 'ae'),
-                           'àâäéèêëîïôöùûüÿç', 'aaaeeeeiioouuuyc'),
-                 '[''’‘‛ʼʹ´`′＇-]', ' ', 'g') ~ m.regex
-       GROUP BY 1
-   ),
-   total AS (
-       -- une ligne par titre et par jour
-       SELECT
-           (s.publication_datetime AT TIME ZONE 'Europe/Paris')::date AS jour,
-           SUM(s.count) AS nb_articles_total
-       FROM public.stats_factiva_articles s
-       CROSS JOIN bornes b
-       WHERE s.publication_datetime >= b.t0::timestamp AT TIME ZONE 'Europe/Paris'
-         AND s.publication_datetime <  b.t1::timestamp AT TIME ZONE 'Europe/Paris'
-       GROUP BY 1
-   )
-   SELECT
-       t.jour,
-       COALESCE(n.nb_articles_<thematique>, 0) AS nb_articles_<thematique>,
-       t.nb_articles_total,
-       100.0 * COALESCE(n.nb_articles_<thematique>, 0) / NULLIF(t.nb_articles_total, 0) AS part_articles_<thematique>_pct
-   FROM total t
-   LEFT JOIN <thematique> n USING (jour)
-   ORDER BY t.jour;
-   ```
+3. **Courbe des occurrences par jour.** La recherche sur internet laisse passer des événements. On trace donc le nombre d'occurrences par jour des mots du dictionnaire noyau sur une fenêtre large (plusieurs mois à deux ans), en audiovisuel (occurrences par heure de grille) et en presse (articles par jour). Chaque pic doit être rattaché à un événement de la liste ; un pic sans événement signale un oubli : on cherche ce qui s'est passé ce jour-là et on complète la liste. Modèles : §7.1 (audiovisuel) et §7.2 (presse).
 
 La recherche donne les événements marquants, susceptibles d'être cités dans la publication ; les pics servent de tamis pour ce qu'elle a manqué. La liste fixe ensuite les périodes d'analyse et de comparaison (§3.2) déclarées dans le YAML.
 
@@ -503,3 +390,219 @@ Résultat : publié, testé (jusqu'à publication), sans résultat (après publi
 
 Après publication uniquement (le repo est public) : takeaways publiés avec chiffre, dénominateur et période ; limites ; axes à remonter dans la banque.
 ```
+
+## 7. Modèles de requêtes
+
+**Frugalité (adoptée).** Une requête part du modèle de ce paragraphe et des regex existantes (§3.3, §4.5) : on remplace les bornes, la période, le dictionnaire et les termes, sans relire les questions Metabase d'une analyse précédente. On ne lit une question Metabase que si elle est citée par son numéro, ou pour mettre à jour un modèle. Après l'étape 1, les requêtes portent sur les tables thématiques, pas sur `keywords` et `factiva_articles`. Les contrôles ont leur propre règle (§3.6). Un modèle amélioré au cours d'une analyse remplace celui d'ici.
+
+Dans les modèles, `<sujet>` (en-tête), `<thematique>` (commentaires, noms de CTE et de colonnes), `<axe>` (code et nom court de l'axe, par exemple `c1_lien_cc`) et `<periode>` (`id` de la période dans le YAML) se remplacent avant exécution (conventions Metabase, §1).
+
+| Modèle | Étape | Média | Unité | Tables |
+|---|---|---|---|---|
+| [7.1 Courbe journalière](#71-courbe-journalière-audiovisuel) | 0.3 | audiovisuel | occurrence, par heure de grille | `keywords`, `program_metadata` |
+| [7.2 Courbe journalière](#72-courbe-journalière-presse) | 0.3 | presse | article, part des articles du jour | `factiva_articles`, `stats_factiva_articles` |
+| [7.3 Axe par chaîne](#73-axe-par-chaîne-audiovisuel) | 2 et 3 | audiovisuel | segment thématique, fenêtre de ±2 minutes | `thematic_extracts.<thematique>_keywords_fr` |
+| [7.4 Axe par titre](#74-axe-par-titre-presse) | 2 et 3 | presse | article d'au moins 100 mots | `thematic_extracts.<thematique>_articles_fr`, `source_classification` |
+
+### 7.1 Courbe journalière, audiovisuel
+
+Base Baromètre. Compte les mots du dictionnaire noyau détectés dans `keywords_with_timestamp`, comme le job, et non une regex sur le texte. `keywords.start` est en heure de Paris. Le dénominateur est la grille en vigueur chaque jour (`program_metadata`), seule source d'heures disponible avant 2025 (`time_monitored` ne commence qu'en 2025).
+
+```sql
+-- AV - V2 - Courbe journalière <sujet>, toutes chaînes confondues
+--   Mesure : occurrences des mots du dictionnaire <thematique> par heure de grille
+--   (un segment de 2 minutes peut contenir plusieurs occurrences). Maille : jour.
+--   Tables : public.keywords (keywords_with_timestamp), public.program_metadata
+WITH bornes(t0, t1) AS (
+    VALUES (date '2024-01-01', date '2026-10-26')
+),
+jours AS (
+    SELECT d::date AS jour
+    FROM bornes b, generate_series(b.t0, b.t1 - 1, interval '1 day') AS d
+),
+-- entrée <thematique> > keywords > french > audiovisuel de thematic_jobs_config.yml
+dictionnaire_<thematique>(mot) AS (
+    VALUES ('mot 1'), ('mot 2')
+),
+occurrences AS (
+    SELECT
+        k.start::date        AS jour,
+        COUNT(*)             AS nb_occurrences,  -- une ligne par mot détecté
+        COUNT(DISTINCT k.id) AS nb_segments      -- segments de 2 minutes concernés
+    FROM public.keywords k
+    CROSS JOIN bornes b
+    CROSS JOIN LATERAL json_array_elements(k.keywords_with_timestamp) AS kwt(e)
+    WHERE k.country = 'france'
+      AND k.start >= b.t0 AND k.start < b.t1
+      AND lower(kwt.e ->> 'keyword') IN (SELECT mot FROM dictionnaire_<thematique>)
+    GROUP BY 1
+),
+heures AS (
+    -- grille en vigueur le jour donné, toutes chaînes
+    SELECT j.jour, SUM(pm.duration_minutes) / 60.0 AS nb_heures_grille
+    FROM jours j
+    JOIN public.program_metadata pm
+      ON pm.country = 'france'
+     AND pm.weekday = EXTRACT(ISODOW FROM j.jour)::int
+     AND j.jour BETWEEN CAST(pm.program_grid_start AS date) AND CAST(pm.program_grid_end AS date)
+    GROUP BY j.jour
+)
+SELECT
+    h.jour,
+    COALESCE(o.nb_occurrences, 0) AS nb_occurrences,
+    COALESCE(o.nb_segments, 0)    AS nb_segments,
+    h.nb_heures_grille,
+    COALESCE(o.nb_occurrences, 0) / NULLIF(h.nb_heures_grille, 0) AS occ_par_heure
+FROM heures h
+LEFT JOIN occurrences o USING (jour)
+ORDER BY h.jour;
+```
+
+Affichage : courbe, `jour` en x, `occ_par_heure` en y, annotée des événements (G2).
+
+### 7.2 Courbe journalière, presse
+
+Base Print Media DB. À l'étape 0, le job n'a pas encore tourné : la requête normalise elle-même le texte et les mots (§3.5) ; après l'extraction, les tables thématiques fournissent les colonnes `*_normalized` et les requêtes n'ont plus à normaliser. Le dénominateur est `stats_factiva_articles` (nombre d'articles par titre et par jour). Pas de filtre `word_count` ici : la courbe mesure l'agitation des médias sur tous les articles, comme son dénominateur.
+
+```sql
+-- PE - V2 - Courbe journalière <sujet>, presse
+--   Mesure : articles dont le titre, le chapô ou le corps contient un mot du dictionnaire
+--   <thematique>, rapportés au nombre total d'articles du jour. Maille : jour (heure de Paris).
+--   Tables : public.factiva_articles (hors DUP), public.stats_factiva_articles
+WITH bornes(t0, t1) AS (
+    VALUES (date '2025-01-01', date '2026-10-19')  -- t1 une semaine avant la date du jour (§2)
+),
+-- entrée <thematique> > keywords > french > presse de thematic_jobs_config.yml, copiée telle quelle
+dictionnaire_<thematique>(mot) AS (
+    VALUES ('mot 1'), ('mots 1')
+),
+-- même regex que le job : expressions normalisées, mots entiers
+motif AS (
+    SELECT '\y(' || string_agg(
+               regexp_replace(
+                   translate(replace(replace(lower(mot), 'œ', 'oe'), 'æ', 'ae'),
+                             'àâäéèêëîïôöùûüÿç', 'aaaeeeeiioouuuyc'),
+                   '[''’‘‛ʼʹ´`′＇-]', ' ', 'g'),
+               '|' ORDER BY length(mot) DESC) || ')\y' AS regex
+    FROM dictionnaire_<thematique>
+),
+<thematique> AS (
+    SELECT
+        (a.publication_datetime AT TIME ZONE 'Europe/Paris')::date AS jour,
+        COUNT(*) AS nb_articles_<thematique>
+    FROM public.factiva_articles a
+    CROSS JOIN bornes b
+    CROSS JOIN motif m
+    WHERE a.publication_datetime >= b.t0::timestamp AT TIME ZONE 'Europe/Paris'
+      AND a.publication_datetime <  b.t1::timestamp AT TIME ZONE 'Europe/Paris'
+      AND a.duplicate_status <> 'DUP'
+      AND regexp_replace(
+              translate(replace(replace(lower(concat_ws(' ', a.snippet, a.title, a.body)), 'œ', 'oe'), 'æ', 'ae'),
+                        'àâäéèêëîïôöùûüÿç', 'aaaeeeeiioouuuyc'),
+              '[''’‘‛ʼʹ´`′＇-]', ' ', 'g') ~ m.regex
+    GROUP BY 1
+),
+total AS (
+    -- une ligne par titre et par jour
+    SELECT
+        (s.publication_datetime AT TIME ZONE 'Europe/Paris')::date AS jour,
+        SUM(s.count) AS nb_articles_total
+    FROM public.stats_factiva_articles s
+    CROSS JOIN bornes b
+    WHERE s.publication_datetime >= b.t0::timestamp AT TIME ZONE 'Europe/Paris'
+      AND s.publication_datetime <  b.t1::timestamp AT TIME ZONE 'Europe/Paris'
+    GROUP BY 1
+)
+SELECT
+    t.jour,
+    COALESCE(n.nb_articles_<thematique>, 0) AS nb_articles_<thematique>,
+    t.nb_articles_total,
+    100.0 * COALESCE(n.nb_articles_<thematique>, 0) / NULLIF(t.nb_articles_total, 0) AS part_articles_<thematique>_pct
+FROM total t
+LEFT JOIN <thematique> n USING (jour)
+ORDER BY t.jour;
+```
+
+
+### 7.3 Axe par chaîne, audiovisuel
+
+Base Baromètre. Unité : segment thématique de 2 minutes (`thematic_chunk = true`). Un axe compte s'il apparaît dans le segment ou dans un segment de la même chaîne qui commence moins de 2 min 30 s avant ou après (§3.4) ; c'est l'écart que le job utilise pour retenir les segments adjacents. La colonne `_sans_fenetre` ne lit que le segment lui-même : un résultat publiable tient avec et sans la fenêtre (§3.8). Un axe défini par les thèmes du dictionnaire OME (têtes de maillon C1 à C4) teste la colonne `themes` au lieu d'une regex ; `themes` est vide pour un segment adjacent, la fenêtre ne s'applique donc pas à ces axes. Un axe de plus : une regex et deux colonnes de plus.
+
+```sql
+-- AV - <code> - <axe> <sujet>, par chaîne
+--   Une ligne = une chaîne. Unité : segment thématique de 2 minutes.
+--   L'axe compte s'il est dans le segment ou dans un segment de la même chaîne à ±2 min 30 s.
+--   Table : thematic_extracts.<thematique>_keywords_fr
+WITH segments AS (
+    SELECT this_id, channel_name, channel_title, start, thematic_chunk, plaintext_normalized
+    FROM thematic_extracts.<thematique>_keywords_fr
+    WHERE period = '<periode>'
+),
+-- un drapeau par axe : regex sur le texte normalisé, mots entiers (§3.3, §3.5)
+regex AS (
+    SELECT '\y(terme 1|terme 2)\y' AS <axe>
+),
+par_segment AS (
+    SELECT
+        t.channel_title,
+        t.this_id,
+        bool_or(v.plaintext_normalized ~ r.<axe>)                           AS <axe>,
+        bool_or(v.this_id = t.this_id AND v.plaintext_normalized ~ r.<axe>) AS <axe>_sans_fenetre
+    FROM segments t
+    JOIN segments v
+      ON v.channel_name = t.channel_name
+     AND v.start BETWEEN t.start - interval '2 minutes 30 seconds'
+                     AND t.start + interval '2 minutes 30 seconds'
+    CROSS JOIN regex r
+    WHERE t.thematic_chunk
+    GROUP BY t.channel_title, t.this_id
+)
+SELECT
+    channel_title,
+    COUNT(*)                                             AS nb_segments_<thematique>,
+    COUNT(*) FILTER (WHERE <axe>)                        AS nb_segments_<axe>,
+    100.0 * COUNT(*) FILTER (WHERE <axe>) / COUNT(*)     AS part_<axe>_pct,
+    COUNT(*) FILTER (WHERE <axe>_sans_fenetre)           AS nb_segments_<axe>_sans_fenetre,
+    100.0 * COUNT(*) FILTER (WHERE <axe>_sans_fenetre) / COUNT(*) AS part_<axe>_sans_fenetre_pct
+FROM par_segment
+GROUP BY channel_title
+ORDER BY part_<axe>_pct DESC;
+```
+
+Affichage : classement des chaînes en barres (G7), `part_<axe>_pct` ; une chaîne sous 30 segments ne se lit qu'avec sa famille (§3.7).
+
+### 7.4 Axe par titre, presse
+
+Base Print Media DB. Unité : article d'au moins 100 mots (§2). Un axe compte s'il apparaît dans le titre, le chapô ou le corps (§3.4). Les colonnes `*_normalized` sont déjà normalisées par le job.
+
+```sql
+-- PE - <code> - <axe> <sujet>, par titre
+--   Une ligne = un titre de presse. Unité : article d'au moins 100 mots.
+--   L'axe compte s'il est dans le titre, le chapô ou le corps.
+--   Tables : thematic_extracts.<thematique>_articles_fr, public.source_classification
+WITH regex AS (
+    SELECT '\y(terme 1|terme 2)\y' AS <axe>
+),
+articles AS (
+    SELECT
+        a.source_code,
+        a.source_name,
+        concat_ws(' ', a.title_normalized, a.snippet_normalized, a.body_normalized) ~ r.<axe> AS <axe>
+    FROM thematic_extracts.<thematique>_articles_fr a
+    CROSS JOIN regex r
+    WHERE a.period = '<periode>'
+      AND a.word_count >= 100
+)
+SELECT
+    ar.source_name,
+    sc.source_type,
+    COUNT(*)                                         AS nb_articles_<thematique>,
+    COUNT(*) FILTER (WHERE ar.<axe>)                 AS nb_articles_<axe>,
+    100.0 * COUNT(*) FILTER (WHERE ar.<axe>) / COUNT(*) AS part_<axe>_pct
+FROM articles ar
+LEFT JOIN public.source_classification sc USING (source_code)
+GROUP BY ar.source_name, sc.source_type
+ORDER BY part_<axe>_pct DESC;
+```
+
+Affichage : classement des titres en barres colorées par famille (G7) ; un titre sous 30 articles ne se lit qu'avec sa famille (§3.7).

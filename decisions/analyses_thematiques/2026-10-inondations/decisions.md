@@ -12,7 +12,7 @@
 Méthode commune, sans écart à ce stade.
 
 - Événements recensés (étape 0) : 🔴 [tableau début, fin, lieu, impact, source datée, à remplir par recherche en ligne puis compléter avec les pics de la courbe]
-- Courbe journalière (étape 0) : modèle de la méthode commune (§1, étape 0.3), audiovisuel du 01/01/2024 au 26/10/2026, presse du 01/01/2025 (début des données) au 26/10/2026, mots du §2 ; 🔴 [numéro de la question Metabase audiovisuel, puis presse]
+- Courbe journalière (étape 0) : modèle de la méthode commune (§1, étape 0.3), audiovisuel du 01/01/2024 au 26/10/2026, presse du 01/01/2025 (début des données) au 26/10/2026, mots du §2 ; presse : « PE - V2 - Courbe journalière inondations » (2394) ; 🔴 [numéro de la question Metabase audiovisuel]
 - Période d'analyse : 🔴 [à fixer après la courbe ; le YAML contient pour l'instant `hiver_2025_2026` et `automne_2026`, fenêtres saisonnières à resserrer autour des pics]
 - Période de comparaison : 🔴 [à fixer après la courbe]
 - Contrôles : 🔴 [précision et rappel, après extraction]

@@ -65,7 +65,7 @@ inondations:
     french:
       audiovisuel:
         - inondation
-        - augmentation du risque d'inondation
+        - augmentation du risque inondation
         - inondations à répétition
         - gestion des inondations
         - anticiper les risques d'inondation
@@ -74,15 +74,15 @@ inondations:
         - crue
         - crue centennale
         - coulée de boue
-        - pluie extreme
+        - pluie extrême
         - pluie torrentielle
-        - submergé par les eaux
-        - englouti par les eaux
+        - zone inondable
+        - inondable
       presse:
         - inondation
         - inondations
-        - augmentation du risque d'inondation
-        - augmentation du risque d'inondations
+        - augmentation du risque inondation
+        - augmentation du risque inondations
         - inondations à répétition
         - gestion des inondations
         - anticiper les risques d'inondation
@@ -99,11 +99,7 @@ inondations:
         - pluies extrêmes
         - pluie torrentielle
         - pluies torrentielles
-        - submergé par les eaux
-        - submergés par les eaux
-        - submergée par les eaux
-        - submergées par les eaux
-        - englouti par les eaux
-        - engloutie par les eaux
-        - engloutis par les eaux
-        - englouties par les eaux
+        - zone inondable
+        - zones inondables
+        - inondable
+        - inondables

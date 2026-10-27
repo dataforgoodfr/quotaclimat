@@ -52,6 +52,10 @@ One row per ad or occurrence in `advertising.ad_screenshot`:
 | `frame_offsets_sec`, `nb_frames` | offsets of the frames from the start of the ad, number of frames found |
 | `details` | margin of the ad video, missing archives, error message |
 
+Readable by Metabase (`metabase-analytics-<env>`) and `rrs-read-<env>` thanks to the default privileges of the
+database admin, set by `terraform_data.readonly_default_privileges` (`infrastructure/live/barometre/template/grants.tf`):
+the readonly privilege of Scaleway does not cover the tables created by the migrations.
+
 A separate table rather than columns of `ad` / `ad_occurrence`: the detection deletes and recreates the
 occurrences of a window it reprocesses (same ids when the ad and its start don't change), which would
 lose the columns, and the job only writes its own table, without updating the tables the detection and

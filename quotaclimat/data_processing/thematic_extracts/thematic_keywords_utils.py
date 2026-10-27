@@ -15,15 +15,19 @@ load_dotenv(Path(__file__).resolve().parents[3] / ".env", override=False)
 def read_barometre_keywords(con: duckdb.DuckDBPyConnection,
                             keywords_to_look_for: list[str],
                             start_date: date, end_date: date,
-                            country: str,
+                            country: str, channels: list[str] | None,
                             source_table: str, postgres_db: str) -> pd.DataFrame:
-    """Reads barometre.keywords to retrieve (start, channel) of every thematic chunk to keep"""
+    """Reads barometre.keywords to retrieve (start, channel) of every thematic chunk to keep,
+    on every channel of the country, or only on channels when given"""
     keywords_list = keywords_to_look_for
     kewords_sql = ", ".join("'" + m.replace("'", "''") + "'" for m in keywords_list)
+    # no channels: IN (k.channel_name) keeps every channel (channel_name is NOT NULL)
+    channels_sql = ("k.channel_name" if channels is None
+                    else ", ".join("'" + c.replace("'", "''") + "'" for c in channels))
     try:
         out = con.sql(f"""
             WITH exploded AS (
-                SELECT k.id, k.channel_name,
+                SELECT k.id, k.channel_name, k.channel_title,
                     k.start as start,
                     k.plaintext,
                     unnest(from_json(k.keywords_with_timestamp::JSON,
@@ -32,13 +36,14 @@ def read_barometre_keywords(con: duckdb.DuckDBPyConnection,
                 WHERE k.start >= TIMESTAMP '{start_date}' AT TIME ZONE 'Europe/Paris'
                     AND k.start <  TIMESTAMP '{end_date}'   AT TIME ZONE 'Europe/Paris'
                     AND k.country = '{country}'
+                    AND k.channel_name IN ({channels_sql})
             )
-            SELECT e.id, e.channel_name, e.start, e.plaintext,
+            SELECT e.id, e.channel_name, e.channel_title, e.start, e.plaintext,
                 string_agg(DISTINCT e.kwt.keyword, ',' ORDER BY e.kwt.keyword) AS keywords_found,
                 string_agg(DISTINCT e.kwt.theme, ',' ORDER BY e.kwt.theme) AS themes
             FROM exploded e
             WHERE e.kwt.keyword IN ({kewords_sql})
-            GROUP BY e.id, e.channel_name, e.start, e.plaintext
+            GROUP BY e.id, e.channel_name, e.channel_title, e.start, e.plaintext
             ORDER BY e.start, e.channel_name
     """).df()
         return out
@@ -172,7 +177,7 @@ def read_day_from_s3(con: duckdb.DuckDBPyConnection, day: date, channels: list[s
 
 ### GETTING ADJACENT CHUNKS ###
 def extract_adjacent_chunks_day(keywords_day_df: pd.DataFrame, s3_day_df: pd.DataFrame,
-                                gap: pd.Timedelta, country: str, channel_titles: dict[str, str]) -> pd.DataFrame:
+                                gap: pd.Timedelta) -> pd.DataFrame:
     """Keeps thematic chunks (from the keywords table) and their adjacents (within gap) fetched from s3"""
     try:
         gap_ns = pd.Timedelta(gap).value  # integer, nanoseconds
@@ -183,7 +188,7 @@ def extract_adjacent_chunks_day(keywords_day_df: pd.DataFrame, s3_day_df: pd.Dat
 
         # All chunks coming from the keywords table are thematic chunks
         kw = (
-            keywords_day_df[keys + ["id", "plaintext", "keywords_found", "themes"]]
+            keywords_day_df[keys + ["id", "channel_title", "plaintext", "keywords_found", "themes"]]
             .drop_duplicates(subset=keys)
             .rename(columns={"id": "source_keywords_id"})
             .assign(thematic_chunk=True)
@@ -221,10 +226,13 @@ def extract_adjacent_chunks_day(keywords_day_df: pd.DataFrame, s3_day_df: pd.Dat
         check = kw.merge(near, on=keys, suffixes=("_kw", "_s3"))
         mismatch = check[check["plaintext_kw"] != check["plaintext_s3"]]
         if not mismatch.empty:
+            example = mismatch.iloc[0]
             raise ValueError(
                 f"{len(mismatch)} thematic chunks have mismatched plaintext between source table and S3 "
                 f"at the same channel and start time: issue is likely caused by a timezone offset. "
-                f"Example: {mismatch[['channel_name', 'start']].iloc[0].to_dict()}"
+                f"Example: {example[['channel_name', 'start']].to_dict()}\n"
+                f"source table plaintext: {example['plaintext_kw']!r}\n"
+                f"S3 plaintext: {example['plaintext_s3']!r}"
             )
 
         # Pure adjacents: in S3 near a thematic chunk, absent from the keywords table
@@ -238,7 +246,10 @@ def extract_adjacent_chunks_day(keywords_day_df: pd.DataFrame, s3_day_df: pd.Dat
         # id = primary key: channel + start UTC TZ so no doubles on winter/summer swithcing
         out["this_id"] = (out["channel_name"] + "_"
                   + out["start"].dt.tz_convert("UTC").dt.strftime("%Y%m%d%H%M%S").str.replace("+", "", regex=False))
-        out["channel_title"] = out["channel_name"].map(channel_titles[country])
+        # adjacent chunks (from s3) take the title of their channel, known from its thematic chunks of the day
+        titles = (kw.dropna(subset=["channel_title"]).drop_duplicates("channel_name")
+                  .set_index("channel_name")["channel_title"])
+        out["channel_title"] = out["channel_name"].map(titles)
         # plaintext was only needed to compare the source with S3: only the normalized form is ingested,
         # like title / snippet / body of the articles
         out["plaintext_normalized"] = out["plaintext"].map(utils.normalize_text)

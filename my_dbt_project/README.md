@@ -100,6 +100,8 @@ To use a reference table in a model, declare it as a dbt source; `source_or_empt
 
 They have the names of the production tables (`public.keywords`, `public.program_metadata`...): seeding one replaces that table (`drop ... cascade` with `--full-refresh`, `truncate` otherwise). They are therefore disabled unless `DBT_ENABLE_FIXTURE_SEEDS=true`, set only in the `testconsole` docker compose service and the CI `dbt` job: in production (`DBT_ENV=prod`, `docker` target), `dbt seed` or `dbt build` without `--select` only loads `seeds/ref` and `seeds/themes`. The flag fails closed on purpose: the target name cannot tell production apart, since production also runs with the `docker` target. `test_fixture_seeds_disabled_in_production` checks it.
 
+`seeds/themes` holds the methodology seeds versioned in the repository, loaded in production by `entrypoints/dbt.sh` (`dbt seed --full-refresh --select path:seeds/themes`, schema `public`): `mesinfo_theme_mots_cles` (read by `cas_theme`), and `pollution_chimique_mots_cles` (keyword -> chemical pollution family, per language community) with `chaine_communaute_belgique` (Belgian channel -> `francophone` / `néerlandophone`), read by the Metabase dashboards of the collection "Belgique - Pollution chimique" in a join with `core_query_thematics_keywords_be`. They are real columns, so dashboard filters can be wired to them (a filter cannot be wired to a custom column of a question). Keywords are lowercase, like `core_query_thematics_keywords_be.keyword`, and must exist in the keyword dictionary of the pipeline to be detected.
+
 `keywords` has a post-hook adding its primary key and adjusting `program_metadata_id`'s type, since `dbt seed` infers types/constraints from the CSV and doesn't recreate them.
 
 ## Tests

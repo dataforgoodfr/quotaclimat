@@ -44,3 +44,64 @@ seeds:
         description: True for a case-sensitive match (e.g. the acronym VE).
         tests:
           - not_null
+
+  - name: pollution_chimique_mots_cles
+    description: >
+      In the public schema. Keywords of the chemical pollution dashboards of Belgium (Metabase collection
+      "Belgique - Pollution chimique"): one row per language community and keyword, with the family of the keyword.
+      The keywords are the lowercase forms stored in core_query_thematics_keywords_be.keyword (both apostrophes
+      listed), all present in the keyword dictionary of the pipeline: a keyword missing from the dictionary is never
+      detected. Built from the lexicon "produits chimiques" (method note of the collection); the Dutch list is to
+      review by a Dutch speaker.
+    config:
+      column_types:
+        communaute: text
+        mot_cle: text
+        famille: text
+    columns:
+      - name: communaute
+        description: Language community whose channels say the keyword (e.g. pesticide is in both lists).
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['francophone', 'néerlandophone']
+      - name: mot_cle
+        description: Detected keyword, lowercase, as in core_query_thematics_keywords_be.keyword.
+        tests:
+          - not_null
+      - name: famille
+        description: Chemical pollution family of the keyword (e.g. PFAS / polluants éternels).
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                # quote: false, values quoted here: the apostrophes are doubled for SQL
+                quote: false
+                values: ["'PFAS / polluants éternels'", "'Métaux lourds'", "'Pesticides & biocides'",
+                         "'Perturbateurs endocriniens'", "'Plastiques & microplastiques'",
+                         "'Substances chimiques & toxiques'", "'Pollution de l''eau'", "'Pollution de l''air'",
+                         "'Sols pollués & sites industriels'", "'Dépollution & chimie durable'"]
+
+  - name: chaine_communaute_belgique
+    description: >
+      In the public schema. Language community of the Belgian channels of core_query_thematics_keywords_be: one row
+      per channel. Dutch-speaking channels: channel_titles_belgium_flanders (quotaclimat/data_processing/mediatree/
+      i8n/belgium_flanders/channel_titles.py); the others are French-speaking (national and local).
+    config:
+      column_types:
+        channel_name: text
+        communaute: text
+    columns:
+      - name: channel_name
+        description: Technical channel identifier, as in core_query_thematics_keywords_be.channel_name.
+        tests:
+          - not_null
+          - unique
+      - name: communaute
+        description: Language community of the channel.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['francophone', 'néerlandophone']

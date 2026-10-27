@@ -273,7 +273,6 @@ Every target below is deployed once per environment (`dev`/`prod`) from its `tem
 | RDB privilege | `scaleway_rdb_privilege.rrs_read` | Readonly grant for `rrs_read` on `barometre` |
 | RDB user | `scaleway_rdb_user.metabase_analytics` | Readonly user (`metabase-analytics-<env>`) for Metabase dashboards |
 | RDB privilege | `scaleway_rdb_privilege.metabase_analytics` | Readonly grant for `metabase_analytics` on `barometre` |
-| Terraform data (null resource) | `terraform_data.readonly_default_privileges` | Default privileges of the database admin (`barometreclimat` in prod): the tables and schemas it creates next (Alembic migrations), in any schema, are readable by `metabase_analytics` and `rrs_read`, which Scaleway's `readonly` privilege doesn't cover (it only sets defaults for `_rdb_superadmin`); plus the catch-up grant on `advertising.ad_screenshot` |
 | RDB ACL | `scaleway_rdb_acl.public` | IP allow-list (Scaleway job CIDRs + dev/prod extra IPs) |
 | Instance IP | `scaleway_instance_ip.gpu` | Flexible IP for the GPU instance |
 | Instance server | `scaleway_instance_server.gpu` | GPU instance (Whisper transcription / ML workloads) |

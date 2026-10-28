@@ -76,6 +76,7 @@ Classification des titres de presse (nationale, régionale...) : table `source_c
 
 - Le corpus noyau d'un thème est construit uniquement à partir de mots du dictionnaire OME, directs (HRFP) ou indirects.
 - Un terme n'entre dans le dictionnaire noyau que s'il désigne le sujet sans ambiguïté : `crue centennale` oui, `piégé par les eaux` non.
+- Le dictionnaire noyau ne contient pas de terme qui relève d'un axe, cause ou contexte (`pluie torrentielle` pour les inondations) : le corpus serait construit sur ce que l'axe veut mesurer.
 - On n'écarte jamais un terme parce qu'il est HRFP : il est dans le dictionnaire OME parce que nous voulons qu'il y soit. Ses faux positifs se mesurent au contrôle de précision (§3.6).
 - On garde toujours l'écriture du dictionnaire OME, même si elle paraît fautive ou incomplète (`augmentation du risque inondation`, sans « d' ») : elle peut reprendre un terme administratif. En presse, les variantes de genre et de nombre partent de cette écriture.
 - La liste de chaque thème est fixe : un thème récurrent (incendies, inondations...) utilise toujours la même entrée de `thematic_jobs_config.yml`.

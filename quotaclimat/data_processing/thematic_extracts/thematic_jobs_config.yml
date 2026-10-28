@@ -84,10 +84,6 @@ inondations:
         - crue
         - crue centennale
         - coulée de boue
-        - pluie extrême
-        - pluie torrentielle
-        - zone inondable
-        - inondable
       presse:
         - inondation
         - inondations
@@ -105,11 +101,3 @@ inondations:
         - crues centennales
         - coulée de boue
         - coulées de boue
-        - pluie extrême
-        - pluies extrêmes
-        - pluie torrentielle
-        - pluies torrentielles
-        - zone inondable
-        - zones inondables
-        - inondable
-        - inondables

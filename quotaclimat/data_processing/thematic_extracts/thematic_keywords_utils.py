@@ -177,8 +177,9 @@ def read_day_from_s3(con: duckdb.DuckDBPyConnection, day: date, channels: list[s
 
 ### GETTING ADJACENT CHUNKS ###
 def extract_adjacent_chunks_day(keywords_day_df: pd.DataFrame, s3_day_df: pd.DataFrame,
-                                gap: pd.Timedelta) -> pd.DataFrame:
-    """Keeps thematic chunks (from the keywords table) and their adjacents (within gap) fetched from s3"""
+                                gap: pd.Timedelta) -> tuple[pd.DataFrame, int]:
+    """Keeps thematic chunks (from the keywords table) and their adjacents (within gap) fetched from s3.
+    Also returns the number of thematic chunks whose plaintext differs from S3."""
     try:
         gap_ns = pd.Timedelta(gap).value  # integer, nanoseconds
         keys = ["start", "channel_name"]
@@ -222,17 +223,30 @@ def extract_adjacent_chunks_day(keywords_day_df: pd.DataFrame, s3_day_df: pd.Dat
         if n_found != len(kw):
             raise ValueError(f"{len(kw) - n_found} thematic chunks missing from S3")
 
-        # For the same channel and start time, source plaintext must match S3 plaintext
+        # For the same channel and start time, source plaintext should match S3 plaintext.
+        # Mediatree can deliver two versions of the same chunk (a different 30 s segment missing in each):
+        # counted and logged, the source table plaintext is kept for thematic chunks
         check = kw.merge(near, on=keys, suffixes=("_kw", "_s3"))
         mismatch = check[check["plaintext_kw"] != check["plaintext_s3"]]
-        if not mismatch.empty:
-            example = mismatch.iloc[0]
-            raise ValueError(
-                f"{len(mismatch)} thematic chunks have mismatched plaintext between source table and S3 "
-                f"at the same channel and start time: issue is likely caused by a timezone offset. "
-                f"Example: {example[['channel_name', 'start']].to_dict()}\n"
-                f"source table plaintext: {example['plaintext_kw']!r}\n"
-                f"S3 plaintext: {example['plaintext_s3']!r}"
+        if mismatch.empty:
+            logging.info("[EXTRACT_ADJACENT_CHUNKS] 0 plaintext mismatch between source table and S3")
+        else:
+            examples = []
+            for _, row in mismatch.head(5).iterrows():
+                kw_text, s3_text = row["plaintext_kw"], row["plaintext_s3"]
+                # first character where both plaintexts differ
+                diverge = next((i for i, (a, b) in enumerate(zip(kw_text, s3_text)) if a != b),
+                               min(len(kw_text), len(s3_text)))
+                examples.append(
+                    f"{row['channel_name']} {row['start']} (source id {row['source_keywords_id']}): "
+                    f"diverge at char {diverge}\n"
+                    f"  source table: {kw_text[max(0, diverge - 50):diverge + 100]!r}\n"
+                    f"  S3:           {s3_text[max(0, diverge - 50):diverge + 100]!r}"
+                )
+            logging.warning(
+                f"[EXTRACT_ADJACENT_CHUNKS] {len(mismatch)} plaintext mismatch between source table and S3 "
+                f"at the same channel and start time, source table plaintext kept. First 5:\n"
+                + "\n".join(examples)
             )
 
         # Pure adjacents: in S3 near a thematic chunk, absent from the keywords table
@@ -256,7 +270,7 @@ def extract_adjacent_chunks_day(keywords_day_df: pd.DataFrame, s3_day_df: pd.Dat
         cols = ["this_id", "channel_name", "channel_title", "start",
                 "thematic_chunk",
                 "source_keywords_id", "keywords_found", "themes", "plaintext_normalized"]
-        return out.sort_values(["channel_name", "start"])[cols].reset_index(drop=True)
+        return out.sort_values(["channel_name", "start"])[cols].reset_index(drop=True), len(mismatch)
 
     except Exception as e:
         logging.error(f"[EXTRACT_ADJACENT_CHUNKS] ERROR EXTRACTING ADJACENT CHUNKS: {e}")
@@ -265,12 +279,26 @@ def extract_adjacent_chunks_day(keywords_day_df: pd.DataFrame, s3_day_df: pd.Dat
     
 ### CHECKING RESULTS
 def check_keywords(con: duckdb.DuckDBPyConnection, postgres_db: str, destination_table: str,
-                   schema: str, gap: pd.Timedelta) -> pd.DataFrame:
+                   schema: str, gap: pd.Timedelta, dry_run: bool, source_table: str,
+                   n_plaintext_mismatch: int = 0) -> pd.DataFrame | None:
     """Per channel report on the destination table, using gap as the extraction does (starts are not always on a 2 min grid).
     - n_expected_adj: sides (before / after) of thematic chunks with no other thematic chunk within gap
     - n_missing_adj (missing_prev + missing_next) / pct_missing_adj: expected sides with no chunk within gap.
       Program edges are legitimate misses (~105 per day in France, every news program edge for Belgian TV)
-    - orphans: adjacent chunks with no thematic chunk of the same channel within gap"""
+    - orphans: adjacent chunks with no thematic chunk of the same channel within gap
+    - n_plaintext_mismatch: thematic chunks of this run whose plaintext differs from S3 (counted by extract_adjacent_chunks_day),
+      logged even in dry run. The table report needs the rows of this run in the table: skipped in dry run (returns None)"""
+    if n_plaintext_mismatch > 0:
+        logging.warning(
+            f"[CHECK] {n_plaintext_mismatch} plaintext mismatch between {source_table} and S3 during this run, "
+            f"{source_table} plaintext kept: see the [EXTRACT_ADJACENT_CHUNKS] warnings of each day"
+        )
+    else:
+        logging.info(f"[CHECK] 0 plaintext mismatch between {source_table} and S3 during this run")
+    if dry_run:
+        logging.info(f"[CHECK] DRY_RUN: nothing ingested, no check on {destination_table}")
+        return None
+
     gap_sql = f"INTERVAL '{int(pd.Timedelta(gap).total_seconds())} seconds'"
     try:
         report = con.sql(f"""

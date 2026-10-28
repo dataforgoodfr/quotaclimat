@@ -177,9 +177,10 @@ def read_day_from_s3(con: duckdb.DuckDBPyConnection, day: date, channels: list[s
 
 ### GETTING ADJACENT CHUNKS ###
 def extract_adjacent_chunks_day(keywords_day_df: pd.DataFrame, s3_day_df: pd.DataFrame,
-                                gap: pd.Timedelta) -> tuple[pd.DataFrame, int]:
+                                gap: pd.Timedelta) -> tuple[pd.DataFrame, int, dict[str, int]]:
     """Keeps thematic chunks (from the keywords table) and their adjacents (within gap) fetched from s3.
-    Also returns the number of thematic chunks whose plaintext differs from S3."""
+    Also returns the number of thematic chunks whose plaintext differs from S3,
+    and the number of thematic chunks missing from S3 per channel."""
     try:
         gap_ns = pd.Timedelta(gap).value  # integer, nanoseconds
         keys = ["start", "channel_name"]
@@ -218,10 +219,21 @@ def extract_adjacent_chunks_day(keywords_day_df: pd.DataFrame, s3_day_df: pd.Dat
             )
         near = pd.concat(parts, ignore_index=True)
 
-        # All thematic chunks must be in S3
-        n_found = len(kw.merge(near[keys], on=keys))
-        if n_found != len(kw):
-            raise ValueError(f"{len(kw) - n_found} thematic chunks missing from S3")
+        # Thematic chunks should be in S3. On old days, the keywords table was filled before S3 was written,
+        # with another program window (e.g. fr3-idf JT 12h on 2024-01-07): counted per channel and logged,
+        # kept with the source table plaintext
+        found = kw.merge(near[keys], on=keys, how="left", indicator=True)
+        missing_s3 = found[found["_merge"] == "left_only"]
+        n_missing_s3 = missing_s3["channel_name"].value_counts().to_dict()
+        if missing_s3.empty:
+            logging.info("[EXTRACT_ADJACENT_CHUNKS] 0 thematic chunk missing from S3")
+        else:
+            logging.warning(
+                f"[EXTRACT_ADJACENT_CHUNKS] {len(missing_s3)} thematic chunks missing from S3, "
+                f"source table plaintext kept. First 5:\n"
+                + "\n".join(f"{row['channel_name']} {row['start']} (source id {row['source_keywords_id']})"
+                            for _, row in missing_s3.head(5).iterrows())
+            )
 
         # For the same channel and start time, source plaintext should match S3 plaintext.
         # Mediatree can deliver two versions of the same chunk (a different 30 s segment missing in each):
@@ -270,7 +282,7 @@ def extract_adjacent_chunks_day(keywords_day_df: pd.DataFrame, s3_day_df: pd.Dat
         cols = ["this_id", "channel_name", "channel_title", "start",
                 "thematic_chunk",
                 "source_keywords_id", "keywords_found", "themes", "plaintext_normalized"]
-        return out.sort_values(["channel_name", "start"])[cols].reset_index(drop=True), len(mismatch)
+        return out.sort_values(["channel_name", "start"])[cols].reset_index(drop=True), len(mismatch), n_missing_s3
 
     except Exception as e:
         logging.error(f"[EXTRACT_ADJACENT_CHUNKS] ERROR EXTRACTING ADJACENT CHUNKS: {e}")
@@ -280,14 +292,18 @@ def extract_adjacent_chunks_day(keywords_day_df: pd.DataFrame, s3_day_df: pd.Dat
 ### CHECKING RESULTS
 def check_keywords(con: duckdb.DuckDBPyConnection, postgres_db: str, destination_table: str,
                    schema: str, gap: pd.Timedelta, dry_run: bool, source_table: str,
-                   n_plaintext_mismatch: int = 0) -> pd.DataFrame | None:
+                   n_plaintext_mismatch: int = 0,
+                   n_missing_s3: dict[str, int] | None = None) -> pd.DataFrame | None:
     """Per channel report on the destination table, using gap as the extraction does (starts are not always on a 2 min grid).
     - n_expected_adj: sides (before / after) of thematic chunks with no other thematic chunk within gap
     - n_missing_adj (missing_prev + missing_next) / pct_missing_adj: expected sides with no chunk within gap.
       Program edges are legitimate misses (~105 per day in France, every news program edge for Belgian TV)
     - orphans: adjacent chunks with no thematic chunk of the same channel within gap
-    - n_plaintext_mismatch: thematic chunks of this run whose plaintext differs from S3 (counted by extract_adjacent_chunks_day),
-      logged even in dry run. The table report needs the rows of this run in the table: skipped in dry run (returns None)"""
+    - n_missing_s3: thematic chunks of this run missing from S3 (counted per channel by extract_adjacent_chunks_day),
+      only this run: a resumed run does not count the days ingested before
+    - n_plaintext_mismatch: thematic chunks of this run whose plaintext differs from S3 (counted by extract_adjacent_chunks_day)
+    Both counts are logged even in dry run (n_missing_s3 as a per channel table). The table report needs the rows
+    of this run in the table: skipped in dry run (returns None)"""
     if n_plaintext_mismatch > 0:
         logging.warning(
             f"[CHECK] {n_plaintext_mismatch} plaintext mismatch between {source_table} and S3 during this run, "
@@ -295,6 +311,18 @@ def check_keywords(con: duckdb.DuckDBPyConnection, postgres_db: str, destination
         )
     else:
         logging.info(f"[CHECK] 0 plaintext mismatch between {source_table} and S3 during this run")
+    n_missing_s3 = n_missing_s3 or {}
+    if n_missing_s3:
+        # per channel table, also in dry run (the table report below needs ingested rows)
+        missing_s3_df = (pd.DataFrame(list(n_missing_s3.items()), columns=["channel_name", "n_missing_s3"])
+                         .sort_values(["n_missing_s3", "channel_name"], ascending=[False, True]))
+        logging.warning(
+            f"[CHECK] {sum(n_missing_s3.values())} thematic chunks of {source_table} missing from S3 during this run, "
+            f"{source_table} plaintext kept: see the [EXTRACT_ADJACENT_CHUNKS] warnings of each day. Per channel:\n"
+            f"{missing_s3_df.to_string(index=False)}"
+        )
+    else:
+        logging.info(f"[CHECK] 0 thematic chunk of {source_table} missing from S3 during this run")
     if dry_run:
         logging.info(f"[CHECK] DRY_RUN: nothing ingested, no check on {destination_table}")
         return None
@@ -355,6 +383,7 @@ def check_keywords(con: duckdb.DuckDBPyConnection, postgres_db: str, destination
         logging.error(f"[{destination_table}] ERROR CHECKING TABLE: {e}")
         raise e
 
+    report["n_missing_s3"] = report["channel_name"].map(n_missing_s3).fillna(0).astype(int)
     total = report.drop(columns=["channel_name", "pct_missing_adj"]).sum()
     pct_total = (round(100 * total["n_missing_adj"] / total["n_expected_adj"], 2)
                  if total["n_expected_adj"] else None)
@@ -364,9 +393,11 @@ def check_keywords(con: duckdb.DuckDBPyConnection, postgres_db: str, destination
         f"thematic chunks without neighbour: {total['missing_prev']} before, {total['missing_next']} after\n"
         f"missing adjacents (within gap): {total['n_missing_adj']} / {total['n_expected_adj']} expected ({pct_total} %). Up to ~105 per day (France) can be program edges, "
         f"and chunks can be missing in S3.\n"
-        f"orphan adjacents: {total['orphans']}"
+        f"orphan adjacents: {total['orphans']}\n"
+        f"thematic chunks missing from S3 (this run): {total['n_missing_s3']}"
     )
-    with_missing = report[report["n_missing_adj"] > 0]
+    with_missing = report[(report["n_missing_adj"] > 0) | (report["n_missing_s3"] > 0)]
     if not with_missing.empty:
-        logging.info(f"[CHECK] channels with missing adjacents:\n{with_missing.to_string(index=False)}")
+        logging.info(f"[CHECK] channels with missing adjacents or thematic chunks missing from S3:\n"
+                     f"{with_missing.to_string(index=False)}")
     return report

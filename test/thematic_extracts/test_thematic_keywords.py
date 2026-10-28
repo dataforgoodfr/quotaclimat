@@ -70,7 +70,7 @@ def _s3_df(rows):
     return pd.DataFrame([{"channel_name": c, "start": s, "plaintext": p} for c, s, p in rows])
 
 def _extract(kw, s3):
-    out, _ = kw_utils.extract_adjacent_chunks_day(kw, s3, tk.GAP)
+    out, _, _ = kw_utils.extract_adjacent_chunks_day(kw, s3, tk.GAP)
     return out
 
 class RunEnv:
@@ -245,17 +245,27 @@ def test_extract_adjacent_chunks_day_output_columns_id_format_and_title():
     assert set(out_utc["this_id"]) == set(out["this_id"])
 
 
-def test_extract_adjacent_chunks_day_raises_if_core_missing_from_s3():
-    """Verify that the function raises a ValueError if a thematic chunk (here 14h)
-    does not exist on the S3 side, instead of ingesting an incomplete day."""
+def test_extract_adjacent_chunks_day_counts_core_missing_from_s3(caplog):
+    """Verify that a thematic chunk (here 14h) that does not exist on the S3 side (old days: keywords
+    filled before S3) is counted per channel in a warning and kept with the source table plaintext,
+    without raising."""
     kw = _kw_df([
         ("kw1", "tf1", T0, "core 10h"),
         ("kw2", "tf1", T0 + timedelta(hours=4), "core 14h"),
+        ("kw3", "m6", T0, "core m6"),
     ])
-    s3 = _s3_df([("tf1", T0, "core 10h"), ("tf1", T0 + 2 * MIN, "n")])
+    s3 = _s3_df([("tf1", T0, "core 10h"), ("tf1", T0 + 2 * MIN, "n"), ("m6", T0, "core m6")])
 
-    with pytest.raises(ValueError):
-        _extract(kw, s3)
+    with caplog.at_level(logging.WARNING):
+        out, n_mismatch, n_missing_s3 = kw_utils.extract_adjacent_chunks_day(kw, s3, tk.GAP)
+
+    assert n_missing_s3 == {"tf1": 1}
+    assert n_mismatch == 0
+    assert "1 thematic chunks missing from S3" in caplog.text
+    out = out.set_index("plaintext_normalized")
+    assert set(out.index) == {"core 10h", "core 14h", "n", "core m6"}
+    assert bool(out.loc["core 14h", "thematic_chunk"]) is True
+    assert out.loc["core 14h", "source_keywords_id"] == "kw2"
 
 
 def test_extract_adjacent_chunks_day_warns_if_core_and_s3_plaintext_differ(caplog):
@@ -297,6 +307,25 @@ def test_run_ingests_every_period_into_one_table(env):
     assert env.con.execute(
         f"SELECT count(*) FROM {env.table} WHERE plaintext_normalized = 'l ete'"
     ).fetchone()[0] == 1
+
+
+def test_run_counts_core_missing_from_s3_in_check(env, caplog):
+    """Verify that a thematic chunk missing from S3 does not stop the run: it is ingested,
+    the per channel count is logged by the check, and the check report has it in n_missing_s3."""
+    env.add_day(D1)
+    _add_kw(env.con, "kw_missing", "tf1", "2025-03-10 14:00:00", "core missing",
+            [("inondation", "changement_climatique_constat")])
+    env.add_day(D1, channel="m6")
+    env.configure(start=D1, end=D2)
+
+    with caplog.at_level(logging.INFO):
+        tk.run()
+
+    assert env.count() == 5
+    assert "1 thematic chunks of public.keywords missing from S3 during this run" in caplog.text
+    report = kw_utils.check_keywords(env.con, DB, env.destination_table, DESTINATION_SCHEMA, tk.GAP,
+                                     False, f"{SCHEMA}.keywords", 0, {"tf1": 1})
+    assert report.set_index("channel_name")["n_missing_s3"].to_dict() == {"tf1": 1, "m6": 0}
 
 
 def test_run_stops_at_first_failing_day(env):

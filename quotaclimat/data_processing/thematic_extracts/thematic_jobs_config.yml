@@ -55,12 +55,22 @@ incendies:
 inondations:
   periodes:
     france:
-      - id: hiver_2025_2026
-        start: 2025-12-01
-        end: 2026-03-15
-      - id: automne_2026
-        start: 2026-09-01
-        end: 2026-10-20
+      - id: pas_de_calais_novembre_2023
+        start: 2023-10-31
+        end: 2023-11-20
+      - id: pas_de_calais_janvier_2024
+        start: 2023-12-25
+        end: 2024-01-15
+      - id: ardeche_valence_octobre_2024
+        start: 2024-10-07
+        end: 2024-11-10
+      - id: sud_ouest_fevrier_2026
+        start: 2026-02-09
+        end: 2026-03-01
+      - id: sud_espagne_septembre_octobre_2026
+        start: 2026-09-21
+        end: 2026-10-27
+
   keywords:
     french:
       audiovisuel:

@@ -12,9 +12,22 @@
 Méthode commune, sans écart à ce stade.
 
 - Événements recensés (étape 0) : 🔴 [tableau début, fin, lieu, impact, source datée, à remplir par recherche en ligne puis compléter avec les pics de la courbe]
-- Courbe journalière (étape 0) : modèle de la méthode commune (§1, étape 0.3), audiovisuel du 01/01/2024 au 26/10/2026, presse du 01/01/2025 (début des données) au 26/10/2026, mots du §2 ; presse : « PE - V2 - Courbe journalière inondations » (2394) ; 🔴 [numéro de la question Metabase audiovisuel]
-- Période d'analyse : 🔴 [à fixer après la courbe ; le YAML contient pour l'instant `hiver_2025_2026` et `automne_2026`, fenêtres saisonnières à resserrer autour des pics]
-- Période de comparaison : 🔴 [à fixer après la courbe]
+- Courbe journalière (étape 0) : modèles 7.1 et 7.2 de la méthode commune, audiovisuel du 01/01/2024 au 26/10/2026, presse par semaine, du lundi 06/01/2025 à la dernière semaine complète ingérée, mots du §2 ; audiovisuel : « AV - V2 - Courbe journalière inondations » (2329) ; presse : « PE - V2 - Courbe hebdomadaire inondations » (2394)
+- Périodes (entrée `inondations` du YAML, fin incluse ci-dessous) :
+
+  Cinq fenêtres, chacune avec une tolérance d'une à deux semaines avant et après (méthode commune §3.2, événement météorologique). Deux épisodes proches dans le temps partagent une même fenêtre.
+
+  | `id` | Du | Au | Épisodes | Presse |
+  |---|---|---|---|---|
+  | `pas_de_calais_novembre_2023` | 31/10/2023 | 19/11/2023 | Pas-de-Calais, premier épisode (crues de 2023-2024, divisées en deux fenêtres) | non (données presse à partir de 2025) |
+  | `pas_de_calais_janvier_2024` | 25/12/2023 | 14/01/2024 | Pas-de-Calais, second épisode | non |
+  | `ardeche_valence_octobre_2024` | 07/10/2024 | 09/11/2024 | Ardèche et Espagne (Valence), fusionnés | non |
+  | `sud_ouest_fevrier_2026` | 09/02/2026 | 28/02/2026 | Sud-Ouest | oui |
+  | `sud_espagne_septembre_octobre_2026` | 21/09/2026 | 26/10/2026 | Gard et Hérault, et Espagne, fusionnés | oui |
+
+  🔴 [sources datées des épisodes à ajouter au tableau des événements]
+
+- Période d'analyse et périodes de comparaison : 🔴 [préciser laquelle est la période d'analyse]
 - Contrôles : 🔴 [précision et rappel, après extraction]
 
 **Presse.** Presque tous les termes qui décrivent l'événement (`inondation`, `Crue`, `coulée de boue`, `pluie torrentielle`...) sont HRFP. Seuls les mots non HRFP font entrer un article dans `factiva_articles` (méthode commune §3.10) : le corpus presse sera tiré vers les articles qui contiennent déjà du vocabulaire environnemental, ce qui gonfle les taux de recontextualisation. Comparer les périodes entre elles en presse, ne pas comparer la presse à l'audiovisuel en niveau absolu, et le dire dans l'encadré méthodologique. 🔴 [à valider par l'expert]

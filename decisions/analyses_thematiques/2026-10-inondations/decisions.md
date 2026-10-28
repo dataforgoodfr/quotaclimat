@@ -45,17 +45,13 @@ Dictionnaire OME : `quotaclimat/data_processing/mediatree/keyword/keyword.py`, e
 | `Crue` | oui | faux positifs à contrôler : participe de « croire », adjectif (« lumière crue ») |
 | `crue centennale` | oui | |
 | `coulée de boue` | oui | |
-| `pluie extrême` | oui | |
-| `pluie torrentielle` | oui | |
-| `zone inondable` | oui | ramène aussi de l'urbanisme hors événement |
-| `Inondable` | oui | idem |
 | `augmentation du risque inondation` | non | |
 | `anticiper les inondations` | non | |
 | `anticiper les risques d'inondation` | non | |
 | `gestion des inondations` | non | |
 | `prévention des inondations` | non | |
 
-En presse, les expressions qui contiennent `inondation` ou `crue` n'ajoutent aucun article ; elles sont gardées parce qu'elles ne sont pas HRFP (méthode commune §3.1). L'entrée `presse` du YAML déclare aussi les pluriels.
+Les expressions longues (`prévention des inondations`, `gestion des inondations`, `anticiper les inondations`...) sont gardées : en audiovisuel, la détection n'enregistre que l'expression la plus longue, et les retirer ferait sortir des segments du corpus. Les axes contextuels (prévention, solutions) utiliseront d'autres termes, pour éviter la circularité. En presse, les expressions qui contiennent `inondation` ou `crue` n'ajoutent aucun article ; elles sont gardées parce qu'elles ne sont pas HRFP (méthode commune §3.1). L'entrée `presse` du YAML déclare aussi les pluriels.
 
 **Termes écartés et raison**
 
@@ -63,6 +59,8 @@ En presse, les expressions qui contiennent `inondation` ou `crue` n'ajoutent auc
 |---|---|
 | `submergé par les eaux`, `englouti par les eaux`, `emporté par les eaux`, `cerné par les eaux`, `piégé par les eaux`, `sous les eaux`, `les eaux sont montées` | trop génériques, ne désignent pas l'inondation sans contexte |
 | `eaux déchainées`, `eau boueuse`, `eaux boueuses` | trop génériques |
+| `pluie extrême`, `pluie torrentielle` (retirés le 28/10/2026, après le premier lancement du job) | décrivent une cause de l'inondation, pas l'inondation ; les garder rendrait circulaire la mesure des axes causes et météo (C2) |
+| `zone inondable`, `Inondable` (retirés le 28/10/2026, après le premier lancement du job) | relève de l'aménagement ; le garder rendrait circulaire la mesure d'un axe aménagement (C2) |
 | `forte pluie`, `pluie intense`, `importante précipitation` | météo générique, ne désigne pas l'inondation |
 | `déluge` | souvent figuré (« déluge de critiques ») |
 | `méga-orage` | désigne l'orage, pas l'inondation |

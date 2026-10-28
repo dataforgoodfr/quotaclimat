@@ -87,12 +87,11 @@ Termes écrits sous forme normalisée (méthode commune §3.5), en regex de mots
 |---|---|---|---|---|---|---|
 | V1 | Volume | banque V1 | corpus | G7 | | |
 | V2 | Courbe journalière (presse : hebdomadaire) | banque V2 | corpus | G2 | 2329 / 2394 | testé |
-| A1 | Climat, dictionnaire OME explicite | spécifique | ci-dessous | G7 | | |
-| A2 | Mentions explicites du changement climatique | banque A1 | [banque](../decisions.md#lien-avec-le-changement-climatique) | G7 | | |
-| A3 | Mécanismes physiques de l'inondation | spécifique | ci-dessous | G7 | | |
-| A4 | Voix scientifiques | banque A3 | banque, sans doublon de `giec`, + `hydrologues?`, `hydrogeologues?`, `meteorologues?` | G7 | | |
-| A5 | Mise en série | banque A2 | banque, sans `comme en 2022` ni `saison des feux`, + `episode mediterraneen`, `episode cevenol`, `crue historique`, `comme en 2024` | G7 | | |
-| A6 | Sécheresse | banque B3 | [banque](../decisions.md#co-aléa-sécheresse) | G7 | | |
+| A1 | Mentions explicites du changement climatique | banque A1 | [banque](../decisions.md#lien-avec-le-changement-climatique) | G7 | | |
+| A2 | Mécanismes physiques de l'inondation | spécifique | ci-dessous | G7 | | |
+| A3 | Voix scientifiques | banque A3 | banque, sans doublon de `giec`, + `hydrologues?`, `hydrogeologues?`, `meteorologues?` | G7 | | |
+| A4 | Mise en série | banque A2 | banque, sans `comme en 2022` ni `saison des feux`, + `plus frequentes?`, `crue historique`, `comme en 2024` | G7 | | |
+| A5 | Sécheresse | banque B3, réduite | ci-dessous | G7 | | |
 | B1 | Causes du changement climatique, dictionnaire OME explicite | spécifique | ci-dessous | G7 | | |
 | B2 | Causes météorologiques directes | banque B4, termes remplacés | ci-dessous | G7 | | |
 | B3 | Gouvernance et politique locale | spécifique | ci-dessous | G7 | | |
@@ -109,14 +108,16 @@ Termes écrits sous forme normalisée (méthode commune §3.5), en regex de mots
 | D5 | Végétalisation | banque D3 | ci-dessous | G11 | | |
 | D6 | Politiques et financements d'adaptation | spécifique | ci-dessous | G11 | | |
 
-Croisements prévus : `A1 x B1` et `A2 x A3` (G13, nuage de points, un point par média) ; curatif ou préventif (banque D3) : D1 face à D2, D4 et D5 (G11, barres empilées par média).
+Croisements prévus : `A1 x B1` et `A1 x A2` (G13, nuage de points, un point par média) ; curatif ou préventif (banque D3) : D1 face à D2, D4 et D5 (G11, barres empilées par média).
+
+**Axes retirés** : climat d'après le dictionnaire OME explicite (redondant avec A1, les mentions explicites).
 
 **Axes de la banque non exploités** : B2 co-aléa chaleur (sans lien direct avec l'inondation) ; B6 forces de l'ordre et justice (pas de cause criminelle). X3 proportionnalité : couvert par la courbe journalière (V2), rapprochée des événements. 🔴 [à décider : V3 mots les plus employés, V4 part de couverture, B5 aléas composés, C2 santé, C3 précarité du ménage, C4 personnes vulnérables, D2 solutions individuelles ou systémiques]
 
 **Termes des axes spécifiques**
 
-- **A1 Climat, dictionnaire OME explicite** (termes du dictionnaire OME qui nomment le climat sans ambiguïté) : `changement climatique`, `rechauffement climatique`, `rechauffement planetaire`, `urgence climatique`, `dereglement du climat`, `un climat qui change`, `evolution du climat`, `effet de serre`, `risques? climatiques?`, `rechauffement des oceans`, `rechauffement de l atmosphere`, `rechauffement des temperatures`, `seuil de rechauffement`, `equilibre climatique`, `le climat du futur`, `anthropocene`
-- **A3 Mécanismes physiques** : `vapeur d eau`, `atmosphere plus chaude`, `evaporation`, `cycle de l eau`, `oceans? plus chauds?`, `mediterranee plus chaude`, `temperature de surface de la mer`, `plus frequentes et plus intenses`, `clausius clapeyron`. `evaporation` est large : à contrôler.
+- **A2 Mécanismes physiques** : `vapeur d eau`, `atmosphere plus chaude`, `evaporation`, `cycle de l eau`, `oceans? plus chauds?`, `mediterranee plus chaude`, `temperature de surface de la mer`, `clausius clapeyron`. `evaporation` est large : à contrôler.
+- **A5 Sécheresse** (liste de la banque arrêtée aux termes qui nomment explicitement la sécheresse) : `secheresse`, `secheresses`, `deficit hydrique`, `sol sec`, `sols secs`, `sol tres sec`, `manque d eau`, `penurie d eau`
 - **B1 Causes du changement climatique, dictionnaire OME explicite** : `gaz a effet de serre`, `emissions? de carbone`, `emissions anthropiques`, `emissions de methane`, `emissions mondiales de co2`, `emissions mondiales de co deux`, `co2`, `co deux`, `methane`, `combustibles? fossiles?`, `energies? fossiles?`, `deforestation`
 - **B2 Causes météorologiques directes** : `pluies? diluviennes?`, `fortes? pluies?`, `pluies? torrentielles?`, `pluies? extremes?`, `pluies? intenses?`, `precipitations? extremes?`, `orages?`, `cumuls? de pluie`, `millimetres de pluie`, `episodes? pluvieux`
 - **B3 Gouvernance et politique locale** : `choix politiques?`, `defaillance de l etat`, `manque d anticipation`, `sous investissement`, `responsabilite des elus`, `cout de l inaction`, `court termisme`

@@ -1,7 +1,7 @@
 # Inondations 2025-2026
 
 - Responsable : Renan
-- Statut : en cours, étape 0 (cadrage) ; dictionnaire noyau validé le 26/10/2026
+- Statut : en cours, étape 2 (axes) ; dictionnaire noyau validé le 26/10/2026, révisé le 28/10/2026
 - Entrée de `thematic_jobs_config.yml` : `inondations` (mots-clés mis à jour le 26/10/2026 ; périodes à fixer après la courbe journalière ; job pas encore lancé)
 - Tables : `thematic_extracts.inondations_articles_fr`, `thematic_extracts.inondations_keywords_fr`
 - Collection Metabase : `03. Analyses thématiques/21. Inondations 2026` (id 469)
@@ -81,7 +81,56 @@ Correspondance avec le dictionnaire OME vérifiée le 26/10/2026.
 
 ## 3. Axes
 
-🔴 [à remplir à l'étape 2]
+Termes écrits sous forme normalisée (méthode commune §3.5), en regex de mots entiers ; `s?` marque le pluriel. Aucun terme d'axe n'appartient au dictionnaire noyau (§3.1). Statut de tous les axes : à tester.
+
+| Code | Axe | Origine | Termes | Graphique | Question Metabase (id) | Résultat |
+|---|---|---|---|---|---|---|
+| V1 | Volume | banque V1 | corpus | G7 | | |
+| V2 | Courbe journalière (presse : hebdomadaire) | banque V2 | corpus | G2 | 2329 / 2394 | testé |
+| A1 | Climat, dictionnaire OME explicite | spécifique | ci-dessous | G7 | | |
+| A2 | Mentions explicites du changement climatique | banque A1 | [banque](../decisions.md#lien-avec-le-changement-climatique) | G7 | | |
+| A3 | Mécanismes physiques de l'inondation | spécifique | ci-dessous | G7 | | |
+| A4 | Voix scientifiques | banque A3 | banque, sans doublon de `giec`, + `hydrologues?`, `hydrogeologues?`, `meteorologues?` | G7 | | |
+| A5 | Mise en série | banque A2 | banque, sans `comme en 2022` ni `saison des feux`, + `episode mediterraneen`, `episode cevenol`, `crue historique`, `comme en 2024` | G7 | | |
+| A6 | Sécheresse | banque B3 | [banque](../decisions.md#co-aléa-sécheresse) | G7 | | |
+| B1 | Causes du changement climatique, dictionnaire OME explicite | spécifique | ci-dessous | G7 | | |
+| B2 | Causes météorologiques directes | banque B4, termes remplacés | ci-dessous | G7 | | |
+| B3 | Gouvernance et politique locale | spécifique | ci-dessous | G7 | | |
+| B4 | Facteurs locaux aggravants | spécifique | ci-dessous | G7 | | |
+| C1 | Conséquences humaines | spécifique | ci-dessous | G7 | | |
+| C2 | Dommages matériels | banque C1 (secteur) | ci-dessous | G6 | | |
+| C3 | Assurances | banque C1 (secteur) | ci-dessous | G6 | | |
+| C4 | Agriculture | banque C1 (secteur) | ci-dessous | G6 | | |
+| C5 | Reconstruction, temps long | spécifique | ci-dessous | G7 | | |
+| D1 | Secours (curatif) | banque D3 | ci-dessous | G11 | | |
+| D2 | Alerte des habitants et préparation | banque D3 | ci-dessous | G11 | | |
+| D3 | Atténuation du changement climatique | banque D1 | [banque](../decisions.md#solutions), liste atténuation | G11 | | |
+| D4 | Aménagement | banque D3 | ci-dessous | G11 | | |
+| D5 | Végétalisation | banque D3 | ci-dessous | G11 | | |
+| D6 | Politiques et financements d'adaptation | spécifique | ci-dessous | G11 | | |
+
+Croisements prévus : `A1 x B1` et `A2 x A3` (G13, nuage de points, un point par média) ; curatif ou préventif (banque D3) : D1 face à D2, D4 et D5 (G11, barres empilées par média).
+
+**Axes de la banque non exploités** : B2 co-aléa chaleur (sans lien direct avec l'inondation) ; B6 forces de l'ordre et justice (pas de cause criminelle). X3 proportionnalité : couvert par la courbe journalière (V2), rapprochée des événements. 🔴 [à décider : V3 mots les plus employés, V4 part de couverture, B5 aléas composés, C2 santé, C3 précarité du ménage, C4 personnes vulnérables, D2 solutions individuelles ou systémiques]
+
+**Termes des axes spécifiques**
+
+- **A1 Climat, dictionnaire OME explicite** (termes du dictionnaire OME qui nomment le climat sans ambiguïté) : `changement climatique`, `rechauffement climatique`, `rechauffement planetaire`, `urgence climatique`, `dereglement du climat`, `un climat qui change`, `evolution du climat`, `effet de serre`, `risques? climatiques?`, `rechauffement des oceans`, `rechauffement de l atmosphere`, `rechauffement des temperatures`, `seuil de rechauffement`, `equilibre climatique`, `le climat du futur`, `anthropocene`
+- **A3 Mécanismes physiques** : `vapeur d eau`, `atmosphere plus chaude`, `evaporation`, `cycle de l eau`, `oceans? plus chauds?`, `mediterranee plus chaude`, `temperature de surface de la mer`, `plus frequentes et plus intenses`, `clausius clapeyron`. `evaporation` est large : à contrôler.
+- **B1 Causes du changement climatique, dictionnaire OME explicite** : `gaz a effet de serre`, `emissions? de carbone`, `emissions anthropiques`, `emissions de methane`, `emissions mondiales de co2`, `emissions mondiales de co deux`, `co2`, `co deux`, `methane`, `combustibles? fossiles?`, `energies? fossiles?`, `deforestation`
+- **B2 Causes météorologiques directes** : `pluies? diluviennes?`, `fortes? pluies?`, `pluies? torrentielles?`, `pluies? extremes?`, `pluies? intenses?`, `precipitations? extremes?`, `orages?`, `cumuls? de pluie`, `millimetres de pluie`, `episodes? pluvieux`
+- **B3 Gouvernance et politique locale** : `choix politiques?`, `defaillance de l etat`, `manque d anticipation`, `sous investissement`, `responsabilite des elus`, `cout de l inaction`, `court termisme`
+- **B4 Facteurs locaux aggravants** : `artificialisation`, `impermeabilisation`, `sols? impermeabilises?`, `betonisation`, `betonnage`, `etalement urbain`, `saturation des sols`, `arrachage des haies`, `remembrement`, `rectification des cours d eau`, `curage`, `entretien des cours d eau`, `embacles?`, `fonds de vallee`, `constructions? en zone a risque`, `subsidence`, `affaissement des sols`, `pompage des nappes`, `vetuste des reseaux`, `gestion des eaux pluviales`. Limite : l'axe détecte la mention, pas ce qu'on en dit (méthode commune §3.10, valence) ; `curage` et `entretien des cours d eau` sont aussi des arguments contestés.
+- **C1 Conséquences humaines** : `evacues?`, `sinistres?`, `bilan humain`, `vies? humaines?`, `personnes? disparues?`, `morts?`, `deces`, `victimes?`. Termes fréquents : si l'axe dépasse 70 % du corpus, prévoir une version stricte (`bilan humain`, `morts?`, `deces`, `personnes? disparues?`) (§3.6).
+- **C2 Dommages matériels** : `degats materiels`, `milliards d euros de degats`, `millions d euros de degats`, `pertes economiques`, `coupures? d electricite`
+- **C3 Assurances** : `regime cat nat`, `catnat`, `arretes? de catastrophe naturelle`, `indemnisation`, `assureurs?`, `france assureurs`, `franchise`, `surprime`, `inassurable`, `reassurance`. `franchise` est large : à contrôler.
+- **C4 Agriculture** : `cultures inondees`, `parcelles inondees`, `champs inondes`, `terres agricoles inondees`, `recoltes? detruites?`, `pertes? de recolte`, `recolte compromise`, `semis detruits`, `semis retardes`, `impossibilite de semer`, `retard des semis`, `pertes? de rendement`, `baisse des rendements`, `cereales noyees`, `vergers inondes`, `vignes inondees`, `maraichage`, `cultures maraicheres`
+- **C5 Reconstruction, temps long** : `reconstruire`, `reconstruction`, `retour a la normale`
+- **D1 Secours** : `secours`, `sapeurs? pompiers?`, `sauveteurs?`, `helicopteres?`, `cellule de crise`, `plan orsec`
+- **D2 Alerte des habitants et préparation** : `batardeaux?`, `calfeutrer`, `sacs de sable`, `kit d urgence`, `plan familial de mise en surete`, `plan communal de sauvegarde`, `dicrim`, `culture du risque`, `exercices? d evacuation`, `systemes? d alerte`, `fr alert`, `vigilance rouge`, `alerte precoce`, `evacuation preventive`, `journee nationale de la resilience`, `vigicrues`, `vigicrues flash`, `apic`, `service de prevision des crues`, `hydrometrie`, `stations? hydrometriques?`, `reseau d observation`, `vigilance crues`, `avertissement automatique`
+- **D4 Aménagement** : `repli strategique`, `recul strategique`, `relocalisation`, `demolition des habitations`, `rachat des maisons`, `expropriation`, `non constructible`, `zone inondable`, `inconstructible`, `interdiction de construire`, `desartificialisation`, `fonds barnier`, `surelevation`, `pilotis`, `piece refuge`, `digues?`, `systeme d endiguement`, `bassins? de retention`, `bassins? ecreteurs?`, `ecretement`, `ouvrages? de protection`, `amenagement hydraulique`
+- **D5 Végétalisation** : `desimpermeabilisation`, `vegetalisation`, `renaturation`, `remeandrage`, `zones? humides?`, `ripisylve`, `agroforesterie`, `ville eponge`, `noues?`, `bio retention`, `zan`, `zero artificialisation nette`, `loi climat resilience`
+- **D6 Politiques et financements d'adaptation** : `fonds vert`, `plan national d adaptation`, `pnacc`
 
 ## 4. Résultats
 

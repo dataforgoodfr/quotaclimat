@@ -1,0 +1,1423 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Data tiers: raw, syndicated, curated",
+    "output": "docs/diagrams/data_tiers.html",
+    "quality_profile": "standard",
+    "repository": {
+      "url": "git@github.com:dataforgoodfr/quotaclimat.git",
+      "revision": "c741938f0d8d858c4622ee6f582db2d9d509454f",
+      "link_mode": "local-only"
+    },
+    "legend": {
+      "mode": "auto",
+      "entries": {
+        "external": {
+          "label": "Source"
+        },
+        "database": {
+          "label": "Raw table"
+        },
+        "backend": {
+          "label": "Syndicated table (dbt)"
+        },
+        "cloud": {
+          "label": "Curated table"
+        }
+      }
+    }
+  },
+  "components": [
+    {
+      "id": "s_ls",
+      "type": "external",
+      "label": "Label Studio",
+      "pos": [
+        80,
+        40
+      ],
+      "size": [
+        150,
+        46
+      ],
+      "sources": [
+        {
+          "path": "quotaclimat/data_ingestion/labelstudio/configs.py",
+          "label": "6 databases"
+        }
+      ]
+    },
+    {
+      "id": "s_git",
+      "type": "external",
+      "label": "program_metadata.json",
+      "pos": [
+        440,
+        40
+      ],
+      "size": [
+        172,
+        46
+      ],
+      "sources": [
+        {
+          "path": "transform_program.py",
+          "label": "loader"
+        }
+      ]
+    },
+    {
+      "id": "s_mt",
+      "type": "external",
+      "label": "Mediatree",
+      "pos": [
+        865,
+        40
+      ],
+      "size": [
+        150,
+        46
+      ],
+      "sources": [
+        {
+          "path": "entrypoints/mediatree_import.sh",
+          "label": "import job"
+        }
+      ]
+    },
+    {
+      "id": "s_ad",
+      "type": "external",
+      "label": "Ad detection",
+      "pos": [
+        1260,
+        40
+      ],
+      "size": [
+        150,
+        46
+      ],
+      "sources": [
+        {
+          "path": "entrypoints/advertising_detection.sh",
+          "label": "detection job"
+        }
+      ]
+    },
+    {
+      "id": "s_gs",
+      "type": "external",
+      "label": "Google Sheets + CSVs",
+      "pos": [
+        1590,
+        40
+      ],
+      "size": [
+        166,
+        46
+      ],
+      "sources": [
+        {
+          "path": "quotaclimat/data_ingestion/external_sources/download_external_sources.py",
+          "label": "download"
+        }
+      ]
+    },
+    {
+      "id": "s_press",
+      "type": "external",
+      "label": "Press, keyword Excel",
+      "pos": [
+        1930,
+        40
+      ],
+      "size": [
+        166,
+        46
+      ],
+      "sources": [
+        {
+          "path": "quotaclimat/data_ingestion/ingest_db/ingest_sitemap_in_db.py",
+          "label": "sitemaps"
+        }
+      ]
+    },
+    {
+      "id": "r_lsa",
+      "type": "database",
+      "label": "public.labelstudio_task_aggregate",
+      "pos": [
+        80,
+        540
+      ],
+      "size": [
+        251,
+        46
+      ],
+      "sources": [
+        {
+          "path": "quotaclimat/data_ingestion/labelstudio/models.py",
+          "label": "table"
+        }
+      ]
+    },
+    {
+      "id": "r_lsc",
+      "type": "database",
+      "label": "public.labelstudio_task_completion_aggregate",
+      "pos": [
+        80,
+        614
+      ],
+      "size": [
+        324,
+        46
+      ],
+      "sources": [
+        {
+          "path": "quotaclimat/data_ingestion/labelstudio/models.py",
+          "label": "table"
+        }
+      ]
+    },
+    {
+      "id": "r_cm",
+      "type": "database",
+      "label": "public.channel_metadata",
+      "pos": [
+        440,
+        466
+      ],
+      "size": [
+        185,
+        46
+      ],
+      "sources": [
+        {
+          "path": "postgres/schemas/models.py",
+          "label": "table"
+        }
+      ]
+    },
+    {
+      "id": "r_refprog",
+      "type": "database",
+      "label": "advertising.ref_programmes_emissions_infos_en_continue",
+      "pos": [
+        440,
+        540
+      ],
+      "size": [
+        390,
+        46
+      ],
+      "sources": [
+        {
+          "path": "my_dbt_project/seeds/ref/_ref_seeds.yml",
+          "label": "table"
+        }
+      ]
+    },
+    {
+      "id": "r_pm",
+      "type": "database",
+      "label": "public.program_metadata",
+      "pos": [
+        440,
+        614
+      ],
+      "size": [
+        185,
+        46
+      ],
+      "sources": [
+        {
+          "path": "postgres/schemas/models.py",
+          "label": "table"
+        }
+      ]
+    },
+    {
+      "id": "r_sw",
+      "type": "database",
+      "label": "public.stop_word",
+      "pos": [
+        865,
+        466
+      ],
+      "size": [
+        150,
+        46
+      ],
+      "sources": [
+        {
+          "path": "postgres/schemas/models.py",
+          "label": "table"
+        }
+      ]
+    },
+    {
+      "id": "r_tm",
+      "type": "database",
+      "label": "public.time_monitored",
+      "pos": [
+        865,
+        540
+      ],
+      "size": [
+        172,
+        46
+      ],
+      "sources": [
+        {
+          "path": "my_dbt_project/models/advertising/sources.yml",
+          "label": "table"
+        }
+      ]
+    },
+    {
+      "id": "r_kw",
+      "type": "database",
+      "label": "public.keywords",
+      "pos": [
+        865,
+        614
+      ],
+      "size": [
+        150,
+        46
+      ],
+      "sources": [
+        {
+          "path": "postgres/schemas/models.py",
+          "label": "table"
+        }
+      ]
+    },
+    {
+      "id": "r_am",
+      "type": "database",
+      "label": "advertising.ad_merge",
+      "pos": [
+        1260,
+        318
+      ],
+      "size": [
+        166,
+        46
+      ],
+      "sources": [
+        {
+          "path": "postgres/schemas/advertising/models.py",
+          "label": "table"
+        }
+      ]
+    },
+    {
+      "id": "r_amo",
+      "type": "database",
+      "label": "advertising.ad_merge_occurrence",
+      "pos": [
+        1260,
+        392
+      ],
+      "size": [
+        238,
+        46
+      ],
+      "sources": [
+        {
+          "path": "postgres/schemas/advertising/models.py",
+          "label": "table"
+        }
+      ]
+    },
+    {
+      "id": "r_ass",
+      "type": "database",
+      "label": "advertising.ad_screenshot",
+      "pos": [
+        1260,
+        466
+      ],
+      "size": [
+        199,
+        46
+      ],
+      "sources": [
+        {
+          "path": "postgres/schemas/advertising/models.py",
+          "label": "table"
+        }
+      ]
+    },
+    {
+      "id": "r_ad",
+      "type": "database",
+      "label": "advertising.ad",
+      "pos": [
+        1260,
+        540
+      ],
+      "size": [
+        150,
+        46
+      ],
+      "sources": [
+        {
+          "path": "postgres/schemas/advertising/models.py",
+          "label": "table"
+        }
+      ]
+    },
+    {
+      "id": "r_occ",
+      "type": "database",
+      "label": "advertising.ad_occurrence",
+      "pos": [
+        1260,
+        614
+      ],
+      "size": [
+        199,
+        46
+      ],
+      "sources": [
+        {
+          "path": "postgres/schemas/advertising/models.py",
+          "label": "table"
+        }
+      ]
+    },
+    {
+      "id": "r_sec",
+      "type": "database",
+      "label": "advertising.ref_ome_secteurs",
+      "pos": [
+        1590,
+        392
+      ],
+      "size": [
+        218,
+        46
+      ],
+      "sources": [
+        {
+          "path": "my_dbt_project/seeds/ref/_ref_seeds.yml",
+          "label": "table"
+        }
+      ]
+    },
+    {
+      "id": "r_cat",
+      "type": "database",
+      "label": "advertising.ref_ome_categories",
+      "pos": [
+        1590,
+        466
+      ],
+      "size": [
+        232,
+        46
+      ],
+      "sources": [
+        {
+          "path": "my_dbt_project/seeds/ref/_ref_seeds.yml",
+          "label": "table"
+        }
+      ]
+    },
+    {
+      "id": "r_inv",
+      "type": "database",
+      "label": "advertising.ref_inventaire_marques",
+      "pos": [
+        1590,
+        540
+      ],
+      "size": [
+        258,
+        46
+      ],
+      "sources": [
+        {
+          "path": "my_dbt_project/seeds/ref/_ref_seeds.yml",
+          "label": "table"
+        }
+      ]
+    },
+    {
+      "id": "r_theme",
+      "type": "database",
+      "label": "public.mesinfo_theme_mots_cles",
+      "pos": [
+        1590,
+        614
+      ],
+      "size": [
+        232,
+        46
+      ],
+      "sources": [
+        {
+          "path": "my_dbt_project/seeds/themes/_themes_seeds.yml",
+          "label": "table"
+        }
+      ]
+    },
+    {
+      "id": "r_fa",
+      "type": "database",
+      "label": "public.factiva_articles",
+      "pos": [
+        1930,
+        170
+      ],
+      "size": [
+        185,
+        46
+      ],
+      "sources": [
+        {
+          "path": "postgres/schemas/factiva_models.py",
+          "label": "table"
+        }
+      ]
+    },
+    {
+      "id": "r_lm",
+      "type": "database",
+      "label": "public.lemonde_ftp_articles",
+      "pos": [
+        1930,
+        244
+      ],
+      "size": [
+        212,
+        46
+      ],
+      "sources": [
+        {
+          "path": "postgres/schemas/factiva_models.py",
+          "label": "table"
+        }
+      ]
+    },
+    {
+      "id": "r_sf",
+      "type": "database",
+      "label": "public.stats_factiva_articles",
+      "pos": [
+        1930,
+        318
+      ],
+      "size": [
+        225,
+        46
+      ],
+      "sources": [
+        {
+          "path": "postgres/schemas/factiva_models.py",
+          "label": "table"
+        }
+      ]
+    },
+    {
+      "id": "r_sc",
+      "type": "database",
+      "label": "public.source_classification",
+      "pos": [
+        1930,
+        392
+      ],
+      "size": [
+        218,
+        46
+      ],
+      "sources": [
+        {
+          "path": "postgres/schemas/factiva_models.py",
+          "label": "table"
+        }
+      ]
+    },
+    {
+      "id": "r_sm",
+      "type": "database",
+      "label": "public.sitemap_table",
+      "pos": [
+        1930,
+        466
+      ],
+      "size": [
+        166,
+        46
+      ],
+      "sources": [
+        {
+          "path": "postgres/schemas/models.py",
+          "label": "table"
+        }
+      ]
+    },
+    {
+      "id": "r_dic",
+      "type": "database",
+      "label": "public.dictionary",
+      "pos": [
+        1930,
+        540
+      ],
+      "size": [
+        150,
+        46
+      ],
+      "sources": [
+        {
+          "path": "postgres/schemas/models.py",
+          "label": "table"
+        }
+      ]
+    },
+    {
+      "id": "r_kmc",
+      "type": "database",
+      "label": "public.keyword_macro_category",
+      "pos": [
+        1930,
+        614
+      ],
+      "size": [
+        225,
+        46
+      ],
+      "sources": [
+        {
+          "path": "postgres/schemas/models.py",
+          "label": "table"
+        }
+      ]
+    },
+    {
+      "id": "y_tgc",
+      "type": "backend",
+      "label": "analytics.task_global_completion",
+      "pos": [
+        80,
+        798
+      ],
+      "size": [
+        245,
+        46
+      ],
+      "sources": [
+        {
+          "path": "my_dbt_project/models/analytics/task_global_completion.sql",
+          "label": "dbt model"
+        }
+      ]
+    },
+    {
+      "id": "y_cdm",
+      "type": "backend",
+      "label": "analytics.cas_de_mesinformation",
+      "pos": [
+        80,
+        872
+      ],
+      "size": [
+        238,
+        46
+      ],
+      "sources": [
+        {
+          "path": "my_dbt_project/models/analytics/cas_de_mesinformation.sql",
+          "label": "dbt model"
+        }
+      ]
+    },
+    {
+      "id": "y_cth",
+      "type": "backend",
+      "label": "analytics.cas_theme",
+      "pos": [
+        80,
+        946
+      ],
+      "size": [
+        159,
+        46
+      ],
+      "sources": [
+        {
+          "path": "my_dbt_project/models/analytics/cas_theme.sql",
+          "label": "dbt model"
+        }
+      ]
+    },
+    {
+      "id": "y_prog",
+      "type": "backend",
+      "label": "analytics.program",
+      "pos": [
+        440,
+        798
+      ],
+      "size": [
+        150,
+        46
+      ],
+      "sources": [
+        {
+          "path": "my_dbt_project/models/analytics/program.sql",
+          "label": "dbt model"
+        }
+      ]
+    },
+    {
+      "id": "y_ej",
+      "type": "backend",
+      "label": "public.emission_jour",
+      "pos": [
+        865,
+        798
+      ],
+      "size": [
+        166,
+        46
+      ],
+      "sources": [
+        {
+          "path": "my_dbt_project/models/analytics/emission_jour.sql",
+          "label": "dbt model"
+        }
+      ]
+    },
+    {
+      "id": "y_env",
+      "type": "backend",
+      "label": "public.environmental_shares_with_desinfo_counts",
+      "pos": [
+        1930,
+        798
+      ],
+      "size": [
+        344,
+        46
+      ],
+      "sources": [
+        {
+          "path": "my_dbt_project/models/analytics/environmental_shares_with_desinfo_counts.sql",
+          "label": "dbt model"
+        }
+      ]
+    },
+    {
+      "id": "y_h",
+      "type": "backend",
+      "label": "public.homepage_environment_by_media_by_month",
+      "pos": [
+        1930,
+        872
+      ],
+      "size": [
+        331,
+        46
+      ],
+      "sources": [
+        {
+          "path": "my_dbt_project/models/homepage/homepage_environment_by_media_by_month.sql",
+          "label": "dbt model"
+        }
+      ]
+    },
+    {
+      "id": "y_c1",
+      "type": "backend",
+      "label": "public.core_query_environmental_shares",
+      "pos": [
+        1930,
+        946
+      ],
+      "size": [
+        284,
+        46
+      ],
+      "sources": [
+        {
+          "path": "my_dbt_project/models/dashboards/core_query_environmental_shares.sql",
+          "label": "dbt model"
+        }
+      ]
+    },
+    {
+      "id": "y_c2",
+      "type": "backend",
+      "label": "public.core_query_environmental_shares_be",
+      "pos": [
+        1930,
+        1020
+      ],
+      "size": [
+        304,
+        46
+      ],
+      "sources": [
+        {
+          "path": "my_dbt_project/models/dashboards/core_query_environmental_shares_be.sql",
+          "label": "dbt model"
+        }
+      ]
+    },
+    {
+      "id": "y_c3",
+      "type": "backend",
+      "label": "public.core_query_environmental_shares_i8n",
+      "pos": [
+        1930,
+        1094
+      ],
+      "size": [
+        311,
+        46
+      ],
+      "sources": [
+        {
+          "path": "my_dbt_project/models/dashboards/core_query_environmental_shares_i8n.sql",
+          "label": "dbt model"
+        }
+      ]
+    },
+    {
+      "id": "y_t1",
+      "type": "backend",
+      "label": "public.core_query_thematics_keywords",
+      "pos": [
+        1930,
+        1168
+      ],
+      "size": [
+        271,
+        46
+      ],
+      "sources": [
+        {
+          "path": "my_dbt_project/models/dashboards/core_query_thematics_keywords.sql",
+          "label": "dbt model"
+        }
+      ]
+    },
+    {
+      "id": "y_t2",
+      "type": "backend",
+      "label": "public.core_query_thematics_keywords_be",
+      "pos": [
+        1930,
+        1242
+      ],
+      "size": [
+        291,
+        46
+      ],
+      "sources": [
+        {
+          "path": "my_dbt_project/models/dashboards/core_query_thematics_keywords_be.sql",
+          "label": "dbt model"
+        }
+      ]
+    },
+    {
+      "id": "y_t3",
+      "type": "backend",
+      "label": "public.core_query_thematics_keywords_i8n",
+      "pos": [
+        1930,
+        1316
+      ],
+      "size": [
+        298,
+        46
+      ],
+      "sources": [
+        {
+          "path": "my_dbt_project/models/dashboards/core_query_thematics_keywords_i8n.sql",
+          "label": "dbt model"
+        }
+      ]
+    },
+    {
+      "id": "y_oc",
+      "type": "backend",
+      "label": "public.thematic_query_ocean",
+      "pos": [
+        1930,
+        1390
+      ],
+      "size": [
+        212,
+        46
+      ],
+      "sources": [
+        {
+          "path": "my_dbt_project/models/dashboards/thematic_query_ocean.sql",
+          "label": "dbt model"
+        }
+      ]
+    },
+    {
+      "id": "y_occt",
+      "type": "backend",
+      "label": "advertising.ad_occurrence_tunnels",
+      "pos": [
+        1260,
+        798
+      ],
+      "size": [
+        251,
+        46
+      ],
+      "sources": [
+        {
+          "path": "my_dbt_project/models/advertising/ad_occurrence_tunnels.sql",
+          "label": "dbt model"
+        }
+      ]
+    },
+    {
+      "id": "y_tun",
+      "type": "backend",
+      "label": "advertising.ad_tunnels",
+      "pos": [
+        1260,
+        872
+      ],
+      "size": [
+        179,
+        46
+      ],
+      "sources": [
+        {
+          "path": "my_dbt_project/models/advertising/ad_tunnels.sql",
+          "label": "dbt model"
+        }
+      ]
+    },
+    {
+      "id": "y_tunp",
+      "type": "backend",
+      "label": "advertising.ad_tunnel_programs",
+      "pos": [
+        1260,
+        946
+      ],
+      "size": [
+        232,
+        46
+      ],
+      "sources": [
+        {
+          "path": "my_dbt_project/models/advertising/ad_tunnel_programs.sql",
+          "label": "dbt model"
+        }
+      ]
+    },
+    {
+      "id": "y_occm",
+      "type": "backend",
+      "label": "advertising.ad_occurrence_mesinfo",
+      "pos": [
+        1260,
+        1020
+      ],
+      "size": [
+        251,
+        46
+      ],
+      "sources": [
+        {
+          "path": "my_dbt_project/models/advertising/ad_occurrence_mesinfo.sql",
+          "label": "dbt model"
+        }
+      ]
+    },
+    {
+      "id": "y_pub",
+      "type": "backend",
+      "label": "analytics.publicites",
+      "pos": [
+        1260,
+        1094
+      ],
+      "size": [
+        166,
+        46
+      ],
+      "sources": [
+        {
+          "path": "my_dbt_project/models/analytics/publicites.sql",
+          "label": "dbt model"
+        }
+      ]
+    },
+    {
+      "id": "y_pae",
+      "type": "backend",
+      "label": "advertising.pub_annonceur_emission_jour",
+      "pos": [
+        1260,
+        1168
+      ],
+      "size": [
+        291,
+        46
+      ],
+      "sources": [
+        {
+          "path": "my_dbt_project/models/analytics/pub_annonceur_emission_jour.sql",
+          "label": "dbt model"
+        }
+      ]
+    },
+    {
+      "id": "y_br",
+      "type": "backend",
+      "label": "advertising.ad_brands",
+      "pos": [
+        1590,
+        1094
+      ],
+      "size": [
+        172,
+        46
+      ],
+      "sources": [
+        {
+          "path": "my_dbt_project/models/advertising/ad_brands.sql",
+          "label": "dbt model"
+        }
+      ]
+    },
+    {
+      "id": "c_chaine",
+      "type": "cloud",
+      "label": "curated.chaine",
+      "pos": [
+        440,
+        1648
+      ],
+      "size": [
+        150,
+        46
+      ],
+      "sources": [
+        {
+          "path": "my_dbt_project/models/curated/chaine.sql",
+          "label": "dbt model"
+        }
+      ]
+    },
+    {
+      "id": "c_cas",
+      "type": "cloud",
+      "label": "curated.cas_mesinformation",
+      "pos": [
+        80,
+        1574
+      ],
+      "size": [
+        205,
+        46
+      ],
+      "sources": [
+        {
+          "path": "my_dbt_project/models/curated/cas_mesinformation.sql",
+          "label": "dbt model"
+        }
+      ]
+    },
+    {
+      "id": "c_ej",
+      "type": "cloud",
+      "label": "curated.emission_jour",
+      "pos": [
+        865,
+        1574
+      ],
+      "size": [
+        172,
+        46
+      ],
+      "sources": [
+        {
+          "path": "my_dbt_project/models/curated/curated_emission_jour.sql",
+          "label": "dbt model"
+        }
+      ]
+    },
+    {
+      "id": "c_pub",
+      "type": "cloud",
+      "label": "curated.publicite",
+      "pos": [
+        1260,
+        1574
+      ],
+      "size": [
+        150,
+        46
+      ],
+      "sources": [
+        {
+          "path": "my_dbt_project/models/curated/publicite.sql",
+          "label": "dbt model"
+        }
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "RAW: ingested tables and seeds",
+      "wraps": [
+        "r_lsa",
+        "r_lsc",
+        "r_cm",
+        "r_refprog",
+        "r_pm",
+        "r_sw",
+        "r_tm",
+        "r_kw",
+        "r_am",
+        "r_amo",
+        "r_ass",
+        "r_ad",
+        "r_occ",
+        "r_sec",
+        "r_cat",
+        "r_inv",
+        "r_theme",
+        "r_fa",
+        "r_lm",
+        "r_sf",
+        "r_sc",
+        "r_sm",
+        "r_dic",
+        "r_kmc"
+      ],
+      "pad": 18
+    },
+    {
+      "kind": "region",
+      "label": "SYNDICATED: built by dbt",
+      "wraps": [
+        "y_tgc",
+        "y_cdm",
+        "y_cth",
+        "y_prog",
+        "y_ej",
+        "y_env",
+        "y_h",
+        "y_c1",
+        "y_c2",
+        "y_c3",
+        "y_t1",
+        "y_t2",
+        "y_t3",
+        "y_oc",
+        "y_occt",
+        "y_tun",
+        "y_tunp",
+        "y_occm",
+        "y_pub",
+        "y_pae",
+        "y_br"
+      ],
+      "pad": 18
+    },
+    {
+      "kind": "region",
+      "label": "CURATED: clean tables for the teams",
+      "wraps": [
+        "c_chaine",
+        "c_cas",
+        "c_ej",
+        "c_pub"
+      ],
+      "pad": 18
+    }
+  ],
+  "connections": [
+    {
+      "from": "s_ls",
+      "to": "r_lsa"
+    },
+    {
+      "from": "s_ls",
+      "to": "r_lsc"
+    },
+    {
+      "from": "s_git",
+      "to": "r_pm"
+    },
+    {
+      "from": "s_mt",
+      "to": "r_kw"
+    },
+    {
+      "from": "s_ad",
+      "to": "r_ad"
+    },
+    {
+      "from": "s_gs",
+      "to": "r_inv"
+    },
+    {
+      "from": "s_press",
+      "to": "r_fa"
+    },
+    {
+      "from": "r_lsa",
+      "to": "y_tgc",
+      "fromSide": "left",
+      "toSide": "left",
+      "via": [
+        [
+          40,
+          563
+        ],
+        [
+          40,
+          821
+        ]
+      ]
+    },
+    {
+      "from": "r_lsc",
+      "to": "y_tgc"
+    },
+    {
+      "from": "r_pm",
+      "to": "y_prog"
+    },
+    {
+      "from": "r_refprog",
+      "to": "y_prog",
+      "fromSide": "right",
+      "toSide": "right",
+      "via": [
+        [
+          850,
+          563
+        ],
+        [
+          850,
+          821
+        ]
+      ]
+    },
+    {
+      "from": "y_tgc",
+      "to": "y_cdm"
+    },
+    {
+      "from": "y_prog",
+      "to": "y_cdm",
+      "fromSide": "left",
+      "toSide": "right",
+      "via": [
+        [
+          380,
+          821
+        ],
+        [
+          380,
+          895
+        ]
+      ]
+    },
+    {
+      "from": "y_cdm",
+      "to": "y_cth"
+    },
+    {
+      "from": "r_kw",
+      "to": "y_ej"
+    },
+    {
+      "from": "r_tm",
+      "to": "y_ej",
+      "fromSide": "right",
+      "toSide": "right",
+      "via": [
+        [
+          1040,
+          563
+        ],
+        [
+          1040,
+          821
+        ]
+      ]
+    },
+    {
+      "from": "y_cdm",
+      "to": "y_ej",
+      "fromSide": "right",
+      "toSide": "left",
+      "via": [
+        [
+          700,
+          895
+        ],
+        [
+          700,
+          821
+        ]
+      ]
+    },
+    {
+      "from": "y_prog",
+      "to": "y_ej"
+    },
+    {
+      "from": "r_ad",
+      "to": "y_occt",
+      "fromSide": "right",
+      "toSide": "right",
+      "via": [
+        [
+          1560,
+          563
+        ],
+        [
+          1560,
+          821
+        ]
+      ]
+    },
+    {
+      "from": "r_occ",
+      "to": "y_occt"
+    },
+    {
+      "from": "y_occt",
+      "to": "y_tun"
+    },
+    {
+      "from": "y_tun",
+      "to": "y_tunp"
+    },
+    {
+      "from": "r_occ",
+      "to": "y_occm",
+      "fromSide": "right",
+      "toSide": "right",
+      "via": [
+        [
+          1545,
+          637
+        ],
+        [
+          1545,
+          1043
+        ]
+      ]
+    },
+    {
+      "from": "r_inv",
+      "to": "y_br"
+    },
+    {
+      "from": "y_br",
+      "to": "y_pub"
+    },
+    {
+      "from": "y_occm",
+      "to": "y_pub"
+    },
+    {
+      "from": "y_tun",
+      "to": "y_pub",
+      "fromSide": "right",
+      "toSide": "right",
+      "via": [
+        [
+          1545,
+          895
+        ],
+        [
+          1545,
+          1117
+        ]
+      ]
+    },
+    {
+      "from": "y_pub",
+      "to": "y_pae"
+    },
+    {
+      "from": "y_cdm",
+      "to": "c_cas",
+      "variant": "emphasis",
+      "fromSide": "right",
+      "toSide": "right",
+      "via": [
+        [
+          348,
+          895
+        ],
+        [
+          348,
+          1597
+        ]
+      ]
+    },
+    {
+      "from": "y_cth",
+      "to": "c_cas",
+      "variant": "emphasis"
+    },
+    {
+      "from": "y_ej",
+      "to": "c_ej",
+      "variant": "emphasis"
+    },
+    {
+      "from": "y_pub",
+      "to": "c_pub",
+      "variant": "emphasis"
+    },
+    {
+      "from": "y_prog",
+      "to": "c_chaine",
+      "variant": "emphasis"
+    },
+    {
+      "from": "c_chaine",
+      "to": "c_cas",
+      "variant": "emphasis"
+    },
+    {
+      "from": "c_chaine",
+      "to": "c_ej",
+      "variant": "emphasis"
+    },
+    {
+      "from": "c_chaine",
+      "to": "c_pub",
+      "variant": "emphasis"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "Reading the diagram",
+      "items": [
+        "Every box is one table, named schema.table; columns group tables by topic from source to curated",
+        "Each source feeds the tables of its column; only its main table is linked",
+        "Arrows show dbt dependencies; dashboard tables of public read keywords and program_metadata"
+      ]
+    }
+  ]
+}

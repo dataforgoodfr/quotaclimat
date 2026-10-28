@@ -160,6 +160,7 @@ Each README below is the authoritative source for its area — read it instead o
 | `quotaclimat/data_ingestion/advertising/s05_enrichment/e02_screenshots/README.md` | Screenshot mosaics of ads and occurrences for visual checks: sources (ad export with its margin history, mediatree archives), `advertising.ad_screenshot`, public-read storage, env vars |
 | `rrs/README.md` | RRS (Risk Response System) disinformation clustering: architecture, directory structure, dictionaries/subjects, keyword detection, misinformation classification, clustering pipeline, DB schema, extended perimeter, env vars, local Docker dev, CI/CD |
 | `rrs/clustering/README.md` | LLM clustering internals (`cluster_llm.py`, `cluster_llm_timeseries.py`): label generation/merge/classification steps, timeseries incremental mode, usage/flags, env vars |
+| `docs/data_tiers.md` | Data tiers (raw / syndicated / curated): which schema and table belongs to which tier, sources → raw, dbt lineage, curated tables, how to regenerate the Archify diagrams |
 | `docs/kestra_flows.md` | Every production Kestra flow step by step: what code runs, what it reads/writes, which technologies are involved, plus where Kestra itself is hosted (shared Elastic Metal orchestrator, see `infrastructure/Readme.md`) |
 
 ## Keeping docs in sync when opening a PR

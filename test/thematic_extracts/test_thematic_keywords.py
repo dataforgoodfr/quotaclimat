@@ -70,7 +70,8 @@ def _s3_df(rows):
     return pd.DataFrame([{"channel_name": c, "start": s, "plaintext": p} for c, s, p in rows])
 
 def _extract(kw, s3):
-    return kw_utils.extract_adjacent_chunks_day(kw, s3, tk.GAP)
+    out, _ = kw_utils.extract_adjacent_chunks_day(kw, s3, tk.GAP)
+    return out
 
 class RunEnv:
     """Everything run() needs, with no Postgres and no S3."""
@@ -257,14 +258,18 @@ def test_extract_adjacent_chunks_day_raises_if_core_missing_from_s3():
         _extract(kw, s3)
 
 
-def test_extract_adjacent_chunks_day_raises_if_core_and_s3_plaintext_differ():
-    """Verify that the function raises a ValueError when, for the same channel and start time,
-    the thematic chunk plaintext differs from the S3 chunk (likely timezone shift issue)."""
+def test_extract_adjacent_chunks_day_warns_if_core_and_s3_plaintext_differ(caplog):
+    """Verify that when, for the same channel and start time, the thematic chunk plaintext differs
+    from the S3 chunk (two Mediatree versions of the same chunk), the mismatch is counted in a warning
+    and the source table plaintext is kept, without raising."""
     kw = _kw_df([("kw1", "tf1", T0, "plaintext from source")])
     s3 = _s3_df([("tf1", T0, "plaintext from s3")])
 
-    with pytest.raises(ValueError):
-        _extract(kw, s3)
+    with caplog.at_level(logging.WARNING):
+        out = _extract(kw, s3)
+
+    assert "1 plaintext mismatch" in caplog.text
+    assert list(out["plaintext_normalized"]) == ["plaintext from source"]
 
 
 # ───────────────────────── run() ─────────────────────────

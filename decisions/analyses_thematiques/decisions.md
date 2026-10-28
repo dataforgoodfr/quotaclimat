@@ -124,6 +124,8 @@ Les regex des axes s'appliquent aux colonnes `*_normalized`, en mots entiers (`\
 
 **Frugalité (adoptée).** Un contrôle ne scanne jamais toute une table et ne fait pas relire tout un corpus par un LLM : 30 contenus au plus par contrôle, tirés au hasard avec `TABLESAMPLE SYSTEM (1) ... LIMIT 30` (un `ORDER BY random()` lirait toute la table). Pas de contrôle de complétude : les scripts du job vérifient déjà ce qu'ils ingèrent.
 
+**Lecture humaine (adoptée).** Les contrôles qui demandent de lire des contenus (précision, rappel) sont faits par la personne responsable de l'analyse. Claude ne relit pas les textes du corpus et ne propose pas de le faire.
+
 - **Précision (provisoire)** : sur un échantillon de 30 contenus au plus par terme fréquent, relire et compter les faux positifs à l'aide de `keywords_found`. Un terme trop bruité est discuté (exclusion ou contrainte) et le choix noté dans le §2 de l'analyse.
 - **Rappel (adoptée)** : vérifier que quelques contenus connus de l'épisode (JT du jour du pic, Unes) sont dans le corpus.
 - **Périmètre cadré (provisoire)** : pour distinguer le sujet principal de la mention incidente, calculer aussi les résultats sur les contenus où un terme du noyau est dans le titre ou apparaît au moins N fois. Le seuil N est noté dans l'analyse.

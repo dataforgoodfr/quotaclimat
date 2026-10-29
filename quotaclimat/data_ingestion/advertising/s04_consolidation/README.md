@@ -5,6 +5,8 @@ step, each with its own entry point:
 
 - `e01_merge_split_ads`: unsupervised merge of the ads split in several pieces by the detection
   (`entrypoints/advertising_merge_split_ads.sh`).
+- `e02_manual_corrections`: corrections listed by humans in a Google Sheet, for instance after a check of the
+  screenshots (`entrypoints/advertising_manual_corrections.sh`).
 
 ## Merging ads
 
@@ -60,3 +62,109 @@ Run regularly after the classification: by default it processes the 7 last days 
 defaults to `true` (only logs): set it to `false` to write.
 
 Until the merged ad is exported and classified, its occurrences are not in `ad_occurrences_classified`.
+
+## e02_manual_corrections
+
+Corrections listed by humans (or by code) in the private Google Sheet `Corrections_publicites`
+(`MANUAL_CORRECTIONS_SPREADSHEET`), in the Drive folder of the reference sheets (`EXTERNAL_SOURCES_DRIVE_FOLDER`).
+Share it as **editor** with the Google Sheets editor service account (`GOOGLE_SHEETS_EDITOR_SERVICE_ACCOUNT_JSON`,
+the one of `s05_enrichment/e01_brand_groups`): the job writes its columns in it. A spreadsheet readable by
+anyone is refused, like the reference sheets.
+
+```bash
+MANUAL_CORRECTIONS_DRY_RUN=false poetry run python quotaclimat/data_ingestion/advertising/s04_consolidation/e02_manual_corrections/run.py
+```
+
+Run it after the merge of the split ads and before the classification: an ad sent back to the classification
+or a new ad is classified by its next run. `MANUAL_CORRECTIONS_DRY_RUN` defaults to `true`: it logs the result of
+every row, and writes nothing to the database, the buckets or the sheet. The new ads need ffmpeg (image
+`quotaclimat_with_media_tools`). In production, a Scaleway job whose definition is updated on every push to `main`
+by `.github/workflows/deploy-main.yml` (job id in the GitHub secret `SCALEWAY_JOB_ADVERTISING_MANUAL_CORRECTIONS`).
+
+### Tabs
+
+Every tab is read, except the tabs for humans (name starting with `_`, e.g. `_lisez-moi`). The beginning of the
+name of a tab gives its kind, all the tabs of a kind have the same columns: a new batch of corrections can go
+to a new tab (`correction_ads_mai`, `nouvelle_ad_mazda`...). A tab with another name is skipped (warning in the
+logs).
+
+| Tab name starts with | Columns filled by humans | Columns filled by the job |
+|---|---|---|
+| `correction_ads` | `ad_id`, `marque`, `secteur`, `categorie`, `type_contenu` (empty: unchanged), free columns (`commentaire`...) | `traite_le`, `resultat`, `message`, `valeurs_precedentes` |
+| `nouvelle_ad` | `occurrence_id`, `ad_indicator` (optional), free columns | `traite_le`, `resultat`, `message`, `nouvelle_ad_id` |
+| `dechets` | `occurrence_id`, free columns | `traite_le`, `resultat`, `message` |
+
+The columns of the job are added after the last column when missing. Each row is processed once: the rows with
+a `traite_le` are skipped. To process a row again (after fixing it), empty its `traite_le`. `resultat`:
+
+- `appliqué`: done;
+- `avertissement`: done, but a value does not match the reference data (`message` says which);
+- `erreur`: nothing changed (unknown ad or occurrence, unknown code...).
+
+The sheet is written before the database is committed: when it cannot be written, nothing is changed and the
+rows are processed again by the next run. A row moved by a human during the run (sorted, inserted above) is
+found again by its `ad_id` / `occurrence_id`.
+
+### Correction of an ad (`correction_ads`)
+
+`secteur` and `categorie` are codes (`FOD`, `FOD2`, tables `advertising.ref_ome_secteurs` and
+`ref_ome_categories`), `type_contenu` a content type of the classification (`AD`, `BUMPER`, `CHANNEL_PROMO`,
+`SPONSORSHIP`, `OTHER`), in upper or lower case. An unknown code is an error. Warnings (reference data read in
+the database, see `references.py`): a category of another sector, a brand that the dictionary
+(`ref_ome_marques_type_*`) puts in another sector, a brand unknown from the dictionary, the brand inventory and
+the brands already predicted (with the known brands of close spelling).
+
+What changes in `advertising.ad`, depending on the ad:
+
+- **an advertising already classified** (`fragment_type` `AD`, final `prediction_status`, see
+  `s03_classification/prediction_status.py`): the given values replace `predicted_brand`, `predicted_sector`,
+  `predicted_product_category`; `prediction_method` becomes `manual`, `prediction_status` stays;
+- **another content type** (`type_contenu` other than `AD`): `fragment_type` changes, `prediction_method`
+  becomes `manual`, the prediction stays. `analytics.publicites` only keeps the `AD`: the ad leaves the analyses;
+- **an advertising not classified** (another content type corrected to `AD`, `no_sector_found`...): it goes back
+  to the classification at the dictionary stage (`prediction_status = ad_type_done`), with the corrected brand and
+  sector in its `ad_type` prediction. The dictionary, then the sub-category stage, give its sector and category,
+  like for any ad: a given category is ignored (warning). Without sector and without a brand of the dictionary,
+  the sub-category stage has no sector (warning).
+
+The values before the correction (`fragment_type`, `prediction_status`, `prediction_method`, `predicted_*`) are
+written in `valeurs_precedentes`, and in `advertising.ad.prediction`, in an entry
+`{"stage": "manual_correction", "previous": ..., "corrected": ..., "source": {spreadsheet, tab, row}, "at": ...}`
+kept by the classification stages. The other steps treat a corrected ad like the others: the canonicalisation of
+the brands (`RECANONICALIZE_EXISTING=1`) passes on its brand too.
+
+### New ad from occurrences (`nouvelle_ad`)
+
+For occurrences attributed to the wrong ad by the detection. The rows of a tab not processed yet make one new ad,
+or one per value of `ad_indicator` (e.g. `MAZDA` and `RENAULT`: two ads). The id of the ad comes from the
+spreadsheet, the tab and the `ad_indicator`: rows added later with the same `ad_indicator` go to the same ad.
+
+1. The video of the ad is cut from the most recent occurrence whose 2-minutes archives are in the mediatree
+   bucket, and saved like the exportation does (`ads/<ad_id>/raw.mp3` and `raw.mp4`). Its duration is the most
+   frequent duration of the ads of the occurrences (warning when they differ by more than 1 s). No occurrence with
+   its archives: the ad is not created (error on the rows).
+2. The ad is created without fingerprint (`chunks = []`), with `fragment_type = advertising` and no prediction:
+   the classification processes it like a new ad.
+3. Each occurrence is replaced by an occurrence of the new ad (id of the detection formula), the old one is soft
+   deleted.
+
+Limits: without fingerprint, the detection never attributes a broadcast to the new ad, the next broadcasts of
+the spot still go to the old ad. A reprocessing of the detection deletes and recreates the occurrences of its
+window: the moved occurrences come back to the old ad, and the rows are not processed again.
+
+### Junk occurrences (`dechets`)
+
+Occurrences that are not ads: soft deleted (`deleted_at`), like the occurrences replaced by a merge, so every
+reader of `advertising.ad_occurrence` (dbt, screenshots, merge) ignores them. Same limit with a reprocessing of
+the detection.
+
+### Environment variables
+
+| Variable | Default | Usage |
+|---|---|---|
+| `MANUAL_CORRECTIONS_SPREADSHEET` | `Corrections_publicites` | name of the spreadsheet in the Drive folder |
+| `MANUAL_CORRECTIONS_DRY_RUN` | `true` | `false` to write |
+| `EXTERNAL_SOURCES_DRIVE_FOLDER` | none | Drive folder of the spreadsheet (same as the dbt import) |
+| `GOOGLE_SHEETS_EDITOR_SERVICE_ACCOUNT_JSON` | none | JSON key of the service account that writes to Google Sheets |
+| `POSTGRES_*` | | database |
+| `BUCKET`, `BUCKET_SECRET`, `ADVERTISING_BUCKET_NAME`, `MEDIATREE_BUCKET_NAME` | | buckets of the videos (new ads) |

@@ -69,8 +69,9 @@ retries the errors. The rows of soft deleted occurrences stay.
 - Ads: by `first_detection_date` (like the exportation), occurrences: by `occurrence_date`.
   `OCCURRENCES_FROM` keeps only the occurrences broadcast from a date (e.g. `2025-09-29`, start of the ad
   analysis), and only the ads broadcast since then, whatever their detection date.
-- Only the classified ads and their occurrences by default (same `prediction_status` as
-  `analytics.publicites`): the others have no metadata to check.
+- Only the classified ads and their occurrences by default: the final statuses of the classification
+  (`FINAL_PREDICTION_STATUSES` of `s03_classification/prediction_status.py`, same list as
+  `analytics.publicites`), the others have no metadata to check.
 - Every occurrence that is not soft deleted.
 
 ## Order
@@ -89,7 +90,7 @@ the first ads sooner.
 | `CHANNEL` | all | one channel |
 | `AD_IDS` | all | comma separated ad ids, for a spot check |
 | `TARGETS` | `ads,occurrences` | what to screenshot |
-| `PREDICTION_STATUSES` | `classified` | `classified`, `all` or a comma separated list |
+| `PREDICTION_STATUSES` | `classified` | `classified` (`FINAL_PREDICTION_STATUSES`), `all` or a comma separated list |
 | `LIMIT` | none | max number of ads, and of occurrences |
 | `OCCURRENCES_FROM` | none | only the occurrences broadcast from this date, Paris time (`2025-09-29`) |
 | `ADS_PER_OCCURRENCE_BATCH` | `20` | ads per batch of occurrences, see Order |

@@ -18,6 +18,9 @@ from quotaclimat.data_ingestion.advertising.s02_exportation.ad_bucket import (
     ad_media_s3_key,
     get_margin_from_detection_date,
 )
+from quotaclimat.data_ingestion.advertising.s03_classification.prediction_status import (
+    FINAL_PREDICTION_STATUSES,
+)
 from quotaclimat.data_ingestion.advertising.s05_enrichment.e02_screenshots.frames import (
     build_mosaic,
     extract_frame,
@@ -47,17 +50,6 @@ SCREENSHOT_S3_PREFIX = "screenshots"
 # reachable only with the bucket credentials.
 SCREENSHOT_ACL = os.environ.get("SCREENSHOT_ACL", "public-read")
 
-# Same statuses as analytics.publicites: the ads whose metadata is shown in Metabase.
-CLASSIFIED_PREDICTION_STATUSES = (
-    "dict_miss",
-    "dict_tier1",
-    "dict_tier2",
-    "dict_tier2_no_kw",
-    "dict_tier3",
-    "dict_tier3_no_kw",
-    "subcat_done",
-)
-
 MAX_CONCURRENT_JOBS = 10
 BATCH_SIZE = 50
 # Occurrences are processed by batches of ads, the most broadcast first: within a batch, the occurrences
@@ -73,7 +65,7 @@ class Filters:
     channel: str | None = None
     ad_ids: list[str] = field(default_factory=list)
     # None: every ad, whatever its classification
-    prediction_statuses: tuple[str, ...] | None = CLASSIFIED_PREDICTION_STATUSES
+    prediction_statuses: tuple[str, ...] | None = FINAL_PREDICTION_STATUSES
     limit: int | None = None
     # only the occurrences broadcast from this date (the ads keep start_date / end_date on their detection)
     occurrences_from: datetime | None = None
@@ -558,7 +550,8 @@ def filters_from_env() -> Filters:
     if statuses == "all":
         prediction_statuses = None
     elif statuses == "classified":
-        prediction_statuses = CLASSIFIED_PREDICTION_STATUSES
+        # same statuses as analytics.publicites: the ads whose metadata is shown in Metabase
+        prediction_statuses = FINAL_PREDICTION_STATUSES
     else:
         prediction_statuses = tuple(s.strip() for s in statuses.split(","))
 

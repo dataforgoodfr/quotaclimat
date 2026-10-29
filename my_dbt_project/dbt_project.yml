@@ -106,3 +106,17 @@ seeds:
         post-hook:
           - "ALTER TABLE keywords ADD PRIMARY KEY (id,start)"
           - "ALTER TABLE keywords ALTER COLUMN program_metadata_id TYPE text"
+
+vars:
+  # final values of advertising.ad.prediction_status: the classification gives a brand and a sector usable in the
+  # analyses (analytics.publicites, through macros/final_prediction_statuses.sql). Same list as
+  # FINAL_PREDICTION_STATUSES in quotaclimat/data_ingestion/advertising/s03_classification/prediction_status.py,
+  # checked by test/advertising_classification/test_prediction_status.py
+  final_prediction_statuses:
+    - dict_miss
+    - dict_tier1
+    - dict_tier2
+    - dict_tier2_no_kw
+    - dict_tier3
+    - dict_tier3_no_kw
+    - subcat_done

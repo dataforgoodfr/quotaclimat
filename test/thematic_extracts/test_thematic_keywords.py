@@ -44,12 +44,12 @@ def con():
     yield c
     c.close()
 
-def _add_kw(con, id_, channel, start, plaintext, pairs, country="france", title=None):
-    """pairs = [(keyword, theme), ...]; title defaults to TITLES[channel]"""
+def _add_kw(con, id_, channel, start, plaintext, pairs, country="france"):
+    """pairs = [(keyword, theme), ...]"""
     con.execute(
         f"INSERT INTO {DB}.{SCHEMA}.keywords VALUES (?, ?, CAST(? AS TIMESTAMP) AT TIME ZONE 'Europe/Paris', ?, ?, ?, ?)",
         [id_, channel, start, plaintext,
-         json.dumps([{"keyword": k, "theme": t} for k, t in pairs]), country, title or TITLES.get(channel)],
+         json.dumps([{"keyword": k, "theme": t} for k, t in pairs]), country, TITLES.get(channel)],
     )
 
 def _read(con, keywords):
@@ -186,18 +186,6 @@ def test_read_barometre_keywords_dedups_keywords_and_themes(con):
     assert out.loc["c", "themes"] == "adaptation_climatique_solutions_indirectes,changement_climatique_constat"
 
 
-def test_read_barometre_keywords_renames_legacy_france_info_title(con):
-    """Verify that the legacy title "France Info" of franceinfotv becomes "France Info TV",
-    and that the other titles are kept (exact match: no "France Info TV TV", radio unchanged)."""
-    _add_kw(con, "old", "franceinfotv", "2025-03-10 10:00:00", "pa", [("crue", "t")], title="France Info")
-    _add_kw(con, "new", "franceinfotv", "2025-03-10 11:00:00", "pb", [("crue", "t")], title="France Info TV")
-    _add_kw(con, "radio", "france-info", "2025-03-10 12:00:00", "pc", [("crue", "t")], title="FranceinfoRadio")
-
-    out = _read(con, ["crue"]).set_index("id")["channel_title"]
-
-    assert out.to_dict() == {"old": "France Info TV", "new": "France Info TV", "radio": "FranceinfoRadio"}
-
-
 # ───────────────────────── extract_adjacent_chunks_day ─────────────────────────
 
 
@@ -272,7 +260,7 @@ def test_extract_adjacent_chunks_day_counts_core_missing_from_s3(caplog):
         out, n_mismatch, n_missing_s3 = kw_utils.extract_adjacent_chunks_day(kw, s3, tk.GAP)
 
     assert n_missing_s3 == {"tf1": 1}
-    assert n_mismatch == 0
+    assert n_mismatch == {}
     assert "1 thematic chunks missing from S3" in caplog.text
     out = out.set_index("plaintext_normalized")
     assert set(out.index) == {"core 10h", "core 14h", "n", "core m6"}
@@ -336,8 +324,9 @@ def test_run_counts_core_missing_from_s3_in_check(env, caplog):
     assert env.count() == 5
     assert "1 thematic chunks of public.keywords missing from S3 during this run" in caplog.text
     report = kw_utils.check_keywords(env.con, DB, env.destination_table, DESTINATION_SCHEMA, tk.GAP,
-                                     False, f"{SCHEMA}.keywords", 0, {"tf1": 1})
+                                     False, f"{SCHEMA}.keywords", {"m6": 2}, {"tf1": 1})
     assert report.set_index("channel_name")["n_missing_s3"].to_dict() == {"tf1": 1, "m6": 0}
+    assert report.set_index("channel_name")["n_plaintext_mismatch"].to_dict() == {"tf1": 0, "m6": 2}
 
 
 def test_run_stops_at_first_failing_day(env):

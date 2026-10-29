@@ -78,7 +78,8 @@ MANUAL_CORRECTIONS_DRY_RUN=false poetry run python quotaclimat/data_ingestion/ad
 Run it after the merge of the split ads and before the classification: an ad sent back to the classification
 or a new ad is classified by its next run. `MANUAL_CORRECTIONS_DRY_RUN` defaults to `true`: it logs the result of
 every row, and writes nothing to the database, the buckets or the sheet. The new ads need ffmpeg (image
-`quotaclimat_with_media_tools`).
+`quotaclimat_with_media_tools`). In production, a Scaleway job whose definition is updated on every push to `main`
+by `.github/workflows/deploy-main.yml` (job id in the GitHub secret `SCALEWAY_JOB_ADVERTISING_MANUAL_CORRECTIONS`).
 
 ### Tabs
 

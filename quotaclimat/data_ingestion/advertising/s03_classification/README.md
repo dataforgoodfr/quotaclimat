@@ -197,22 +197,24 @@ The taxonomy comes from two Excel files in `reference_data/`:
 
 ## Status reference
 
-Every value `prediction_status` can take:
+Every value `prediction_status` can take. They are declared in `prediction_status.py`: `FINAL_PREDICTION_STATUSES` (the classification gives a brand and a sector usable in the analyses) and `NON_FINAL_PREDICTION_STATUSES` (waiting for the next stage, or to be inspected). The final ones are the ads shown in `analytics.publicites` (same list in the dbt var `final_prediction_statuses`, see `my_dbt_project/README.md`) and in the screenshots (`s05_enrichment/e02_screenshots`). `test/advertising_classification/test_prediction_status.py` reads the code of the advertising package and fails when a status written or read by the pipeline is in neither list, when a declared status is never used, or when the dbt var differs from the Python list: a new status must be added to one of the lists (and to this table).
 
-| Status | Set by | Meaning                                                 |
-|---|---|---------------------------------------------------------|
-| `NULL` | initial | Not yet classified                                      |
-| `ad_type_done` | stage 2 | LLM classification succeeded                            |
-| `ad_type_parse_error` | stage 2 | LLM returned malformed JSON; needs inspection           |
-| `dict_tier1` | stage 3 | brand alone resolved sector + sub-cat                   |
-| `dict_tier2` | stage 3 | Brand resolved sector, keyword resolved sub-cat         |
-| `dict_tier2_no_kw` | stage 3 | Brand resolved sector, sub-cat goes to LLM              |
-| `dict_tier3` | stage 3 | ambiguous brand resolved by keyword hit                 |
-| `dict_tier3_no_kw` | stage 3 | Ambiguous brand, no keyword hit, full LLM fallback      |
-| `dict_miss` | stage 3 | No dictionary hit; LLM sector kept, sub-cat goes to LLM |
-| `subcat_done` | stage 4 | LLM sub-category classification succeeded               |
-| `subcat_parse_error` | stage 4 | LLM returned malformed JSON; needs inspection           |
-| `no_data` | stages 1, 2, 4 | S3 vidéo missing (also sets `fragment_type='no_data'`)  |
+| Status | Set by | Final | Meaning                                                 |
+|---|---|---|---------------------------------------------------------|
+| `NULL` | initial | no | Not yet classified                                      |
+| `ad_type_done` | stage 2 | no | LLM classification succeeded                            |
+| `ad_type_parse_error` | stage 2 | no | LLM returned malformed JSON; needs inspection           |
+| `dict_tier1` | stage 3 | yes | brand alone resolved sector + sub-cat                   |
+| `dict_tier2` | stage 3 | yes | Brand resolved sector, keyword resolved sub-cat         |
+| `dict_tier2_no_kw` | stage 3 | yes | Brand resolved sector, sub-cat goes to LLM              |
+| `dict_tier3` | stage 3 | yes | ambiguous brand resolved by keyword hit                 |
+| `dict_tier3_no_kw` | stage 3 | yes | Ambiguous brand, no keyword hit, full LLM fallback      |
+| `dict_miss` | stage 3 | yes | No dictionary hit; LLM sector kept, sub-cat goes to LLM |
+| `subcat_done` | stage 4 | yes | LLM sub-category classification succeeded               |
+| `subcat_parse_error` | stage 4 | no | LLM returned malformed JSON; needs inspection           |
+| `no_data` | stage 4 | no | S3 vidéo missing (stages 1 and 2 only set `fragment_type='no_data'`) |
+
+`dict_tier2_no_kw`, `dict_tier3_no_kw` and `dict_miss` are final although stage 4 still processes them: they already have their sector, and stage 4 only adds the sub-category.
 
 **prediction_status vs prediction_method**
 

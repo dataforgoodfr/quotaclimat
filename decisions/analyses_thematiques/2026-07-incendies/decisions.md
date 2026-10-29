@@ -10,6 +10,16 @@ Fichier reconstitué à partir de la fiche d'analyse, des questions Metabase et 
 - Collection Metabase : `03. Analyses thématiques/19. Incendies 2026` (id 362)
 - Inspiration : [article vague de chaleur de mai 2026](https://quotaclimat.org/actualites/vague-chaleur-mai-2026-couverture-mediatique/) ; méthode audiovisuelle alignée sur l'analyse faite pour le BBIE, étendue à la presse
 
+## Angle
+
+Questions auxquelles l'analyse répond, avec les axes du §3 qui y répondent :
+
+- Parle-t-on du réchauffement climatique ? (A1, A2, C2a)
+- Parle-t-on davantage des solutions curatives que préventives ? (E3)
+- Ne parle-t-on que des pyromanes, ou d'autres causes ? (C1a et C1b, face à C2a à C2d)
+- Parle-t-on des causes structurelles ou immédiates ? (C3)
+- Quels feux de forêt ont le plus ému les médias ? Est-ce lié à la proximité avec Paris, ou à la gravité de la situation ? (Q8)
+
 ## 1. Méthode spécifique
 
 **Corpus construit hors dictionnaire OME.** Le dictionnaire OME est pauvre en vocabulaire du feu : `incendie`, `incendie de forêt` et `feux de forêt` sont HRFP et classés dans `changement_climatique_consequences_indirectes`. Les compteurs `*_no_hrfp` les ignorent, et le modèle `core_query_thematics_keywords`, qui filtre les thèmes `%indirect%`, ne les contient pas. Le corpus a donc été construit par regex sur le texte (§2). À l'inverse, le vocabulaire de la canicule est dans le dictionnaire (`changement_climatique_consequences`, non HRFP).

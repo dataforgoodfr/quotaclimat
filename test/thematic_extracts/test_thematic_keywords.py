@@ -44,12 +44,12 @@ def con():
     yield c
     c.close()
 
-def _add_kw(con, id_, channel, start, plaintext, pairs, country="france"):
-    """pairs = [(keyword, theme), ...]"""
+def _add_kw(con, id_, channel, start, plaintext, pairs, country="france", title=None):
+    """pairs = [(keyword, theme), ...]; title defaults to TITLES[channel]"""
     con.execute(
         f"INSERT INTO {DB}.{SCHEMA}.keywords VALUES (?, ?, CAST(? AS TIMESTAMP) AT TIME ZONE 'Europe/Paris', ?, ?, ?, ?)",
         [id_, channel, start, plaintext,
-         json.dumps([{"keyword": k, "theme": t} for k, t in pairs]), country, TITLES.get(channel)],
+         json.dumps([{"keyword": k, "theme": t} for k, t in pairs]), country, title or TITLES.get(channel)],
     )
 
 def _read(con, keywords):
@@ -184,6 +184,18 @@ def test_read_barometre_keywords_dedups_keywords_and_themes(con):
     assert out.loc["b", "themes"] == "adaptation_climatique_solutions_indirectes"
     assert out.loc["c", "keywords_found"] == "crue,inondation"
     assert out.loc["c", "themes"] == "adaptation_climatique_solutions_indirectes,changement_climatique_constat"
+
+
+def test_read_barometre_keywords_renames_legacy_france_info_title(con):
+    """Verify that the legacy title "France Info" of franceinfotv becomes "France Info TV",
+    and that the other titles are kept (exact match: no "France Info TV TV", radio unchanged)."""
+    _add_kw(con, "old", "franceinfotv", "2025-03-10 10:00:00", "pa", [("crue", "t")], title="France Info")
+    _add_kw(con, "new", "franceinfotv", "2025-03-10 11:00:00", "pb", [("crue", "t")], title="France Info TV")
+    _add_kw(con, "radio", "france-info", "2025-03-10 12:00:00", "pc", [("crue", "t")], title="FranceinfoRadio")
+
+    out = _read(con, ["crue"]).set_index("id")["channel_title"]
+
+    assert out.to_dict() == {"old": "France Info TV", "new": "France Info TV", "radio": "FranceinfoRadio"}
 
 
 # ───────────────────────── extract_adjacent_chunks_day ─────────────────────────

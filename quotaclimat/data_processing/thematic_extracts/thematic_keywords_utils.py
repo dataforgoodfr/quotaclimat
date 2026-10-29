@@ -45,8 +45,12 @@ def read_barometre_keywords(con: duckdb.DuckDBPyConnection,
             WHERE e.kwt.keyword IN ({kewords_sql})
             GROUP BY e.id, e.channel_name, e.channel_title, e.start, e.plaintext
             ORDER BY e.start, e.channel_name
-    """).df()
+        """).df()
+        
+        ## Legacy name
+        out["channel_title"] = out["channel_title"].replace("France Info", "France Info TV")
         return out
+    
     except Exception as e:
         logging.error(f"[{source_table}] ERROR READING KEYWORDS TABLE:")
         logging.error(e)

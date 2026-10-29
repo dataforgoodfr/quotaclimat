@@ -79,6 +79,41 @@ substances (« effet cocktail ») et les difficultés méthodologiques à démon
 de causalité. Cette thématique est fréquemment articulée à celles portant sur 
 l'agriculture, l'industrie, l'alimentation et la régulation sanitaire.
 """.strip(),
+
+    "purchase_power": """
+Le thème couvre les débats publics portant sur l'argent des ménages français
+et sur les finances publiques considérées sous l'angle de ce qu'elles coûtent
+ou rapportent aux Français.
+
+Il comprend quatre registres :
+
+CE QUE LES MÉNAGES REÇOIVENT
+salaires, Smic, primes, pensions de retraite, allocations chômage,
+prestations sociales et minima sociaux.
+CE QUE LES MÉNAGES DÉPENSENT
+prix et inflation, alimentation, énergie et carburants, logement et loyers,
+santé et mutuelles, transports, assurances, crédits et frais bancaires.
+CE QUI EST PRÉLEVÉ
+impôts, taxes, TVA, cotisations sociales, fiscalité du patrimoine et des
+successions, fiscalité locale.
+CE QUI EST FAIT DE CET ARGENT
+dépense publique, dette et déficit, fonction publique et bureaucratie,
+fraude sociale et fiscale, compétitivité et commerce extérieur, et les
+modèles économiques invoqués dans le débat.
+Le thème inclut aussi bien les affirmations chiffrées que les récits et
+accusations qui les accompagnent (« on nous vole », « le travail ne paie
+plus », « l'État gaspille »), ainsi que la contestation des chiffres officiels
+et des institutions qui les produisent.
+
+Il inclut les contre-récits au même titre que les récits dominants.
+
+NE RELÈVENT PAS DU THÈME :
+– les emplois figurés du vocabulaire économique (inflation des normes,
+  gaspillage alimentaire, capitalisation boursière) ;
+– l'économie d'autres pays sans lien établi avec la France ;
+– la vie financière des entreprises sans effet énoncé sur les ménages ;
+– les termes du dictionnaire employés dans un tout autre sens
+""".strip(),
 }
 
 

@@ -17,7 +17,6 @@ infrastructure/
 ├── .env.secrets.dist          # Template listing all required secrets
 ├── bin/
 │   ├── setup.sh               # Installs all dependencies
-│   ├── test_default_privileges.py # Tests on a database whether the readonly users can read new tables/schemas (default privileges)
 │   └── lib/
 │       └── common.sh          # Vaultwarden secret fetch functions
 ├── live/

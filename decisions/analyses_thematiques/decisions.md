@@ -18,6 +18,8 @@ Cinq étapes, de 0 à 4, chacune validée explicitement par l'équipe avant de p
 - Parle-t-on des causes structurelles ou immédiates ?
 - Quels feux de forêt ont le plus ému les médias ? Est-ce lié à la proximité avec Paris, ou à la gravité de la situation ?
 
+Pour nourrir l'angle, on regarde aussi ce que QuotaClimat a déjà publié sur le sujet : la table `wp_linkedin_posts` (base Metabase `db_wordpress`) contient nos posts LinkedIn, avec leur texte (`content`) et leur engagement. Un simple filtre `content LIKE '%<thematique>%'` donne tous les posts qui en parlent, où l'on pioche des angles. La question se nomme `Brainstorm - LinkedIn <thematique>`, dans la collection de l'analyse (exemple : question 2433 pour les inondations).
+
 | Étape | Ce qu'on produit | Où on le consigne |
 |---|---|---|
 | 0. Cadrage | Angle (questions auxquelles l'analyse répond), mots du dictionnaire OME retenus (liste stricte audiovisuel, regex presse), événements recensés, périodes candidates | `decisions.md` de l'analyse, Angle, §1 et §2 |
@@ -41,7 +43,7 @@ La recherche donne les événements marquants, susceptibles d'être cités dans 
 
 **Le repo est public** : aucun chiffre ni takeaway non publié n'y entre. Avant publication, les résultats vivent dans un document Metabase `Résultats - <Sujet> <Année>` de la collection de l'analyse. Le statut d'un axe reste « testé » jusqu'à la publication.
 
-**Conventions Metabase.** Collection `03. Analyses thématiques/NN. <Sujet> <Année>`. Préfixe `AV -` pour l'audiovisuel, `PE -` pour la presse. Après le préfixe, le code de l'axe ([§4.1](#41-catégories-et-codes)) : `AV - V1 - Volume`, `PE - A1 - Lien CC`. Versions abandonnées préfixées `OLD-`. On ne modifie jamais une question d'une autre analyse : on la duplique. Dans le SQL, `<sujet>` (en-tête) et `<thematique>` (commentaires, noms de CTE et de colonnes) se remplacent par le thème : `Courbe journalière inondations`, `dictionnaire_inondations`, `nb_articles_inondations`. On n'emploie pas « noyau » dans les requêtes. L'extrait audiovisuel de 2 minutes s'y appelle `chunk`, comme la colonne `thematic_chunk`, et non segment (`nb_chunks_inondations`, CTE `chunks`). Une part en pourcentage (de 0 à 100) se nomme `pct_<mesure>` (`pct_a1_lien_cc`, `pct_articles_inondations`), un nombre `nb_<mesure>`. Toutes les questions sont versionnées dans Metabase, et leur SQL commence par un chapeau en commentaire : le média (audiovisuel ou presse écrite), le titre de la question, une description courte de ce qu'elle fait. Les modèles du §7 suivent ce format. Après publication, le SQL des questions utilisées est copié dans `<AAAA-MM>-<sujet>/queries/`.
+**Conventions Metabase.** Collection `03. Analyses thématiques/NN. <Sujet> <Année>`. Préfixe `AV -` pour l'audiovisuel, `PE -` pour la presse. Après le préfixe, le code de l'axe ([§4.1](#41-catégories-et-codes)) : `AV - V1 - Volume`, `PE - A1 - Lien CC`. Une question qui regroupe tous les axes d'un maillon prend la lettre du maillon : `AV - A - Constat`, `AV - B - Causes`, `AV - C - Conséquences`, `AV - D - Solutions`. Les questions sur les tables thématiques prennent la période en variable Metabase `{{period}}` (texte, libellé « Period ») : `[[WHERE k.period = {{period}}]]`, sans valeur toutes les périodes. Dans Metabase, la variable s'affiche en liste déroulante (valeurs fixes) des `id` de l'entrée du YAML ; le connecteur ne sait pas créer cette liste, elle se règle à la main dans les réglages de la variable. Versions abandonnées préfixées `OLD-`. On ne modifie jamais une question d'une autre analyse : on la duplique. Dans le SQL, `<sujet>` (en-tête) et `<thematique>` (commentaires, noms de CTE et de colonnes) se remplacent par le thème : `Courbe journalière inondations`, `dictionnaire_inondations`, `nb_articles_inondations`. On n'emploie pas « noyau » dans les requêtes. L'extrait audiovisuel de 2 minutes s'y appelle `chunk`, comme la colonne `thematic_chunk`, et non segment (`nb_chunks_inondations`, CTE `chunks`). Une part en pourcentage (de 0 à 100) se nomme `pct_<mesure>` (`pct_a1_lien_cc`, `pct_articles_inondations`), un nombre `nb_<mesure>`. Toutes les questions sont versionnées dans Metabase, et leur SQL commence par un chapeau en commentaire : le média (audiovisuel ou presse écrite), le titre de la question, une description courte de ce qu'elle fait. Les modèles du §7 suivent ce format. Après publication, le SQL des questions utilisées est copié dans `<AAAA-MM>-<sujet>/queries/`.
 
 **Nouvelle analyse.** Créer `<AAAA-MM>-<sujet>/decisions.md` à partir du [modèle](#6-modèle-pour-une-analyse) et remplir les §1 et §2 avant toute requête.
 
@@ -70,7 +72,7 @@ Le job prend en entrée `THEMATIC` (l'entrée du fichier), `MODE` et `COUNTRY` (
 
 Les anciennes tables datées (par exemple `incendies_articles_fr_20260701_20260708`) sont vouées à disparaître ; aucune table n'est plus créée sous ce nom.
 
-Profondeur des données : rien avant le 1er janvier 2023 en audiovisuel (`keywords`), rien avant le 1er janvier 2025 en presse (`factiva_articles`). Les articles de presse n'entrent en base qu'une semaine après leur parution : pas d'analyse presse au jour le jour, la dernière semaine est toujours incomplète. `time_monitored` ne remonte pas avant 2025 : en deçà, les heures se prennent dans la grille (`program_metadata`).
+Profondeur des données : rien avant le 1er janvier 2023 en audiovisuel (`keywords`), et rien avant le 1er décembre 2023 sur S3, d'où viennent les segments adjacents (avant cette date, pas de recontextualisation à ±2 minutes) ; rien avant le 1er janvier 2025 en presse (`factiva_articles`). Les articles de presse n'entrent en base qu'une semaine après leur parution : pas d'analyse presse au jour le jour, la dernière semaine est toujours incomplète. `time_monitored` ne remonte pas avant 2025 : en deçà, les heures se prennent dans la grille (`program_metadata`).
 
 Volume du corpus audiovisuel : toujours filtrer sur `thematic_chunk = true`. Les segments adjacents ne servent qu'à la recontextualisation.
 
@@ -209,14 +211,7 @@ Statuts : voir plus haut. « Explorée dans » cite les analyses ; « idée » r
 | V1 | Q1 (en partie) | Volume | Combien d'articles, d'occurrences, de segments, par média ? Faudra-t-il agréger ? | Classement des médias en barres (G7) | Incendies 2026, Chaleur 2026 |
 | V2 | Q7 | Timeline | Comment le volume évolue-t-il jour par jour ? Occurrences par heure de grille sur une fenêtre large (voir l'étape 0). Sert à fixer les périodes, à mesurer l'agitation des médias sur le sujet et à la comparer d'une thématique à l'autre (incendies face à inondations), pour formuler des hypothèses sur ce qui fait réagir les médias. Attention à la taille des dictionnaires noyau comparés | Courbe annotée d'événements (G2), courbe hebdomadaire (G1) | Incendies 2026 |
 | V3 | | Mots les plus employés | Quels mots du dictionnaire noyau portent le volume, et lesquels restent peu utilisés ? Compter les occurrences dans le texte (`plaintext_normalized`, `title/snippet/body_normalized`, par exemple avec `regexp_matches(..., 'g')`), pas `keywords_found` : celui-ci ne donne que le nombre de segments ou d'articles où le mot apparaît, pas le nombre de fois où il est dit. Intéressant selon le contexte | Barres terme × famille de presse (G12) | Surchauffe 2026 |
-<<<<<<< HEAD
-=======
-<<<<<<< Updated upstream
 | V4 | Q1 (en partie), Q6 | Part de couverture, comparaison et répartition | Quelle part du temps d'antenne ou des articles porte sur les enjeux environnementaux, est-elle exceptionnelle par rapport au niveau habituel ou à un épisode similaire, et quel maillon domine ? Takeaway à en tirer : le reflux (ancien Q7b), la couverture retombe-t-elle sous son niveau habituel après le pic ? Sources, par semaine : `public.core_query_environmental_shares` en audiovisuel (par chaîne), question Metabase 1384 « Modèle crises Presse Ecrite - splitées par crise » en presse (par type de média) | Barres avant / pendant (G8), donut de répartition (G5) | Incendies 2026, Chaleur 2026 ; répartition : idée (Bilan OMÉ S1 2026) |
-=======
-| V4 | Q1 (en partie), Q6 | Part de couverture, comparaison et répartition | Quelle part du temps d'antenne ou des articles porte sur les enjeux environnementaux, est-elle exceptionnelle par rapport au niveau habituel ou à un épisode similaire, et quel maillon domine ? Takeaway à en tirer : le reflux (ancien Q7b), la couverture retombe-t-elle sous son niveau habituel après le pic ? | Barres avant / pendant (G8), donut de répartition (G5) | Incendies 2026, Chaleur 2026 ; répartition : idée (Bilan OMÉ S1 2026) |
->>>>>>> Stashed changes
->>>>>>> 4d5c65a (decisiions edit for indondations)
 
 **A à D. Chaîne causale**
 
@@ -253,6 +248,7 @@ La désinformation n'entre pas dans ces analyses : elle fait l'objet d'analyses 
 | X4 | Cadrages concurrents | Quel angle domine : pouvoir d'achat, souveraineté, géopolitique, industrie et emploi, santé, « écologie punitive » ? Codage booléen non exclusif, un dictionnaire par cadrage | G9 | idée (Bilan OMÉ S1 2026) |
 | X5 | Politisation | Le sujet est-il présenté comme l'affaire d'un camp politique ? Demande une lecture humaine ; un codage par LLM impose les précautions de la charte IA | G10 | idée (Bilan OMÉ S1 2026) |
 | X6 | Couplage avec une autre actualité | Quelle part du corpus relie le sujet à un autre événement du moment (élection, crise énergétique...) ? | G7 | idée (Bilan OMÉ S1 2026) |
+| X7 | Étranger ou France | Recontextualise-t-on davantage un événement qui se passe à l'étranger qu'en France (lien avec le climat, causes, solutions) ? Croiser les axes avec une regex de lieu (exemple : colonne `espagne` de la question 2427, analyse inondations) | G4 | idée (posts LinkedIn de QuotaClimat, question 2433) |
 
 ### 4.3 Croisements
 
@@ -416,7 +412,7 @@ Après publication uniquement (le repo est public) : takeaways publiés avec chi
 
 **Frugalité (adoptée).** Une requête part du modèle de ce paragraphe et des regex existantes (§3.3, §4.5) : on remplace les bornes, la période, le dictionnaire et les termes, sans relire les questions Metabase d'une analyse précédente. On ne lit une question Metabase que si elle est citée par son numéro, ou pour mettre à jour un modèle. Après l'étape 1, les requêtes portent sur les tables thématiques, pas sur `keywords` et `factiva_articles`. Les contrôles ont leur propre règle (§3.6). Un modèle amélioré au cours d'une analyse remplace celui d'ici.
 
-Dans les modèles, `<sujet>` (en-tête), `<thematique>` (commentaires, noms de CTE et de colonnes), `<axe>` (code et nom court de l'axe, par exemple `a1_lien_cc`) et `<periode>` (`id` de la période dans le YAML) se remplacent avant exécution (conventions Metabase, §1).
+Dans les modèles, `<sujet>` (en-tête), `<thematique>` (commentaires, noms de CTE et de colonnes), `<axe>` (code et nom court de l'axe, par exemple `a1_lien_cc`) se remplacent avant exécution ; la période est la variable Metabase `{{period}}` (conventions Metabase, §1).
 
 | Modèle | Étape | Média | Unité | Tables |
 |---|---|---|---|---|
@@ -560,7 +556,7 @@ La fenêtre est une fonction de fenêtre (`RANGE` de ±2 minutes) plutôt qu'une
 
 ```sql
 -- Média : audiovisuel
--- Question : AV - <code> - <axe> <sujet>
+-- Question : AV - <code> - <axe> <sujet> (ou AV - <lettre> - <maillon> pour tous les axes d'un maillon)
 -- Description : part des chunks thématiques de 2 minutes où l'axe apparaît, dans le chunk ou
 --   dans un chunk adjacent de la même chaîne (±2 minutes). Une ligne = une chaîne, avec son secteur et son type.
 -- Tables : thematic_extracts.<thematique>_keywords_fr, curated.chaine (media_sector, media_type)
@@ -575,7 +571,7 @@ drapeaux AS (
         k.plaintext_normalized ~ r.<axe> AS <axe>
     FROM thematic_extracts.<thematique>_keywords_fr k
     CROSS JOIN regex r
-    WHERE k.period = '<periode>'
+    [[WHERE k.period = {{period}}]]  -- variable Period, liste déroulante des id du YAML
 ),
 -- fenêtre de ±2 minutes sur la même chaîne ; _sans_fenetre garde le drapeau du chunk seul
 par_chunk AS (
@@ -627,8 +623,8 @@ articles AS (
         concat_ws(' ', a.title_normalized, a.snippet_normalized, a.body_normalized) ~ r.<axe> AS <axe>
     FROM thematic_extracts.<thematique>_articles_fr a
     CROSS JOIN regex r
-    WHERE a.period = '<periode>'
-      AND a.word_count >= 100
+    WHERE a.word_count >= 100
+      [[AND a.period = {{period}}]]  -- variable Period, liste déroulante des id du YAML
 )
 SELECT
     ar.source_name,

@@ -213,8 +213,13 @@ Every value `prediction_status` can take. They are declared in `prediction_statu
 | `subcat_done` | stage 4 | yes | LLM sub-category classification succeeded               |
 | `subcat_parse_error` | stage 4 | no | LLM returned malformed JSON; needs inspection           |
 | `no_data` | stage 4 | no | S3 vidéo missing (stages 1 and 2 only set `fragment_type='no_data'`) |
+| `not_ad` | earlier version | no | Not an advertising (`fragment_type` `BUMPER`, `OTHER`...); no longer written |
+| `no_sector_found` | earlier version | no | Advertising without sector; no longer written |
+| `video_decode_error` | earlier version | no | Video unreadable; no longer written |
 
 `dict_tier2_no_kw`, `dict_tier3_no_kw` and `dict_miss` are final although stage 4 still processes them: they already have their sector, and stage 4 only adds the sub-category.
+
+The last three statuses were written by an earlier version of the classification and are still in the database (`LEGACY_PREDICTION_STATUSES`). A final status is shown in the analyses only for an advertising (`fragment_type` `AD`): a manual correction can change the content type of a classified ad, or send an ad back to stage 3 (`ad_type_done`), see `s04_consolidation/README.md` (`e02_manual_corrections`). `prediction_method` is then `manual` for an ad corrected by hand.
 
 **prediction_status vs prediction_method**
 

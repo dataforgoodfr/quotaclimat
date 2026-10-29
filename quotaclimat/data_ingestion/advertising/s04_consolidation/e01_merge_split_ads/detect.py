@@ -39,7 +39,8 @@ MERGEABLE_PAIR_TYPES = {
 
 # the pairs whose first piece starts in [date_start, date_end + 5 min): the margin completes the chains
 # starting before date_end (see build_sequences)
-PAIRS_QUERY = text(r"""
+PAIRS_QUERY = text(
+    r"""
 WITH occ AS (
   SELECT
     o.id AS occurrence_id,
@@ -129,7 +130,8 @@ LEFT JOIN LATERAL (
 -- the time not covered by the segments between stays under gap_max_sec
 WHERE EXTRACT(EPOCH FROM c.next_start_date - c.end_date) - COALESCE(e.between_sec, 0) <= :gap_max_sec
 ORDER BY c.channel_name, c.start_date, c.occurrence_id
-""")
+"""
+)
 
 
 @dataclass(frozen=True)

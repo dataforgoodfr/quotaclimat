@@ -8,11 +8,17 @@ No database: the statuses are read in the code (ast), the dbt var in dbt_project
 
 import ast
 from pathlib import Path
+from typing import get_args
 
 import yaml
 
+from quotaclimat.data_ingestion.advertising.s03_classification.ad_classification_schema import (
+    ContentType,
+)
 from quotaclimat.data_ingestion.advertising.s03_classification.prediction_status import (
+    AD_CONTENT_TYPE,
     FINAL_PREDICTION_STATUSES,
+    LEGACY_PREDICTION_STATUSES,
     NON_FINAL_PREDICTION_STATUSES,
 )
 
@@ -102,10 +108,19 @@ def pipeline_statuses() -> set[str]:
     return found - RUNNER_ONLY_STATUSES
 
 
-def test_final_and_non_final_are_disjoint():
-    assert set(FINAL_PREDICTION_STATUSES).isdisjoint(NON_FINAL_PREDICTION_STATUSES)
-    assert len(set(FINAL_PREDICTION_STATUSES)) == len(FINAL_PREDICTION_STATUSES)
-    assert len(set(NON_FINAL_PREDICTION_STATUSES)) == len(NON_FINAL_PREDICTION_STATUSES)
+def test_final_non_final_and_legacy_are_disjoint():
+    lists = [
+        FINAL_PREDICTION_STATUSES,
+        NON_FINAL_PREDICTION_STATUSES,
+        LEGACY_PREDICTION_STATUSES,
+    ]
+    all_statuses = [status for statuses in lists for status in statuses]
+    assert len(set(all_statuses)) == len(all_statuses)
+
+
+def test_legacy_statuses_are_no_longer_used():
+    """A legacy status is only in the database: the code writing it was removed."""
+    assert set(LEGACY_PREDICTION_STATUSES).isdisjoint(pipeline_statuses())
 
 
 def test_every_pipeline_status_is_declared():
@@ -165,7 +180,12 @@ def test_dbt_var_is_the_python_list():
 def test_publicites_uses_the_dbt_list():
     sql = PUBLICITES_MODEL.read_text()
     assert "prediction_status IN ({{ final_prediction_statuses() }})" in sql
+    assert f"a.fragment_type = '{AD_CONTENT_TYPE}'" in sql
     for status in FINAL_PREDICTION_STATUSES:
         assert (
             f"'{status}'" not in sql
         ), f"{status} written in publicites.sql instead of the macro"
+
+
+def test_ad_content_type_is_a_content_type_of_the_classification():
+    assert AD_CONTENT_TYPE in get_args(ContentType)

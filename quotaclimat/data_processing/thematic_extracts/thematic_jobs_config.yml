@@ -64,6 +64,9 @@ inondations:
       - id: ardeche_valence_octobre_2024
         start: 2024-10-07
         end: 2024-11-10
+      - id: texas_2025
+        start: 2025-06-30
+        end: 2025-07-14
       - id: sud_ouest_fevrier_2026
         start: 2026-02-09
         end: 2026-03-01

@@ -166,7 +166,7 @@ def run() -> None:
     kw_utils._configure_s3(_con, S3_ENDPOINT_URL, S3_REGION, S3_ACCESS_KEY, S3_SECRET_KEY)
 
     counter_to_ingest = 0
-    n_plaintext_mismatch = 0
+    n_plaintext_mismatch = {}  # thematic chunks whose plaintext differs from S3: {channel: count}
     n_missing_s3 = {}  # thematic chunks missing from S3: {channel: count}
     ingested = 0
     stopped_day = None
@@ -227,7 +227,8 @@ def run() -> None:
                 logging.info("[KEYWORDS/S3] Starting selection of chunks to keep (thematic + adjacent)")
                 day_to_ingest_df, n_mismatch_day, n_missing_s3_day = kw_utils.extract_adjacent_chunks_day(
                     keywords_day_df, s3_day_df, GAP)
-                n_plaintext_mismatch += n_mismatch_day
+                for channel, n in n_mismatch_day.items():
+                    n_plaintext_mismatch[channel] = n_plaintext_mismatch.get(channel, 0) + n
                 for channel, n in n_missing_s3_day.items():
                     n_missing_s3[channel] = n_missing_s3.get(channel, 0) + n
                 # COUNTRY of the job kept as a control, period id to tell periods apart in the table

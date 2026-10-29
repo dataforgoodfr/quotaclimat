@@ -33,7 +33,7 @@ La recherche donne les événements marquants, susceptibles d'être cités dans 
 
 **Le repo est public** : aucun chiffre ni takeaway non publié n'y entre. Avant publication, les résultats vivent dans un document Metabase `Résultats - <Sujet> <Année>` de la collection de l'analyse. Le statut d'un axe reste « testé » jusqu'à la publication.
 
-**Conventions Metabase.** Collection `03. Analyses thématiques/NN. <Sujet> <Année>`. Préfixe `AV -` pour l'audiovisuel, `PE -` pour la presse. Après le préfixe, le code de l'axe ([§4.1](#41-catégories-et-codes)) : `AV - V1 - Volume`, `PE - C1 - Lien CC`. Versions abandonnées préfixées `OLD-`. On ne modifie jamais une question d'une autre analyse : on la duplique. Dans le SQL, `<sujet>` (en-tête) et `<thematique>` (commentaires, noms de CTE et de colonnes) se remplacent par le thème : `Courbe journalière inondations`, `dictionnaire_inondations`, `nb_articles_inondations`. On n'emploie pas « noyau » dans les requêtes. Toutes les questions sont versionnées dans Metabase, et leur SQL commence par un chapeau en commentaire : le média (audiovisuel ou presse écrite), le titre de la question, une description courte de ce qu'elle fait. Les modèles du §7 suivent ce format. Après publication, le SQL des questions utilisées est copié dans `<AAAA-MM>-<sujet>/queries/`.
+**Conventions Metabase.** Collection `03. Analyses thématiques/NN. <Sujet> <Année>`. Préfixe `AV -` pour l'audiovisuel, `PE -` pour la presse. Après le préfixe, le code de l'axe ([§4.1](#41-catégories-et-codes)) : `AV - V1 - Volume`, `PE - A1 - Lien CC`. Versions abandonnées préfixées `OLD-`. On ne modifie jamais une question d'une autre analyse : on la duplique. Dans le SQL, `<sujet>` (en-tête) et `<thematique>` (commentaires, noms de CTE et de colonnes) se remplacent par le thème : `Courbe journalière inondations`, `dictionnaire_inondations`, `nb_articles_inondations`. On n'emploie pas « noyau » dans les requêtes. Toutes les questions sont versionnées dans Metabase, et leur SQL commence par un chapeau en commentaire : le média (audiovisuel ou presse écrite), le titre de la question, une description courte de ce qu'elle fait. Les modèles du §7 suivent ce format. Après publication, le SQL des questions utilisées est copié dans `<AAAA-MM>-<sujet>/queries/`.
 
 **Nouvelle analyse.** Créer `<AAAA-MM>-<sujet>/decisions.md` à partir du [modèle](#6-modèle-pour-une-analyse) et remplir les §1 et §2 avant toute requête.
 
@@ -62,7 +62,7 @@ Le job prend en entrée `THEMATIC` (l'entrée du fichier), `MODE` et `COUNTRY` (
 
 Les anciennes tables datées (par exemple `incendies_articles_fr_20260701_20260708`) sont vouées à disparaître ; aucune table n'est plus créée sous ce nom.
 
-Profondeur des données : rien avant le 1er janvier 2023 en audiovisuel (`keywords`), rien avant le 1er janvier 2025 en presse (`factiva_articles`). Les articles de presse n'entrent en base qu'une semaine après leur parution : pas d'analyse presse au jour le jour, la dernière semaine est toujours incomplète. `time_monitored` ne remonte pas avant 2025 : en deçà, les heures se prennent dans la grille (`program_metadata`).
+Profondeur des données : rien avant le 1er janvier 2023 en audiovisuel (`keywords`), et rien avant le 1er décembre 2023 sur S3, d'où viennent les segments adjacents (avant cette date, pas de recontextualisation à ±2 minutes) ; rien avant le 1er janvier 2025 en presse (`factiva_articles`). Les articles de presse n'entrent en base qu'une semaine après leur parution : pas d'analyse presse au jour le jour, la dernière semaine est toujours incomplète. `time_monitored` ne remonte pas avant 2025 : en deçà, les heures se prennent dans la grille (`program_metadata`).
 
 Volume du corpus audiovisuel : toujours filtrer sur `thematic_chunk = true`. Les segments adjacents ne servent qu'à la recontextualisation.
 
@@ -98,7 +98,7 @@ Classification des titres de presse (nationale, régionale...) : table `source_c
 
 - Chaque axe a son propre dictionnaire de termes explicites. Ces termes n'ont pas à appartenir au dictionnaire OME, puisqu'un axe peut porter sur l'économie, les transports, la santé...
 - Les axes qui ne dépendent pas du sujet sont dans la [banque d'axes génériques](#4-banque-daxes-génériques). Chaque analyse liste dans son §3 tous les axes appliqués : pour un axe de la banque, un renvoi et les éventuels ajouts ou retraits de termes ; pour un axe spécifique, ses termes. Les axes de la banque non exploités sont listés avec leur raison.
-- Un axe entre dans la banque (catégories V et C) s'il remplit trois conditions :
+- Un axe entre dans la banque (catégories V, A, B, C et D) s'il remplit trois conditions :
   1. sa question se transpose à au moins deux aléas (incendies, inondations, chaleur...) sans changer de sens ; les termes peuvent varier, l'analyse note ses ajouts et retraits dans son §3 ;
   2. il a une trace : une analyse qui l'a testé, ou une référence datée (§5) pour une idée ;
   3. ses termes à risque de faux positifs sont signalés.
@@ -178,22 +178,25 @@ Statuts : **publié** (a donné un résultat publié), **présenté** (figure da
 
 ### 4.1 Catégories et codes
 
-Les axes se rangent en trois catégories, dans l'ordre où un article les présente généralement.
+Les axes se rangent en six catégories, dans l'ordre où un article les présente généralement : la volumétrie, les quatre maillons de la chaîne causale, les inclassables.
 
 | Préfixe | Catégorie | Question type | Traitement |
 |---|---|---|---|
 | V | Volumétrie | Combien de données a-t-on ? Nombre d'articles, d'occurrences, de segments, et leur timeline. Sert surtout à savoir s'il faudra agréger (effectif minimal) ; la timeline sert aussi à fixer les périodes et à comparer l'agitation médiatique d'une thématique à l'autre | Quelques requêtes à chaque analyse ; l'article commence en général par la timeline |
-| C | Chaîne causale | Quelle part de couverture des enjeux environnementaux, et que dit-on du constat, des causes, des conséquences, des solutions ? Chaque axe se range dans un maillon : les personnes vulnérables relèvent des conséquences, les pompiers des solutions | Le cœur de l'analyse |
+| A | Constat | L'événement est-il relié au changement climatique, présenté comme une tendance, expliqué par des scientifiques ? | Le cœur de l'analyse, avec B, C et D |
+| B | Causes | Quelles causes sont évoquées : climatiques, météorologiques, humaines directes, locales ? | |
+| C | Conséquences | Quelles conséquences sont évoquées : humaines, matérielles, par secteur ? Les personnes vulnérables relèvent des conséquences | |
+| D | Solutions | Quelles solutions sont présentées : curatives, préventives, atténuation, adaptation ? Les pompiers relèvent des solutions | |
 | X | Inclassables | Angles qui n'entrent dans aucun maillon (Unes, intervenants, cadrages...) | Pas systématique ; réservoir d'idées pour sortir des analyses répétitives, à enrichir à chaque analyse |
 
 **Codage.**
 
 - V : `V` + numéro (`V1`, `V2`).
-- C : le chiffre est le maillon (`C0` couverture globale, `C1` constat, `C2` causes, `C3` conséquences, `C4` solutions), la lettre le sous-axe (`C3b` santé). Le maillon se lit dans le code.
+- A, B, C, D : la lettre est le maillon (`A` constat, `B` causes, `C` conséquences, `D` solutions), suivie d'un numéro (`C2` santé).
 - X : `X` + numéro.
-- Un croisement s'écrit avec les deux codes (`C1 x C2`). Les questions Metabase reprennent le code : `AV - C1 - Lien CC`.
-- Un axe propre à une analyse prend la lettre suivante de son maillon dans le `decisions.md` de l'analyse, sans l'ajouter à la banque.
-- Les analyses antérieures (incendies, chaleur et surchauffe 2026) gardent leurs anciens codes (Q1, A1, B1...).
+- Un croisement s'écrit avec les deux codes (`A1 x B1`). Les questions Metabase reprennent le code : `AV - A1 - Lien CC`.
+- Dans une analyse, les axes sont numérotés dans leur maillon (`A1`, `A2`...) ; un axe repris de la banque indique son code de banque dans la colonne « Origine » (`banque A1`). Un axe propre à l'analyse n'entre pas dans la banque.
+- Les analyses antérieures (incendies, chaleur et surchauffe 2026) gardent leurs anciens codes (Q1, A1, B1...), qui ne correspondent pas aux codes actuels.
 
 Ventilations habituelles, pour toutes les catégories : chaîne ou titre, public / privé, presse nationale / régionale, TV / radio.
 
@@ -208,30 +211,34 @@ Statuts : voir plus haut. « Explorée dans » cite les analyses ; « idée » r
 | V1 | Q1 (en partie) | Volume | Combien d'articles, d'occurrences, de segments, par média ? Faudra-t-il agréger ? | Classement des médias en barres (G7) | Incendies 2026, Chaleur 2026 |
 | V2 | Q7 | Timeline | Comment le volume évolue-t-il jour par jour ? Occurrences par heure de grille sur une fenêtre large (voir l'étape 0). Sert à fixer les périodes, à mesurer l'agitation des médias sur le sujet et à la comparer d'une thématique à l'autre (incendies face à inondations), pour formuler des hypothèses sur ce qui fait réagir les médias. Attention à la taille des dictionnaires noyau comparés | Courbe annotée d'événements (G2), courbe hebdomadaire (G1) | Incendies 2026 |
 | V3 | | Mots les plus employés | Quels mots du dictionnaire noyau portent le volume, et lesquels restent peu utilisés ? Compter les occurrences dans le texte (`plaintext_normalized`, `title/snippet/body_normalized`, par exemple avec `regexp_matches(..., 'g')`), pas `keywords_found` : celui-ci ne donne que le nombre de segments ou d'articles où le mot apparaît, pas le nombre de fois où il est dit. Intéressant selon le contexte | Barres terme × famille de presse (G12) | Surchauffe 2026 |
+<<<<<<< Updated upstream
+| V4 | Q1 (en partie), Q6 | Part de couverture, comparaison et répartition | Quelle part du temps d'antenne ou des articles porte sur les enjeux environnementaux, est-elle exceptionnelle par rapport au niveau habituel ou à un épisode similaire, et quel maillon domine ? Takeaway à en tirer : le reflux (ancien Q7b), la couverture retombe-t-elle sous son niveau habituel après le pic ? Sources, par semaine : `public.core_query_environmental_shares` en audiovisuel (par chaîne), question Metabase 1384 « Modèle crises Presse Ecrite - splitées par crise » en presse (par type de média) | Barres avant / pendant (G8), donut de répartition (G5) | Incendies 2026, Chaleur 2026 ; répartition : idée (Bilan OMÉ S1 2026) |
+=======
+| V4 | Q1 (en partie), Q6 | Part de couverture, comparaison et répartition | Quelle part du temps d'antenne ou des articles porte sur les enjeux environnementaux, est-elle exceptionnelle par rapport au niveau habituel ou à un épisode similaire, et quel maillon domine ? Takeaway à en tirer : le reflux (ancien Q7b), la couverture retombe-t-elle sous son niveau habituel après le pic ? | Barres avant / pendant (G8), donut de répartition (G5) | Incendies 2026, Chaleur 2026 ; répartition : idée (Bilan OMÉ S1 2026) |
+>>>>>>> Stashed changes
 
-**C. Chaîne causale**
+**A à D. Chaîne causale**
 
 Les axes sont des listes de termes explicites (§4.5), comme la mention explicite du changement climatique. Les thèmes du dictionnaire OME (colonne `themes` en audiovisuel, `predict_*` de `factiva_articles` en presse) ne définissent pas d'axe : ils sont trop larges.
 
 | Code | Maillon | Axe | Question posée | Graphique | Explorée dans |
 |---|---|---|---|---|---|
-| C0 | Global | Part de couverture, comparaison et répartition (ancien Q1 en partie, Q6) | Quelle part du temps d'antenne ou des articles porte sur les enjeux environnementaux, est-elle exceptionnelle par rapport au niveau habituel ou à un épisode similaire, et quel maillon domine ? Takeaway à en tirer : le reflux (ancien Q7b), la couverture retombe-t-elle sous son niveau habituel après le pic ? | Barres avant / pendant (G8), donut de répartition (G5) | Incendies 2026, Chaleur 2026 ; répartition : idée (Bilan OMÉ S1 2026) |
-| C1 | Constat | [Lien avec le changement climatique](#lien-avec-le-changement-climatique) | Les médias relient-ils l'événement au changement climatique ? | G7, G3, G4 | Incendies 2026, Chaleur 2026 |
-| C1a | Constat | [Mise en série](#mise-en-série) | | L'événement est-il présenté comme une tendance (« de plus en plus fréquent ») ? | G7 | Incendies 2026 |
-| C1b | Constat | Intervenants : qui on appelle pour en parler ([voix scientifiques](#voix-scientifiques) et autres) | | Qui est mentionné pour expliquer : scientifiques, élus, secours, sinistrés, associations, monde agricole ? Limite : on détecte la mention d'un type d'intervenant, pas qui parle | G7, G11 | Incendies 2026 (voix scientifiques) ; autres intervenants : idée (Acrimed) |
-| C2 | Causes | [Causes climatiques](#causes-climatiques) | Le changement climatique est-il présenté comme une cause ? 🔴 [liste de termes propre aux causes à construire : sans le thème OME, C2 reprend la liste de C1] | G4, croisement `C1 x C2` | Incendies 2026, Chaleur 2026 |
-| C2a | Causes | [Co-aléa chaleur](#co-aléa-chaleur) | | L'événement est-il relié à la chaleur ? | G7 | Incendies 2026 |
-| C2b | Causes | [Co-aléa sécheresse](#co-aléa-sécheresse) | | L'événement est-il relié à la sécheresse ? | G7 | Incendies 2026 |
-| C2c | Causes | [Co-aléa vent et météo](#co-aléa-vent-et-météo) | | L'événement est-il relié aux conditions météo ? | G7 | Incendies 2026 |
-| C2d | Causes | [Aléas composés](#aléas-composés) | | L'événement est-il présenté comme la combinaison de plusieurs aléas ? | G10 | Incendies 2026 |
-| C2e | Causes | [Forces de l'ordre et justice](#forces-de-lordre-et-justice) | | Les causes humaines directes (origine criminelle, enquête) dominent-elles, le sujet est-il traité comme un fait divers ? | G7 | Incendies 2026 |
-| C3a | Conséquences | Par secteur | | De quelles conséquences de l'événement parle-t-on le plus : transports, économie, assurance, écoles, travail, agriculture, alimentation... (secteurs à choisir selon le sujet) ? | G6 | idée (Bilan OMÉ S1 2026) |
-| C3b | Conséquences | [Santé](#santé) | | Les effets sanitaires sont-ils évoqués ? | G7 | Incendies 2026, Surchauffe 2026 |
-| C3c | Conséquences | Précarité du ménage | | Les ménages précaires ou modestes sont-ils évoqués ? Termes larges (`populaire`, `fragile`) : à contrôler | G7 | Surchauffe 2026 |
-| C3d | Conséquences | Personnes vulnérables | | Les personnes âgées, les enfants, les nourrissons sont-ils évoqués ? Termes larges (`enfant`) : à contrôler | G7 | Surchauffe 2026 |
-| C4 | Solutions | [Solutions](#solutions) | Quelles solutions sont présentées : atténuation, adaptation ? 🔴 [liste de termes d'adaptation à construire] | G11 | Incendies 2026, Chaleur 2026 |
-| C4a | Solutions | Individuelles ou systémiques | | Les solutions relèvent-elles du geste individuel et du court terme, ou de l'action collective et structurelle ? Généralise l'axe chaleur « adaptation palliative ou structurelle » | G11, G3 | Chaleur 2026 (adaptation) ; idée en général (Bilan OMÉ S1 2026) |
-| C4b | Solutions | Curatif ou préventif | | La couverture porte-t-elle sur la lutte et les secours (pompiers, moyens aériens) ou sur la prévention ? | G11 | Incendies 2026 |
+| A1 | Constat | [Lien avec le changement climatique](#lien-avec-le-changement-climatique) | Les médias relient-ils l'événement au changement climatique ? | G7, G3, G4 | Incendies 2026, Chaleur 2026 |
+| A2 | Constat | [Mise en série](#mise-en-série) | L'événement est-il présenté comme une tendance (« de plus en plus fréquent ») ? | G7 | Incendies 2026 |
+| A3 | Constat | Intervenants : qui on appelle pour en parler ([voix scientifiques](#voix-scientifiques) et autres) | Qui est mentionné pour expliquer : scientifiques, élus, secours, sinistrés, associations, monde agricole ? Limite : on détecte la mention d'un type d'intervenant, pas qui parle | G7, G11 | Incendies 2026 (voix scientifiques) ; autres intervenants : idée (Acrimed) |
+| B1 | Causes | [Causes climatiques](#causes-climatiques) | Le changement climatique est-il présenté comme une cause ? 🔴 [liste de termes propre aux causes à construire : sans le thème OME, B1 reprend la liste de A1] | G4, croisement `A1 x B1` | Incendies 2026, Chaleur 2026 |
+| B2 | Causes | [Co-aléa chaleur](#co-aléa-chaleur) | L'événement est-il relié à la chaleur ? | G7 | Incendies 2026 |
+| B3 | Causes | [Co-aléa sécheresse](#co-aléa-sécheresse) | L'événement est-il relié à la sécheresse ? | G7 | Incendies 2026 |
+| B4 | Causes | [Co-aléa vent et météo](#co-aléa-vent-et-météo) | L'événement est-il relié aux conditions météo ? | G7 | Incendies 2026 |
+| B5 | Causes | [Aléas composés](#aléas-composés) | L'événement est-il présenté comme la combinaison de plusieurs aléas ? | G10 | Incendies 2026 |
+| B6 | Causes | [Forces de l'ordre et justice](#forces-de-lordre-et-justice) | Les causes humaines directes (origine criminelle, enquête) dominent-elles, le sujet est-il traité comme un fait divers ? | G7 | Incendies 2026 |
+| C1 | Conséquences | Par secteur | De quelles conséquences de l'événement parle-t-on le plus : transports, économie, assurance, écoles, travail, agriculture, alimentation... (secteurs à choisir selon le sujet) ? | G6 | idée (Bilan OMÉ S1 2026) |
+| C2 | Conséquences | [Santé](#santé) | Les effets sanitaires sont-ils évoqués ? | G7 | Incendies 2026, Surchauffe 2026 |
+| C3 | Conséquences | Précarité du ménage | Les ménages précaires ou modestes sont-ils évoqués ? Termes larges (`populaire`, `fragile`) : à contrôler | G7 | Surchauffe 2026 |
+| C4 | Conséquences | Personnes vulnérables | Les personnes âgées, les enfants, les nourrissons sont-ils évoqués ? Termes larges (`enfant`) : à contrôler | G7 | Surchauffe 2026 |
+| D1 | Solutions | [Solutions](#solutions) | Quelles solutions sont présentées : atténuation, adaptation ? 🔴 [liste de termes d'adaptation à construire] | G11 | Incendies 2026, Chaleur 2026 |
+| D2 | Solutions | Individuelles ou systémiques | Les solutions relèvent-elles du geste individuel et du court terme, ou de l'action collective et structurelle ? Généralise l'axe chaleur « adaptation palliative ou structurelle » | G11, G3 | Chaleur 2026 (adaptation) ; idée en général (Bilan OMÉ S1 2026) |
+| D3 | Solutions | Curatif ou préventif | La couverture porte-t-elle sur la lutte et les secours (pompiers, moyens aériens) ou sur la prévention ? | G11 | Incendies 2026 |
 
 La désinformation n'entre pas dans ces analyses : elle fait l'objet d'analyses annexes, avec leur propre méthode.
 
@@ -248,7 +255,7 @@ La désinformation n'entre pas dans ces analyses : elle fait l'objet d'analyses 
 
 ### 4.3 Croisements
 
-Un croisement met deux variables face à face, en général sous forme de nuage de points (G13). Exemple : un point = un média, x = part des séquences du corpus qui font le lien avec le changement climatique (C1), y = part qui évoque ses causes (C2). Chaque part est calculée séparément sur le corpus (certains contenus relèvent des deux axes, pas tous) : on ne restreint pas une variable à l'autre. Les médias en haut à droite font le lien et l'expliquent.
+Un croisement met deux variables face à face, en général sous forme de nuage de points (G13). Exemple : un point = un média, x = part des séquences du corpus qui font le lien avec le changement climatique (A1), y = part qui évoque ses causes (B1). Chaque part est calculée séparément sur le corpus (certains contenus relèvent des deux axes, pas tous) : on ne restreint pas une variable à l'autre. Les médias en haut à droite font le lien et l'expliquent.
 
 - **Deux variables**, pas plus, sauf idée qui le justifie clairement : au-delà, le résultat devient illisible.
 - **Les meilleurs croisements découpent le nuage en quatre groupes**, pas seulement en bons et mauvais élèves, et donnent quelque chose à dire sur chaque groupe.
@@ -256,7 +263,7 @@ Un croisement met deux variables face à face, en général sous forme de nuage 
 
 | Croisement | Question posée | Graphique | Explorée dans |
 |---|---|---|---|
-| `C1 x C2`, par média | Faire le lien, est-ce expliquer ? | G13 | Incendies 2026, Chaleur 2026 |
+| `A1 x B1`, par média | Faire le lien, est-ce expliquer ? | G13 | Incendies 2026, Chaleur 2026 |
 | Volume x recontextualisation, par média | Ceux qui en parlent le plus recontextualisent-ils le plus ? | G13 | idée |
 | Longueur x lien CC | Les articles longs recontextualisent-ils davantage ? | Barres par tranche de longueur | Incendies 2026 |
 | Évolution du lien CC dans l'épisode | Le climat arrive-t-il au pic ou après ? | G2 | idée |
@@ -374,12 +381,12 @@ Seulement ce qui s'écarte de la méthode commune. Sinon : « Méthode commune, 
 
 ## 3. Axes
 
-Chaque axe des catégories V et C de la banque (méthode commune §4) est soit listé ici, soit noté comme non exploité avec sa raison. X : seulement s'ils sont traités.
+Chaque axe des catégories V, A, B, C et D de la banque (méthode commune §4) est soit listé ici, soit noté comme non exploité avec sa raison. X : seulement s'ils sont traités.
 
 | Code | Axe | Origine | Termes | Graphique | Question Metabase (id) | Résultat |
 |---|---|---|---|---|---|---|
-| C1 | Lien avec le changement climatique | banque | [banque](../decisions.md#lien-avec-le-changement-climatique) | G7 | | testé |
-| C3e | <axe spécifique, rangé dans son maillon> | spécifique | ci-dessous | | | |
+| A1 | Lien avec le changement climatique | banque A1 | [banque](../decisions.md#lien-avec-le-changement-climatique) | G7 | | testé |
+| C5 | <axe spécifique, numéroté dans son maillon> | spécifique | ci-dessous | | | |
 
 Résultat : publié, testé (jusqu'à publication), sans résultat (après publication, avec la raison).
 
@@ -398,7 +405,7 @@ Après publication uniquement (le repo est public) : takeaways publiés avec chi
 
 **Frugalité (adoptée).** Une requête part du modèle de ce paragraphe et des regex existantes (§3.3, §4.5) : on remplace les bornes, la période, le dictionnaire et les termes, sans relire les questions Metabase d'une analyse précédente. On ne lit une question Metabase que si elle est citée par son numéro, ou pour mettre à jour un modèle. Après l'étape 1, les requêtes portent sur les tables thématiques, pas sur `keywords` et `factiva_articles`. Les contrôles ont leur propre règle (§3.6). Un modèle amélioré au cours d'une analyse remplace celui d'ici.
 
-Dans les modèles, `<sujet>` (en-tête), `<thematique>` (commentaires, noms de CTE et de colonnes), `<axe>` (code et nom court de l'axe, par exemple `c1_lien_cc`) et `<periode>` (`id` de la période dans le YAML) se remplacent avant exécution (conventions Metabase, §1).
+Dans les modèles, `<sujet>` (en-tête), `<thematique>` (commentaires, noms de CTE et de colonnes), `<axe>` (code et nom court de l'axe, par exemple `a1_lien_cc`) et `<periode>` (`id` de la période dans le YAML) se remplacent avant exécution (conventions Metabase, §1).
 
 | Modèle | Étape | Média | Unité | Tables |
 |---|---|---|---|---|

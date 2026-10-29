@@ -8,6 +8,15 @@ import pytest
 import quotaclimat.data_processing.thematic_extracts.thematic_utils as utils
 
 
+# ───────────────────────── COUNTRIES ─────────────────────────
+def test_france_channels_without_d8():
+    """Verify that France scans its 18 channels, without d8 (C8)."""
+    channels = utils.COUNTRIES["france"]["channels"]
+    assert "d8" not in channels
+    assert len(channels) == 18
+    assert {"tf1", "franceinfotv", "france-info", "sud-radio"} <= set(channels)
+
+
 # ───────────────────────── make_destination_table_name ─────────────────────────
 @pytest.mark.parametrize("media_type, expected", [
     ("audiovisuel", "inondations_keywords_fr"),

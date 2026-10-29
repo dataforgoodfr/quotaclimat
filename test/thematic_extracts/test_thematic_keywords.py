@@ -260,7 +260,7 @@ def test_extract_adjacent_chunks_day_counts_core_missing_from_s3(caplog):
         out, n_mismatch, n_missing_s3 = kw_utils.extract_adjacent_chunks_day(kw, s3, tk.GAP)
 
     assert n_missing_s3 == {"tf1": 1}
-    assert n_mismatch == 0
+    assert n_mismatch == {}
     assert "1 thematic chunks missing from S3" in caplog.text
     out = out.set_index("plaintext_normalized")
     assert set(out.index) == {"core 10h", "core 14h", "n", "core m6"}
@@ -324,8 +324,9 @@ def test_run_counts_core_missing_from_s3_in_check(env, caplog):
     assert env.count() == 5
     assert "1 thematic chunks of public.keywords missing from S3 during this run" in caplog.text
     report = kw_utils.check_keywords(env.con, DB, env.destination_table, DESTINATION_SCHEMA, tk.GAP,
-                                     False, f"{SCHEMA}.keywords", 0, {"tf1": 1})
+                                     False, f"{SCHEMA}.keywords", {"m6": 2}, {"tf1": 1})
     assert report.set_index("channel_name")["n_missing_s3"].to_dict() == {"tf1": 1, "m6": 0}
+    assert report.set_index("channel_name")["n_plaintext_mismatch"].to_dict() == {"tf1": 0, "m6": 2}
 
 
 def test_run_stops_at_first_failing_day(env):

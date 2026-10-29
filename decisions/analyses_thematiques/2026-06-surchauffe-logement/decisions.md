@@ -41,17 +41,17 @@ Questions Metabase : volumétrie (AV 2275, PE 2269), mentions journalières (AV 
 | Q2 | Mentions journalières 2026, face à la climatisation et à l'ITN | V2, G14 | corpus, climatisation | 2271, 2274 | présenté |
 | | Comparaison avec un sujet concurrent (surchauffe face à climatisation) | X | corpus, climatisation | 2271, 2274 | présenté |
 | | Mots les plus employés du corpus | V3 | corpus | | présenté |
-| A1 | Performance du logement | C2, spécifique | `dpe`, `diagnostic de performance energetique`, `confort dete` | 2290, 2276 | présenté |
-| A2 | Caractéristiques du logement | C2, spécifique | `traversant`, `dernier etage`, `rez de chaussee`, `orientation sud`, `facade sud`, `orientation ouest`, `facade ouest`, `toit`, `sous les toits` | 2290, 2276 | présenté |
-| A3 | Localisation du logement dans le quartier | C2, spécifique | `icu`, `ilot de chaleur urbain`, `bruit`, `lieu refuge` | 2290, 2276 | présenté |
-| B1 | Protections solaires | C4 | `protection solaire`, `volet`, `rideau thermique`, `occultant`, `persienne`, `ombre` | 2280, 2277 | testé |
-| B2 | Isolation thermique | C4 | `isolation`, `isolant`, `enveloppe thermique`, `renovation` (et `renovation energetique`, `renovation thermique` en audiovisuel) | 2280, 2277 | testé |
-| B3 | Solutions passives | C4 | `vegetalisation`, `evapotranspiration`, `evaporation` | 2280, 2277 | testé |
-| B4 | Ventilation | C4 | `brasseur dair`, `puits canadien`, `puits provencal`, `ventilateur`, `ventilation` (et `courant dair` en audiovisuel) | 2280, 2277 | testé |
-| B5 | Dépenses énergétiques d'été, climatisation | C4 | `rafraichissement`, `refroidissement`, `climatisation`, `consommation energetique`, `pompe a chaleur reversible`, `climatiseur` | 2280, 2277 | testé |
-| C | Précarité du ménage | C3c | `les plus precaires`, `modestes`, `pauvres`, `fragiles`, `demunis`, `faible revenu`, `populaire` | 2281, 2278 | présenté |
-| D1 | Conditions de santé | C3b | `maladie chronique`, `cardiovasculaire`, `respiratoire`, `antipsychotiques`, `anxiolytiques`, `antidepresseurs`, `malaise`, `coup de chaleur`, `surmortalite` | 2281, 2278 | présenté |
-| D2 | Personnes vulnérables | C3d | `personne vieillissante`, `personne agee`, `aine`, `senior`, `enfant`, `bebe`, `nourrisson`, `bas age`, `vulnerable` | 2281, 2278 | présenté |
+| A1 | Performance du logement | B, spécifique | `dpe`, `diagnostic de performance energetique`, `confort dete` | 2290, 2276 | présenté |
+| A2 | Caractéristiques du logement | B, spécifique | `traversant`, `dernier etage`, `rez de chaussee`, `orientation sud`, `facade sud`, `orientation ouest`, `facade ouest`, `toit`, `sous les toits` | 2290, 2276 | présenté |
+| A3 | Localisation du logement dans le quartier | B, spécifique | `icu`, `ilot de chaleur urbain`, `bruit`, `lieu refuge` | 2290, 2276 | présenté |
+| B1 | Protections solaires | D | `protection solaire`, `volet`, `rideau thermique`, `occultant`, `persienne`, `ombre` | 2280, 2277 | testé |
+| B2 | Isolation thermique | D | `isolation`, `isolant`, `enveloppe thermique`, `renovation` (et `renovation energetique`, `renovation thermique` en audiovisuel) | 2280, 2277 | testé |
+| B3 | Solutions passives | D | `vegetalisation`, `evapotranspiration`, `evaporation` | 2280, 2277 | testé |
+| B4 | Ventilation | D | `brasseur dair`, `puits canadien`, `puits provencal`, `ventilateur`, `ventilation` (et `courant dair` en audiovisuel) | 2280, 2277 | testé |
+| B5 | Dépenses énergétiques d'été, climatisation | D | `rafraichissement`, `refroidissement`, `climatisation`, `consommation energetique`, `pompe a chaleur reversible`, `climatiseur` | 2280, 2277 | testé |
+| C | Précarité du ménage | C3 | `les plus precaires`, `modestes`, `pauvres`, `fragiles`, `demunis`, `faible revenu`, `populaire` | 2281, 2278 | présenté |
+| D1 | Conditions de santé | C2 | `maladie chronique`, `cardiovasculaire`, `respiratoire`, `antipsychotiques`, `anxiolytiques`, `antidepresseurs`, `malaise`, `coup de chaleur`, `surmortalite` | 2281, 2278 | présenté |
+| D2 | Personnes vulnérables | C4 | `personne vieillissante`, `personne agee`, `aine`, `senior`, `enfant`, `bebe`, `nourrisson`, `bas age`, `vulnerable` | 2281, 2278 | présenté |
 | | Climatisation x précarité | croisement | B5 et C | 2279 | testé, non présenté |
 | | Ratio articles passoire thermique / climatisation face au nombre de jours de canicule | V2 | | | testé |
 
@@ -65,4 +65,4 @@ Les termes larges (`toit`, `bruit`, `ombre`, `populaire`, `fragile`, `enfant`, `
 
 Non publiés : résultats dans la collection Metabase et le support présenté à l'ONPE (non référencé ici).
 
-**Axes remontés dans la banque** : précarité du ménage (C3c), personnes vulnérables (C3d), courbe des mentions face à un indicateur physique (G14). Piste non remontée : comparaison avec un sujet concurrent (surchauffe face à climatisation).
+**Axes remontés dans la banque** : précarité du ménage (C3), personnes vulnérables (C4), courbe des mentions face à un indicateur physique (G14). Piste non remontée : comparaison avec un sujet concurrent (surchauffe face à climatisation).

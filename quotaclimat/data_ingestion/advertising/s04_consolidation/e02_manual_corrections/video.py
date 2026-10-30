@@ -45,7 +45,25 @@ async def _find_and_export(
     duration_sec: float,
     dry_run: bool,
 ) -> Ad_Occurrence | None:
-    fs = get_s3_filesystem()
+    # each call runs in its own event loop (asyncio.run): a new filesystem, as fsspec would otherwise return
+    # its cached instance, whose S3 session is bound to the loop of the previous call, closed since
+    fs = get_s3_filesystem(asynchronous=True, skip_instance_cache=True)
+    session = await fs.set_session()
+    try:
+        return await _export_from_an_occurrence(
+            fs, ad_id, occurrences, duration_sec, dry_run
+        )
+    finally:
+        await session.close()
+
+
+async def _export_from_an_occurrence(
+    fs,
+    ad_id: str,
+    occurrences: Sequence[Ad_Occurrence],
+    duration_sec: float,
+    dry_run: bool,
+) -> Ad_Occurrence | None:
     ad = SimpleNamespace(id=ad_id, duration_sec=duration_sec)
     available: dict = {}
     for occurrence in sorted(

@@ -1,8 +1,11 @@
 """Manual corrections of the ads (s04_consolidation/e02_manual_corrections), on a PostgreSQL database, with an
 in-memory spreadsheet."""
 
+import asyncio
 import json
+import threading
 from datetime import datetime, timedelta
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from types import SimpleNamespace
 
 import pytest
@@ -537,7 +540,11 @@ def test_video_is_cut_from_the_most_recent_occurrence_with_its_archives(monkeypa
     async def export(ad, occurrence, from_date, to_date, parts, local_dir, fs):
         exported.append((ad.id, occurrence.id))
 
-    monkeypatch.setattr(video, "get_s3_filesystem", lambda: None)
+    class Filesystem:
+        async def set_session(self):
+            return SimpleNamespace(close=lambda: asyncio.sleep(0))
+
+    monkeypatch.setattr(video, "get_s3_filesystem", lambda **kwargs: Filesystem())
     monkeypatch.setattr(video, "list_available_part_starts", available)
     monkeypatch.setattr(video, "download_media_parts", download)
     monkeypatch.setattr(video, "_export_ad", export)
@@ -547,3 +554,59 @@ def test_video_is_cut_from_the_most_recent_occurrence_with_its_archives(monkeypa
     assert exported == []
     assert video.export_new_ad_video("new", occurrences, 20.0, dry_run=False) is middle
     assert exported == [("new", "middle")]
+
+
+class EmptyBucketHandler(BaseHTTPRequestHandler):
+    """A S3 endpoint whose bucket has no archive: every listing is empty."""
+
+    requests: list[str] = []
+
+    def do_GET(self):
+        EmptyBucketHandler.requests.append(self.path)
+        body = (
+            b'<?xml version="1.0" encoding="UTF-8"?>'
+            b'<ListBucketResult xmlns="http://s3.amazonaws.com/doc/2006-03-01/">'
+            b"<Name>mediatree-videos-prod</Name><KeyCount>0</KeyCount>"
+            b"<IsTruncated>false</IsTruncated></ListBucketResult>"
+        )
+        self.send_response(200)
+        self.send_header("Content-Type", "application/xml")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def log_message(self, *args):
+        pass
+
+
+@pytest.fixture
+def local_s3(monkeypatch):
+    from quotaclimat.data_ingestion.advertising.tools.mediatree import (
+        bucket_mediatree,
+    )
+
+    server = ThreadingHTTPServer(("127.0.0.1", 0), EmptyBucketHandler)
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    EmptyBucketHandler.requests = []
+    monkeypatch.setattr(
+        bucket_mediatree, "ENDPOINT_URL", f"http://127.0.0.1:{server.server_port}"
+    )
+    monkeypatch.setattr(bucket_mediatree, "ACCESS_KEY", "key")
+    monkeypatch.setattr(bucket_mediatree, "SECRET_KEY", "secret")
+    for proxy in ("HTTP_PROXY", "http_proxy", "HTTPS_PROXY", "https_proxy"):
+        monkeypatch.delenv(proxy, raising=False)
+    yield EmptyBucketHandler.requests
+    server.shutdown()
+    server.server_close()
+
+
+def test_videos_of_several_new_ads_in_the_same_job(local_s3):
+    # one event loop per new ad: the S3 session of the first one must not be reused by the next ones
+    from quotaclimat.data_ingestion.advertising.s04_consolidation.e02_manual_corrections import (
+        video,
+    )
+
+    for ad_id in ("new1", "new2"):
+        occurrences = [make_occ(f"{ad_id}-occ", "a1", 0)]
+        assert video.export_new_ad_video(ad_id, occurrences, 20.0, dry_run=True) is None
+    assert len(local_s3) >= 2

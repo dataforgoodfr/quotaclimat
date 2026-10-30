@@ -45,6 +45,7 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    # The old key is stricter: this fails if a keyword exists under several themes.
-    op.drop_constraint("pk_keyword_language_category_theme", "dictionary", type_="primary")
-    op.create_primary_key("pk_keyword_language", "dictionary", ["keyword", "language"])
+    # Deliberately a no-op: (keyword, language) was a bug, and restoring it would break
+    # databases where the key was already fixed by hand. Reverting past 44f13b7eebd4
+    # drops the category/theme columns, and the key with them.
+    pass

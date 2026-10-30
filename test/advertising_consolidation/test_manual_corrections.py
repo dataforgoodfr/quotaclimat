@@ -159,6 +159,7 @@ def test_tab_kind():
     assert corrections_run.tab_kind("correction_ads_mai") == "correction_ads"
     assert corrections_run.tab_kind("nouvelle_ad_renault") == "nouvelle_ad"
     assert corrections_run.tab_kind("dechets") == "dechets"
+    assert corrections_run.tab_kind("reattribution_mai") == "reattribution"
     assert corrections_run.tab_kind("autre") is None
 
 
@@ -431,6 +432,96 @@ def test_junk_occurrences_are_soft_deleted(engine):
         "avertissement",
         "erreur",
     ]
+
+
+# ---------- reattribution to an existing ad ----------
+
+
+def test_occurrences_are_moved_to_an_existing_ad(engine):
+    insert(
+        engine,
+        make_ad("wrong"),
+        make_ad("right"),
+        make_occ("o1", "wrong", 0),
+        make_occ("o2", "wrong", 600),
+    )
+    sheet = MemorySheet(
+        {
+            "reattribution": [
+                ["occurrence_id", "ad_id", "commentaire"],
+                ["o1", "right", "même spot"],
+                ["o2", "right", ""],
+            ]
+        }
+    )
+    assert run(engine, sheet) == {"appliqué": 2}
+
+    with Session(engine) as session:
+        live = {
+            o.id: o.ad_id
+            for o in session.scalars(
+                select(Ad_Occurrence).where(Ad_Occurrence.deleted_at.is_(None))
+            )
+        }
+        assert session.get(Ad_Occurrence, "o1").deleted_at is not None
+        assert session.get(Ad_Occurrence, "o2").deleted_at is not None
+    new_ids = sheet.column("reattribution", "nouvelle_occurrence_id")
+    assert live == {new_ids[0]: "right", new_ids[1]: "right"}
+
+
+def test_reattribution_errors_change_nothing(engine):
+    insert(
+        engine,
+        make_ad("wrong"),
+        make_ad("right"),
+        make_occ("o1", "wrong", 0),
+        make_occ("o2", "right", 600),
+        make_occ("o3", "wrong", 1200),
+    )
+    with Session(engine) as session:
+        session.get(Ad_Occurrence, "o3").deleted_at = T0
+        session.commit()
+    sheet = MemorySheet(
+        {
+            "reattribution": [
+                ["occurrence_id", "ad_id"],
+                ["o1", "inconnue"],
+                ["o1", ""],
+                ["inconnue", "right"],
+                ["o2", "right"],
+                ["o3", "right"],
+            ]
+        }
+    )
+    assert run(engine, sheet) == {"erreur": 5}
+    assert sheet.column("reattribution", "message") == [
+        "ad inconnue inconnue",
+        "occurrence en double dans l'onglet",
+        "occurrence inconnue inconnue",
+        "occurrence déjà dans cette ad",
+        f"occurrence supprimée le {T0:%Y-%m-%d}",
+    ]
+    with Session(engine) as session:
+        assert session.get(Ad_Occurrence, "o1").deleted_at is None
+        assert session.get(Ad_Occurrence, "o1").ad_id == "wrong"
+
+
+def test_reattribution_to_an_ad_of_another_duration_or_not_classified_gives_warnings(
+    engine,
+):
+    insert(
+        engine,
+        make_ad("wrong", duration_sec=20.0),
+        make_ad("bumper", fragment_type="BUMPER", duration_sec=5.0),
+        make_occ("o1", "wrong", 0),
+    )
+    sheet = MemorySheet(
+        {"reattribution": [["occurrence_id", "ad_id"], ["o1", "bumper"]]}
+    )
+    assert run(engine, sheet) == {"avertissement": 1}
+    message = sheet.column("reattribution", "message")[0]
+    assert "durée de l'ad (5s) différente de celle de l'ad d'origine (20s)" in message
+    assert "l'occurrence n'apparaît pas dans les analyses" in message
 
 
 # ---------- new ads ----------

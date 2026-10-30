@@ -44,6 +44,8 @@ CONTENT_TYPES = get_args(ContentType)
 DICT_MATCH_INPUT_STATUS = "ad_type_done"
 # fragment_type of a new ad, the same as the detection: exported and classified by the next steps
 NEW_AD_FRAGMENT_TYPE = "advertising"
+# occurrences of ads of durations further apart than this get a warning when they move to one ad
+MAX_DURATION_SPREAD_SEC = 1.0
 # the video of the ad is missing or unreadable: a classification needing it will fail
 MISSING_VIDEO_STATUSES = ("no_data", "video_decode_error")
 PREVIOUS_COLUMNS = (
@@ -341,8 +343,7 @@ def create_ad_from_occurrences(
     """Create the ad (when it does not exist) and move the occurrences to it.
 
     The ad has no fingerprint and no prediction: the classification processes it like a new ad, the
-    detection never attributes broadcasts to it. Each occurrence is replaced by an occurrence of the new ad
-    (id of the detection formula), the old one is soft deleted. Returns {old occurrence id: new id}.
+    detection never attributes broadcasts to it. Returns {old occurrence id: new id} (see move_occurrences).
     """
     if session.get(Ad, ad_id) is None:
         session.add(
@@ -355,6 +356,14 @@ def create_ad_from_occurrences(
             )
         )
         session.flush()
+    return move_occurrences(session, ad_id, occurrences)
+
+
+def move_occurrences(
+    session: Session, ad_id: str, occurrences: Sequence[Ad_Occurrence]
+) -> dict[str, str]:
+    """Move the occurrences to the existing ad ad_id: each one is replaced by an occurrence of the ad (id of
+    the detection formula), the old one is soft deleted. Returns {old occurrence id: new id}."""
     now = _utcnow()
     new_ids = {}
     for occurrence in occurrences:
@@ -381,3 +390,49 @@ def create_ad_from_occurrences(
     )
     session.flush()
     return new_ids
+
+
+def reattribute_occurrence(
+    session: Session, occurrence_id: str, ad_id: str
+) -> tuple[Outcome, str | None]:
+    """Move an occurrence attributed to the wrong ad to the existing ad ad_id.
+
+    Warnings: an ad of another duration than the ad of the occurrence, an ad that is not a classified
+    advertising (the occurrence is then left out of the analyses). Returns the outcome and the id of the new
+    occurrence (None on an error).
+    """
+    if not ad_id:
+        return Outcome.error("ad_id vide"), None
+    ad = session.get(Ad, ad_id)
+    if ad is None:
+        return Outcome.error(f"ad {ad_id} inconnue"), None
+    occurrence = session.get(Ad_Occurrence, occurrence_id)
+    if occurrence is None:
+        return Outcome.error(f"occurrence {occurrence_id} inconnue"), None
+    if occurrence.deleted_at is not None:
+        return (
+            Outcome.error(f"occurrence supprimée le {occurrence.deleted_at:%Y-%m-%d}"),
+            None,
+        )
+    if occurrence.ad_id == ad_id:
+        return Outcome.error("occurrence déjà dans cette ad"), None
+
+    outcome = Outcome()
+    source_ad = session.get(Ad, occurrence.ad_id) if occurrence.ad_id else None
+    if (
+        source_ad is not None
+        and abs(source_ad.duration_sec - ad.duration_sec) > MAX_DURATION_SPREAD_SEC
+    ):
+        outcome.warn(
+            f"durée de l'ad ({ad.duration_sec:g}s) différente de celle de l'ad d'origine"
+            f" ({source_ad.duration_sec:g}s)"
+        )
+    if (
+        ad.fragment_type != AD_CONTENT_TYPE
+        or ad.prediction_status not in FINAL_PREDICTION_STATUSES
+    ):
+        outcome.warn(
+            "l'ad n'est pas une publicité classée : l'occurrence n'apparaît pas dans les analyses"
+        )
+    new_id = move_occurrences(session, ad_id, [occurrence])[occurrence_id]
+    return outcome, new_id

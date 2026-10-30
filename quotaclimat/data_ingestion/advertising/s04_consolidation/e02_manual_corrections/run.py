@@ -5,7 +5,8 @@ the name of a tab gives its kind (TAB_KINDS), all the tabs of a kind have the sa
 - correction_ads...: one row per ad to correct (ad_id, marque, secteur, categorie, type_contenu);
 - nouvelle_ad...: occurrences attributed to the wrong ad (occurrence_id), moved to a new ad, one per tab
   and per value of the optional ad_indicator column;
-- dechets...: occurrences that are not ads (occurrence_id), soft deleted.
+- dechets...: occurrences that are not ads (occurrence_id), soft deleted;
+- reattribution...: occurrences attributed to the wrong ad (occurrence_id), moved to an existing ad (ad_id).
 
 Each row is processed once: the job fills traite_le, resultat (appliqué, avertissement or erreur) and
 message, and the rows with a traite_le are skipped (to process a row again, empty its traite_le). A warning
@@ -31,6 +32,7 @@ from sqlalchemy.orm import Session
 from postgres.database_connection import connect_to_db
 from postgres.schemas.advertising.models import Ad
 from quotaclimat.data_ingestion.advertising.s04_consolidation.e02_manual_corrections.corrections import (
+    MAX_DURATION_SPREAD_SEC,
     RESULT_ERROR,
     AdCorrection,
     Outcome,
@@ -38,6 +40,7 @@ from quotaclimat.data_ingestion.advertising.s04_consolidation.e02_manual_correct
     create_ad_from_occurrences,
     live_occurrences,
     new_ad_id,
+    reattribute_occurrence,
     trash_occurrence,
 )
 from quotaclimat.data_ingestion.advertising.s04_consolidation.e02_manual_corrections.references import (
@@ -53,13 +56,15 @@ from quotaclimat.utils.sentry import sentry_init
 KIND_AD = "correction_ads"
 KIND_NEW_AD = "nouvelle_ad"
 KIND_TRASH = "dechets"
+KIND_REATTRIBUTION = "reattribution"
 # beginning of the name of a tab -> its kind
-TAB_KINDS = (KIND_AD, KIND_NEW_AD, KIND_TRASH)
+TAB_KINDS = (KIND_AD, KIND_NEW_AD, KIND_TRASH, KIND_REATTRIBUTION)
 # column identifying the rows of a kind of tab
 KEY_COLUMNS = {
     KIND_AD: "ad_id",
     KIND_NEW_AD: "occurrence_id",
     KIND_TRASH: "occurrence_id",
+    KIND_REATTRIBUTION: "occurrence_id",
 }
 
 # columns filled by the job (added after the last column when missing)
@@ -68,9 +73,8 @@ COLUMN_RESULT = "resultat"
 COLUMN_MESSAGE = "message"
 COLUMN_PREVIOUS = "valeurs_precedentes"
 COLUMN_NEW_AD = "nouvelle_ad_id"
+COLUMN_NEW_OCCURRENCE = "nouvelle_occurrence_id"
 COLUMN_AD_INDICATOR = "ad_indicator"
-# a new ad whose occurrences come from ads of durations further apart than this gets a warning
-MAX_DURATION_SPREAD_SEC = 1.0
 
 VideoExporter = Callable[..., object]
 
@@ -143,6 +147,34 @@ def process_trash_rows(
             )
             outcome = Outcome.error(f"échec : {e}")
         updates.append((row, _cells(outcome)))
+    return updates
+
+
+def process_reattribution_rows(
+    session: Session, rows: list[SheetRow]
+) -> list[tuple[SheetRow, dict[str, str]]]:
+    updates = []
+    seen = set()
+    for row in rows:
+        occurrence_id = row.values["occurrence_id"]
+        extra = {}
+        if occurrence_id in seen:
+            outcome = Outcome.error("occurrence en double dans l'onglet")
+        else:
+            seen.add(occurrence_id)
+            try:
+                with session.begin_nested():
+                    outcome, new_id = reattribute_occurrence(
+                        session, occurrence_id, row.values.get("ad_id", "").strip()
+                    )
+                if new_id:
+                    extra = {COLUMN_NEW_OCCURRENCE: new_id}
+            except Exception as e:
+                logging.exception(
+                    "Reattribution of the occurrence %s failed", occurrence_id
+                )
+                outcome = Outcome.error(f"échec : {e}")
+        updates.append((row, _cells(outcome, **extra)))
     return updates
 
 
@@ -280,6 +312,8 @@ def process_tab(
         updates = process_ad_rows(session, pending, references, spreadsheet, tab)
     elif kind == KIND_TRASH:
         updates = process_trash_rows(session, pending)
+    elif kind == KIND_REATTRIBUTION:
+        updates = process_reattribution_rows(session, pending)
     else:
         updates = process_new_ad_rows(
             session, pending, spreadsheet, tab, export_video, dry_run

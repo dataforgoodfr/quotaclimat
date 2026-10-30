@@ -12,7 +12,11 @@ Create Date: 2026-10-30
 
 from typing import Sequence, Union
 
+import sqlalchemy as sa
+
 from alembic import op
+
+PK_COLUMNS = ["keyword", "language", "category", "theme"]
 
 revision: str = "b7d2e5a91c34"
 down_revision: Union[str, None] = "f4a8c2e6d1b3"
@@ -21,6 +25,11 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
+    pk = sa.inspect(op.get_bind()).get_pk_constraint("dictionary")
+    if pk["constrained_columns"] == PK_COLUMNS:
+        # already fixed (other databases, or by hand): nothing to do
+        return
+
     # category and theme were added as nullable, a primary key column cannot be
     op.execute("UPDATE dictionary SET category = '' WHERE category IS NULL")
     op.execute("UPDATE dictionary SET theme = '' WHERE theme IS NULL")
@@ -31,7 +40,7 @@ def upgrade() -> None:
     op.create_primary_key(
         "pk_keyword_language_category_theme",
         "dictionary",
-        ["keyword", "language", "category", "theme"],
+        PK_COLUMNS,
     )
 
 

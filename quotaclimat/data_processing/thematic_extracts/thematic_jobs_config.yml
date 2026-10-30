@@ -70,15 +70,22 @@ inondations:
       - id: 202507_texas
         start: 2025-06-30
         end: 2025-07-14
+      - id: 202601_aude
+        start: 2026-01-12
+        end: 2026-01-26
       - id: 202602_sud_ouest_fr
         start: 2026-02-09
         end: 2026-03-01
       - id: 202608_nepal
         start: 2026-08-24
         end: 2026-09-06
-      - id: 202609_gard_espagne
+      - id: 202609_gard
         start: 2026-09-21
-        end: 2026-10-27
+        end: 2026-10-11
+      - id: 202610_espagne
+        start: 2026-10-11
+        end: 2026-10-30
+        end: 2026-10-30
 
   keywords:
     french:

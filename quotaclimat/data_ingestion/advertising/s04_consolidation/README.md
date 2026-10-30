@@ -91,8 +91,9 @@ logs).
 | Tab name starts with | Columns filled by humans | Columns filled by the job |
 |---|---|---|
 | `correction_ads` | `ad_id`, `marque`, `secteur`, `categorie`, `type_contenu` (empty: unchanged), free columns (`commentaire`...) | `traite_le`, `resultat`, `message`, `valeurs_precedentes` |
-| `nouvelle_ad` | `occurrence_id`, `ad_indicator` (optional), free columns | `traite_le`, `resultat`, `message`, `nouvelle_ad_id` |
+| `nouvelle_ad` | `occurrence_id`, `ad_indicator` (optional), free columns | `traite_le`, `resultat`, `message`, `nouvelle_ad_id`, `nouvelle_occurrence_id` |
 | `dechets` | `occurrence_id`, free columns | `traite_le`, `resultat`, `message` |
+| `reattribution` | `occurrence_id`, `ad_id`, free columns | `traite_le`, `resultat`, `message`, `nouvelle_occurrence_id` |
 
 The columns of the job are added after the last column when missing. Each row is processed once: the rows with
 a `traite_le` are skipped. To process a row again (after fixing it), empty its `traite_le`. `resultat`:
@@ -153,8 +154,8 @@ spreadsheet, the tab and the `ad_indicator`: rows added later with the same `ad_
    its archives: the ad is not created (error on the rows).
 2. The ad is created without fingerprint (`chunks = []`), with `fragment_type = advertising` and no prediction:
    the classification processes it like a new ad.
-3. Each occurrence is replaced by an occurrence of the new ad (id of the detection formula), the old one is soft
-   deleted.
+3. Each occurrence is replaced by an occurrence of the new ad (id of the detection formula, written in
+   `nouvelle_occurrence_id`), the old one is soft deleted: it keeps its old `ad_id`, with a `deleted_at`.
 
 Limits: without fingerprint, the detection never attributes a broadcast to the new ad, the next broadcasts of
 the spot still go to the old ad. A reprocessing of the detection deletes and recreates the occurrences of its
@@ -165,6 +166,17 @@ window: the moved occurrences come back to the old ad, and the rows are not proc
 Occurrences that are not ads: soft deleted (`deleted_at`), like the occurrences replaced by a merge, so every
 reader of `advertising.ad_occurrence` (dbt, screenshots, merge) ignores them. Same limit with a reprocessing of
 the detection.
+
+### Occurrences moved to an existing ad (`reattribution`)
+
+For an occurrence attributed to the wrong ad by the detection, when the right ad already exists: one row per
+occurrence, with the id of the right ad (`ad_id`). The occurrence is replaced by an occurrence of this ad (id of
+the detection formula, written in `nouvelle_occurrence_id`), the old one is soft deleted (it keeps its old
+`ad_id`, with a `deleted_at`), like for a new ad.
+Errors: unknown or deleted occurrence, unknown or empty `ad_id`, occurrence already in this ad, occurrence twice
+in the tab. Warnings: an ad of another duration than the ad of the occurrence (by more than 1 s), an ad that is
+not a classified advertising (the occurrence is then left out of `analytics.publicites`). Same limit with a
+reprocessing of the detection.
 
 ### Environment variables
 

@@ -119,8 +119,16 @@ What changes in `advertising.ad`, depending on the ad:
 - **an advertising already classified** (`fragment_type` `AD`, final `prediction_status`, see
   `s03_classification/prediction_status.py`): the given values replace `predicted_brand`, `predicted_sector`,
   `predicted_product_category`; `prediction_method` becomes `manual`, `prediction_status` stays;
-- **another content type** (`type_contenu` other than `AD`): `fragment_type` changes, `prediction_method`
-  becomes `manual`, the prediction stays. `analytics.publicites` only keeps the `AD`: the ad leaves the analyses;
+- **another content type** (`type_contenu` other than `AD`): the ad becomes like a content the classification
+  found not to be an advertising. `fragment_type` and the `content_type` of its `ad_type` prediction take the
+  content type, `prediction_status` becomes `ad_type_done` (the dictionary stage skips a content type other than
+  `AD`), `predicted_brand`, `predicted_sector` and `predicted_product_category` are emptied (a given brand, sector
+  or category is ignored, warning), `prediction_method` becomes `manual`. The ad leaves the analyses, including the
+  Metabase queries reading `advertising.ad` with a filter on `prediction_status` or `predicted_brand` but not on
+  `fragment_type`, and the screenshots of its new occurrences (`s05_enrichment/e02_screenshots` only takes the
+  final statuses). The `brand_name` of the classification stays in the `ad_type` prediction: corrected back to
+  `AD`, the ad goes back to the classification (next case). An ad corrected before this rule keeps its final
+  status and its prediction: empty the `traite_le` of its row to apply the correction again;
 - **an advertising not classified** (another content type corrected to `AD`, `no_sector_found`...): it goes back
   to the classification at the dictionary stage (`prediction_status = ad_type_done`), with the corrected brand and
   sector in its `ad_type` prediction. The dictionary, then the sub-category stage, give its sector and category,

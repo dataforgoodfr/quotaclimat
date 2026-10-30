@@ -287,15 +287,54 @@ def test_ad_not_classified_yet_needs_a_content_type(engine):
 
 
 def test_content_type_correction_takes_the_ad_out_of_the_analyses(engine):
-    insert(engine, make_ad("a1"))
+    insert(
+        engine,
+        make_ad(
+            "a1",
+            predicted_sector="AUT",
+            predicted_product_category="AUT1",
+            prediction=[
+                {
+                    "stage": "ad_type",
+                    "raw_response": {"content_type": "AD", "brand_name": "Pytest"},
+                }
+            ],
+        ),
+    )
     sheet = MemorySheet({"correction_ads": [AD_HEADER, ["a1", "", "", "", "bumper"]]})
     assert run(engine, sheet) == {"appliqué": 1}
     ad = get_ad(engine, "a1")
+    # like a content the classification found not to be an advertising
+    assert (
+        ad.fragment_type,
+        ad.prediction_status,
+        ad.predicted_brand,
+        ad.predicted_sector,
+        ad.predicted_product_category,
+        ad.prediction_method,
+    ) == ("BUMPER", "ad_type_done", None, None, None, "manual")
+    # the dictionary stage skips it, the brand of the classification stays for a correction back to AD
+    assert ad.prediction[0]["raw_response"] == {
+        "content_type": "BUMPER",
+        "brand_name": "Pytest",
+    }
+    assert ad.prediction[-1]["previous"]["predicted_brand"] == "Pytest"
+    assert ad.prediction[-1]["previous"]["predicted_sector"] == "AUT"
+
+
+def test_content_type_correction_back_to_ad_goes_back_to_the_classification(engine):
+    insert(engine, make_ad("a1", predicted_sector="AUT"))
+    sheet = MemorySheet({"correction_ads": [AD_HEADER, ["a1", "", "", "", "bumper"]]})
+    run(engine, sheet)
+    sheet = MemorySheet({"correction_ads": [AD_HEADER, ["a1", "", "", "", "AD"]]})
+    run(engine, sheet)
+    ad = get_ad(engine, "a1")
     assert (ad.fragment_type, ad.prediction_status, ad.predicted_brand) == (
-        "BUMPER",
-        "subcat_done",
-        "Pytest",
+        "AD",
+        "ad_type_done",
+        None,
     )
+    assert ad.prediction[0]["raw_response"]["content_type"] == "AD"
 
 
 def test_not_classified_ad_corrected_to_ad_goes_back_to_the_dictionary_stage(engine):

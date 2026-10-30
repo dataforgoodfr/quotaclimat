@@ -173,8 +173,11 @@ def correct_ad(
     - an advertising not classified (another content type corrected to AD, no sector found...): it goes back
       to the classification at the dictionary stage (status ad_type_done) with the corrected brand and sector
       in its ad_type prediction; the dictionary, then the sub-category stage, give its sector and category;
-    - another content type (BUMPER, OTHER...): only fragment_type changes, the ad leaves the analyses
-      (analytics.publicites only keeps the AD).
+    - another content type (BUMPER, OTHER...): the ad becomes like a content the classification found not to
+      be an advertising: content type in fragment_type and in its ad_type prediction, status ad_type_done (the
+      dictionary stage skips it), no brand, sector nor category. It leaves the analyses, even the queries
+      reading advertising.ad without filtering on fragment_type, and the screenshots of new occurrences.
+      Corrected back to AD, it goes back to the classification (case above).
     The values before the correction are kept in advertising.ad.prediction (stage "manual_correction").
     """
     error = _validation_error(correction, references)
@@ -202,7 +205,20 @@ def correct_ad(
             outcome.warn(
                 f"marque, secteur et catégorie ignorés : le contenu n'est pas une publicité ({AD_CONTENT_TYPE})"
             )
+        entry = _ad_type_entry(prediction)
+        if entry is None:
+            entry = {"stage": "ad_type", "model": MANUAL_METHOD, "raw_response": {}}
+            prediction.insert(0, entry)
+        # the brand_name of the classification stays: the dictionary uses it if the ad is corrected back to AD
+        entry["raw_response"] = {
+            **(entry.get("raw_response") or {}),
+            "content_type": content_type,
+        }
         ad.fragment_type = content_type
+        ad.prediction_status = DICT_MATCH_INPUT_STATUS
+        ad.predicted_brand = None
+        ad.predicted_sector = None
+        ad.predicted_product_category = None
         ad.prediction_method = MANUAL_METHOD
     elif ad.prediction_status in FINAL_PREDICTION_STATUSES:
         _check_references(correction, ad, references, outcome)

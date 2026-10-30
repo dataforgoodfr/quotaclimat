@@ -1,6 +1,6 @@
 [project]
 name = "quotaclimat"
-version = "2.1.187"
+version = "2.1.188"
 description = ""
 authors = [
     {name = "Rambier Estelle", "email"="estelle.rambier@hotmail.fr"},

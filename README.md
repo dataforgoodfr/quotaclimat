@@ -275,6 +275,8 @@ docker compose up test # test is the container name running pytest test
 ## Deploy
 Every commit on the `main` branch will build an deploy to the Scaleway container registry a new image that will be deployed. Have a look to `.github/deploy-main.yml`.
 
+Every push on any branch also builds `quotaclimat_base` and pushes it to the dev Scaleway registry, tagged `<branch>` and `<branch>-<short sha>` (job `build_and_push_docker_image` in `.github/workflows/test.yml`). Its Docker layer cache is stored in the same registry under the `buildcache-<branch>` tags: every branch reads `buildcache-main` and its own, so `poetry install` only runs again when `poetry.lock` changes. These tags can be deleted at any time, the next build just runs without cache.
+
 Learn [more here.](https://www.scaleway.com/en/docs/tutorials/use-container-registry-github-actions/)
 
 ## Monitoring

@@ -135,6 +135,7 @@ Secrets (API credentials) are mounted from `secrets/` directory as Docker secret
 ## CI/CD (GitHub Actions)
 
 - **Every push**: runs pytest against a PostgreSQL service container
+- **Every push**: builds `quotaclimat_base` and pushes it to the dev registry (`build_and_push_docker_image`), with a BuildKit layer cache stored in that registry under `buildcache-<branch>` tags (reads `buildcache-main` + its own branch's)
 - **Main branch push**: bumps version (`poetry version patch`), builds Docker images, pushes to Scaleway Container Registry, updates Scaleway serverless job definitions
 - Scaleway jobs run as serverless batch jobs (not always-on services)
 

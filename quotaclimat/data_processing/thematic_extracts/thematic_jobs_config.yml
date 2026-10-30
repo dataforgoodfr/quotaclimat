@@ -2,7 +2,7 @@
 ### One entry per thematic (the THEMATIC env variable), with:
 ### - periodes: [country][list of periods] to extract, one id per period.
 ###     - country: one of the COUNTRIES keys in thematic_utils.py (france, belgiumfr, belgiumnl)
-###     - id: [a-z0-9_], written in the period column of the destination table
+###     - id: [a-z0-9_], written in the period column of the destination table as yyyymm_event
 ###     - start (included) / end (excluded): YYYY-MM-DD, unquoted
 ###     - periods of a country must not overlap
 ###     - every period goes into one table per media and country: {thematic}_keywords_{country_short}, {thematic}_articles_{country_short}

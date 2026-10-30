@@ -64,12 +64,18 @@ inondations:
       - id: 202410_ardeche_valence
         start: 2024-10-07
         end: 2024-11-10
+      - id: 202501_bretagne
+        start: 2025-20-01
+        end: 2025-02-03
       - id: 202507_texas
         start: 2025-06-30
         end: 2025-07-14
       - id: 202602_sud_ouest_fr
         start: 2026-02-09
         end: 2026-03-01
+      - id: 202608_nepal
+        start: 2026-08-24
+        end: 2026-09-06
       - id: 202609_gard_espagne
         start: 2026-09-21
         end: 2026-10-27

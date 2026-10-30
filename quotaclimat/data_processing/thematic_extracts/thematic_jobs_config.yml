@@ -2,7 +2,7 @@
 ### One entry per thematic (the THEMATIC env variable), with:
 ### - periodes: [country][list of periods] to extract, one id per period.
 ###     - country: one of the COUNTRIES keys in thematic_utils.py (france, belgiumfr, belgiumnl)
-###     - id: [a-z0-9_], written in the period column of the destination table
+###     - id: [a-z0-9_], written in the period column of the destination table as yyyymm_event
 ###     - start (included) / end (excluded): YYYY-MM-DD, unquoted
 ###     - periods of a country must not overlap
 ###     - every period goes into one table per media and country: {thematic}_keywords_{country_short}, {thematic}_articles_{country_short}
@@ -58,19 +58,19 @@ incendies:
 inondations:
   periodes:
     france:
-      - id: pas_de_calais_janvier_2024
+      - id: 202401_pas_de_calais
         start: 2023-12-25
         end: 2024-01-15
-      - id: ardeche_valence_octobre_2024
+      - id: 202410_ardeche_valence
         start: 2024-10-07
         end: 2024-11-10
-      - id: texas_2025
+      - id: 202507_texas
         start: 2025-06-30
         end: 2025-07-14
-      - id: sud_ouest_fevrier_2026
+      - id: 202602_sud_ouest_fr
         start: 2026-02-09
         end: 2026-03-01
-      - id: sud_espagne_septembre_octobre_2026
+      - id: 202609_gard_espagne
         start: 2026-09-21
         end: 2026-10-27
 

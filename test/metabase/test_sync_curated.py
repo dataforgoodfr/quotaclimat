@@ -52,22 +52,26 @@ def metabase_table(table_id: int, name: str, fields: dict) -> dict:
 
 class FakeMetabase:
     def __init__(self, tables: list[dict]):
-        self.tables = {t["id"]: t for t in tables}
+        self.by_id = {t["id"]: t for t in tables}
         self.updated = {}
         self.synced = []
 
+    def tables(self, database, schema):
+        return [
+            {k: t[k] for k in ("id", "db_id", "schema", "name")} for t in self.by_id.values()
+            if t["db_id"] == database and t["schema"] == schema
+        ]
+
     def get(self, path):
-        if path == "table":
-            return [{k: t[k] for k in ("id", "db_id", "schema", "name")} for t in self.tables.values()]
-        return copy.deepcopy(self.tables[int(path.split("/")[1])])
+        return copy.deepcopy(self.by_id[int(path.split("/")[1])])
 
     def put(self, path, body):
         kind, metabase_id = path.split("/")
         self.updated[(kind, int(metabase_id))] = body
         if kind == "table":
-            self.tables[int(metabase_id)].update(body)
+            self.by_id[int(metabase_id)].update(body)
         else:
-            for table in self.tables.values():
+            for table in self.by_id.values():
                 for field in table["fields"]:
                     if field["id"] == int(metabase_id):
                         field.update(body)
@@ -139,6 +143,6 @@ def test_sync_waits_for_new_tables_and_columns(monkeypatch):
     metabase = FakeMetabase([metabase_table(11, "publicite", {"chaine_id": 111})])
     known_after_sync = [metabase_table(10, "chaine", {"chaine_id": 101}),
                         metabase_table(11, "publicite", {"chaine_id": 111, "duree_sec": 112})]
-    metabase.post = lambda path, body=None: metabase.tables.update({t["id"]: t for t in known_after_sync})
+    metabase.post = lambda path, body=None: metabase.by_id.update({t["id"]: t for t in known_after_sync})
     assert sync(metabase, MANIFEST, [2], apply=True, wait=60) is True
     assert ("field", 112) in metabase.updated

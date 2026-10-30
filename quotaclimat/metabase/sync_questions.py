@@ -24,6 +24,7 @@ import re
 import sys
 import time
 import uuid
+from urllib.parse import quote
 
 import requests
 
@@ -201,11 +202,19 @@ class Metabase:
         response = self.session.post(f"{self.url}/api/{path}", timeout=60)
         response.raise_for_status()
 
+    def tables(self, database: int, schema: str) -> list[dict]:
+        """Tables of a schema of a database known to Metabase (none when Metabase does not know the schema yet).
+        Not GET table: it lists the thousands of tables of every database, and times out."""
+        try:
+            return self.get(f"database/{database}/schema/{quote(schema, safe='')}?include_hidden=true")
+        except requests.HTTPError as error:
+            # Metabase answers 404 for a schema without any table
+            if error.response is not None and error.response.status_code == 404:
+                return []
+            raise
+
     def _find_field(self, database: int, schema: str, table: str, column: str) -> int | None:
-        tables = [
-            t for t in self.get("table")
-            if t["db_id"] == database and t["schema"] == schema and t["name"] == table
-        ]
+        tables = [t for t in self.tables(database, schema) if t["name"] == table]
         if len(tables) != 1:
             return None
         metadata = self.get(f"table/{tables[0]['id']}/query_metadata")

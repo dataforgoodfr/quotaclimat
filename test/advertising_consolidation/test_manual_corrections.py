@@ -594,6 +594,15 @@ def test_new_ads_from_occurrences_one_per_ad_indicator(engine):
         "appliqué",
         "erreur",
     ]
+    # the old occurrence keeps its ad, with a deleted_at: the new one is in nouvelle_occurrence_id
+    new_occurrences = sheet.column("nouvelle_ad_avril", "nouvelle_occurrence_id")
+    assert new_occurrences[3] == ""
+    with Session(engine) as session:
+        assert session.get(Ad_Occurrence, "o1").ad_id == "a1"
+        assert [
+            session.get(Ad_Occurrence, occurrence_id).ad_id
+            for occurrence_id in new_occurrences[:3]
+        ] == [mazda, renault, mazda]
 
 
 def test_new_ad_without_video_is_not_created(engine):

@@ -229,10 +229,11 @@ def _new_ad_group(
                 )
             occurrences = {}
 
+    new_ids: dict[str, str] = {}
     if occurrences:
         try:
             with session.begin_nested():
-                create_ad_from_occurrences(
+                new_ids = create_ad_from_occurrences(
                     session, ad_id, list(occurrences.values()), duration_sec
                 )
         except Exception as e:
@@ -251,7 +252,11 @@ def _new_ad_group(
                 outcome.warn(warning)
             if reference is not None and reference.id == occurrence_id:
                 outcome.messages.append("vidéo de l'ad prise sur cette occurrence")
-        extra = {COLUMN_NEW_AD: ad_id} if outcome.result != RESULT_ERROR else {}
+        extra = (
+            {COLUMN_NEW_AD: ad_id, COLUMN_NEW_OCCURRENCE: new_ids[occurrence_id]}
+            if outcome.result != RESULT_ERROR
+            else {}
+        )
         updates.append((row, _cells(outcome, **extra)))
     return updates
 

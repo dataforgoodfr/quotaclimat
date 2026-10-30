@@ -10,6 +10,9 @@
 
 ## Angle
 
+- Destination : rapport OMÉ S2 2026, bilan annuel, parution prévue en février 2027
+- Ce que couvre l'analyse : les plus grosses inondations de 2026 en France, comparées à des épisodes antérieurs et à des épisodes à l'étranger
+
 Questions auxquelles l'analyse répond (29/10/2026), avec les axes du §3 qui y répondent :
 
 - Relie-t-on les inondations au réchauffement climatique, et en explique-t-on le mécanisme ? (A1 à A6)
@@ -19,6 +22,19 @@ Questions auxquelles l'analyse répond (29/10/2026), avec les axes du §3 qui y 
 - De quelles conséquences parle-t-on : humaines, matérielles, assurances, agriculture, reconstruction ? (C1 à C5)
 - Quels épisodes ont le plus ému les médias, en France ou à l'étranger, et est-ce proportionné à leur gravité ? (V2, colonne `espagne` de V1)
 
+Plan de comparaison (30/10/2026), périodes de l'entrée `inondations` du YAML (dates au §1) :
+
+| `id` | Épisode | Rôle |
+|---|---|---|
+| `202601_aude` | Aude, janvier 2026 | analyse |
+| `202602_sud_ouest_fr` | Sud-Ouest, février 2026 | analyse |
+| `202609_gard_espagne` | Gard, Hérault et Espagne, septembre et octobre 2026 | analyse (France) et comparaison à l'étranger (Espagne), dans la même fenêtre : à séparer par une regex de lieu (piste X7, colonne `espagne` de V1) |
+| `202608_nepal` | Népal, août et septembre 2026 | comparaison à l'étranger, même année |
+| `202507_texas` | Texas (États-Unis), juillet 2025 | comparaison à l'étranger, antérieure |
+| `202401_pas_de_calais` | Pas-de-Calais, janvier 2024 | comparaison antérieure, France |
+| `202410_ardeche_valence` | Ardèche et Valence (Espagne), octobre 2024 | comparaison antérieure, France et étranger dans la même fenêtre (regex de lieu) |
+| `202501_bretagne` | Bretagne, janvier 2025 | comparaison antérieure, France |
+
 ## 1. Méthode spécifique
 
 Méthode commune, sans écart à ce stade.
@@ -27,20 +43,24 @@ Méthode commune, sans écart à ce stade.
 - Courbe journalière (étape 0) : modèles 7.1 et 7.2 de la méthode commune, audiovisuel du 01/01/2024 au 26/10/2026, presse par semaine, du lundi 06/01/2025 à la dernière semaine complète ingérée, mots du §2 ; audiovisuel : « AV - V2 - Courbe journalière inondations » (2329) ; presse : « PE - V2 - Courbe hebdomadaire inondations » (2394)
 - Périodes (entrée `inondations` du YAML, fin incluse ci-dessous) :
 
-  Cinq fenêtres, chacune avec une tolérance d'une à deux semaines avant et après (méthode commune §3.2, événement météorologique). Deux épisodes proches dans le temps partagent une même fenêtre.
+  Huit fenêtres, chacune avec une tolérance d'une à deux semaines avant et après (méthode commune §3.2, événement météorologique). Deux épisodes proches dans le temps partagent une même fenêtre. Rôle de chaque période : plan de comparaison de l'Angle.
 
   | `id` | Du | Au | Épisodes | Presse |
   |---|---|---|---|---|
-  | `pas_de_calais_janvier_2024` | 25/12/2023 | 14/01/2024 | Pas-de-Calais, second épisode | non |
-  | `ardeche_valence_octobre_2024` | 07/10/2024 | 09/11/2024 | Ardèche et Espagne (Valence), fusionnés | non |
-  | `sud_ouest_fevrier_2026` | 09/02/2026 | 28/02/2026 | Sud-Ouest | oui |
-  | `sud_espagne_septembre_octobre_2026` | 21/09/2026 | 26/10/2026 | Gard et Hérault, et Espagne, fusionnés | oui |
+  | `202401_pas_de_calais` | 25/12/2023 | 14/01/2024 | Pas-de-Calais, second épisode | non |
+  | `202410_ardeche_valence` | 07/10/2024 | 09/11/2024 | Ardèche et Espagne (Valence), fusionnés | non |
+  | `202501_bretagne` | 20/01/2025 | 02/02/2025 | Bretagne | oui |
+  | `202507_texas` | 30/06/2025 | 13/07/2025 | Texas (États-Unis) | oui |
+  | `202601_aude` | 12/01/2026 | 25/01/2026 | Aude | oui |
+  | `202602_sud_ouest_fr` | 09/02/2026 | 28/02/2026 | Sud-Ouest | oui |
+  | `202608_nepal` | 24/08/2026 | 05/09/2026 | Népal | oui |
+  | `202609_gard_espagne` | 21/09/2026 | 26/10/2026 | Gard et Hérault, et Espagne, fusionnés | oui |
 
   Le premier épisode du Pas-de-Calais (31/10 au 19/11/2023) est retiré : il précède les données S3 (01/12/2023), donc sans segments adjacents.
 
   🔴 [sources datées des épisodes à ajouter au tableau des événements]
 
-- Période d'analyse et périodes de comparaison : 🔴 [préciser laquelle est la période d'analyse]
+- Période d'analyse et périodes de comparaison : plan de comparaison de l'Angle
 - Contrôles : 🔴 [précision et rappel, après extraction]
 
 **Presse.** Presque tous les termes qui décrivent l'événement (`inondation`, `Crue`, `coulée de boue`, `pluie torrentielle`...) sont HRFP. Seuls les mots non HRFP font entrer un article dans `factiva_articles` (méthode commune §3.10) : le corpus presse sera tiré vers les articles qui contiennent déjà du vocabulaire environnemental, ce qui gonfle les taux de recontextualisation. Comparer les périodes entre elles en presse, ne pas comparer la presse à l'audiovisuel en niveau absolu, et le dire dans l'encadré méthodologique. 🔴 [à valider par l'expert]

@@ -18,11 +18,16 @@ Cinq étapes, de 0 à 4, chacune validée explicitement par l'équipe avant de p
 - Parle-t-on des causes structurelles ou immédiates ?
 - Quels feux de forêt ont le plus ému les médias ? Est-ce lié à la proximité avec Paris, ou à la gravité de la situation ?
 
+L'angle s'écrit avec son contexte, en tête de la section « Angle » :
+
+- **Destination** : rapport OMÉ (semestriel, annuel), article QuotaClimat, présentation à des partenaires (non publique)... avec sa date de parution prévue. Elle fixe ce que couvre l'analyse : un rapport annuel porte sur les principaux épisodes de l'année, un article peut ne porter que sur un épisode.
+- **Plan de comparaison** : les périodes d'analyse, et à quoi chacune se compare (épisodes antérieurs en France, épisodes à l'étranger, même saison sans événement...). Une ligne par période du YAML avec son rôle. Ce plan fixe la liste complète des périodes avant la première entrée du YAML : chaque période ajoutée après coup demande une modification du YAML, une PR et un nouveau lancement du job.
+
 Pour nourrir l'angle, on regarde aussi ce que QuotaClimat a déjà publié sur le sujet : la table `wp_linkedin_posts` (base Metabase `db_wordpress`) contient nos posts LinkedIn, avec leur texte (`content`) et leur engagement. Un simple filtre `content LIKE '%<thematique>%'` donne tous les posts qui en parlent, où l'on pioche des angles. La question se nomme `Brainstorm - LinkedIn <thematique>`, dans la collection de l'analyse (exemple : question 2433 pour les inondations).
 
 | Étape | Ce qu'on produit | Où on le consigne |
 |---|---|---|
-| 0. Cadrage | Angle (questions auxquelles l'analyse répond), mots du dictionnaire OME retenus (liste stricte audiovisuel, regex presse), événements recensés, périodes candidates | `decisions.md` de l'analyse, Angle, §1 et §2 |
+| 0. Cadrage | Angle (destination, questions auxquelles l'analyse répond, plan de comparaison), mots du dictionnaire OME retenus (liste stricte audiovisuel, regex presse), événements recensés, périodes candidates | `decisions.md` de l'analyse, Angle, §1 et §2 |
 | 1. Extraction | Entrée de `thematic_jobs_config.yml` (mots-clés, périodes), tables thématiques générées, contrôles | `decisions.md` de l'analyse, §1 et §2 |
 | 2. Axes | Axes de la banque appliqués ou non exploités, axes spécifiques, termes, graphiques prévus | `decisions.md` de l'analyse, §3 |
 | 3. Requêtes | Questions Metabase sur les tables thématiques | Colonne « Question Metabase » du §3 |
@@ -103,6 +108,7 @@ Classification des titres de presse (nationale, régionale...) : table `source_c
   - événement dont la date est connue à l'avance (COP, sommet, vote...) : à partir de 2 à 3 semaines avant, pour voir une éventuelle montée en puissance ;
   - événement météorologique : à l'échelle des prévisions, soit 1 à 2 semaines avant et après l'épisode.
 - **Période de comparaison** : un épisode similaire (même aléa, actualité comparable), renseigné comme une autre période de la même entrée. Les requêtes comparent les périodes via la colonne `period`.
+- **Rôle de chaque période** : il est écrit dans le plan de comparaison de l'Angle (§1) avant la première entrée du YAML, pour déclarer toutes les périodes en une fois.
 
 ### 3.3 Axes (adoptée)
 
@@ -369,8 +375,19 @@ Notre sujet est l'écologie. Une référence qui traite d'un autre sujet ne sert
 
 Ce que l'analyse veut montrer, en quelques questions écrites avant le dictionnaire noyau (§1 de la méthode commune). Chaque axe du §3 se rattache à l'une d'elles.
 
+- Destination : <rapport OMÉ, article QuotaClimat, présentation à des partenaires (non publique)...>, parution prévue <mois année>
+- Ce que couvre l'analyse : <épisode unique, principaux épisodes de l'année...>
+
+Questions :
+
 - <question 1>
 - <question 2>
+
+Plan de comparaison (écrit avant la première entrée du YAML) :
+
+| `id` | Épisode | Rôle |
+|---|---|---|
+| `<id>` | <lieu, date> | analyse \| comparaison (antérieur, étranger...) |
 
 ## 1. Méthode spécifique
 

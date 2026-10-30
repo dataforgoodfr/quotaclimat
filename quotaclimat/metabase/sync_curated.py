@@ -107,15 +107,15 @@ def plan(tables: dict, known: dict) -> list[tuple[str, int, dict, str]]:
 def known_tables(metabase: Metabase, database: int, tables: dict) -> dict:
     """The curated tables known to Metabase in this database, by name, with their fields; a table missing one of
     the columns documented in dbt is left out (not synced yet)."""
-    schemas = {table["schema"] for table in tables.values()}
     known = {}
-    for table in metabase.get("table"):
-        if table["db_id"] != database or table["schema"] not in schemas or table["name"] not in tables:
-            continue
-        metadata = metabase.get(f"table/{table['id']}/query_metadata")
-        fields = {field["name"]: field for field in metadata["fields"]}
-        if set(tables[table["name"]]["fields"]) <= set(fields):
-            known[table["name"]] = {**metadata, "fields": fields}
+    for schema in sorted({table["schema"] for table in tables.values()}):
+        for table in metabase.tables(database, schema):
+            if table["name"] not in tables:
+                continue
+            metadata = metabase.get(f"table/{table['id']}/query_metadata")
+            fields = {field["name"]: field for field in metadata["fields"]}
+            if set(tables[table["name"]]["fields"]) <= set(fields):
+                known[table["name"]] = {**metadata, "fields": fields}
     return known
 
 

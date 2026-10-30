@@ -1,6 +1,7 @@
 import copy
 
 import pytest
+import requests
 
 from quotaclimat.metabase.questions import METABASE_DIR, load_queries, read_query, render, sql_version, tag_names
 from quotaclimat.metabase import sync_questions
@@ -144,7 +145,7 @@ class SchemaSyncMetabase(Metabase):
         self.sync_asked = []
 
     def get(self, path):
-        if path == "table":
+        if path == "database/2/schema/analytics?include_hidden=true":
             visible = self.sync_asked and self.delay <= 0
             self.delay -= 1 if self.sync_asked else 0
             return [{"id": 7, "db_id": 2, "schema": "analytics", "name": "t"}] if visible else []
@@ -172,6 +173,17 @@ def test_field_id_gives_up_after_the_timeout(monkeypatch):
     monkeypatch.setattr(sync_questions.time, "monotonic", lambda: next(clock))
     with pytest.raises(ValueError, match="toujours inconnue"):
         SchemaSyncMetabase(delay=1_000).field_id(2, "analytics.t.secteur")
+
+
+def test_tables_of_a_schema_unknown_to_metabase(monkeypatch):
+    response = requests.Response()
+    response.status_code = 404
+    metabase = Metabase("https://metabase.test", "key")
+    monkeypatch.setattr(metabase.session, "get", lambda url, timeout: response)
+    assert metabase.tables(2, "curated") == []
+    response.status_code = 500
+    with pytest.raises(requests.HTTPError):
+        metabase.tables(2, "curated")
 
 
 def test_sync_goes_on_when_a_field_filter_cannot_be_resolved(monkeypatch):

@@ -35,7 +35,18 @@ def upgrade() -> None:
     op.drop_column('dictionary', 'crisis_climate')
     op.drop_column('dictionary', 'crisis_biodiversity')
     op.drop_column('dictionary', 'crisis_resource')
-    pass
+
+    # The model declares pk_keyword_language_category_theme: a keyword can be listed under
+    # several themes/categories. category and theme were just added nullable, which a
+    # primary key column cannot be.
+    op.execute("UPDATE dictionary SET category = '' WHERE category IS NULL")
+    op.execute("UPDATE dictionary SET theme = '' WHERE theme IS NULL")
+    op.execute('ALTER TABLE dictionary DROP CONSTRAINT IF EXISTS pk_keyword_language')
+    op.create_primary_key(
+        'pk_keyword_language_category_theme',
+        'dictionary',
+        ['keyword', 'language', 'category', 'theme'],
+    )
     # ### end Alembic commands ###
 
 
@@ -52,5 +63,13 @@ def downgrade() -> None:
     op.add_column('dictionary', sa.Column('crisis_biodiversity', sa.Boolean(), nullable=True, server_default=sa.text('true')))
     op.add_column('dictionary', sa.Column('crisis_resource', sa.Boolean(), nullable=True, server_default=sa.text('true')))
 
+    # Dropping category and theme also drops pk_keyword_language_category_theme.
+    # The dictionary is fully rebuilt by update_dictionary, so duplicates are discarded
+    # to restore the initial pk_keyword_language.
     op.drop_column('dictionary', 'category')
     op.drop_column('dictionary', 'theme')
+    op.execute(
+        'DELETE FROM dictionary a USING dictionary b '
+        'WHERE a.keyword = b.keyword AND a.language = b.language AND a.ctid > b.ctid'
+    )
+    op.create_primary_key('pk_keyword_language', 'dictionary', ['keyword', 'language'])

@@ -6,8 +6,10 @@ The functions only add to the session, they never commit: the caller decides of 
 A merge is done in two steps:
 1. create_merged_ad: the merged ad, from the source ads in broadcast order. Its fingerprints are the
    ones of the source ads one after the other, so that the detection recognises the whole ad when the
-   pieces are broadcast together (the longest known ads are tried first). It has no prediction, so the
-   exportation and classification steps process it like a new ad;
+   pieces are broadcast together (the longest known ads are tried first). When the source ads are
+   classified advertisings with the same brand, sector and category, it takes their classification
+   (inherit_classification, status merge_inherited); otherwise it has no prediction, and the exportation
+   and classification steps process it like a new ad;
 2. merge_occurrences: for each broadcast, one occurrence of the merged ad replaces the occurrences of
    the pieces (and of the short segments between them), which are soft deleted (deleted_at).
 
@@ -15,13 +17,17 @@ Both steps are logged: advertising.ad_merge (the merge rule) is kept when the de
 window, advertising.ad_merge_occurrence is deleted with the occurrences of the window (foreign keys on
 delete cascade), and the merge is redone on the new occurrences.
 revert_merge undoes the occurrence merges of a merged ad.
+inherit_classification_of_merges gives their classification to the merged ads created before it existed,
+or whose pieces were classified after the merge.
 """
 
 import hashlib
+import re
+from collections import Counter
 from collections.abc import Sequence
 from datetime import UTC, datetime
 
-from sqlalchemy import select, update
+from sqlalchemy import func, select, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
 
@@ -31,11 +37,39 @@ from postgres.schemas.advertising.models import (
     Ad_Merge_Occurrence,
     Ad_Occurrence,
 )
+from quotaclimat.data_ingestion.advertising.s03_classification.prediction_status import (
+    AD_CONTENT_TYPE,
+    FINAL_PREDICTION_STATUSES,
+    SUBCATEGORY_PENDING_STATUSES,
+)
 
 MERGE_STATUS_ACTIVE = "active"
 MERGE_STATUS_REVERTED = "reverted"
 ROLE_PIECE = "piece"
 ROLE_ABSORBED = "absorbed"
+# prediction_method and prediction stage of a merged ad classified like its pieces
+INHERITED_METHOD = "merge_inherited"
+# why the classification of the pieces is not inherited (logged by inherit_classification_of_merges)
+INHERITED = "inherited"
+NOT_CLASSIFIED = "piece_not_classified"
+SUBCATEGORY_PENDING = "piece_waiting_for_subcategory"
+OTHER_BRAND = "other_brand"
+OTHER_SECTOR = "other_sector"
+OTHER_CATEGORY = "other_category"
+# source ad columns read to inherit their classification (not the fingerprints, heavy)
+CLASSIFICATION_COLUMNS = (
+    Ad.id,
+    Ad.duration_sec,
+    Ad.fragment_type,
+    Ad.transcript,
+    Ad.prediction,
+    Ad.prediction_status,
+    Ad.prediction_confidence,
+    Ad.prediction_method,
+    Ad.predicted_brand,
+    Ad.predicted_sector,
+    Ad.predicted_product_category,
+)
 
 
 class MergeRevertedError(ValueError):
@@ -81,6 +115,146 @@ def concatenate_chunks(source_ads: Sequence[Ad]) -> list[dict]:
     ]
 
 
+def brand_key(brand: str | None) -> str:
+    """Brand compared without case, spaces nor punctuation, like the detection of the split pieces
+    (s04_consolidation/e01_merge_split_ads/detect.py)."""
+    return re.sub(r"[\W_]", "", (brand or "").lower())
+
+
+def _ad_type_entry(prediction) -> dict | None:
+    if not isinstance(prediction, list):
+        return None
+    return next(
+        (e for e in prediction if isinstance(e, dict) and e.get("stage") == "ad_type"),
+        None,
+    )
+
+
+def inherited_classification(source_ads: Sequence) -> tuple[dict | None, str]:
+    """Classification of the merged ad taken from its source ads (Ad, or rows of CLASSIFICATION_COLUMNS),
+    in broadcast order, and why.
+
+    Inherited (INHERITED) when every source ad is an advertising with a final status, its sub-category
+    found (not waiting for stage 4), and they all have the same brand (compared with brand_key), sector and
+    category (an empty category included): the merged ad is then shown in the analyses like its pieces.
+    Otherwise (None, reason): the merged ad goes through the classification.
+    Values: the brand as spelled for the longest piece, the lowest confidence, the transcripts of the
+    pieces one after the other (the transcription stage only processes ads without transcript, and would
+    mark the merged ad no_data until its video is exported), the ad_type prediction of the longest piece
+    and a merge_inherited entry with the statuses and methods of the pieces.
+    """
+    for ad in source_ads:
+        if (
+            ad.fragment_type != AD_CONTENT_TYPE
+            or ad.prediction_status not in FINAL_PREDICTION_STATUSES
+        ):
+            return None, NOT_CLASSIFIED
+        if ad.prediction_status in SUBCATEGORY_PENDING_STATUSES:
+            return None, SUBCATEGORY_PENDING
+    keys = {brand_key(ad.predicted_brand) for ad in source_ads}
+    if len(keys) != 1 or keys == {""}:
+        return None, OTHER_BRAND
+    if len({ad.predicted_sector for ad in source_ads}) != 1 or (
+        source_ads[0].predicted_sector is None
+    ):
+        return None, OTHER_SECTOR
+    if len({ad.predicted_product_category for ad in source_ads}) != 1:
+        return None, OTHER_CATEGORY
+
+    longest = max(source_ads, key=lambda ad: ad.duration_sec)
+    confidences = [
+        ad.prediction_confidence
+        for ad in source_ads
+        if ad.prediction_confidence is not None
+    ]
+    prediction = [
+        entry for entry in [_ad_type_entry(longest.prediction)] if entry is not None
+    ] + [
+        {
+            "stage": INHERITED_METHOD,
+            "source_ad_ids": [ad.id for ad in source_ads],
+            "source_prediction_statuses": [ad.prediction_status for ad in source_ads],
+            "source_prediction_methods": [ad.prediction_method for ad in source_ads],
+        }
+    ]
+    return {
+        "fragment_type": AD_CONTENT_TYPE,
+        "predicted_brand": longest.predicted_brand,
+        "predicted_sector": longest.predicted_sector,
+        "predicted_product_category": longest.predicted_product_category,
+        "prediction_confidence": min(confidences) if confidences else None,
+        "prediction_method": INHERITED_METHOD,
+        "prediction": prediction,
+        "transcript": " ".join(ad.transcript for ad in source_ads if ad.transcript),
+    }, INHERITED
+
+
+def inherit_classification(
+    session: Session, merged_ad_id: str, source_ads: Sequence
+) -> str:
+    """Give the merged ad the classification of its source ads (inherited_classification), when it has
+    no classification yet (prediction_status empty): a classification of the merged ad itself, or a
+    manual correction, is never replaced. Its transcript, when it has one, is kept.
+    Returns the reason of inherited_classification (INHERITED when inherited).
+    """
+    values, reason = inherited_classification(source_ads)
+    if values is None:
+        return reason
+    transcript = values.pop("transcript")
+    session.execute(
+        update(Ad)
+        .where(Ad.id == merged_ad_id)
+        .where(Ad.prediction_status.is_(None))
+        .values(
+            prediction_status="merge_inherited",
+            transcript=func.coalesce(Ad.transcript, transcript),
+            **values,
+        )
+        .execution_options(synchronize_session="fetch")
+    )
+    return reason
+
+
+def inherit_classification_of_merges(
+    session: Session, dry_run: bool = False, batch_size: int = 1000
+) -> Counter:
+    """inherit_classification for every active merge whose merged ad has no classification yet: the
+    merges created before the merged ads took the classification of their pieces, or whose pieces were
+    classified after the merge.
+
+    dry_run: nothing is written, the counts say what would be done.
+    Returns the number of merges per reason of inherited_classification.
+    """
+    pending = session.execute(
+        select(Ad_Merge.merged_ad_id, Ad_Merge.source_ad_ids)
+        .join(Ad, Ad.id == Ad_Merge.merged_ad_id)
+        .where(Ad_Merge.status == MERGE_STATUS_ACTIVE)
+        .where(Ad.prediction_status.is_(None))
+        .order_by(Ad_Merge.merged_ad_id)
+    ).all()
+    reasons = Counter()
+    for start in range(0, len(pending), batch_size):
+        batch = pending[start : start + batch_size]
+        source_ids = {ad_id for _, ids in batch for ad_id in ids}
+        sources = {
+            row.id: row
+            for row in session.execute(
+                select(*CLASSIFICATION_COLUMNS).where(Ad.id.in_(source_ids))
+            )
+        }
+        for merged_id, source_ad_ids in batch:
+            if any(ad_id not in sources for ad_id in source_ad_ids):
+                reasons[NOT_CLASSIFIED] += 1
+                continue
+            source_ads = [sources[ad_id] for ad_id in source_ad_ids]
+            if dry_run:
+                reasons[inherited_classification(source_ads)[1]] += 1
+            else:
+                reasons[inherit_classification(session, merged_id, source_ads)] += 1
+        session.flush()
+    return reasons
+
+
 def create_merged_ad(
     session: Session,
     source_ad_ids: Sequence[str],
@@ -91,9 +265,11 @@ def create_merged_ad(
 ) -> str:
     """Create the ad merging the given ads (in broadcast order) and its advertising.ad_merge row.
 
+    The merged ad takes the classification of the source ads when they agree (inherit_classification).
     Idempotent: when the merged ad already exists, its duration and details stay the ones of the
-    creation. A reverted merge raises MergeRevertedError, unless reactivate_reverted (its fingerprints
-    are then restored): an automatic script must not redo a merge reverted by a human.
+    creation, and it takes the classification of the source ads if it still has none. A reverted merge
+    raises MergeRevertedError, unless reactivate_reverted (its fingerprints are then restored): an
+    automatic script must not redo a merge reverted by a human.
     duration_sec defaults to the sum of the source durations.
     Returns the id of the merged ad.
     """
@@ -128,12 +304,15 @@ def create_merged_ad(
                 if duration_sec is not None
                 else sum(ad.duration_sec for ad in source_ads),
                 chunks=chunks,
-                # same type as a new ad from the detection: exported and classified by the next steps
+                # same type as a new ad from the detection: exported and classified by the next steps,
+                # unless it inherits the classification of the source ads below
                 fragment_type="advertising",
             )
         )
     else:
         merged_ad.chunks = chunks
+    session.flush()
+    inherit_classification(session, ad_id, source_ads)
 
     now = _utcnow()
     if merge is None:

@@ -33,11 +33,20 @@ from quotaclimat.data_ingestion.advertising.s04_consolidation.e01_merge_split_ad
     group_by_source_ads,
 )
 from quotaclimat.data_ingestion.advertising.tools.ad_merge import (
+    INHERITED,
     MERGE_STATUS_ACTIVE,
     MERGE_STATUS_REVERTED,
+    NOT_CLASSIFIED,
+    OTHER_BRAND,
+    OTHER_CATEGORY,
+    OTHER_SECTOR,
+    SUBCATEGORY_PENDING,
     MergeRevertedError,
     concatenate_chunks,
     create_merged_ad,
+    inherit_classification,
+    inherit_classification_of_merges,
+    inherited_classification,
     merge_occurrences,
     merged_ad_id,
     revert_merge,
@@ -67,7 +76,9 @@ def fingerprint(n: int) -> dict:
     }
 
 
-def make_ad(ad_id, duration_sec, brand=None, llm_brand=None, content_type="AD"):
+def make_ad(
+    ad_id, duration_sec, brand=None, llm_brand=None, content_type="AD", **columns
+):
     prediction = [
         {
             "stage": "ad_type",
@@ -75,14 +86,35 @@ def make_ad(ad_id, duration_sec, brand=None, llm_brand=None, content_type="AD"):
         }
     ]
     return Ad(
-        id=ad_id,
-        first_detection_date=T0,
-        duration_sec=duration_sec,
-        chunks=[{"hash": HASH, "fingerprints": [fingerprint(len(ad_id))]}],
-        fragment_type=content_type,
-        prediction=prediction,
-        prediction_status="dict_tier1" if brand else "dict_miss",
-        predicted_brand=brand,
+        **{
+            "id": ad_id,
+            "first_detection_date": T0,
+            "duration_sec": duration_sec,
+            "chunks": [{"hash": HASH, "fingerprints": [fingerprint(len(ad_id))]}],
+            "fragment_type": content_type,
+            "prediction": prediction,
+            "prediction_status": "dict_tier1" if brand else "dict_miss",
+            "predicted_brand": brand,
+        }
+        | columns
+    )
+
+
+def make_classified_ad(ad_id, duration_sec, brand="Renault", **columns):
+    """An advertising classified by the dictionary, sector AUTO, category AUTO_EV."""
+    return make_ad(
+        ad_id,
+        duration_sec,
+        brand,
+        llm_brand=brand,
+        **{
+            "predicted_sector": "AUTO",
+            "predicted_product_category": "AUTO_EV",
+            "prediction_confidence": 0.9,
+            "prediction_method": "dict_tier1",
+            "transcript": f"transcript of {ad_id}",
+        }
+        | columns,
     )
 
 
@@ -152,6 +184,188 @@ def test_create_merged_ad_rejects_unknown_ads(engine):
             create_merged_ad(session, ["a1", "unknown"], method="test")
         with pytest.raises(ValueError):
             create_merged_ad(session, ["a1"], method="test")
+
+
+def piece(**columns):
+    """A source ad as read by inherited_classification: a classified advertising, overridden by columns."""
+    return SimpleNamespace(
+        **{
+            "id": "p",
+            "duration_sec": 10.0,
+            "fragment_type": "AD",
+            "transcript": None,
+            "prediction": None,
+            "prediction_status": "subcat_done",
+            "prediction_confidence": None,
+            "prediction_method": "llm_subcat",
+            "predicted_brand": "Renault",
+            "predicted_sector": "AUTO",
+            "predicted_product_category": "AUTO_EV",
+        }
+        | columns
+    )
+
+
+def test_inherited_classification_needs_classified_pieces_that_agree():
+    assert (
+        inherited_classification([piece(), piece(predicted_brand="RENAULT !")])[1]
+        == INHERITED
+    )
+    for other, reason in [
+        (piece(fragment_type="advertising", prediction_status=None), NOT_CLASSIFIED),
+        (piece(fragment_type="SPONSORSHIP"), NOT_CLASSIFIED),
+        (piece(prediction_status="ad_type_done"), NOT_CLASSIFIED),
+        (piece(prediction_status="dict_miss"), SUBCATEGORY_PENDING),
+        (piece(predicted_brand="Peugeot"), OTHER_BRAND),
+        (piece(predicted_sector="FOOD"), OTHER_SECTOR),
+        (piece(predicted_product_category="AUTO_THERMAL"), OTHER_CATEGORY),
+        (piece(predicted_product_category=None), OTHER_CATEGORY),
+    ]:
+        assert inherited_classification([piece(), other]) == (None, reason)
+    assert inherited_classification(
+        [piece(predicted_brand=None), piece(predicted_brand=None)]
+    ) == (None, OTHER_BRAND)
+    assert inherited_classification(
+        [piece(predicted_sector=None), piece(predicted_sector=None)]
+    ) == (None, OTHER_SECTOR)
+    # the same empty category on every piece is inherited, like a final status of a merged ad
+    values, reason = inherited_classification(
+        [
+            piece(predicted_product_category=None),
+            piece(predicted_product_category=None, prediction_status="merge_inherited"),
+        ]
+    )
+    assert reason == INHERITED and values["predicted_product_category"] is None
+
+
+def test_create_merged_ad_inherits_the_classification_of_the_pieces(engine):
+    insert(
+        engine,
+        make_classified_ad("a1", 8, "RENAULT", prediction_confidence=0.7),
+        make_classified_ad("a2", 12),
+    )
+    with Session(engine) as session:
+        ad_id = create_merged_ad(session, ["a1", "a2"], method="test")
+        session.commit()
+        ad = session.get(Ad, ad_id)
+        assert (ad.fragment_type, ad.prediction_status, ad.prediction_method) == (
+            "AD",
+            "merge_inherited",
+            "merge_inherited",
+        )
+        # the brand as spelled for the longest piece, the lowest confidence
+        assert (
+            ad.predicted_brand,
+            ad.predicted_sector,
+            ad.predicted_product_category,
+        ) == (
+            "Renault",
+            "AUTO",
+            "AUTO_EV",
+        )
+        assert ad.prediction_confidence == 0.7
+        # a transcript: the transcription stage leaves it alone
+        assert ad.transcript == "transcript of a1 transcript of a2"
+        assert ad.prediction == [
+            {
+                "stage": "ad_type",
+                "raw_response": {"content_type": "AD", "brand_name": "Renault"},
+            },
+            {
+                "stage": "merge_inherited",
+                "source_ad_ids": ["a1", "a2"],
+                "source_prediction_statuses": ["dict_tier1", "dict_tier1"],
+                "source_prediction_methods": ["dict_tier1", "dict_tier1"],
+            },
+        ]
+
+
+def test_create_merged_ad_without_agreement_goes_to_the_classification(engine):
+    insert(
+        engine,
+        make_classified_ad("a1", 8),
+        make_classified_ad("a2", 12, predicted_sector="FOOD"),
+    )
+    with Session(engine) as session:
+        ad_id = create_merged_ad(session, ["a1", "a2"], method="test")
+        session.commit()
+        ad = session.get(Ad, ad_id)
+        assert (ad.fragment_type, ad.prediction_status, ad.transcript) == (
+            "advertising",
+            None,
+            None,
+        )
+
+
+def test_inherit_classification_keeps_a_classification_and_a_transcript(engine):
+    insert(engine, make_classified_ad("a1", 8), make_classified_ad("a2", 12))
+    with Session(engine) as session:
+        sources = [session.get(Ad, "a1"), session.get(Ad, "a2")]
+        session.add(
+            Ad(
+                id="classified",
+                first_detection_date=T0,
+                duration_sec=20,
+                chunks=[],
+                fragment_type="AD",
+                prediction_status="subcat_done",
+                predicted_brand="Renault",
+                predicted_sector="FOOD",
+            )
+        )
+        session.add(
+            Ad(
+                id="transcribed",
+                first_detection_date=T0,
+                duration_sec=20,
+                chunks=[],
+                fragment_type="no_data",
+                transcript="whole ad",
+            )
+        )
+        session.flush()
+        inherit_classification(session, "classified", sources)
+        inherit_classification(session, "transcribed", sources)
+        session.commit()
+        assert session.get(Ad, "classified").predicted_sector == "FOOD"
+        transcribed = session.get(Ad, "transcribed")
+        assert (transcribed.fragment_type, transcribed.transcript) == ("AD", "whole ad")
+        assert transcribed.prediction_status == "merge_inherited"
+
+
+def test_inherit_classification_of_merges_backfills_the_merged_ads(engine):
+    insert(
+        engine,
+        make_classified_ad("a1", 8),
+        make_classified_ad("a2", 12, prediction_status="ad_type_done"),
+        make_classified_ad("b1", 8, "Lidl"),
+        make_classified_ad("b2", 12, "Lidl", predicted_sector="FOOD"),
+    )
+    with Session(engine) as session:
+        a = create_merged_ad(session, ["a1", "a2"], method="test")
+        b = create_merged_ad(session, ["b1", "b2"], method="test")
+        session.commit()
+        assert session.get(Ad, a).prediction_status is None
+        # a2 classified after the merge
+        session.get(Ad, "a2").prediction_status = "dict_tier1"
+        session.commit()
+
+        assert inherit_classification_of_merges(session, dry_run=True) == {
+            INHERITED: 1,
+            OTHER_SECTOR: 1,
+        }
+        session.rollback()
+        assert session.get(Ad, a).prediction_status is None
+
+        assert inherit_classification_of_merges(session, batch_size=1) == {
+            INHERITED: 1,
+            OTHER_SECTOR: 1,
+        }
+        session.commit()
+        assert session.get(Ad, a).prediction_status == "merge_inherited"
+        assert session.get(Ad, b).prediction_status is None
+        # done once: only b is left
+        assert inherit_classification_of_merges(session) == {OTHER_SECTOR: 1}
 
 
 def test_merge_occurrences_soft_deletes_and_logs(engine):
@@ -422,6 +636,31 @@ def test_run_merges_the_split_ads(engine, monkeypatch):
     assert merge_run.run() == 0
     active = active_occurrences(engine)
     assert active["ob"] == "b" and active["oc"] == "c"
+
+
+def test_run_inherit_only_classifies_the_merged_ads(engine, monkeypatch):
+    insert(
+        engine,
+        make_classified_ad("a1", 8),
+        make_classified_ad("a2", 12, transcript=None),
+    )
+    with Session(engine) as session:
+        session.get(Ad, "a2").prediction_status = "ad_type_done"
+        session.flush()
+        ad_id = create_merged_ad(session, ["a1", "a2"], method="test")
+        session.get(Ad, "a2").prediction_status = "dict_tier1"
+        session.commit()
+    monkeypatch.setenv("AD_MERGE_INHERIT_ONLY", "true")
+    monkeypatch.setenv("AD_MERGE_DRY_RUN", "true")
+    assert merge_run.run() == 0
+    with Session(engine) as session:
+        assert session.get(Ad, ad_id).prediction_status is None
+    monkeypatch.setenv("AD_MERGE_DRY_RUN", "false")
+    assert merge_run.run() == 0
+    with Session(engine) as session:
+        ad = session.get(Ad, ad_id)
+        assert ad.prediction_status == "merge_inherited"
+        assert ad.transcript == "transcript of a1"
 
 
 # ---------- s01_detection/e03_already_identified_advertising.py ----------

@@ -14,11 +14,30 @@ The database operations of a merge are in `tools/ad_merge.py`, to be reused by e
 ads (automatic or manual). They only add to the session, the caller commits:
 
 - `create_merged_ad(session, source_ad_ids, method, duration_sec=None, details=None)`: the ad merging the
-  source ads (in broadcast order), with their fingerprints one after the other and no prediction, so that
-  the exportation and classification steps process it like a new ad, and the detection recognises it
-  when the pieces are broadcast together. Idempotent (stable id from the source ads). A merge reverted
-  by `revert_merge` raises `MergeRevertedError` unless `reactivate_reverted=True`: the automatic script
-  never redoes a merge a human judged wrong.
+  source ads (in broadcast order), with their fingerprints one after the other, so that the detection
+  recognises it when the pieces are broadcast together. It takes the classification of the source ads
+  when they agree (`inherit_classification`, see below); otherwise it has no prediction, and the
+  exportation and classification steps process it like a new ad. Idempotent (stable id from the source
+  ads). A merge reverted by `revert_merge` raises `MergeRevertedError` unless `reactivate_reverted=True`:
+  the automatic script never redoes a merge a human judged wrong.
+- `inherit_classification(session, merged_ad_id, source_ads)`: the merged ad takes the classification of
+  its source ads when every source ad is an advertising (`fragment_type` `AD`) with a final status whose
+  sub-category is known (not `dict_miss`, `dict_tier2_no_kw` or `dict_tier3_no_kw`, still waiting for
+  stage 4), and they all have the same brand (compared without case, spaces nor punctuation, like the
+  detection of the pieces), sector and category (an empty category included). The merged ad then gets
+  `fragment_type = 'AD'`, `prediction_status` and `prediction_method` `merge_inherited` (a final status,
+  shown in the analyses like its pieces), the brand as spelled for the longest piece, the lowest confidence,
+  the transcripts of the pieces one after the other (the transcription stage only processes the ads
+  without transcript: it would mark the merged ad `no_data` while its video is not exported), and in
+  `prediction` the `ad_type` entry of the longest piece and a `merge_inherited` entry with the source ads,
+  their statuses and methods. Only a merged ad without classification (`prediction_status` empty) is
+  changed: a classification of the merged ad itself or a manual correction is kept. To classify the
+  merged ads from their whole video instead, empty their `prediction_status` (and `transcript`): the
+  classification processes them like new ads.
+- `inherit_classification_of_merges(session, dry_run=False)`: `inherit_classification` for every active
+  merge whose merged ad has no classification: merges created before this rule, or whose pieces were
+  classified after the merge. Returns the number of merges per reason (`inherited`, `piece_not_classified`,
+  `piece_waiting_for_subcategory`, `other_brand`, `other_sector`, `other_category`).
 - `merge_occurrences(session, merged_ad_id, piece_occurrence_ids, absorbed_occurrence_ids=())`: one
   occurrence of the merged ad replaces one broadcast of the pieces; the occurrences of the pieces and of
   the segments between them are soft deleted (`deleted_at`).
@@ -58,10 +77,16 @@ other one, pieces overlapping by more than 1 s, a gap of 1 to 3 s with nothing b
 piece are chained (ad split in 3 pieces or more).
 
 Run regularly after the classification: by default it processes the 7 last days (`AD_MERGE_DAYS`), or
-`AD_MERGE_START_DATE` to `AD_MERGE_END_DATE` (UTC) for a backfill, day by day. `AD_MERGE_DRY_RUN`
-defaults to `true` (only logs): set it to `false` to write.
+`AD_MERGE_START_DATE` to `AD_MERGE_END_DATE` (UTC) for a backfill, day by day. Then every merged ad still
+not classified takes the classification of its pieces when they agree (`inherit_classification_of_merges`),
+whatever its date. `AD_MERGE_DRY_RUN` defaults to `true` (only logs, including the number of merged ads
+per reason of `inherit_classification_of_merges`): set it to `false` to write. `AD_MERGE_INHERIT_ONLY=true`
+skips the merge of the windows: only the merged ads not classified take the classification of their
+pieces.
 
-Until the merged ad is exported and classified, its occurrences are not in `ad_occurrences_classified`.
+A merged ad whose pieces disagree, or are not classified yet, has no classification: until it is exported
+and classified (or its pieces classified, at the next run), its occurrences are not in
+`analytics.publicites`.
 
 ## e02_manual_corrections
 

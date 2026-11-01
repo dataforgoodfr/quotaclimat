@@ -243,7 +243,7 @@ models:
             type_metabase: type/Company
       - name: classement_par
         data_type: text
-        description: "Méthode qui a classé la publicité : « dictionnaire » quand la marque figure dans le dictionnaire de l'Observatoire (classement le plus fiable), « modèle de langage » quand un modèle de langage a déterminé la catégorie, « en cours » quand le classement n'est pas terminé."
+        description: "Méthode qui a classé la publicité : « dictionnaire » quand la marque figure dans le dictionnaire de l'Observatoire (classement le plus fiable), « modèle de langage » quand un modèle de langage a déterminé la catégorie, « repris des morceaux » pour une publicité que la détection avait coupée en morceaux, reconstituée ensuite, qui reprend la marque, le secteur et la catégorie sur lesquels ses morceaux s'accordent (chaque morceau classé par le dictionnaire ou par un modèle de langage), « en cours » quand le classement n'est pas terminé."
         config:
           meta:
             libelle: Classée par
@@ -252,7 +252,7 @@ models:
           - not_null
           - accepted_values:
               arguments:
-                values: ['dictionnaire', 'modèle de langage', 'en cours']
+                values: ['dictionnaire', 'modèle de langage', 'repris des morceaux', 'en cours']
       - name: est_dans_programme
         data_type: boolean
         description: >-

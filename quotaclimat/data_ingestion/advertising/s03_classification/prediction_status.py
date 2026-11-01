@@ -10,7 +10,9 @@ correction can change the content type of a classified ad (s04_consolidation/e02
 # The classification gives a brand and a sector usable in the analyses: the ads shown in
 # analytics.publicites (dbt var final_prediction_statuses, checked equal by the test above) and in the
 # screenshots (s05_enrichment/e02_screenshots). dict_miss, dict_tier2_no_kw and dict_tier3_no_kw still go
-# through stage 4 (sub-category), but already have their sector.
+# through stage 4 (sub-category), but already have their sector. merge_inherited: an ad merging the pieces of
+# an ad split by the detection (s04_consolidation/e01_merge_split_ads), with the classification its pieces
+# agree on (tools/ad_merge.py), without going through the classification.
 FINAL_PREDICTION_STATUSES = (
     "dict_miss",
     "dict_tier1",
@@ -19,7 +21,11 @@ FINAL_PREDICTION_STATUSES = (
     "dict_tier3",
     "dict_tier3_no_kw",
     "subcat_done",
+    "merge_inherited",
 )
+
+# Final statuses still waiting for the sub-category of stage 4 (e04_classify_subcat.py)
+SUBCATEGORY_PENDING_STATUSES = ("dict_miss", "dict_tier2_no_kw", "dict_tier3_no_kw")
 
 # Waiting for the next stage, or to be inspected: left out of the analyses.
 # NULL (not classified yet) is not a status of this list.

@@ -52,8 +52,8 @@ SCREENSHOT_ACL = os.environ.get("SCREENSHOT_ACL", "public-read")
 
 MAX_CONCURRENT_JOBS = 10
 BATCH_SIZE = 50
-# Occurrences are processed by batches of ads, the most broadcast first: within a batch, the occurrences
-# sharing the same mediatree archives are still processed together.
+# Occurrences are processed by batches of ads, the longest cumulated broadcast time first: within a batch,
+# the occurrences sharing the same mediatree archives are still processed together.
 ADS_PER_OCCURRENCE_BATCH = int(os.environ.get("ADS_PER_OCCURRENCE_BATCH", 20))
 LOCAL_CACHE_DIR = "./.cache/screenshots"
 
@@ -115,8 +115,8 @@ def _ad_filters(filters: Filters) -> list:
 
 
 def _occurrence_counts(filters: Filters):
-    """Number of occurrences of each ad (on the channel and from occurrences_from when set): the
-    priority of the ads, the most broadcast first."""
+    """Number of occurrences of each ad (on the channel and from occurrences_from when set), from
+    which the priority of the ads is computed (see _most_broadcast_first)."""
     query = select(Ad_Occurrence.ad_id, func.count().label("nb_occurrences")).where(
         Ad_Occurrence.deleted_at.is_(None)
     )
@@ -127,8 +127,20 @@ def _occurrence_counts(filters: Filters):
     return query.group_by(Ad_Occurrence.ad_id).subquery()
 
 
+def _most_broadcast_first(counts) -> list:
+    """Order of the ads: the longest cumulated broadcast time first (duration of the ad x number of
+    occurrences), so that a long ad broadcast less often is not left behind short ones broadcast
+    more; then the number of occurrences, and the id for a stable order."""
+    broadcast_sec = counts.c.nb_occurrences * func.coalesce(Ad.duration_sec, 0)
+    return [
+        broadcast_sec.desc().nulls_last(),
+        counts.c.nb_occurrences.desc().nulls_last(),
+        Ad.id,
+    ]
+
+
 def ads_query(filters: Filters):
-    """Ads to screenshot, the most broadcast first. With a channel or occurrences_from, only the ads
+    """Ads to screenshot, the longest cumulated broadcast time first. With a channel or occurrences_from, only the ads
     broadcast there."""
     counts = _occurrence_counts(filters)
     query = select(Ad.id, Ad.duration_sec, Ad.first_detection_date).join(
@@ -144,20 +156,18 @@ def ads_query(filters: Filters):
         query = query.where(Ad.first_detection_date >= filters.start_date)
     if filters.end_date:
         query = query.where(Ad.first_detection_date < filters.end_date)
-    return query.order_by(counts.c.nb_occurrences.desc().nulls_last(), Ad.id).limit(
-        filters.limit
-    )
+    return query.order_by(*_most_broadcast_first(counts)).limit(filters.limit)
 
 
 def ranked_ad_ids_query(filters: Filters):
-    """Ids of the ads having occurrences, the most broadcast first: the order of the occurrence
-    batches."""
+    """Ids of the ads having occurrences, the longest cumulated broadcast time first: the order of
+    the occurrence batches."""
     counts = _occurrence_counts(filters)
     return (
         select(Ad.id)
         .join(counts, counts.c.ad_id == Ad.id)
         .where(*_ad_filters(filters))
-        .order_by(counts.c.nb_occurrences.desc(), Ad.id)
+        .order_by(*_most_broadcast_first(counts))
     )
 
 
@@ -480,8 +490,9 @@ async def run_ads(session, fs: s3fs.S3FileSystem, filters: Filters) -> None:
 async def run_occurrences(
     read_session, write_session, fs: s3fs.S3FileSystem, filters: Filters
 ) -> None:
-    """Screenshot the occurrences by batches of ADS_PER_OCCURRENCE_BATCH ads, the most broadcast
-    first, so that their checks are complete first. Within a batch, one (channel, day) group at a time.
+    """Screenshot the occurrences by batches of ADS_PER_OCCURRENCE_BATCH ads, the longest cumulated
+    broadcast time first, so that their checks are complete first. Within a batch, one (channel, day)
+    group at a time.
     """
     total = write_session.execute(
         select(func.count()).select_from(occurrences_query(filters).subquery())

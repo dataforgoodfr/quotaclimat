@@ -211,11 +211,14 @@ Every value `prediction_status` can take. They are declared in `prediction_statu
 | `dict_tier3_no_kw` | stage 3 | yes | Ambiguous brand, no keyword hit, full LLM fallback      |
 | `dict_miss` | stage 3 | yes | No dictionary hit; LLM sector kept, sub-cat goes to LLM |
 | `subcat_done` | stage 4 | yes | LLM sub-category classification succeeded               |
+| `merge_inherited` | `s04_consolidation` merge of split ads | yes | Merged ad with the classification its pieces agree on, or else the one of the pieces covering the longest duration (`tools/ad_merge.py`), not processed by the stages |
 | `subcat_parse_error` | stage 4 | no | LLM returned malformed JSON; needs inspection           |
 | `no_data` | stage 4 | no | S3 vidéo missing (stages 1 and 2 only set `fragment_type='no_data'`) |
 | `not_ad` | earlier version | no | Not an advertising (`fragment_type` `BUMPER`, `OTHER`...); no longer written |
 | `no_sector_found` | earlier version | no | Advertising without sector; no longer written |
 | `video_decode_error` | earlier version | no | Video unreadable; no longer written |
+
+`dict_tier1`, `dict_tier2` and `dict_tier3` are also written by the merge of split ads (`s04_consolidation`, `tools/ad_merge.py`): a merged ad whose pieces disagree gets the decision of the brand dictionary on their whole transcript, with `prediction_method` `merge_inherited+<status>`.
 
 `dict_tier2_no_kw`, `dict_tier3_no_kw` and `dict_miss` are final although stage 4 still processes them: they already have their sector, and stage 4 only adds the sub-category.
 

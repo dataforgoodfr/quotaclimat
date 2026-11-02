@@ -120,3 +120,4 @@ vars:
     - dict_tier3
     - dict_tier3_no_kw
     - subcat_done
+    - merge_inherited

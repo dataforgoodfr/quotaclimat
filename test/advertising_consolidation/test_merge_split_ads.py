@@ -4,8 +4,9 @@ script (s04_consolidation/e01_merge_split_ads), on a PostgreSQL database."""
 from datetime import datetime, timedelta
 from types import SimpleNamespace
 
+import pandas as pd
 import pytest
-from sqlalchemy import select
+from sqlalchemy import select, text
 from sqlalchemy.orm import Session
 
 from postgres.database_connection import connect_to_db
@@ -23,6 +24,9 @@ from quotaclimat.data_ingestion.advertising.s01_detection.e03_already_identified
 from quotaclimat.data_ingestion.advertising.s01_detection.e06_export_classification import (
     clean_pre_existing_detections,
 )
+from quotaclimat.data_ingestion.advertising.s03_classification.dictionary.matcher import (
+    BrandDictionary,
+)
 from quotaclimat.data_ingestion.advertising.s04_consolidation.e01_merge_split_ads import (
     run as merge_run,
 )
@@ -33,7 +37,9 @@ from quotaclimat.data_ingestion.advertising.s04_consolidation.e01_merge_split_ad
     group_by_source_ads,
 )
 from quotaclimat.data_ingestion.advertising.tools.ad_merge import (
+    DICTIONARY_TABLES,
     INHERITED,
+    INHERITED_FROM_DICTIONARY,
     MERGE_STATUS_ACTIVE,
     MERGE_STATUS_REVERTED,
     NOT_CLASSIFIED,
@@ -47,6 +53,7 @@ from quotaclimat.data_ingestion.advertising.tools.ad_merge import (
     inherit_classification,
     inherit_classification_of_merges,
     inherited_classification,
+    load_brand_dictionary,
     merge_occurrences,
     merged_ad_id,
     revert_merge,
@@ -331,6 +338,256 @@ def test_inherit_classification_keeps_a_classification_and_a_transcript(engine):
         transcribed = session.get(Ad, "transcribed")
         assert (transcribed.fragment_type, transcribed.transcript) == ("AD", "whole ad")
         assert transcribed.prediction_status == "merge_inherited"
+
+
+# tabs of the brand dictionary (Excel file of the classification, or its copy in the database), in their order
+DICTIONARY_TIER1 = [
+    {"nom_marque": "Lidl", "secteur": "DST", "catégorie": "DST1"},
+]
+DICTIONARY_TIER2 = [
+    {
+        "nom_marque": "Renault",
+        "secteur": "AUT",
+        "catégorie": "AUT1",
+        "mots_clés_produit": "modèle électrique ; R5",
+    },
+    {
+        "nom_marque": "Renault",
+        "secteur": "AUT",
+        "catégorie": "AUT2",
+        "mots_clés_produit": "hybride rechargeable ; austral",
+    },
+    {
+        "nom_marque": "Renault",
+        "secteur": "AUT",
+        "catégorie": "AUT5",
+        "mots_clés_produit": "modèle ; SUV",
+    },
+]
+DICTIONARY_TIER3 = [
+    {
+        "nom_marque": "Auchan",
+        "secteur": "FOD",
+        "catégorie": "FOD30",
+        "mots_clés_produit": "fruits ; légumes",
+    },
+    {
+        "nom_marque": "Auchan",
+        "secteur": "DST",
+        "catégorie": "DST1",
+        "mots_clés_produit": "magasin",
+    },
+]
+
+
+def brand_dictionary() -> BrandDictionary:
+    return BrandDictionary.from_frames(
+        pd.DataFrame(DICTIONARY_TIER1),
+        pd.DataFrame(DICTIONARY_TIER2),
+        pd.DataFrame(DICTIONARY_TIER3),
+    )
+
+
+def test_inherited_classification_uses_the_dictionary_on_the_whole_transcript():
+    # each piece was classified on its own part of the transcript: "SUV" alone gave AUT5
+    pieces = [
+        piece(id="p1", predicted_product_category="AUT5", transcript="le nouveau SUV"),
+        piece(
+            id="p2",
+            duration_sec=20.0,
+            predicted_product_category="AUT2",
+            prediction_method="dict_tier2",
+            transcript="Austral, hybride rechargeable",
+            prediction=[
+                {
+                    "stage": "ad_type",
+                    "raw_response": {"brand_name": "Renault", "product_name": None},
+                }
+            ],
+        ),
+    ]
+    assert inherited_classification(pieces) == (None, OTHER_CATEGORY)
+    values, reason = inherited_classification(pieces, brand_dictionary())
+    assert reason == INHERITED_FROM_DICTIONARY
+    # the first rule of the brand with a keyword hit in the whole transcript, like stage 3
+    assert {
+        k: values[k]
+        for k in [
+            "prediction_status",
+            "prediction_method",
+            "fragment_type",
+            "predicted_brand",
+            "predicted_sector",
+            "predicted_product_category",
+            "prediction_confidence",
+            "transcript",
+        ]
+    } == {
+        "prediction_status": "dict_tier2",
+        "prediction_method": "merge_inherited+dict_tier2",
+        "fragment_type": "AD",
+        "predicted_brand": "Renault",
+        "predicted_sector": "AUT",
+        "predicted_product_category": "AUT2",
+        "prediction_confidence": None,
+        "transcript": "le nouveau SUV Austral, hybride rechargeable",
+    }
+    ad_type, dict_match, merge = values["prediction"]
+    assert ad_type["stage"] == "ad_type"
+    assert (
+        dict_match["stage"],
+        dict_match["method"],
+        dict_match["matched_keyword"],
+    ) == (
+        "dict_match",
+        "dict_tier2",
+        "hybride rechargeable",
+    )
+    assert merge == {
+        "stage": "merge_inherited",
+        "source_ad_ids": ["p1", "p2"],
+        "source_prediction_statuses": ["subcat_done", "subcat_done"],
+        "source_prediction_methods": ["llm_subcat", "dict_tier2"],
+        "rule": INHERITED_FROM_DICTIONARY,
+    }
+
+
+def test_inherited_classification_by_the_dictionary_needs_a_decision():
+    dictionary = brand_dictionary()
+    # tier 2 without keyword: the dictionary gives the sector only, the merged ad goes to the classification
+    no_keyword = [
+        piece(predicted_product_category="AUT1", transcript="la voiture"),
+        piece(predicted_product_category="AUT2", transcript="de demain"),
+    ]
+    assert inherited_classification(no_keyword, dictionary) == (None, OTHER_CATEGORY)
+    # tier 3: a keyword gives the sector and the category
+    retail = [
+        piece(
+            predicted_brand="Auchan",
+            predicted_sector="DST",
+            predicted_product_category="DST1",
+            transcript="chez Auchan",
+        ),
+        piece(
+            predicted_brand="Auchan",
+            predicted_sector="FOD",
+            predicted_product_category="FOD30",
+            transcript="les fruits de saison",
+        ),
+    ]
+    values, reason = inherited_classification(retail, dictionary)
+    assert reason == INHERITED_FROM_DICTIONARY
+    assert (
+        values["prediction_status"],
+        values["predicted_sector"],
+        values["predicted_product_category"],
+    ) == (
+        "dict_tier3",
+        "FOD",
+        "FOD30",
+    )
+    # tier 1: the brand alone
+    lidl = [
+        piece(
+            predicted_brand="Lidl",
+            predicted_sector="FOD",
+            predicted_product_category="FOD30",
+        ),
+        piece(
+            predicted_brand="Lidl",
+            predicted_sector="DST",
+            predicted_product_category="DST1",
+        ),
+    ]
+    values, reason = inherited_classification(lidl, dictionary)
+    assert (
+        reason,
+        values["prediction_status"],
+        values["predicted_product_category"],
+    ) == (
+        INHERITED_FROM_DICTIONARY,
+        "dict_tier1",
+        "DST1",
+    )
+    # a brand out of the dictionary
+    other = [
+        piece(predicted_brand="Inconnue"),
+        piece(predicted_brand="Inconnue", predicted_sector="FOD"),
+    ]
+    assert inherited_classification(other, dictionary) == (None, OTHER_SECTOR)
+    # pieces that agree: their classification, whatever the dictionary says
+    assert inherited_classification([piece(), piece()], dictionary)[1] == INHERITED
+
+
+@pytest.fixture
+def dictionary_tables(engine):
+    with engine.begin() as connection:
+        for table, rows in zip(
+            DICTIONARY_TABLES, [DICTIONARY_TIER1, DICTIONARY_TIER2, DICTIONARY_TIER3]
+        ):
+            connection.execute(text(f"DROP TABLE IF EXISTS advertising.{table}"))
+            pd.DataFrame(rows).to_sql(
+                table, connection, schema="advertising", index=False
+            )
+    yield
+    with engine.begin() as connection:
+        for table in DICTIONARY_TABLES:
+            connection.execute(text(f"DROP TABLE IF EXISTS advertising.{table}"))
+
+
+def test_load_brand_dictionary_reads_the_copy_in_the_database(
+    engine, dictionary_tables
+):
+    with Session(engine) as session:
+        dictionary = load_brand_dictionary(session)
+    # rules in the order of the rows: "modèle électrique" (AUT1) comes before "modèle" (AUT5)
+    match = dictionary.match("Renault", None, "un modèle électrique")
+    assert (match.method, match.subcat_code) == ("dict_tier2", "AUT1")
+    assert dictionary.match("Lidl").method == "dict_tier1"
+
+
+def test_load_brand_dictionary_without_tables(engine):
+    with engine.begin() as connection:
+        for table in DICTIONARY_TABLES:
+            connection.execute(text(f"DROP TABLE IF EXISTS advertising.{table}"))
+    with Session(engine) as session:
+        assert load_brand_dictionary(session) is None
+
+
+def test_run_inherit_only_classifies_with_the_dictionary(
+    engine, dictionary_tables, monkeypatch
+):
+    insert(
+        engine,
+        make_classified_ad(
+            "a1", 8, predicted_product_category="AUT5", transcript="le nouveau SUV"
+        ),
+        make_classified_ad(
+            "a2",
+            12,
+            predicted_product_category="AUT2",
+            transcript="hybride rechargeable",
+        ),
+    )
+    with Session(engine) as session:
+        ad_id = create_merged_ad(session, ["a1", "a2"], method="test")
+        session.commit()
+        assert session.get(Ad, ad_id).prediction_status is None
+    monkeypatch.setenv("AD_MERGE_INHERIT_ONLY", "true")
+    monkeypatch.setenv("AD_MERGE_DRY_RUN", "false")
+    merge_run.run()
+    with Session(engine) as session:
+        ad = session.get(Ad, ad_id)
+        assert (
+            ad.prediction_status,
+            ad.prediction_method,
+            ad.predicted_product_category,
+        ) == (
+            "dict_tier2",
+            "merge_inherited+dict_tier2",
+            "AUT2",
+        )
+        assert ad.transcript == "le nouveau SUV hybride rechargeable"
 
 
 def test_inherit_classification_of_merges_backfills_the_merged_ads(engine):

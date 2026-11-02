@@ -218,6 +218,8 @@ Every value `prediction_status` can take. They are declared in `prediction_statu
 | `no_sector_found` | earlier version | no | Advertising without sector; no longer written |
 | `video_decode_error` | earlier version | no | Video unreadable; no longer written |
 
+`dict_tier1`, `dict_tier2` and `dict_tier3` are also written by the merge of split ads (`s04_consolidation`, `tools/ad_merge.py`): a merged ad whose pieces disagree gets the decision of the brand dictionary on their whole transcript, with `prediction_method` `merge_inherited+<status>`.
+
 `dict_tier2_no_kw`, `dict_tier3_no_kw` and `dict_miss` are final although stage 4 still processes them: they already have their sector, and stage 4 only adds the sub-category.
 
 The last three statuses were written by an earlier version of the classification and are still in the database (`LEGACY_PREDICTION_STATUSES`). A final status is shown in the analyses only for an advertising (`fragment_type` `AD`): a manual correction can change the content type of a classified ad, or send an ad back to stage 3 (`ad_type_done`), see `s04_consolidation/README.md` (`e02_manual_corrections`). `prediction_method` is then `manual` for an ad corrected by hand.

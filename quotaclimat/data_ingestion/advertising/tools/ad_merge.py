@@ -7,9 +7,10 @@ A merge is done in two steps:
 1. create_merged_ad: the merged ad, from the source ads in broadcast order. Its fingerprints are the
    ones of the source ads one after the other, so that the detection recognises the whole ad when the
    pieces are broadcast together (the longest known ads are tried first). When the source ads are
-   classified advertisings with the same brand, sector and category, it takes their classification
-   (inherit_classification, status merge_inherited); otherwise it has no prediction, and the exportation
-   and classification steps process it like a new ad;
+   classified advertisings with the same brand, it takes their classification if they have the same sector
+   and category (inherit_classification, status merge_inherited), or else the one the brand dictionary of
+   the classification gives to their whole transcript (status of the dictionary); otherwise it has no
+   prediction, and the exportation and classification steps process it like a new ad;
 2. merge_occurrences: for each broadcast, one occurrence of the merged ad replaces the occurrences of
    the pieces (and of the short segments between them), which are soft deleted (deleted_at).
 
@@ -27,7 +28,8 @@ from collections import Counter
 from collections.abc import Sequence
 from datetime import UTC, datetime
 
-from sqlalchemy import func, select, update
+import pandas as pd
+from sqlalchemy import func, select, text, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
 
@@ -36,6 +38,12 @@ from postgres.schemas.advertising.models import (
     Ad_Merge,
     Ad_Merge_Occurrence,
     Ad_Occurrence,
+)
+from quotaclimat.data_ingestion.advertising.s03_classification.dictionary.matcher import (
+    BrandDictionary,
+)
+from quotaclimat.data_ingestion.advertising.s03_classification.pipeline.e03_dict_match import (
+    _build_dict_match_entry,
 )
 from quotaclimat.data_ingestion.advertising.s03_classification.prediction_status import (
     AD_CONTENT_TYPE,
@@ -51,11 +59,20 @@ ROLE_ABSORBED = "absorbed"
 INHERITED_METHOD = "merge_inherited"
 # why the classification of the pieces is not inherited (logged by inherit_classification_of_merges)
 INHERITED = "inherited"
+INHERITED_FROM_DICTIONARY = "inherited_from_dictionary"
 NOT_CLASSIFIED = "piece_not_classified"
 SUBCATEGORY_PENDING = "piece_waiting_for_subcategory"
 OTHER_BRAND = "other_brand"
 OTHER_SECTOR = "other_sector"
 OTHER_CATEGORY = "other_category"
+# statuses of a dictionary match that decide the sector and the category (not *_no_kw)
+DICTIONARY_DECISIONS = ("dict_tier1", "dict_tier2", "dict_tier3")
+# copy of the brand dictionary in the database (dbt seeds of the Dictionnaire_marques_secteurs Google Sheet)
+DICTIONARY_TABLES = (
+    "ref_ome_marques_type_1",
+    "ref_ome_marques_type_2",
+    "ref_ome_marques_type_3",
+)
 # source ad columns read to inherit their classification (not the fingerprints, heavy)
 CLASSIFICATION_COLUMNS = (
     Ad.id,
@@ -130,18 +147,54 @@ def _ad_type_entry(prediction) -> dict | None:
     )
 
 
-def inherited_classification(source_ads: Sequence) -> tuple[dict | None, str]:
-    """Classification of the merged ad taken from its source ads (Ad, or rows of CLASSIFICATION_COLUMNS),
-    in broadcast order, and why.
+def load_brand_dictionary(session: Session) -> BrandDictionary | None:
+    """The brand dictionary of the classification (s03_classification/dictionary/matcher.py) from its copy in
+    the database: the dbt seeds advertising.ref_ome_marques_type_1/2/3, downloaded from the
+    Dictionnaire_marques_secteurs Google Sheet (my_dbt_project/external_sources.yml), as the merge job runs
+    without the Excel file the classification reads (s03_classification/reference_data/, not versioned). The
+    rows are read in the order the seeds were loaded (the order of the tabs): the first rule of a brand with
+    a keyword hit wins. None when a table is missing (extended perimeter, tests)."""
+    frames = []
+    for table in DICTIONARY_TABLES:
+        if (
+            session.execute(
+                text("SELECT to_regclass(:name)"), {"name": f"advertising.{table}"}
+            ).scalar()
+            is None
+        ):
+            return None
+        frames.append(
+            pd.DataFrame(
+                session.execute(
+                    text(f"SELECT * FROM advertising.{table} ORDER BY ctid")
+                )
+                .mappings()
+                .all()
+            )
+        )
+    return BrandDictionary.from_frames(*frames)
 
-    Inherited (INHERITED) when every source ad is an advertising with a final status, its sub-category
-    found (not waiting for stage 4), and they all have the same brand (compared with brand_key), sector and
-    category (an empty category included): the merged ad is then shown in the analyses like its pieces.
+
+def inherited_classification(
+    source_ads: Sequence, dictionary: BrandDictionary | None = None
+) -> tuple[dict | None, str]:
+    """Classification of the merged ad taken from its source ads (Ad, or rows of CLASSIFICATION_COLUMNS),
+    in broadcast order, and why. Only for source ads that are all advertisings with a final status and their
+    sub-category found (not waiting for stage 4), with the same brand (compared with brand_key):
+
+    1. INHERITED: they all have the same sector and category (an empty category included). Status
+       merge_inherited, the brand as spelled for the longest piece, the lowest confidence;
+    2. INHERITED_FROM_DICTIONARY: they disagree on the sector or the category, and the brand dictionary of
+       the classification (dictionary), applied like stage 3 (e03_dict_match.py) to the product names and
+       the transcripts of the pieces one after the other, decides: the brand alone (tier 1) or a product
+       keyword (tiers 2 and 3). Each piece was classified on its own part of the transcript, so with its own
+       keywords: the whole transcript holds all of them. Status and brand of the dictionary match
+       (dict_tier1, dict_tier2, dict_tier3), method merge_inherited+<status>, no confidence.
     Otherwise (None, reason): the merged ad goes through the classification.
-    Values: the brand as spelled for the longest piece, the lowest confidence, the transcripts of the
-    pieces one after the other (the transcription stage only processes ads without transcript, and would
-    mark the merged ad no_data until its video is exported), the ad_type prediction of the longest piece
-    and a merge_inherited entry with the statuses and methods of the pieces.
+    Both keep the transcripts of the pieces one after the other (the transcription stage only processes ads
+    without transcript, and would mark the merged ad no_data until its video is exported), the ad_type
+    prediction of the longest piece and a merge_inherited entry with the statuses and methods of the pieces
+    (and the dict_match entry of the dictionary, like stage 3).
     """
     for ad in source_ads:
         if (
@@ -154,50 +207,90 @@ def inherited_classification(source_ads: Sequence) -> tuple[dict | None, str]:
     keys = {brand_key(ad.predicted_brand) for ad in source_ads}
     if len(keys) != 1 or keys == {""}:
         return None, OTHER_BRAND
+
+    longest = max(source_ads, key=lambda ad: ad.duration_sec)
+    transcript = " ".join(ad.transcript for ad in source_ads if ad.transcript)
+    merge_entry = {
+        "stage": INHERITED_METHOD,
+        "source_ad_ids": [ad.id for ad in source_ads],
+        "source_prediction_statuses": [ad.prediction_status for ad in source_ads],
+        "source_prediction_methods": [ad.prediction_method for ad in source_ads],
+    }
+    ad_type_entries = [
+        entry for entry in [_ad_type_entry(longest.prediction)] if entry is not None
+    ]
+
     if len({ad.predicted_sector for ad in source_ads}) != 1 or (
         source_ads[0].predicted_sector is None
     ):
-        return None, OTHER_SECTOR
-    if len({ad.predicted_product_category for ad in source_ads}) != 1:
-        return None, OTHER_CATEGORY
+        disagreement = OTHER_SECTOR
+    elif len({ad.predicted_product_category for ad in source_ads}) != 1:
+        disagreement = OTHER_CATEGORY
+    else:
+        confidences = [
+            ad.prediction_confidence
+            for ad in source_ads
+            if ad.prediction_confidence is not None
+        ]
+        return (
+            dict(
+                prediction_status="merge_inherited",
+                prediction_method=INHERITED_METHOD,
+                fragment_type=AD_CONTENT_TYPE,
+                predicted_brand=longest.predicted_brand,
+                predicted_sector=longest.predicted_sector,
+                predicted_product_category=longest.predicted_product_category,
+                prediction_confidence=min(confidences) if confidences else None,
+                prediction=ad_type_entries + [merge_entry],
+                transcript=transcript,
+            ),
+            INHERITED,
+        )
 
-    longest = max(source_ads, key=lambda ad: ad.duration_sec)
-    confidences = [
-        ad.prediction_confidence
+    if dictionary is None:
+        return None, disagreement
+    product_names = " ".join(
+        ((_ad_type_entry(ad.prediction) or {}).get("raw_response") or {}).get(
+            "product_name"
+        )
+        or ""
         for ad in source_ads
-        if ad.prediction_confidence is not None
-    ]
-    prediction = [
-        entry for entry in [_ad_type_entry(longest.prediction)] if entry is not None
-    ] + [
-        {
-            "stage": INHERITED_METHOD,
-            "source_ad_ids": [ad.id for ad in source_ads],
-            "source_prediction_statuses": [ad.prediction_status for ad in source_ads],
-            "source_prediction_methods": [ad.prediction_method for ad in source_ads],
-        }
-    ]
-    return {
-        "fragment_type": AD_CONTENT_TYPE,
-        "predicted_brand": longest.predicted_brand,
-        "predicted_sector": longest.predicted_sector,
-        "predicted_product_category": longest.predicted_product_category,
-        "prediction_confidence": min(confidences) if confidences else None,
-        "prediction_method": INHERITED_METHOD,
-        "prediction": prediction,
-        "transcript": " ".join(ad.transcript for ad in source_ads if ad.transcript),
-    }, INHERITED
+    )
+    match = dictionary.match(longest.predicted_brand, product_names, transcript)
+    if match is None or match.method not in DICTIONARY_DECISIONS:
+        return None, disagreement
+    return (
+        dict(
+            prediction_status=match.method,
+            prediction_method=f"{INHERITED_METHOD}+{match.method}",
+            fragment_type=AD_CONTENT_TYPE,
+            predicted_brand=match.matched_brand,
+            predicted_sector=match.sector_code,
+            predicted_product_category=match.subcat_code,
+            prediction_confidence=None,
+            prediction=ad_type_entries
+            + [
+                _build_dict_match_entry(match, longest.predicted_brand),
+                merge_entry | {"rule": INHERITED_FROM_DICTIONARY},
+            ],
+            transcript=transcript,
+        ),
+        INHERITED_FROM_DICTIONARY,
+    )
 
 
 def inherit_classification(
-    session: Session, merged_ad_id: str, source_ads: Sequence
+    session: Session,
+    merged_ad_id: str,
+    source_ads: Sequence,
+    dictionary: BrandDictionary | None = None,
 ) -> str:
     """Give the merged ad the classification of its source ads (inherited_classification), when it has
     no classification yet (prediction_status empty): a classification of the merged ad itself, or a
     manual correction, is never replaced. Its transcript, when it has one, is kept.
-    Returns the reason of inherited_classification (INHERITED when inherited).
+    Returns the reason of inherited_classification (INHERITED or INHERITED_FROM_DICTIONARY when classified).
     """
-    values, reason = inherited_classification(source_ads)
+    values, reason = inherited_classification(source_ads, dictionary)
     if values is None:
         return reason
     transcript = values.pop("transcript")
@@ -205,18 +298,17 @@ def inherit_classification(
         update(Ad)
         .where(Ad.id == merged_ad_id)
         .where(Ad.prediction_status.is_(None))
-        .values(
-            prediction_status="merge_inherited",
-            transcript=func.coalesce(Ad.transcript, transcript),
-            **values,
-        )
+        .values(transcript=func.coalesce(Ad.transcript, transcript), **values)
         .execution_options(synchronize_session="fetch")
     )
     return reason
 
 
 def inherit_classification_of_merges(
-    session: Session, dry_run: bool = False, batch_size: int = 1000
+    session: Session,
+    dry_run: bool = False,
+    batch_size: int = 1000,
+    dictionary: BrandDictionary | None = None,
 ) -> Counter:
     """inherit_classification for every active merge whose merged ad has no classification yet: the
     merges created before the merged ads took the classification of their pieces, or whose pieces were
@@ -248,9 +340,11 @@ def inherit_classification_of_merges(
                 continue
             source_ads = [sources[ad_id] for ad_id in source_ad_ids]
             if dry_run:
-                reasons[inherited_classification(source_ads)[1]] += 1
+                reasons[inherited_classification(source_ads, dictionary)[1]] += 1
             else:
-                reasons[inherit_classification(session, merged_id, source_ads)] += 1
+                reasons[
+                    inherit_classification(session, merged_id, source_ads, dictionary)
+                ] += 1
         session.flush()
     return reasons
 
@@ -262,10 +356,12 @@ def create_merged_ad(
     duration_sec: float | None = None,
     details: dict | None = None,
     reactivate_reverted: bool = False,
+    dictionary: BrandDictionary | None = None,
 ) -> str:
     """Create the ad merging the given ads (in broadcast order) and its advertising.ad_merge row.
 
-    The merged ad takes the classification of the source ads when they agree (inherit_classification).
+    The merged ad takes the classification of the source ads when they agree, or the one the brand
+    dictionary (load_brand_dictionary) gives to their whole transcript (inherit_classification).
     Idempotent: when the merged ad already exists, its duration and details stay the ones of the
     creation, and it takes the classification of the source ads if it still has none. A reverted merge
     raises MergeRevertedError, unless reactivate_reverted (its fingerprints are then restored): an
@@ -312,7 +408,7 @@ def create_merged_ad(
     else:
         merged_ad.chunks = chunks
     session.flush()
-    inherit_classification(session, ad_id, source_ads)
+    inherit_classification(session, ad_id, source_ads, dictionary)
 
     now = _utcnow()
     if merge is None:

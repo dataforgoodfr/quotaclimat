@@ -63,6 +63,19 @@ class BrandDictionary:
             f"t1 keys={len(self.t1) if self.t1 else 0}, t2 keys={len(self.t2) if self.t2 else 0}, t3 keys={len(self.t3) if self.t3 else 0}"
         )
 
+    @classmethod
+    def from_frames(
+        cls, tier1: pd.DataFrame, tier2: pd.DataFrame, tier3: pd.DataFrame
+    ) -> "BrandDictionary":
+        """The dictionary from its three tabs already read (same columns as the Excel file), e.g. the copy of
+        the Google Sheet in the database. The rows must be in the order of the tabs: the first rule of a brand
+        with a keyword hit wins."""
+        dictionary = cls.__new__(cls)
+        dictionary.t1 = cls._load_tier1(tier1)
+        dictionary.t2 = cls._load_tier2(tier2)
+        dictionary.t3 = cls._load_tier3(tier3)
+        return dictionary
+
     @staticmethod
     def _load_tier1(df: pd.DataFrame) -> dict[str, tuple[str, str, str]]:
         """brand_key: (sector, subcat, brand_raw)"""

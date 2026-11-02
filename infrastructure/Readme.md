@@ -214,6 +214,23 @@ To add or update a flow, edit the YAML in `kestra/flows/` and run:
 make tags=kestra ansible
 ```
 
+### Per-country secret (`I18N_COUNTRY_SECRETS`)
+
+The `barometre-i18n` flow runs the misinformation job for every country on the VM. Instead of one Kestra secret per country, the per-country credentials are in a single secret, `I18N_COUNTRY_SECRETS`: a **single-line JSON object** keyed by the flow's country codes (`bel`, `bel-fla`, `deu`, `esp`, `pol`), each value holding four strings:
+
+```json
+{"bel":{"bucket_access":"...","bucket_secret":"...","label_studio_token":"...","label_studio_url":"https://..."},"bel-fla":{...},"deu":{...},"esp":{...},"pol":{...}}
+```
+
+| Key | Source (climateguard, project `climate-safeguards-prod`) |
+|---|---|
+| `bucket_access` | Secret Manager `access-key-<country>` (path `/<country>`, e.g. `belgium-flanders` for `bel-fla`) |
+| `bucket_secret` | Secret Manager `secret-key-<country>` |
+| `label_studio_url` | `https://<namespace>-labelstudio-<country>-<env>.functions.fnc.fr-par.scw.cloud` (the Label Studio serverless container domain, Scaleway console) |
+| `label_studio_token` | Secret Manager `labelstudio-<country>-token` (`TF_VAR_labelstudio_user_token` in the country file on Vaultwarden) |
+
+Build it once with `jq -n -c --arg ...` (so values are escaped), store it as one entry in the `Quotaclimat - Orchestrator/` collection, then `make sync-secrets` and `make tags=kestra ansible`. Check each code with `echo "$I18N_COUNTRY_SECRETS" | jq -e '.bel.bucket_access'` before deploying. Adding a country adds one key here, no playbook change. The key is already declared in `kestra_secrets` (`ansible/playbook.yml`); add `export I18N_COUNTRY_SECRETS=` to `.env.secrets.dist`.
+
 ## RRS: extended perimeter (Droit à l'info)
 
 On top of the regular `rrs` database, jobs and registry, the `rrs` target provisions a second, isolated set of resources for the "Droit à l'info" extended France perimeter (see the root [README's "Extended perimeter (Droit à l'info)" section](../README.md#extended-perimeter-droit-à-linfo) for the application-level `EXTENDED_PERIMETER` behaviour):

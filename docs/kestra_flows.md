@@ -52,12 +52,12 @@ Interactive diagram: [`diagrams/infra-topology.html`](diagrams/infra-topology.ht
 
 ### How a task runs
 
-Except for `main-pipeline` (subflow calls) and the i18n Scaleway trigger (an HTTP request), every task is an `io.kestra.plugin.docker.Run`: Kestra pulls an image (`pullPolicy: ALWAYS`, so the latest pushed tag is used) from the Scaleway Container Registry and runs one entry point with environment variables. Credentials come from Kestra secrets (`{{ secret('...') }}`). Tasks in a flow run one after the other, and a failing task fails the flow.
+Except for the subflow calls (`main-pipeline`, `dbt` calls), every task is an `io.kestra.plugin.docker.Run`: Kestra pulls an image (`pullPolicy: ALWAYS`, so the latest pushed tag is used) from the Scaleway Container Registry and runs one entry point with environment variables. Credentials come from Kestra secrets (`{{ secret('...') }}`). Tasks in a flow run one after the other, and a failing task fails the flow.
 
 | Image | Built from | Used by |
 |---|---|---|
 | `namespace-barometre/quotaclimat_base:latest` | this repo (`Dockerfile`) | ingest, keyword detection, dbt in `barometre*` and `extended-perimeter` |
-| `misinformation/label-misinformation:latest` | [`dataforgoodfr/climateguard`](https://github.com/dataforgoodfr/climateguard) (`jobs/label_misinformation`) | `detect_misinformation` in `barometre`, `barometre-catchup`, `extended-perimeter` |
+| `misinformation/label-misinformation:latest` | [`dataforgoodfr/climateguard`](https://github.com/dataforgoodfr/climateguard) (`jobs/label_misinformation`) | `detect_misinformation` in `barometre`, `barometre-catchup`, `barometre-i18n`, `extended-perimeter` |
 | `rrs-prod/rrs-base:prod` | this repo (`rrs/Dockerfile`) | every task of `rrs-climate`, `rrs-insecurity` and `rrs-pollution` |
 | `rrs-prod/rrs-pulsar:prod` | this repo (`rrs/Dockerfile.pulsar`) | `pulsar-themes` |
 
@@ -332,12 +332,13 @@ Interactive version: [`diagrams/flows/barometre-i18n.html`](diagrams/flows/barom
 
 The OME pipeline for the other countries, every day at 04:07. Inputs: `days_back` (default 1), `start_date` (default now).
 
-1. **`i18n_loop`** (`ForEach` over `bel`, `bel-fla`, `deu`, `esp`, `pol`, one country at a time) runs two tasks per country:
+1. **`i18n_loop`** (`ForEach` over `bel`, `bel-fla`, `deu`, `esp`, `pol`, one country at a time) runs three tasks per country, each with `allowFailure: true` so that one country failing does not stop the others (the run then ends in WARNING):
    - `ingest_data_to_s3`: same as `barometre` step 1 with `COUNTRY` set to the loop value. Objects go to the `mediatree` bucket under `country=<name>/year=/...`, and channels and program grids come from that country's config.
    - `detect_keywords`: same as `barometre` step 2, writing to `barometre.keywords` with the country's name. Keywords are filtered on the country's language. Non-French languages are matched on spaCy lemmas plus exact forms, instead of the French regex.
-2. **`detect_misinformation`** (`ForEach` over five Scaleway job definition ids, all in parallel): a `trigger_job` HTTP POST to the Scaleway Serverless Jobs API starts one `label-misinformation-<country>` job per country (deployed from the climateguard repo, token `CLIMATESAFEGUARDS_SCW_SECRET`). Kestra does not wait for them: the polling loop is commented out, so their success or failure is not visible in this flow.
+   - `detect_misinformation`: same as `barometre` step 3, run on the Kestra VM (`label-misinformation:latest` image). `COUNTRY` is the country's full name (`belgium`, `belgium-flanders`, `germany`, `spain`, `poland`), taken from `variables.countries`, which also holds the country bucket (`safeguards-climate-<country>-prod`) and the Label Studio project and project id (the Label Studio URL is in the secret). It runs without `LABEL_MISINFORMATION_OVERWRITE`.
+2. **`dbt_run_transformations`**: once, after all countries, the [`dbt`](#dbt) subflow (`wait: true`, `transmitFailed: true`).
 
-The dbt task is commented out in the YAML, so this flow does not rebuild the models. They are rebuilt by the next `barometre` run.
+**Per-country secrets.** The country bucket keys and Label Studio token and URL live in one Kestra secret, `I18N_COUNTRY_SECRETS`: a single-line JSON object keyed by country code, `{"bel": {"bucket_access": "...", "bucket_secret": "...", "label_studio_token": "...", "label_studio_url": "https://..."}, "bel-fla": {...}, ...}`. The task reads a key with `secret('I18N_COUNTRY_SECRETS') | jq('.["' ~ taskrun.value ~ '"].bucket_access') | first`. The other secrets (`MISTRAL_API_KEY`, `OPENAI_API_KEY`, `POSTGRES_*_READ`...) are shared with the France flows. To add a country: add its code to the `ForEach` values, an entry to `variables.countries` and a key to the JSON secret. See [`infrastructure/Readme.md`](../infrastructure/Readme.md#per-country-secret-i18n_country_secrets) for how to build and deploy the secret.
 
 ## pulsar-themes
 

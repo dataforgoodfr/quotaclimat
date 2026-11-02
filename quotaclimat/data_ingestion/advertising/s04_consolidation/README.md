@@ -16,8 +16,8 @@ ads (automatic or manual). They only add to the session, the caller commits:
 - `create_merged_ad(session, source_ad_ids, method, duration_sec=None, details=None, dictionary=None)`: the
   ad merging the source ads (in broadcast order), with their fingerprints one after the other, so that the
   detection recognises it when the pieces are broadcast together. It takes the classification of the source
-  ads when they agree, or the one of the brand dictionary on their whole transcript
-  (`inherit_classification`, see below); otherwise it has no prediction, and the exportation and
+  ads when they agree, or the one of the brand dictionary on their whole transcript, or the one of the
+  pieces covering the longest duration (`inherit_classification`, see below); otherwise it has no prediction, and the exportation and
   classification steps process it like a new ad. Idempotent (stable id from the source
   ads). A merge reverted by `revert_merge` raises `MergeRevertedError` unless `reactivate_reverted=True`:
   the automatic script never redoes a merge a human judged wrong.
@@ -37,21 +37,30 @@ ads (automatic or manual). They only add to the session, the caller commits:
      other "hybride rechargeable"): the whole transcript holds all of them. `prediction_status` is the one
      of the dictionary (`dict_tier1`, `dict_tier2`, `dict_tier3`), `prediction_method`
      `merge_inherited+<status>`, the brand of the dictionary, no confidence, and `prediction` also gets the
-     `dict_match` entry of stage 3. A tier 2 brand without keyword (the dictionary gives the sector only), a
-     tier 3 brand without keyword or a brand out of the dictionary is not classified.
+     `dict_match` entry of stage 3;
+  3. otherwise (a tier 2 brand without keyword, the dictionary giving the sector only, a tier 3 brand
+     without keyword, a brand out of the dictionary, or no dictionary), the sector and category of the
+     pieces covering the longest duration; on a tie, the ones of the last piece in broadcast order.
+     `prediction_status` `merge_inherited`, `prediction_method` `merge_inherited+majority`, the brand as
+     spelled for the longest of these pieces, their lowest confidence.
 
-  In both cases the merged ad keeps the transcripts of the pieces one after the other (the transcription
+  In all cases the merged ad keeps the transcripts of the pieces one after the other (the transcription
   stage only processes the ads without transcript: it would mark the merged ad `no_data` while its video
-  is not exported), and in `prediction` the `ad_type` entry of the longest piece and a `merge_inherited`
-  entry with the source ads, their statuses and methods (and `rule: inherited_from_dictionary` in case 2). Only a merged ad without classification (`prediction_status` empty) is
+  is not exported), and in `prediction` the `ad_type` entry of the longest piece (of the majority in case
+  3) and a `merge_inherited` entry with the source ads, their statuses, methods and classifications
+  (`source_classifications`: duration, sector and category of each piece), with `rule:
+  inherited_from_dictionary` in case 2, `rule: inherited_from_majority` and `majority_duration_share` (share
+  of the duration of the pieces covered by the majority, 0 to 1) in case 3. The source ads keep their own
+  prediction. Only a merged ad without classification (`prediction_status` empty) is
   changed: a classification of the merged ad itself or a manual correction is kept. To classify the
   merged ads from their whole video instead, empty their `prediction_status` (and `transcript`): the
   classification processes them like new ads.
 - `inherit_classification_of_merges(session, dry_run=False, dictionary=None)`: `inherit_classification`
   for every active merge whose merged ad has no classification: merges created before these rules, or
   whose pieces were classified after the merge. Returns the number of merges per reason (`inherited`,
-  `inherited_from_dictionary`, `piece_not_classified`, `piece_waiting_for_subcategory`, `other_brand`,
-  `other_sector`, `other_category`).
+  `inherited_from_dictionary`, `inherited_from_majority`, `piece_not_classified`,
+  `piece_waiting_for_subcategory`, `other_brand`, `other_sector`: the pieces covering the longest duration
+  have no sector).
 - `load_brand_dictionary(session)`: the brand dictionary of the classification, from its copy in the
   database (dbt seeds `advertising.ref_ome_marques_type_1/2/3`, downloaded from the
   `Dictionnaire_marques_secteurs` Google Sheet, see `my_dbt_project/external_sources.yml`): the merge job
@@ -100,13 +109,15 @@ piece are chained (ad split in 3 pieces or more).
 Run regularly after the classification: by default it processes the 7 last days (`AD_MERGE_DAYS`), or
 `AD_MERGE_START_DATE` to `AD_MERGE_END_DATE` (UTC) for a backfill, day by day. Then every merged ad still
 not classified takes the classification of its pieces when they agree, or the one of the brand dictionary
-on their whole transcript (`inherit_classification_of_merges`), whatever its date. `AD_MERGE_DRY_RUN` defaults to `true` (only logs, including the number of merged ads
+on their whole transcript, or the one of the pieces covering the longest duration
+(`inherit_classification_of_merges`), whatever its date. `AD_MERGE_DRY_RUN` defaults to `true` (only logs, including the number of merged ads
 per reason of `inherit_classification_of_merges`): set it to `false` to write. `AD_MERGE_INHERIT_ONLY=true`
 skips the merge of the windows: only the merged ads not classified are classified from their pieces.
 
-A merged ad whose pieces disagree without a decision of the dictionary, or are not classified yet, has no
-classification: until it is exported and classified (or its pieces classified, at the next run), its
-occurrences are not in `analytics.publicites`.
+A merged ad with a piece that is not a classified advertising (another content type, not classified yet,
+waiting for its sub-category), or pieces of different brands, has no classification: until it is exported
+and classified (or its pieces classified, at the next run), its occurrences are not in
+`analytics.publicites`.
 
 ## e02_manual_corrections
 

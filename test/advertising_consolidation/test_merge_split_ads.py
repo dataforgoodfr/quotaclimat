@@ -40,11 +40,11 @@ from quotaclimat.data_ingestion.advertising.tools.ad_merge import (
     DICTIONARY_TABLES,
     INHERITED,
     INHERITED_FROM_DICTIONARY,
+    INHERITED_FROM_MAJORITY,
     MERGE_STATUS_ACTIVE,
     MERGE_STATUS_REVERTED,
     NOT_CLASSIFIED,
     OTHER_BRAND,
-    OTHER_CATEGORY,
     OTHER_SECTOR,
     SUBCATEGORY_PENDING,
     MergeRevertedError,
@@ -224,9 +224,6 @@ def test_inherited_classification_needs_classified_pieces_that_agree():
         (piece(prediction_status="ad_type_done"), NOT_CLASSIFIED),
         (piece(prediction_status="dict_miss"), SUBCATEGORY_PENDING),
         (piece(predicted_brand="Peugeot"), OTHER_BRAND),
-        (piece(predicted_sector="FOOD"), OTHER_SECTOR),
-        (piece(predicted_product_category="AUTO_THERMAL"), OTHER_CATEGORY),
-        (piece(predicted_product_category=None), OTHER_CATEGORY),
     ]:
         assert inherited_classification([piece(), other]) == (None, reason)
     assert inherited_classification(
@@ -283,18 +280,60 @@ def test_create_merged_ad_inherits_the_classification_of_the_pieces(engine):
                 "source_ad_ids": ["a1", "a2"],
                 "source_prediction_statuses": ["dict_tier1", "dict_tier1"],
                 "source_prediction_methods": ["dict_tier1", "dict_tier1"],
+                "source_classifications": [
+                    {
+                        "ad_id": "a1",
+                        "duration_sec": 8.0,
+                        "predicted_sector": "AUTO",
+                        "predicted_product_category": "AUTO_EV",
+                    },
+                    {
+                        "ad_id": "a2",
+                        "duration_sec": 12.0,
+                        "predicted_sector": "AUTO",
+                        "predicted_product_category": "AUTO_EV",
+                    },
+                ],
             },
         ]
 
 
-def test_create_merged_ad_without_agreement_goes_to_the_classification(engine):
+def test_create_merged_ad_without_agreement_takes_the_majority(engine):
     insert(
         engine,
         make_classified_ad("a1", 8),
-        make_classified_ad("a2", 12, predicted_sector="FOOD"),
+        make_classified_ad(
+            "a2", 12, predicted_sector="FOOD", prediction_confidence=0.6
+        ),
+        make_classified_ad("b1", 8, "Lidl"),
+        make_classified_ad("b2", 12, "Lidl", fragment_type="SPONSORSHIP"),
     )
     with Session(engine) as session:
         ad_id = create_merged_ad(session, ["a1", "a2"], method="test")
+        session.commit()
+        ad = session.get(Ad, ad_id)
+        assert (
+            ad.fragment_type,
+            ad.prediction_status,
+            ad.prediction_method,
+            ad.predicted_sector,
+            ad.prediction_confidence,
+            ad.transcript,
+        ) == (
+            "AD",
+            "merge_inherited",
+            "merge_inherited+majority",
+            "FOOD",
+            0.6,
+            "transcript of a1 transcript of a2",
+        )
+        merge = ad.prediction[-1]
+        assert (merge["rule"], merge["majority_duration_share"]) == (
+            INHERITED_FROM_MAJORITY,
+            0.6,
+        )
+        # a piece that is not a classified advertising: the merged ad goes to the classification
+        ad_id = create_merged_ad(session, ["b1", "b2"], method="test")
         session.commit()
         ad = session.get(Ad, ad_id)
         assert (ad.fragment_type, ad.prediction_status, ad.transcript) == (
@@ -302,6 +341,63 @@ def test_create_merged_ad_without_agreement_goes_to_the_classification(engine):
             None,
             None,
         )
+
+
+def test_inherited_classification_by_majority_of_the_duration():
+    pieces = [
+        piece(
+            id="p1",
+            duration_sec=10.0,
+            predicted_product_category="AUTO_EV",
+            prediction_confidence=0.9,
+        ),
+        piece(
+            id="p2",
+            duration_sec=15.0,
+            predicted_product_category="AUTO_THERMAL",
+            predicted_brand="RENAULT",
+            prediction_confidence=0.5,
+        ),
+        piece(
+            id="p3",
+            duration_sec=10.0,
+            predicted_product_category="AUTO_EV",
+            prediction_confidence=0.7,
+        ),
+    ]
+    # AUTO_EV covers 20 s of 35: brand of its longest piece (the first one), its lowest confidence
+    values, reason = inherited_classification(pieces)
+    assert reason == INHERITED_FROM_MAJORITY
+    assert (
+        values["prediction_status"],
+        values["prediction_method"],
+        values["predicted_brand"],
+        values["predicted_product_category"],
+        values["prediction_confidence"],
+    ) == ("merge_inherited", "merge_inherited+majority", "Renault", "AUTO_EV", 0.7)
+    assert values["prediction"][-1]["majority_duration_share"] == 0.571
+    assert [
+        c["predicted_product_category"]
+        for c in values["prediction"][-1]["source_classifications"]
+    ] == [
+        "AUTO_EV",
+        "AUTO_THERMAL",
+        "AUTO_EV",
+    ]
+    # a tie: the classification of the last piece in broadcast order
+    tie = [
+        piece(duration_sec=15.0, predicted_product_category="AUTO_EV"),
+        piece(duration_sec=15.0, predicted_product_category="AUTO_THERMAL"),
+    ]
+    assert (
+        inherited_classification(tie)[0]["predicted_product_category"] == "AUTO_THERMAL"
+    )
+    # a sector disagreement too
+    sectors = [piece(predicted_sector="FOOD", duration_sec=20.0), piece()]
+    assert inherited_classification(sectors)[0]["predicted_sector"] == "FOOD"
+    # the pieces covering the longest duration have no sector
+    no_sector = [piece(predicted_sector=None, duration_sec=20.0), piece()]
+    assert inherited_classification(no_sector) == (None, OTHER_SECTOR)
 
 
 def test_inherit_classification_keeps_a_classification_and_a_transcript(engine):
@@ -406,7 +502,8 @@ def test_inherited_classification_uses_the_dictionary_on_the_whole_transcript():
             ],
         ),
     ]
-    assert inherited_classification(pieces) == (None, OTHER_CATEGORY)
+    # without the dictionary: the majority of the duration (p2, 20 s of 30)
+    assert inherited_classification(pieces)[1] == INHERITED_FROM_MAJORITY
     values, reason = inherited_classification(pieces, brand_dictionary())
     assert reason == INHERITED_FROM_DICTIONARY
     # the first rule of the brand with a keyword hit in the whole transcript, like stage 3
@@ -448,18 +545,34 @@ def test_inherited_classification_uses_the_dictionary_on_the_whole_transcript():
         "source_ad_ids": ["p1", "p2"],
         "source_prediction_statuses": ["subcat_done", "subcat_done"],
         "source_prediction_methods": ["llm_subcat", "dict_tier2"],
+        "source_classifications": [
+            {
+                "ad_id": "p1",
+                "duration_sec": 10.0,
+                "predicted_sector": "AUTO",
+                "predicted_product_category": "AUT5",
+            },
+            {
+                "ad_id": "p2",
+                "duration_sec": 20.0,
+                "predicted_sector": "AUTO",
+                "predicted_product_category": "AUT2",
+            },
+        ],
         "rule": INHERITED_FROM_DICTIONARY,
     }
 
 
 def test_inherited_classification_by_the_dictionary_needs_a_decision():
     dictionary = brand_dictionary()
-    # tier 2 without keyword: the dictionary gives the sector only, the merged ad goes to the classification
+    # tier 2 without keyword: the dictionary gives the sector only, the majority of the duration decides
     no_keyword = [
         piece(predicted_product_category="AUT1", transcript="la voiture"),
         piece(predicted_product_category="AUT2", transcript="de demain"),
     ]
-    assert inherited_classification(no_keyword, dictionary) == (None, OTHER_CATEGORY)
+    assert (
+        inherited_classification(no_keyword, dictionary)[1] == INHERITED_FROM_MAJORITY
+    )
     # tier 3: a keyword gives the sector and the category
     retail = [
         piece(
@@ -514,7 +627,7 @@ def test_inherited_classification_by_the_dictionary_needs_a_decision():
         piece(predicted_brand="Inconnue"),
         piece(predicted_brand="Inconnue", predicted_sector="FOD"),
     ]
-    assert inherited_classification(other, dictionary) == (None, OTHER_SECTOR)
+    assert inherited_classification(other, dictionary)[1] == INHERITED_FROM_MAJORITY
     # pieces that agree: their classification, whatever the dictionary says
     assert inherited_classification([piece(), piece()], dictionary)[1] == INHERITED
 
@@ -567,12 +680,16 @@ def test_run_inherit_only_classifies_with_the_dictionary(
             12,
             predicted_product_category="AUT2",
             transcript="hybride rechargeable",
+            prediction_status="ad_type_done",
         ),
     )
     with Session(engine) as session:
         ad_id = create_merged_ad(session, ["a1", "a2"], method="test")
         session.commit()
         assert session.get(Ad, ad_id).prediction_status is None
+        # a2 classified after the merge
+        session.get(Ad, "a2").prediction_status = "subcat_done"
+        session.commit()
     monkeypatch.setenv("AD_MERGE_INHERIT_ONLY", "true")
     monkeypatch.setenv("AD_MERGE_DRY_RUN", "false")
     merge_run.run()
@@ -596,7 +713,7 @@ def test_inherit_classification_of_merges_backfills_the_merged_ads(engine):
         make_classified_ad("a1", 8),
         make_classified_ad("a2", 12, prediction_status="ad_type_done"),
         make_classified_ad("b1", 8, "Lidl"),
-        make_classified_ad("b2", 12, "Lidl", predicted_sector="FOOD"),
+        make_classified_ad("b2", 12, "Lidl", prediction_status="ad_type_done"),
     )
     with Session(engine) as session:
         a = create_merged_ad(session, ["a1", "a2"], method="test")
@@ -609,20 +726,20 @@ def test_inherit_classification_of_merges_backfills_the_merged_ads(engine):
 
         assert inherit_classification_of_merges(session, dry_run=True) == {
             INHERITED: 1,
-            OTHER_SECTOR: 1,
+            NOT_CLASSIFIED: 1,
         }
         session.rollback()
         assert session.get(Ad, a).prediction_status is None
 
         assert inherit_classification_of_merges(session, batch_size=1) == {
             INHERITED: 1,
-            OTHER_SECTOR: 1,
+            NOT_CLASSIFIED: 1,
         }
         session.commit()
         assert session.get(Ad, a).prediction_status == "merge_inherited"
         assert session.get(Ad, b).prediction_status is None
         # done once: only b is left
-        assert inherit_classification_of_merges(session) == {OTHER_SECTOR: 1}
+        assert inherit_classification_of_merges(session) == {NOT_CLASSIFIED: 1}
 
 
 def test_merge_occurrences_soft_deletes_and_logs(engine):

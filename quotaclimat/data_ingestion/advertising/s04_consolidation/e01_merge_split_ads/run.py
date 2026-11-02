@@ -5,8 +5,10 @@ For each window of one day, from the oldest:
 1. the broadcasts of split ads are detected (pieces of the same brand, separated by short segments);
 2. one merged ad is created per sequence of source ads (tools/ad_merge.create_merged_ad): it takes the
    classification of the source ads when they agree (status merge_inherited), or the one the brand
-   dictionary (copy of the Google Sheet in the database) gives to their whole transcript; otherwise it has
-   no prediction, and the exportation and classification steps process it like a new ad;
+   dictionary (copy of the Google Sheet in the database) gives to their whole transcript, or the one of the
+   pieces covering the longest duration; otherwise (a piece is not a classified advertising, or the pieces
+   have different brands) it has no prediction, and the exportation and classification steps process it
+   like a new ad;
 3. each broadcast is replaced by one occurrence of the merged ad (tools/ad_merge.merge_occurrences),
    the occurrences of the pieces and of the short segments between them are soft deleted.
 Everything is logged in advertising.ad_merge and advertising.ad_merge_occurrence.
@@ -43,6 +45,7 @@ from quotaclimat.data_ingestion.advertising.s04_consolidation.e01_merge_split_ad
 from quotaclimat.data_ingestion.advertising.tools.ad_merge import (
     INHERITED,
     INHERITED_FROM_DICTIONARY,
+    INHERITED_FROM_MAJORITY,
     MergeRevertedError,
     create_merged_ad,
     inherit_classification_of_merges,
@@ -154,7 +157,8 @@ def inherit_classifications(
     engine, dry_run: bool, dictionary: BrandDictionary | None = None
 ) -> int:
     """The merged ads not classified take the classification of their source ads when they agree, or the
-    one of the brand dictionary on their whole transcript.
+    one of the brand dictionary on their whole transcript, or the one of the pieces covering the longest
+    duration.
     Returns the number of merged ads classified (that would be, in a dry run)."""
     with Session(engine) as session:
         reasons = inherit_classification_of_merges(
@@ -167,7 +171,11 @@ def inherit_classifications(
         " (dry run, nothing written)" if dry_run else "",
         dict(reasons) or "none",
     )
-    return reasons[INHERITED] + reasons[INHERITED_FROM_DICTIONARY]
+    return (
+        reasons[INHERITED]
+        + reasons[INHERITED_FROM_DICTIONARY]
+        + reasons[INHERITED_FROM_MAJORITY]
+    )
 
 
 def run() -> int:

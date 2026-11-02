@@ -211,7 +211,7 @@ Every value `prediction_status` can take. They are declared in `prediction_statu
 | `dict_tier3_no_kw` | stage 3 | yes | Ambiguous brand, no keyword hit, full LLM fallback      |
 | `dict_miss` | stage 3 | yes | No dictionary hit; LLM sector kept, sub-cat goes to LLM |
 | `subcat_done` | stage 4 | yes | LLM sub-category classification succeeded               |
-| `merge_inherited` | `s04_consolidation` merge of split ads | yes | Merged ad with the classification its pieces agree on (`tools/ad_merge.py`), not processed by the stages |
+| `merge_inherited` | `s04_consolidation` merge of split ads | yes | Merged ad with the classification its pieces agree on, or else the one of the pieces covering the longest duration (`tools/ad_merge.py`), not processed by the stages |
 | `subcat_parse_error` | stage 4 | no | LLM returned malformed JSON; needs inspection           |
 | `no_data` | stage 4 | no | S3 vidéo missing (stages 1 and 2 only set `fragment_type='no_data'`) |
 | `not_ad` | earlier version | no | Not an advertising (`fragment_type` `BUMPER`, `OTHER`...); no longer written |

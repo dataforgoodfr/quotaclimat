@@ -123,12 +123,19 @@ def session():
     engine.dispose()
 
 
-def _add_ad(session, ad_id, nb_occurrences, status="subcat_done", channel="tf1"):
+def _add_ad(
+    session,
+    ad_id,
+    nb_occurrences,
+    status="subcat_done",
+    channel="tf1",
+    duration_sec=12.0,
+):
     session.add(
         Ad(
             id=ad_id,
             first_detection_date=T0,
-            duration_sec=12.0,
+            duration_sec=duration_sec,
             chunks=[],
             fragment_type="AD",
             prediction_status=status,
@@ -250,6 +257,30 @@ def test_ads_and_occurrence_batches_most_broadcast_first(session):
     assert sorted(
         o.id for o in session.execute(screenshots.occurrences_query(recent))
     ) == ["ad-b-occ3", "ad-b-occ4"]
+
+
+def test_ads_ranked_by_cumulated_broadcast_time(session):
+    # ad-long: 2 x 40s = 80s; ad-short: 5 x 12s = 60s; ad-tie: 5 x 16s = 80s, more occurrences
+    _add_ad(session, "ad-long", 2, duration_sec=40.0)
+    _add_ad(session, "ad-short", 5)
+    _add_ad(session, "ad-tie", 5, duration_sec=16.0)
+
+    filters = screenshots.Filters()
+    expected = ["ad-tie", "ad-long", "ad-short"]
+    assert [a.id for a in session.execute(screenshots.ads_query(filters))] == expected
+    assert (
+        session.execute(screenshots.ranked_ad_ids_query(filters)).scalars().all()
+        == expected
+    )
+
+    # from T0 + 15 min: occurrences 2 to 4 only (every 10 minutes from T0): ad-long has none left
+    recent = screenshots.Filters(
+        occurrences_from=(T0 + timedelta(minutes=15)).replace(tzinfo=ZoneInfo("UTC"))
+    )
+    assert session.execute(screenshots.ranked_ad_ids_query(recent)).scalars().all() == [
+        "ad-tie",
+        "ad-short",
+    ]
 
 
 def test_run_occurrences_by_batches_of_ads(session, monkeypatch):

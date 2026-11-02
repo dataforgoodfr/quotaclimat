@@ -76,8 +76,12 @@ retries the errors. The rows of soft deleted occurrences stay.
 
 ## Order
 
-The most broadcast ads first (number of occurrences, from `OCCURRENCES_FROM` and on `CHANNEL` when set), so
-that their checks are complete first. The occurrences are processed by batches of `ADS_PER_OCCURRENCE_BATCH`
+The ads with the longest cumulated broadcast time first (duration of the ad x number of occurrences, from
+`OCCURRENCES_FROM` and on `CHANNEL` when set; then the number of occurrences), so that their checks are complete
+first: a long ad broadcast less often comes before short ones broadcast more. Without `OCCURRENCES_FROM`, every
+occurrence counts, old ones included: set it (`2025-09-29`) for the order of the Metabase dashboard.
+The ads and occurrences already `done` or `missing_source` are skipped (see Storage), so a change of order does
+not redo them. The occurrences are processed by batches of `ADS_PER_OCCURRENCE_BATCH`
 ads (20 by default): within a batch, one channel and UTC day at a time, so that the occurrences sharing a
 mediatree archive download it once. A bigger batch downloads fewer archives twice, a smaller one completes
 the first ads sooner.

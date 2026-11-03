@@ -1,7 +1,7 @@
 """Add tables labelstudio
 
 Revision ID: a578d21d7aee
-Revises: 44f13b7eebd4
+Revises: b7d2e5a91c34
 Create Date: 2025-10-09 14:18:14.410103
 
 """
@@ -13,7 +13,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision: str = 'a578d21d7aee'
-down_revision: Union[str, None] = '44f13b7eebd4'
+down_revision: Union[str, None] = 'b7d2e5a91c34'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

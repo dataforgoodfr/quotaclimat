@@ -214,6 +214,29 @@ To add or update a flow, edit the YAML in `kestra/flows/` and run:
 make tags=kestra ansible
 ```
 
+### Failure alerts (Mattermost)
+
+The `main-pipeline` flow posts a message in a Mattermost channel when a step fails (`errors:` block, `MattermostExecution` task, with a link to the execution). The channel is the one of an [incoming webhook](https://developers.mattermost.com/integrate/webhooks/incoming/) (Integrations > Incoming Webhooks), whose URL is listed in the `MATTERMOST_WEBHOOK_URLS` secret (`.env.secrets`, provisioned as a Kestra secret by the `kestra` role). Several webhooks (channels or servers) can be given, comma-separated without spaces, and each gets the message. To change the channels, update the secret, then `make tags=kestra ansible`.
+
+`metabase_sync` has `allowFailure: true`: its failure marks the run as WARNING and sends no alert.
+
+### Per-country secret (`I18N_COUNTRY_SECRETS`)
+
+The `barometre-i18n` flow runs the misinformation job for every country on the VM. Instead of one Kestra secret per country, the per-country credentials are in a single secret, `I18N_COUNTRY_SECRETS`: a **single-line JSON object** keyed by the flow's country codes (`bel`, `bel-fla`, `deu`, `esp`, `pol`), each value holding four strings:
+
+```json
+{"bel":{"bucket_access":"...","bucket_secret":"...","label_studio_token":"...","label_studio_url":"https://..."},"bel-fla":{...},"deu":{...},"esp":{...},"pol":{...}}
+```
+
+| Key | Source (climateguard, project `climate-safeguards-prod`) |
+|---|---|
+| `bucket_access` | Secret Manager `access-key-<country>` (path `/<country>`, e.g. `belgium-flanders` for `bel-fla`) |
+| `bucket_secret` | Secret Manager `secret-key-<country>` |
+| `label_studio_url` | `https://<namespace>-labelstudio-<country>-<env>.functions.fnc.fr-par.scw.cloud` (the Label Studio serverless container domain, Scaleway console) |
+| `label_studio_token` | Secret Manager `labelstudio-<country>-token` (`TF_VAR_labelstudio_user_token` in the country file on Vaultwarden) |
+
+Build it once with `jq -n -c --arg ...` (so values are escaped), store it as one entry in the `Quotaclimat - Orchestrator/` collection, then `make sync-secrets` and `make tags=kestra ansible`. Check each code with `echo "$I18N_COUNTRY_SECRETS" | jq -e '.bel.bucket_access'` before deploying. Adding a country adds one key here, no playbook change. The key is already declared in `kestra_secrets` (`ansible/playbook.yml`); add `export I18N_COUNTRY_SECRETS=` to `.env.secrets.dist`.
+
 ## RRS: extended perimeter (Droit à l'info)
 
 On top of the regular `rrs` database, jobs and registry, the `rrs` target provisions a second, isolated set of resources for the "Droit à l'info" extended France perimeter (see the root [README's "Extended perimeter (Droit à l'info)" section](../README.md#extended-perimeter-droit-à-linfo) for the application-level `EXTENDED_PERIMETER` behaviour):
@@ -273,6 +296,7 @@ Every target below is deployed once per environment (`dev`/`prod`) from its `tem
 | RDB privilege | `scaleway_rdb_privilege.rrs_read` | Readonly grant for `rrs_read` on `barometre` |
 | RDB user | `scaleway_rdb_user.metabase_analytics` | Readonly user (`metabase-analytics-<env>`) for Metabase dashboards |
 | RDB privilege | `scaleway_rdb_privilege.metabase_analytics` | Readonly grant for `metabase_analytics` on `barometre` |
+| Terraform data (null resource) | `terraform_data.readonly_default_privileges` | Default privileges of the database admin (`barometreclimat` in prod): the tables and schemas it creates next (Alembic migrations), in any schema, are readable by `metabase_analytics` and `rrs_read`, which Scaleway's `readonly` privilege doesn't cover (it only sets defaults for `_rdb_superadmin`); plus the catch-up grant on `advertising.ad_screenshot` |
 | RDB ACL | `scaleway_rdb_acl.public` | IP allow-list (Scaleway job CIDRs + dev/prod extra IPs) |
 | Instance IP | `scaleway_instance_ip.gpu` | Flexible IP for the GPU instance |
 | Instance server | `scaleway_instance_server.gpu` | GPU instance (Whisper transcription / ML workloads) |

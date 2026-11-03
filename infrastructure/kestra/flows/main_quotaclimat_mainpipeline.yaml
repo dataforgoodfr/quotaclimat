@@ -31,6 +31,18 @@ inputs:
     required: false
     description: "Reference date (YYYY-MM-DD) from which to count days back. Defaults to now."
 
+variables:
+  # namespace/flowId of each subflow task, to link the failed one in the alert
+  subflows:
+    extended_perimeter: rrs/extended-perimeter
+    rrs_climate_extended: rrs/rrs-climate
+    rrs_insecurity_extended: rrs/rrs-insecurity
+    rrs_pollution_extended: rrs/rrs-pollution
+    barometre: quotaclimat/barometre
+    rrs_climate: rrs/rrs-climate
+    rrs_insecurity: rrs/rrs-insecurity
+    rrs_pollution: rrs/rrs-pollution
+
 triggers:
   - id: morning_schedule
     type: io.kestra.plugin.core.trigger.Schedule
@@ -133,3 +145,24 @@ tasks:
     inputs:
       apply: true
       force: true
+
+# runs when a task above fails (not for metabase_sync, which has allowFailure)
+errors:
+  # one message per webhook of MATTERMOST_WEBHOOK_URLS (comma-separated), all sent in parallel
+  # so that a dead webhook does not prevent the others from being notified
+  - id: alert_mattermost
+    type: io.kestra.plugin.core.flow.ForEach
+    values: "{{ secret('MATTERMOST_WEBHOOK_URLS') | split(',') | toJson }}"
+    concurrencyLimit: 0
+    tasks:
+      - id: send
+        type: io.kestra.plugin.notifications.mattermost.MattermostExecution
+        url: "{{ taskrun.value | trim }}"
+        username: Kestra
+        customMessage: |
+          {% set failed = (execution.taskRunList | jq('.[] | select(.state.current == "FAILED")') | first) -%}
+          main-pipeline failed at step `{{ failed.taskId ?? 'unknown' }}`.
+          {%- if failed.outputs.executionId is defined and vars.subflows[failed.taskId] is defined %}
+          Failed subflow: {{ kestra.url }}ui/main/executions/{{ vars.subflows[failed.taskId] }}/{{ failed.outputs.executionId }}
+          {%- endif %}
+        executionId: "{{ execution.id }}"

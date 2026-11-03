@@ -638,7 +638,7 @@ poetry run python -m quotaclimat.data_ingestion.labelstudio.ingest_labelstudio
 ```
 
 # Analytics
-In order to improve the performance of the dashboards hosted on Metabase, intermediate tables are calculated using `dbt` in the `analytics` schema. These can be found in `my_dbt_project/models/analytics`. The idea is to add a second layer to our database where we will store the more elaborated data used for our visualization. A schema of this evolution is seen below:
+In order to improve the performance of the dashboards hosted on Metabase, intermediate tables are calculated using `dbt` in the `analytics` schema. These can be found in `my_dbt_project/models/analytics`. The idea is to add a second layer to our database where we will store the more elaborated data used for our visualization. The data is organised in three tiers: **raw** (ingested tables, `public` and the `ad*` tables of `advertising`), **syndicated** (built by dbt: `analytics`, plus the dbt models of `public` and `advertising`) and **curated** (the `curated` schema, clean tables for the teams). A schema of this evolution is seen below, see [docs/data_tiers.md](docs/data_tiers.md) for the details:
 ![Data tiers diagram](docs/images/data_tiers.png "Data Tiers")
 These dbt models need to be run using the `--target analytics` command. You can test these locally using the test console:
 ```bash

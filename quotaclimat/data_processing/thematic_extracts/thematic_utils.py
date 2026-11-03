@@ -3,15 +3,16 @@ import duckdb
 import re
 import yaml
 
-from quotaclimat.data_processing.mediatree.i8n.country import BELGIUM, BELGIUM_FLANDERS
+from quotaclimat.data_processing.mediatree.i8n.country import BELGIUM, BELGIUM_FLANDERS, FRANCE
 
 # key: COUNTRY env variable of the jobs and periodes key in thematic_jobs_config.yml
 # - country: value of the country column in public.keywords and of the country partition in s3
 # - country_short: suffix of the destination table name
 # - language: keywords key in thematic_jobs_config.yml
-# - channels: channels to scan in public.keywords (None: every channel of the country)
+# - channels: channels to scan in public.keywords
 COUNTRIES = {
-    "france": {"country": "france", "country_short": "fr", "language": "french", "channels": None},
+    "france": {"country": "france", "country_short": "fr", "language": "french", 
+                "channels": FRANCE.channels},  # d8 (C8) excluded
     # LN24, LATROIS and CANALZ are legacy channels
     "belgiumfr": {"country": "belgium", "country_short": "befr", "language": "french",
                   "channels": [c for c in BELGIUM.channels if c not in ("LN24", "LATROIS", "CANALZ")]},

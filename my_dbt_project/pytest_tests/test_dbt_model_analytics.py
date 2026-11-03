@@ -155,7 +155,8 @@ def create_advertising_tables(db_connection):
                 ('pytest_ad_1', '2000-01-01', 30, '[]', 'AD', 'subcat_done', 'PYTEST_AUTO', 'PYTEST_AUTO_EV', 'Pytest Škoda'),
                 ('pytest_ad_2', '2000-01-01', 20, '[]', 'AD', 'dict_tier1', 'PYTEST_FOOD', NULL, 'Pytest Biscuits'),
                 ('pytest_ad_3', '2000-01-01', 10, '[]', 'AD', 'pending', NULL, NULL, 'Pytest Škoda'),
-                ('pytest_other', '2000-01-01', 15, '[]', 'OTHER', 'pending', NULL, NULL, NULL)
+                -- classified, then corrected by hand to another content type: left out of publicites
+                ('pytest_other', '2000-01-01', 15, '[]', 'OTHER', 'subcat_done', 'PYTEST_FOOD', NULL, 'Pytest Biscuits')
         """)
         cur.execute("""
             INSERT INTO advertising.ad_occurrence (id, deleted_at, occurrence_date, channel_name, ad_id) VALUES
@@ -972,6 +973,7 @@ def test_publicites(db_connection):
         rows = cur.fetchall()
     epoch_10h = int(datetime.datetime(2000, 1, 1, 10, tzinfo=datetime.timezone.utc).timestamp())
     epoch_11h = int(datetime.datetime(2000, 1, 1, 11, tzinfo=datetime.timezone.utc).timestamp())
+    # pytest_occ_3_overlap: ad not classified, pytest_occ_other: classified ad of another content type than AD
     expected = [
         ("pytest_occ_1", "Arte", "Automobile", "Voiture électrique", "Voiture électrique", f"arte@{epoch_10h}"),
         ("pytest_occ_1_duplicate", "Arte", "Automobile", "Voiture électrique", "Voiture électrique", f"arte@{epoch_10h}"),

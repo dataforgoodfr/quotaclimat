@@ -229,6 +229,20 @@ jobs:
           image-uri=${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/quotaclimat_with_media_tools:${{ env.PROJECT_VERSION }}
           startup-command.0=./entrypoints/advertising_screenshots.sh
 
+    # media tools image: ffmpeg cuts the video of the new ads
+    - name: Update advertising_manual_corrections scaleway job
+      uses: jawher/action-scw@v2.54.0
+      env:
+        SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
+        SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
+        SCW_ORGANIZATION_ID: ${{ secrets.SCW_ORGANIZATION_ID }}
+        SCW_ZONE: ${{ secrets.SCW_ZONE }}
+      with:
+        args: >-
+          jobs definition update ${{ secrets.SCALEWAY_JOB_ADVERTISING_MANUAL_CORRECTIONS }}
+          image-uri=${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/quotaclimat_with_media_tools:${{ env.PROJECT_VERSION }}
+          startup-command.0=./entrypoints/advertising_manual_corrections.sh
+
     # uses the quotaclimat_base image, so updated here once that image is pushed
     - name: Update Scaleway job definition with Factiva Stats image
       uses: jawher/action-scw@v2.54.0

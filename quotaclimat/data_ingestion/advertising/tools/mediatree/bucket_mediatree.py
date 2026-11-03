@@ -27,11 +27,13 @@ AD_S3_PREFIX = "ads"
 MEDIATREE_CHANNEL_MAPPING = {"fr3-idf": "france3"}
 
 
-def get_s3_filesystem() -> s3fs.S3FileSystem:
+def get_s3_filesystem(**kwargs) -> s3fs.S3FileSystem:
+    """`kwargs` go to `s3fs.S3FileSystem` (e.g. `asynchronous`, `skip_instance_cache`)."""
     return s3fs.S3FileSystem(
         key=ACCESS_KEY,
         secret=SECRET_KEY,
         client_kwargs={"endpoint_url": ENDPOINT_URL, "region_name": REGION},
+        **kwargs,
     )
 
 

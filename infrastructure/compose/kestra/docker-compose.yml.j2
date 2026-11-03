@@ -26,6 +26,8 @@ services:
             validation-timeout: 5000
             initialization-fail-timeout: -1
         kestra:
+          # base URL of the UI, used for the links in notifications ({{ '{{ kestra.url }}' }} in flows)
+          url: https://{{ kestra_domain }}/
           server:
             liveness:
               enabled: true

@@ -1,0 +1,548 @@
+{
+  "schema_version": 1,
+  "diagram_type": "erd",
+  "meta": {
+    "title": "Curated tier: tables and columns",
+    "locale": "en",
+    "output": "docs/diagrams/data_tiers_curated.html",
+    "quality_profile": "standard",
+    "repository": {
+      "url": "git@github.com:dataforgoodfr/quotaclimat.git",
+      "revision": "c741938f0d8d858c4622ee6f582db2d9d509454f",
+      "link_mode": "local-only"
+    }
+  },
+  "layout": {
+    "mode": "grid",
+    "gapX": 90,
+    "gapY": 60
+  },
+  "entities": [
+    {
+      "id": "chaine",
+      "label": "curated.chaine",
+      "tag": "reference",
+      "row": 0,
+      "col": 1,
+      "attributes": [
+        {
+          "name": "chaine_id",
+          "type": "text",
+          "key": "pk"
+        },
+        {
+          "name": "chaine_nom",
+          "type": "text"
+        },
+        {
+          "name": "pays",
+          "type": "text"
+        },
+        {
+          "name": "est_service_public",
+          "type": "boolean"
+        },
+        {
+          "name": "est_info_continue",
+          "type": "boolean"
+        },
+        {
+          "name": "est_radio",
+          "type": "boolean"
+        }
+      ],
+      "sources": [
+        {
+          "path": "my_dbt_project/models/curated/_curated.yml",
+          "label": "column docs"
+        },
+        {
+          "path": "my_dbt_project/models/curated/chaine.sql",
+          "label": "dbt model"
+        }
+      ],
+      "width": 240
+    },
+    {
+      "id": "publicite",
+      "label": "curated.publicite",
+      "tag": "facts",
+      "row": 1,
+      "col": 0,
+      "attributes": [
+        {
+          "name": "publicite_id",
+          "type": "text",
+          "key": "pk"
+        },
+        {
+          "name": "debut_paris",
+          "type": "timestamp"
+        },
+        {
+          "name": "jour",
+          "type": "date"
+        },
+        {
+          "name": "chaine_id",
+          "type": "text",
+          "key": "fk",
+          "references": "chaine.chaine_id"
+        },
+        {
+          "name": "chaine_nom",
+          "type": "text"
+        },
+        {
+          "name": "est_service_public",
+          "type": "boolean"
+        },
+        {
+          "name": "est_info_continue",
+          "type": "boolean"
+        },
+        {
+          "name": "est_radio",
+          "type": "boolean"
+        },
+        {
+          "name": "spot_id",
+          "type": "text"
+        },
+        {
+          "name": "ecran_id",
+          "type": "text"
+        },
+        {
+          "name": "duree_sec",
+          "type": "double precision"
+        },
+        {
+          "name": "secteur",
+          "type": "text"
+        },
+        {
+          "name": "categorie_produit",
+          "type": "text"
+        },
+        {
+          "name": "categorie_ou_secteur",
+          "type": "text"
+        },
+        {
+          "name": "marque",
+          "type": "text"
+        },
+        {
+          "name": "entreprise",
+          "type": "text"
+        },
+        {
+          "name": "societe_mere",
+          "type": "text"
+        },
+        {
+          "name": "classement_par",
+          "type": "text"
+        },
+        {
+          "name": "est_dans_programme",
+          "type": "boolean"
+        },
+        {
+          "name": "programme_avant",
+          "type": "text"
+        },
+        {
+          "name": "ecart_programme_avant_sec",
+          "type": "double precision"
+        },
+        {
+          "name": "programme_apres",
+          "type": "text"
+        },
+        {
+          "name": "ecart_programme_apres_sec",
+          "type": "double precision"
+        },
+        {
+          "name": "cas_mesinformation_proche_id",
+          "type": "text",
+          "key": "fk",
+          "references": "cas_mesinformation.cas_id"
+        },
+        {
+          "name": "distance_cas_mesinformation_sec",
+          "type": "double precision"
+        },
+        {
+          "name": "lien_mediatree",
+          "type": "text"
+        },
+        {
+          "name": "lien_sauvegarde",
+          "type": "text"
+        },
+        {
+          "name": "lien_visualiseur",
+          "type": "text"
+        }
+      ],
+      "sources": [
+        {
+          "path": "my_dbt_project/models/curated/_curated.yml",
+          "label": "column docs"
+        },
+        {
+          "path": "my_dbt_project/models/curated/publicite.sql",
+          "label": "dbt model"
+        }
+      ],
+      "width": 370
+    },
+    {
+      "id": "cas_mesinformation",
+      "label": "curated.cas_mesinformation",
+      "tag": "facts",
+      "row": 1,
+      "col": 1,
+      "attributes": [
+        {
+          "name": "cas_id",
+          "type": "text",
+          "key": "pk"
+        },
+        {
+          "name": "debut_paris",
+          "type": "timestamp"
+        },
+        {
+          "name": "jour",
+          "type": "date"
+        },
+        {
+          "name": "chaine_id",
+          "type": "text",
+          "key": "fk",
+          "references": "chaine.chaine_id"
+        },
+        {
+          "name": "chaine_nom",
+          "type": "text"
+        },
+        {
+          "name": "est_service_public",
+          "type": "boolean"
+        },
+        {
+          "name": "est_info_continue",
+          "type": "boolean"
+        },
+        {
+          "name": "est_radio",
+          "type": "boolean"
+        },
+        {
+          "name": "pays",
+          "type": "text"
+        },
+        {
+          "name": "programme",
+          "type": "text"
+        },
+        {
+          "name": "emission_jour_id",
+          "type": "text",
+          "key": "fk",
+          "references": "emission_jour.emission_jour_id"
+        },
+        {
+          "name": "affirmation",
+          "type": "text"
+        },
+        {
+          "name": "explication",
+          "type": "text"
+        },
+        {
+          "name": "sources_verification",
+          "type": "text"
+        },
+        {
+          "name": "locuteurs",
+          "type": "text"
+        },
+        {
+          "name": "est_dit_par_journaliste",
+          "type": "boolean"
+        },
+        {
+          "name": "est_dit_par_chroniqueur",
+          "type": "boolean"
+        },
+        {
+          "name": "est_dit_par_invite",
+          "type": "boolean"
+        },
+        {
+          "name": "est_dit_par_politique",
+          "type": "boolean"
+        },
+        {
+          "name": "est_dit_par_public",
+          "type": "boolean"
+        },
+        {
+          "name": "correction",
+          "type": "text"
+        },
+        {
+          "name": "transcription",
+          "type": "text"
+        },
+        {
+          "name": "lien_extrait",
+          "type": "text"
+        },
+        {
+          "name": "themes",
+          "type": "text"
+        },
+        {
+          "name": "est_theme_automobile",
+          "type": "boolean"
+        }
+      ],
+      "sources": [
+        {
+          "path": "my_dbt_project/models/curated/_curated.yml",
+          "label": "column docs"
+        },
+        {
+          "path": "my_dbt_project/models/curated/cas_mesinformation.sql",
+          "label": "dbt model"
+        }
+      ],
+      "width": 262
+    },
+    {
+      "id": "emission_jour",
+      "label": "curated.emission_jour",
+      "tag": "facts",
+      "row": 1,
+      "col": 2,
+      "attributes": [
+        {
+          "name": "emission_jour_id",
+          "type": "text",
+          "key": "pk"
+        },
+        {
+          "name": "emission_id",
+          "type": "text"
+        },
+        {
+          "name": "emission_nom",
+          "type": "text"
+        },
+        {
+          "name": "est_emission_identifiee",
+          "type": "boolean"
+        },
+        {
+          "name": "est_rediffusion",
+          "type": "boolean"
+        },
+        {
+          "name": "jour",
+          "type": "date"
+        },
+        {
+          "name": "chaine_id",
+          "type": "text",
+          "key": "fk",
+          "references": "chaine.chaine_id"
+        },
+        {
+          "name": "chaine_nom",
+          "type": "text"
+        },
+        {
+          "name": "est_service_public",
+          "type": "boolean"
+        },
+        {
+          "name": "est_info_continue",
+          "type": "boolean"
+        },
+        {
+          "name": "est_radio",
+          "type": "boolean"
+        },
+        {
+          "name": "nb_creneaux",
+          "type": "integer"
+        },
+        {
+          "name": "duree_suivie_min",
+          "type": "double precision"
+        },
+        {
+          "name": "duree_environnement_min",
+          "type": "double precision"
+        },
+        {
+          "name": "duree_climat_min",
+          "type": "double precision"
+        },
+        {
+          "name": "duree_biodiversite_min",
+          "type": "double precision"
+        },
+        {
+          "name": "duree_ressources_min",
+          "type": "double precision"
+        },
+        {
+          "name": "duree_climat_constat_min",
+          "type": "double precision"
+        },
+        {
+          "name": "duree_climat_causes_min",
+          "type": "double precision"
+        },
+        {
+          "name": "duree_climat_consequences_min",
+          "type": "double precision"
+        },
+        {
+          "name": "duree_climat_attenuation_min",
+          "type": "double precision"
+        },
+        {
+          "name": "duree_climat_adaptation_min",
+          "type": "double precision"
+        },
+        {
+          "name": "duree_biodiversite_constat_min",
+          "type": "double precision"
+        },
+        {
+          "name": "duree_biodiversite_causes_min",
+          "type": "double precision"
+        },
+        {
+          "name": "duree_biodiversite_consequences_min",
+          "type": "double precision"
+        },
+        {
+          "name": "duree_biodiversite_solutions_min",
+          "type": "double precision"
+        },
+        {
+          "name": "duree_ressources_constat_min",
+          "type": "double precision"
+        },
+        {
+          "name": "duree_ressources_solutions_min",
+          "type": "double precision"
+        },
+        {
+          "name": "part_environnement_pct",
+          "type": "double precision"
+        },
+        {
+          "name": "part_climat_pct",
+          "type": "double precision"
+        },
+        {
+          "name": "part_biodiversite_pct",
+          "type": "double precision"
+        },
+        {
+          "name": "part_ressources_pct",
+          "type": "double precision"
+        },
+        {
+          "name": "nb_cas_mesinformation",
+          "type": "integer"
+        }
+      ],
+      "sources": [
+        {
+          "path": "my_dbt_project/models/curated/_curated.yml",
+          "label": "column docs"
+        },
+        {
+          "path": "my_dbt_project/models/curated/curated_emission_jour.sql",
+          "label": "dbt model"
+        }
+      ],
+      "width": 415
+    }
+  ],
+  "relationships": [
+    {
+      "id": "pub-chaine",
+      "from": "publicite",
+      "to": "chaine",
+      "label": "chaine_id",
+      "fromCardinality": "many",
+      "toCardinality": "one"
+    },
+    {
+      "id": "cas-chaine",
+      "from": "cas_mesinformation",
+      "to": "chaine",
+      "label": "chaine_id",
+      "fromCardinality": "many",
+      "toCardinality": "one"
+    },
+    {
+      "id": "ej-chaine",
+      "from": "emission_jour",
+      "to": "chaine",
+      "label": "chaine_id",
+      "fromCardinality": "many",
+      "toCardinality": "one"
+    },
+    {
+      "id": "cas-ej",
+      "from": "cas_mesinformation",
+      "to": "emission_jour",
+      "label": "emission_jour_id",
+      "fromCardinality": "many",
+      "toCardinality": "one",
+      "toOptional": true
+    },
+    {
+      "id": "pub-cas",
+      "from": "publicite",
+      "to": "cas_mesinformation",
+      "label": "cas_mesinformation_proche_id",
+      "fromCardinality": "many",
+      "toCardinality": "one",
+      "toOptional": true
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "Reading the tier",
+      "items": [
+        "Every table is clean and already filtered: no status or prediction code to filter on",
+        "chaine_id joins every table to chaine; emission_jour_id joins cas_mesinformation to emission_jour",
+        "Names are in French, snake_case, unit as suffix (_sec, _min, _pct from 0 to 100)"
+      ]
+    },
+    {
+      "dot": "orange",
+      "title": "Built last",
+      "items": [
+        "Built by entrypoints/curated.sh after dbt.sh, then documented in Metabase",
+        "Nothing in dbt reads a curated table",
+        "Columns are added, never renamed or removed, because Metabase questions depend on them"
+      ]
+    }
+  ]
+}

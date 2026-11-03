@@ -2,7 +2,7 @@
 ### One entry per thematic (the THEMATIC env variable), with:
 ### - periodes: [country][list of periods] to extract, one id per period.
 ###     - country: one of the COUNTRIES keys in thematic_utils.py (france, belgiumfr, belgiumnl)
-###     - id: [a-z0-9_], written in the period column of the destination table
+###     - id: [a-z0-9_], written in the period column of the destination table as yyyymm_event
 ###     - start (included) / end (excluded): YYYY-MM-DD, unquoted
 ###     - periods of a country must not overlap
 ###     - every period goes into one table per media and country: {thematic}_keywords_{country_short}, {thematic}_articles_{country_short}
@@ -31,6 +31,7 @@ incendies:
         - incendie
         - incendie de forêt
         - feux
+        - feux de forêt
         - forêt brule
         - forêts brulent
         - forêt ravagée
@@ -42,6 +43,8 @@ incendies:
         - incendie de forêt
         - incendies de forêt
         - feux
+        - feu de forêt
+        - feux de forêt
         - forêt brule
         - forêts brulent
         - forêt ravagé
@@ -55,17 +58,48 @@ incendies:
 inondations:
   periodes:
     france:
-      - id: hiver_2025_2026
-        start: 2025-12-01
-        end: 2026-03-15
-      - id: automne_2026
-        start: 2026-09-01
-        end: 2026-10-20
+      - id: 202401_pas_de_calais
+        start: 2023-12-25
+        end: 2024-01-15
+      - id: 202403_gard
+        start: 2024-03-04
+        end: 2024-03-18
+      - id: 202404_yonne
+        start: 2024-03-25
+        end: 2024-04-09
+      - id: 202405_nord_est
+        start: 2024-05-12
+        end: 2024-05-27
+      - id: 202410_ardeche_valence
+        start: 2024-10-07
+        end: 2024-11-10
+      - id: 202501_bretagne
+        start: 2025-01-20
+        end: 2025-02-03
+      - id: 202507_texas
+        start: 2025-06-30
+        end: 2025-07-14
+      - id: 202601_aude
+        start: 2026-01-12
+        end: 2026-01-26
+      - id: 202602_sud_ouest_fr
+        start: 2026-02-09
+        end: 2026-03-01
+      - id: 202608_nepal
+        start: 2026-08-24
+        end: 2026-09-06
+      - id: 202609_gard
+        start: 2026-09-21
+        end: 2026-10-11
+      - id: 202610_espagne
+        start: 2026-10-11
+        end: 2026-10-30
+
   keywords:
     french:
       audiovisuel:
         - inondation
-        - augmentation du risque d'inondation
+        - augmentation du risque inondation
         - inondations à répétition
         - gestion des inondations
         - anticiper les risques d'inondation
@@ -74,15 +108,11 @@ inondations:
         - crue
         - crue centennale
         - coulée de boue
-        - pluie extreme
-        - pluie torrentielle
-        - submergé par les eaux
-        - englouti par les eaux
       presse:
         - inondation
         - inondations
-        - augmentation du risque d'inondation
-        - augmentation du risque d'inondations
+        - augmentation du risque inondation
+        - augmentation du risque inondations
         - inondations à répétition
         - gestion des inondations
         - anticiper les risques d'inondation
@@ -95,15 +125,3 @@ inondations:
         - crues centennales
         - coulée de boue
         - coulées de boue
-        - pluie extrême
-        - pluies extrêmes
-        - pluie torrentielle
-        - pluies torrentielles
-        - submergé par les eaux
-        - submergés par les eaux
-        - submergée par les eaux
-        - submergées par les eaux
-        - englouti par les eaux
-        - engloutie par les eaux
-        - engloutis par les eaux
-        - englouties par les eaux

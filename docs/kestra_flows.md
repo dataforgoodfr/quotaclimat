@@ -117,6 +117,10 @@ Steps:
 8. `rrs_pollution`: [`rrs-pollution`](#rrs-pollution) with its defaults (`source=barometre`, RAG fact-checking and clustering on).
 9. `metabase_sync`: [`metabase-sync`](#metabase-sync) with `apply=true`, `force=true`, last so that the tables its queries read are all built.
 
+### Failure alert
+
+When a step fails, the flow-level `errors:` block posts a message to Mattermost (not for `metabase_sync`, whose `allowFailure: true` ends the run as WARNING). It is a `ForEach` over the comma-separated URLs of the `MATTERMOST_WEBHOOK_URLS` secret (incoming webhooks, one per channel), with `concurrencyLimit: 0` so that a failing webhook does not block the others. Each iteration runs a `io.kestra.plugin.notifications.mattermost.MattermostExecution` task whose message names the first failed task and links to the execution of the failed subflow in the Kestra UI (`kestra.url`, set in the Kestra compose config, plus the `namespace/flowId` of the step from the flow's `subflows` variable, to update when a step is added). See `infrastructure/Readme.md`, "Failure alerts (Mattermost)".
+
 The RRS subflows receive no dates: `rrs-climate` resumes from what is already in the `rrs` DB, `rrs-insecurity` uses its own `days_back` default of 1, and `rrs-pollution`'s `filter_keywords` step likewise resumes from the latest `environmental_health` segment already in `rrs.segments` through now.
 
 ## barometre

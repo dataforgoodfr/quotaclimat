@@ -46,6 +46,7 @@
       METABASE_API_KEY: "{{ lookup('env', 'METABASE_API_KEY') }}"
       METABASE_URL: "{{ lookup('env', 'METABASE_URL') }}"
       MEDIATREE_PASSWORD: "{{ lookup('env', 'MEDIATREE_PASSWORD') }}"
+      MATTERMOST_WEBHOOK_URLS: "{{ lookup('env', 'MATTERMOST_WEBHOOK_URLS') }}"
       MISTRAL_API_KEY: "{{ lookup('env', 'MISTRAL_API_KEY') }}"
       OPENAI_API_KEY: "{{ lookup('env', 'OPENAI_API_KEY') }}"
       POSTGRES_HOST: "{{ lookup('env', 'BAROMETRE_POSTGRES_HOST') }}"

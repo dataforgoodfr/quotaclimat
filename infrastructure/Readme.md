@@ -214,6 +214,12 @@ To add or update a flow, edit the YAML in `kestra/flows/` and run:
 make tags=kestra ansible
 ```
 
+### Failure alerts (Mattermost)
+
+The `main-pipeline` flow posts a message in a Mattermost channel when a step fails (`errors:` block, `MattermostExecution` task, with a link to the execution). The channel is the one of an [incoming webhook](https://developers.mattermost.com/integrate/webhooks/incoming/) (Integrations > Incoming Webhooks), whose URL is listed in the `MATTERMOST_WEBHOOK_URLS` secret (`.env.secrets`, provisioned as a Kestra secret by the `kestra` role). Several webhooks (channels or servers) can be given, comma-separated without spaces, and each gets the message. To change the channels, update the secret, then `make tags=kestra ansible`.
+
+`metabase_sync` has `allowFailure: true`: its failure marks the run as WARNING and sends no alert.
+
 ### Per-country secret (`I18N_COUNTRY_SECRETS`)
 
 The `barometre-i18n` flow runs the misinformation job for every country on the VM. Instead of one Kestra secret per country, the per-country credentials are in a single secret, `I18N_COUNTRY_SECRETS`: a **single-line JSON object** keyed by the flow's country codes (`bel`, `bel-fla`, `deu`, `esp`, `pol`), each value holding four strings:

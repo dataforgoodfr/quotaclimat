@@ -67,6 +67,9 @@ inondations:
       - id: 202404_yonne
         start: 2024-03-25
         end: 2024-04-09
+      - id: 202405_nord_est
+        start: 2024-05-12
+        end: 2024-05-27
       - id: 202410_ardeche_valence
         start: 2024-10-07
         end: 2024-11-10

@@ -2,13 +2,49 @@ id: barometre-i18n
 namespace: quotaclimat
 
 description: |
-  OME pipeline for international scope. The misinformation detection uses scaleway 
-  serverless jobs at the moment to run everything in parallel.
+  OME pipeline for international scope. For each country: ingest Mediatree data to S3,
+  detect keywords, then detect misinformation (label-misinformation image, run on the
+  Kestra VM). The dbt subflow runs once at the end, after all countries.
+
+  Per-country credentials and endpoint (country bucket keys, Label Studio token and URL) are
+  read from the single JSON secret I18N_COUNTRY_SECRETS, keyed by country code. Other
+  per-country config is in `variables.countries`. To add a country: add its code to the ForEach values,
+  an entry in `variables.countries` and a key in the secret.
 
 labels:
   pipeline: ome
   environment: prod
   scope: i18n
+
+variables:
+  # Keyed by the Mediatree country code used in the loop.
+  # name: full country name, expected by the label-misinformation job as COUNTRY.
+  countries:
+    bel:
+      name: belgium
+      bucket: safeguards-climate-belgium-prod
+      label_studio_project: 2
+      label_studio_project_id: 1
+    bel-fla:
+      name: belgium-flanders
+      bucket: safeguards-climate-belgium-flanders-prod
+      label_studio_project: 1
+      label_studio_project_id: 1
+    deu:
+      name: germany
+      bucket: safeguards-climate-germany-prod
+      label_studio_project: 1
+      label_studio_project_id: 1
+    esp:
+      name: spain
+      bucket: safeguards-climate-spain-prod
+      label_studio_project: 1
+      label_studio_project_id: 1
+    pol:
+      name: poland
+      bucket: safeguards-climate-poland-prod
+      label_studio_project: 1
+      label_studio_project_id: 1
 
 triggers:
   - id: morning_schedule
@@ -34,6 +70,7 @@ tasks:
     tasks:
       - id: ingest_data_to_s3
         type: io.kestra.plugin.docker.Run
+        allowFailure: true
         containerImage: "rg.fr-par.scw.cloud/namespace-barometre/quotaclimat_base:latest"
         pullPolicy: ALWAYS
         credentials:
@@ -67,6 +104,7 @@ tasks:
           SENTRY_DSN: "{{ secret('SENTRY_DSN') }}"
 
       - id: detect_keywords
+        allowFailure: true
         logLevel: WARN          # filter per-row INFO spam at the Kestra level (UI freeze fix)
         shmSize: 6gb
         type: io.kestra.plugin.docker.Run
@@ -111,81 +149,64 @@ tasks:
           POSTGRES_PASSWORD: "{{ secret('POSTGRES_PASSWORD') }}"
           SENTRY_DSN: "{{ secret('SENTRY_DSN') }}"
 
-  - id: detect_misinformation
-    type: io.kestra.plugin.core.flow.ForEach
-    values:
-      - "d8bd69ed-3e9b-423a-acc7-b059f3f64ece" # belgium
-      - "95ddceb1-83c3-46a7-93ef-9a019d6f342d" # belgium-flanders
-      - "2bbff9be-1816-49a1-bc64-04c21e6684e1" # germany
-      - "3437feae-0cb9-4b1c-9030-cae45858f3e0" # spain
-      - "6177a49a-7208-456f-bc05-cfc57e0f7d0a" # poland
-    concurrencyLimit: 5
-    tasks:
-      - id: trigger_job
-        type: io.kestra.plugin.core.http.Request
-        uri: "https://api.scaleway.com/serverless-jobs/v1alpha1/regions/fr-par/job-definitions/{{ taskrun.value }}/start"
-        method: POST
-        headers:
-          X-Auth-Token: "{{ secret('CLIMATESAFEGUARDS_SCW_SECRET') }}"
-        contentType: application/json
-        body: |
-          {"replicas": 1}
-      # 
-      # - id: wait_for_completion
-      #   type: io.kestra.plugin.core.flow.LoopUntil
-      #   condition: 
-      #     - type: io.kestra.plugin.core.condition.Or
-      #       conditions:
-      #         - type: io.kestra.plugin.core.condition.Expression
-      #           expression: "{{ json(outputs.poll_job.body).state == 'succeeded' }}"
-      #         - type: io.kestra.plugin.core.condition.Expression
-      #           expression: "{{ json(outputs.poll_job.body).state == 'interrupted' }}"
-      #         - type: io.kestra.plugin.core.condition.Expression
-      #           expression: "{{ json(outputs.poll_job.body).state == 'failed' }}"
-      #   checkFrequency:
-      #     type: constant
-      #     interval: PT30S
-      #   maxDuration: PT4H
-      #   tasks:
-      #     - id: poll_job
-      #       type: io.kestra.plugin.core.http.Request
-      #       uri: "https://api.scaleway.com/serverless-jobs/v1alpha1/regions/fr-par/job-runs/{{ json(outputs.trigger_job[parent.taskrun.value].body).job_runs[0].id }}"
-      #       method: GET
-      #       headers:
-      #         X-Auth-Token: "{{ secret('CLIMATESAFEGUARDS_SCW_SECRET') }}"
-      # - id: log_result
-      #   type: io.kestra.plugin.core.log.Log
-      #   message: "Job {{ taskrun.value }} finished with state: {{ json(outputs.poll_job.body).state }}"
+      - id: detect_misinformation
+        allowFailure: true
+        logLevel: WARN          # filter per-row INFO spam at the Kestra level (UI freeze fix)
+        shmSize: 6gb
+        type: io.kestra.plugin.docker.Run
+        containerImage: "rg.fr-par.scw.cloud/misinformation/label-misinformation:latest"
+        pullPolicy: ALWAYS
+        credentials:
+          registry: rg.fr-par.scw.cloud/misinformation
+          username: nologin
+          password: "{{ secret('SCW_SECRET') }}"
+        entryPoint:
+          - /bin/sh
+          - -c
+          - cd /app && python /app/main.py
+        env:
+          APP_NAME: "label-misinformation-{{ vars.countries[taskrun.value].name }}-prod"
+          AWS_DEFAULT_REGION: fr-par
+          BUCKET_INPUT: mediatree
+          BUCKET_OUTPUT: "{{ vars.countries[taskrun.value].bucket }}"
+          BUCKET_OUTPUT_FOLDER: label-misinformation-input
+          COUNTRY: "{{ vars.countries[taskrun.value].name }}"
+          ENV: production
+          KEYWORDS_URL: https://keywords.mediatree.fr/api/export/single
+          LABEL_STUDIO_PROJECT: "{{ vars.countries[taskrun.value].label_studio_project }}"
+          LABEL_STUDIO_PROJECT_ID: "{{ vars.countries[taskrun.value].label_studio_project_id }}"
+          LLM_PROVIDER: mistral
+          LOGLEVEL: INFO
+          MEDIATREE_AUTH_URL: https://keywords.mediatree.fr/api/auth/token/
+          MEDIATREE_USER: quotaclimat
+          MODEL_NAME: mistral-small-2603
+          MODIN_MEMORY: 3000000000
+          NUMBER_OF_PREVIOUS_DAYS: "{{ inputs.days_back + 1 }}"
+          POSTGRES_DB: barometre
+          POSTGRES_PORT: 22737
+          RAY_COLOR_PREFIX: 1
+          DATE: "{{ (inputs.start_date ?? now()) | date('yyyy-MM-dd') }}"
+          # Per-country credentials, from the single JSON secret I18N_COUNTRY_SECRETS
+          # ({"<code>": {"bucket_access", "bucket_secret", "label_studio_token", "label_studio_url"}}).
+          LABEL_STUDIO_URL: >-
+            {{ secret('I18N_COUNTRY_SECRETS') | jq('.["' ~ taskrun.value ~ '"].label_studio_url') | first }}
+          API_LABEL_STUDIO_KEY: >-
+            {{ secret('I18N_COUNTRY_SECRETS') | jq('.["' ~ taskrun.value ~ '"].label_studio_token') | first }}
+          BUCKET_ACCESS: >-
+            {{ secret('I18N_COUNTRY_SECRETS') | jq('.["' ~ taskrun.value ~ '"].bucket_access') | first }}
+          BUCKET_SECRET: >-
+            {{ secret('I18N_COUNTRY_SECRETS') | jq('.["' ~ taskrun.value ~ '"].bucket_secret') | first }}
+          MEDIATREE_PASSWORD: "{{ secret('MEDIATREE_PASSWORD') }}"
+          MISTRAL_API_KEY: "{{ secret('MISTRAL_API_KEY') }}"
+          OPENAI_API_KEY: "{{ secret('OPENAI_API_KEY') }}"
+          POSTGRES_HOST: "{{ secret('POSTGRES_HOST') }}"
+          POSTGRES_PASSWORD: "{{ secret('POSTGRES_PASSWORD_READ') }}"
+          POSTGRES_USER: "{{ secret('POSTGRES_USER_READ') }}"
+          SENTRY_DSN: "{{ secret('SENTRY_DSN') }}"
 
-  # - id: dbt_run_transformations
-  #   shmSize: 6gb
-  #   type: io.kestra.plugin.docker.Run
-  #   containerImage: "rg.fr-par.scw.cloud/namespace-barometre/quotaclimat_base:latest"
-  #   pullPolicy: ALWAYS
-  #   credentials:
-  #     registry: rg.fr-par.scw.cloud/namespace-barometre
-  #     username: nologin
-  #     password: "{{ secret('SCW_SECRET') }}"
-  #   entryPoint:
-  #     - /bin/sh
-  #     - -c
-  #     - cd /app && /app/entrypoints/dbt.sh
-  #   env:
-  #     DBT_ENV: prod
-  #     DBT_PROFILES_DIR: /app/my_dbt_project/dbt
-  #     DBT_PROJECT_DIR: /app/my_dbt_project
-  #     LOGLEVEL: INFO
-  #     MODIN_CPUS: 2
-  #     MODIN_ENGINE: python
-  #     MODIN_MEMORY: 3000000000
-  #     POSTGRES_DB: barometre
-  #     POSTGRES_PORT: 22737
-  #     BUCKET: "{{ secret('SCW_ACCESS') }}"
-  #     BUCKET_SECRET: "{{ secret('SCW_SECRET') }}"
-  #     LABELSTUDIO_INGESTION_POSTGRES_USER: "{{ secret('POSTGRES_USER_READ') }}"
-  #     LABELSTUDIO_INGESTION_POSTGRES_PASSWORD: "{{ secret('POSTGRES_PASSWORD_READ') }}"
-  #     LABELSTUDIO_POSTGRES_HOST: "{{ secret('POSTGRES_HOST') }}"
-  #     LABELSTUDIO_POSTGRES_PORT: 22737
-  #     POSTGRES_USER: "{{ secret('POSTGRES_USER') }}"
-  #     POSTGRES_HOST: "{{ secret('POSTGRES_HOST') }}"
-  #     POSTGRES_PASSWORD: "{{ secret('POSTGRES_PASSWORD') }}"
+  - id: dbt_run_transformations
+    type: io.kestra.plugin.core.flow.Subflow
+    namespace: quotaclimat
+    flowId: dbt
+    wait: true
+    transmitFailed: true

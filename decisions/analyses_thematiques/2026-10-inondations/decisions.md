@@ -15,12 +15,13 @@
 
 Questions auxquelles l'analyse répond (29/10/2026), avec les axes du §3 qui y répondent :
 
-- Relie-t-on les inondations au réchauffement climatique, et en explique-t-on le mécanisme ? (A1 à A6)
-- Les causes citées sont-elles météorologiques, locales ou politiques ? (B2, B4, B3)
-- Renvoie-t-on la faute aux écologistes ou aux agriculteurs ?
-- Parle-t-on davantage des secours que de la prévention et de l'adaptation ? (D1 face à D2, D4 et D5)
-- De quelles conséquences parle-t-on : humaines, matérielles, assurances, agriculture, reconstruction ? (C1 à C5)
-- Quels épisodes ont le plus ému les médias, en France ou à l'étranger, et est-ce proportionné à leur gravité ? (V2, colonne `espagne` de V1)
+- Relie-t-on les inondations au réchauffement climatique, et en explique-t-on le mécanisme ? (A1 à A4, A6)
+- Les causes citées sont-elles météorologiques, locales ou politiques ? (B2, B6, B4, B5, B3)
+- Renvoie-t-on la faute aux écologistes ou aux agriculteurs ? (B5 en partie : l'axe mesure la mention du modèle agricole, pas la mise en cause)
+- Parle-t-on davantage des secours que de la prévention et de l'adaptation ? (curatif : D1, D2 ; préventif : D3 à D7 ; colonnes `pct_curatif` et `pct_preventif`)
+- De quelles conséquences parle-t-on : humaines, matérielles et reconstruction, assurances, agriculture, transports, économie locale, tourisme ? (C1 à C7)
+- Parle-t-on davantage de la météo que du climat ? (X1)
+- Quels épisodes ont le plus ému les médias, en France ou à l'étranger, et est-ce proportionné à leur gravité ? (V1, V2)
 
 Plan de comparaison (30/10/2026), périodes de l'entrée `inondations` du YAML (dates au §1) :
 
@@ -28,12 +29,17 @@ Plan de comparaison (30/10/2026), périodes de l'entrée `inondations` du YAML (
 |---|---|---|
 | `202601_aude` | Aude, janvier 2026 | analyse |
 | `202602_sud_ouest_fr` | Sud-Ouest, février 2026 | analyse |
-| `202609_gard_espagne` | Gard, Hérault et Espagne, septembre et octobre 2026 | analyse (France) et comparaison à l'étranger (Espagne), dans la même fenêtre : à séparer par une regex de lieu (piste X7, colonne `espagne` de V1) |
+| `202609_gard` | Gard et Hérault, septembre et octobre 2026 | analyse |
+| `202610_espagne` | Espagne, octobre 2026 | comparaison à l'étranger, même année |
 | `202608_nepal` | Népal, août et septembre 2026 | comparaison à l'étranger, même année |
 | `202507_texas` | Texas (États-Unis), juillet 2025 | comparaison à l'étranger, antérieure |
 | `202401_pas_de_calais` | Pas-de-Calais, janvier 2024 | comparaison antérieure, France |
-| `202410_ardeche_valence` | Ardèche et Valence (Espagne), octobre 2024 | comparaison antérieure, France et étranger dans la même fenêtre (regex de lieu) |
+| `202403_gard` | Gard, mars 2024 🔴 [épisode à décrire et sourcer] | comparaison antérieure, France 🔴 [rôle à confirmer] |
+| `202404_yonne` | Yonne, fin mars et début avril 2024 🔴 [épisode à décrire et sourcer] | comparaison antérieure, France 🔴 [rôle à confirmer] |
+| `202410_ardeche_valence` | Ardèche et Valence (Espagne), octobre 2024 | comparaison antérieure, France et étranger dans la même fenêtre, non séparés (regex de lieu retirée de V1 le 03/11/2026) |
 | `202501_bretagne` | Bretagne, janvier 2025 | comparaison antérieure, France |
+
+Le Gard et l'Espagne 2026, d'abord réunis dans une même fenêtre (`202609_gard_espagne`), sont séparés en deux fenêtres consécutives. Gard 03/24 et Yonne 04/24 ont été ajoutés ensuite. 🔴 [dates des deux changements à compléter]
 
 ## 1. Méthode spécifique
 
@@ -43,18 +49,23 @@ Méthode commune, sans écart à ce stade.
 - Courbe journalière (étape 0) : modèles 7.1 et 7.2 de la méthode commune, audiovisuel du 01/01/2024 au 26/10/2026, presse par semaine, du lundi 06/01/2025 à la dernière semaine complète ingérée, mots du §2 ; audiovisuel : « AV - V2 - Courbe journalière inondations » (2329) ; presse : « PE - V2 - Courbe hebdomadaire inondations » (2394)
 - Périodes (entrée `inondations` du YAML, fin incluse ci-dessous) :
 
-  Huit fenêtres, chacune avec une tolérance d'une à deux semaines avant et après (méthode commune §3.2, événement météorologique). Deux épisodes proches dans le temps partagent une même fenêtre. Rôle de chaque période : plan de comparaison de l'Angle.
+  Onze fenêtres, chacune avec une tolérance d'une à deux semaines avant et après (méthode commune §3.2, événement météorologique). L'Ardèche et Valence, proches dans le temps, partagent une même fenêtre ; le Gard et l'Espagne 2026 sont séparés en deux fenêtres consécutives. Rôle de chaque période : plan de comparaison de l'Angle.
 
   | `id` | Du | Au | Épisodes | Presse |
   |---|---|---|---|---|
   | `202401_pas_de_calais` | 25/12/2023 | 14/01/2024 | Pas-de-Calais, second épisode | non |
+  | `202403_gard` | 04/03/2024 | 17/03/2024 | Gard | non |
+  | `202404_yonne` | 25/03/2024 | 08/04/2024 | Yonne | non |
   | `202410_ardeche_valence` | 07/10/2024 | 09/11/2024 | Ardèche et Espagne (Valence), fusionnés | non |
   | `202501_bretagne` | 20/01/2025 | 02/02/2025 | Bretagne | oui |
   | `202507_texas` | 30/06/2025 | 13/07/2025 | Texas (États-Unis) | oui |
   | `202601_aude` | 12/01/2026 | 25/01/2026 | Aude | oui |
   | `202602_sud_ouest_fr` | 09/02/2026 | 28/02/2026 | Sud-Ouest | oui |
   | `202608_nepal` | 24/08/2026 | 05/09/2026 | Népal | oui |
-  | `202609_gard_espagne` | 21/09/2026 | 26/10/2026 | Gard et Hérault, et Espagne, fusionnés | oui |
+  | `202609_gard` | 21/09/2026 | 10/10/2026 | Gard et Hérault | oui |
+  | `202610_espagne` | 11/10/2026 | 29/10/2026 | Espagne | oui |
+
+  Libellés courts des périodes dans les questions (colonne `display_period`) : Pas-de-Calais 01/24, Gard 03/24, Yonne 04/24, Ardèche et Valence 10/24, Bretagne 01/25, Texas 07/25, Aude 01/26, Sud-Ouest 02/26, Népal 08/26, Gard 09/26, Espagne 10/26. 🔴 [libellé à trancher : Yonne 04/24 ou 03/24, la fenêtre commençant le 25/03]
 
   Le premier épisode du Pas-de-Calais (31/10 au 19/11/2023) est retiré : il précède les données S3 (01/12/2023), donc sans segments adjacents.
 
@@ -114,68 +125,77 @@ Correspondance avec le dictionnaire OME vérifiée le 26/10/2026.
 
 ## 3. Axes
 
-Termes écrits sous forme normalisée (méthode commune §3.5), en regex de mots entiers ; `s?` marque le pluriel. Aucun terme d'axe n'appartient au dictionnaire noyau (§3.1). Statut de tous les axes : à tester.
+Termes écrits sous forme normalisée (méthode commune §3.5), en regex de mots entiers ; `s?` marque le pluriel. Aucun terme d'axe n'appartient au dictionnaire noyau (§3.1). Statut de tous les axes : à tester. Termes relus le 03/11/2026 dans les questions Metabase, qui font foi.
+
+Audiovisuel : chunks thématiques, fenêtre de ±2 minutes (colonnes `_sans_fenetre` en contrôle). Presse : articles d'au moins 100 mots, regex sur le titre, le chapô et le corps, parts rapportées au corpus ; la part de couverture (V1 presse) est rapportée au total de `stats_factiva_articles`. Mêmes regex dans les deux médias. Une ligne par période et par chaîne ou titre, sans ligne cumulée sur les périodes (retirée le 03/11/2026) : regrouper les chunks ou articles de toutes les périodes pondérerait chaque période par son volume.
 
 | Code | Axe | Origine | Termes | Graphique | Question Metabase (id) | Résultat |
 |---|---|---|---|---|---|---|
-| V1 | Volume, dont segments évoquant l'Espagne | banque V1 | corpus ; Espagne : espagne, valence, barcelone, andalousie | G7 | 2427 (AV) | |
+| V1 | Volume (chunks et minutes) ; en presse, part des articles inondations dans le total des articles du titre. Colonne Espagne (`espagne`, `valence`, `barcelone`, `andalousie`) retirée le 03/11/2026 | banque V1 | corpus | G7 | 2427 (AV), 2480 (PE) | |
 | V2 | Courbe journalière (presse : hebdomadaire) | banque V2 | corpus | G2 | 2329 / 2394 | testé |
-| V4 | Part de couverture : part du temps d'antenne consacrée à l'environnement, au climat et à chaque maillon du climat, par chaîne et pour l'ensemble, pendant chaque période du YAML face à ses 52 semaines précédentes (parts pondérées par les minutes monitorées). Forme retenue le 30/10/2026 : une ligne par période (`period`, mêmes id que le YAML) et par chaîne, avec côte à côte la part de la période (`pct_<part>`), celle des 52 semaines précédentes (`pct_<part>_reference`) et l'écart en points (`ecart_pts_<part>`) ; variable `{{period}}`, ligne `cumul_periodes` sans filtre. La table est hebdomadaire : une semaine entre dans une période si son lundi est dans ses dates. Les périodes sont recopiées du YAML dans la requête, à mettre à jour quand il change | banque V4 | `public.core_query_environmental_shares` | Barres avant / pendant (G8), donut de répartition (G5) | 2432 (AV) | |
-| V3 | Mots les plus employés, en Pareto : occurrences dans le texte de chaque terme du dictionnaire noyau et des axes, chunks thématiques et voisins ; variable `maillon` (all, noyau, constat, causes, consequences, solutions), all sans le noyau ni B1 (qui répète A1) | banque V3, étendue aux termes des axes | noyau (avec pluriels) et termes de A1 à D6 | Pareto, barres et part cumulée | 2430 (AV) | |
-| A1 | Mentions explicites du changement climatique | banque A1 | [banque](../decisions.md#lien-avec-le-changement-climatique) | G7 | 2429 (AV) | |
-| A2 | Mécanismes physiques de l'inondation | spécifique | ci-dessous | G7 | 2429 (AV) | |
-| A3 | Voix scientifiques | banque A3, + hydrologues et météorologues | ci-dessous | G7 | 2429 (AV) | |
-| A4 | Mise en série | banque A2, sans `comme en 2022` ni `saison des feux` | ci-dessous | G7 | 2429 (AV) | |
-| A5 | Sécheresse | banque B3, réduite | ci-dessous | G7 | 2429 (AV) | |
-| A6 | Causes du réchauffement climatique, dictionnaire OME hors HRFP | spécifique | construit dans la requête depuis public.dictionary, ci-dessous | G7 | 2429 (AV) | |
-| B1 | Mentions explicites du changement climatique | banque A1, reprise dans les causes | même liste que A1 | G7 | 2426 (AV) | |
-| B2 | Causes météorologiques directes | banque B4, termes remplacés | ci-dessous | G7 | 2426 (AV) | |
-| B3 | Gouvernance et politique locale | spécifique | ci-dessous | G7 | 2426 (AV) | |
-| B4 | Urbanisation et aménagement (colonne `b4_urbanisation_amenagement`, anciennement facteurs locaux aggravants) | spécifique | ci-dessous | G7 | 2426 (AV) | |
-| C1 | Conséquences humaines | spécifique | ci-dessous | G7 | | |
-| C2 | Dommages matériels | banque C1 (secteur) | ci-dessous | G6 | | |
-| C3 | Assurances | banque C1 (secteur) | ci-dessous | G6 | | |
-| C4 | Agriculture | banque C1 (secteur) | ci-dessous | G6 | | |
-| C5 | Reconstruction, temps long | spécifique | ci-dessous | G7 | | |
-| C6 | Emploi et activité économique | banque C1 (secteur) | ci-dessous | G6 | | |
-| C7 | Routes et transports | banque C1 (secteur) | ci-dessous | G6 | | |
-| D1 | Secours (curatif) | banque D3 | ci-dessous | G11 | 2434 (AV) | |
-| D2 | Alerte des habitants et préparation | banque D3 | ci-dessous | G11 | 2434 (AV) | |
-| D3 | Atténuation du changement climatique | banque D1 | [banque](../decisions.md#solutions), liste atténuation | G11 | 2434 (AV) | |
-| D4 | Aménagement | banque D3 | ci-dessous | G11 | 2434 (AV) | |
-| D5 | Végétalisation | banque D3 | ci-dessous | G11 | 2434 (AV) | |
-| D6 | Politiques et financements d'adaptation | spécifique | ci-dessous | G11 | 2434 (AV) | |
-| D7 | Absence de solution, fatalité | spécifique | ci-dessous | G11 | 2434 (AV) | |
+| V4 | Part de couverture : part du temps d'antenne consacrée à l'environnement, au climat et à chaque maillon du climat, par chaîne, pendant chaque période du YAML face à ses 52 semaines précédentes (parts pondérées par les minutes monitorées). Forme retenue le 30/10/2026 : une ligne par période (`period`, mêmes id que le YAML) et par chaîne, avec côte à côte la part de la période (`pct_<part>`), celle des 52 semaines précédentes (`pct_<part>_reference`) et l'écart en points (`ecart_pts_<part>`) ; sans variable, sans ligne Ensemble ni cumul (retirées le 03/11/2026). La table est hebdomadaire : une semaine entre dans une période si son lundi est dans ses dates. Les périodes sont recopiées du YAML dans la requête, à mettre à jour quand il change | banque V4 | `public.core_query_environmental_shares` | Barres avant / pendant (G8), donut de répartition (G5) | 2432 (AV) | |
+| V3 | Mots les plus employés, en Pareto : occurrences dans le texte de chaque terme du dictionnaire noyau et des axes, chunks thématiques et voisins ; variable `maillon` (all, noyau, constat, causes, consequences, solutions), all sans le noyau ni B1 (qui répète A1) | banque V3, étendue aux termes des axes | noyau (avec pluriels) et termes des axes 🔴 [Pareto à resynchroniser avec les termes ci-dessous] | Pareto, barres et part cumulée | 2430 (AV) | |
+| X1 | Occurrences des mentions du changement climatique (regex de A1) et de la météo (regex de B2), plusieurs possibles par chunk, en valeur et par heure de grille (`program_metadata`), chunks thématiques seuls et avec leurs voisins à ±2 minutes (`_avec_fenetre`) | spécifique | ceux de A1 et B2 | 🔴 [graphique à choisir] | 2457 (AV) | |
+| A1 | Mentions explicites du changement climatique | banque A1 | ci-dessous | G7 | 2429 (AV), 2463 (PE) | |
+| A2 | Mécanismes physiques de l'inondation | spécifique | ci-dessous | G7 | 2429 (AV), 2463 (PE) | |
+| A3 | Voix scientifiques | banque A3, + hydrologues et météorologues | ci-dessous | G7 | 2429 (AV), 2463 (PE) | |
+| A4 | Mise en série | banque A2, réécrit | ci-dessous | G7 | 2429 (AV), 2463 (PE) | |
+| A6 | Causes du réchauffement climatique, dictionnaire OME hors HRFP | spécifique | construit dans la requête depuis public.dictionary, ci-dessous | G7 | 2429 (AV), 2463 (PE) | |
+| B1 | Mentions explicites du changement climatique | banque A1, reprise dans les causes | même liste que A1 | G7 | 2426 (AV), 2464 (PE) | |
+| B2 | Causes météorologiques directes | variantes de « forte pluie » du dictionnaire OME | ci-dessous | G7 | 2426 (AV), 2464 (PE) | |
+| B3 | Gouvernance et politique locale | spécifique | ci-dessous | G7 | 2426 (AV), 2464 (PE) | |
+| B4 | Urbanisation et aménagement (colonne `b4_urbanisation_amenagement`, anciennement facteurs locaux aggravants) | spécifique | ci-dessous | G7 | 2426 (AV), 2464 (PE) | |
+| B5 | Modèle agricole (colonne `b5_modele_agricole`) | spécifique | ci-dessous | G7 | 2426 (AV), 2464 (PE) | |
+| B6 | Sécheresse (colonne `b6_secheresse`, ancien A5 du constat, passé dans les causes le 03/11/2026) | banque B3, réduite | ci-dessous | G7 | 2426 (AV), 2464 (PE) | |
+| C1 | Conséquences humaines | spécifique | ci-dessous | G7 | 2436 (AV), 2465 (PE) | |
+| C2 | Dommages matériels et reconstruction | banque C1 (secteur) | ci-dessous | G6 | 2436 (AV), 2465 (PE) | |
+| C3 | Assurances | banque C1 (secteur) | ci-dessous | G6 | 2436 (AV), 2465 (PE) | |
+| C4 | Agriculture | banque C1 (secteur) | ci-dessous | G6 | 2436 (AV), 2465 (PE) | |
+| C5 | Routes et transports | banque C1 (secteur) | ci-dessous | G6 | 2436 (AV), 2465 (PE) | |
+| C6 | Économie, générique (réutilisable pour d'autres épisodes) | banque C1 (secteur) | ci-dessous | G6 | 2436 (AV), 2465 (PE) | |
+| C7 | Tourisme | banque C1 (secteur) | ci-dessous | G6 | 2436 (AV), 2465 (PE) | |
+| D1 | Secours (curatif) | banque D3 | ci-dessous | G11 | 2434 (AV), 2466 (PE) | |
+| D2 | Alerte des habitants et préparation (curatif) | banque D3 | ci-dessous | G11 | 2434 (AV), 2466 (PE) | |
+| D3 | Aménagement (préventif) | banque D3 | ci-dessous | G11 | 2434 (AV), 2466 (PE) | |
+| D4 | Végétalisation (préventif) | banque D3 | ci-dessous | G11 | 2434 (AV), 2466 (PE) | |
+| D5 | Entretien des cours d'eau (préventif) | spécifique | ci-dessous | G11 | 2434 (AV), 2466 (PE) | |
+| D6 | Politiques et financements d'adaptation (préventif) | spécifique | ci-dessous | G11 | 2434 (AV), 2466 (PE) | |
+| D7 | Atténuation à la racine (préventif) | banque D1, liste atténuation | ci-dessous | G11 | 2434 (AV), 2466 (PE) | |
 
-Croisements prévus : `A1 x A6` (colonnes `pct_a1_lien_cc` et `pct_a6_causes_rechauffement` de la question 2429) et `A1 x A2` (G13, nuage de points, un point par média) ; curatif ou préventif (banque D3) : D1 face à D2, D4 et D5 (G11, barres empilées par média).
+Croisements prévus : `A1 x A6` (colonnes `pct_a1_lien_cc` et `pct_a6_causes_rechauffement` de la question 2429) et `A1 x A2` (G13, nuage de points, un point par média) ; curatif ou préventif (banque D3) : curatif = D1 ou D2, préventif = D3 à D7 (colonnes `pct_curatif` et `pct_preventif`, un chunk ou un article peut être les deux ; G11, barres empilées par média). D6 ajouté au préventif le 03/11/2026.
 
-**Axes retirés** : climat d'après le dictionnaire OME explicite (redondant avec A1, les mentions explicites).
+**Axes retirés** : climat d'après le dictionnaire OME explicite (redondant avec A1, les mentions explicites) ; adaptation d'après le dictionnaire OME (redondant avec D3) ; absence de solution, fatalité (ancien D7) ; reconstruction, temps long (ancien C5, fusionné dans C2) ; emploi et activité économique (ancien C6, remplacé par l'économie locale) ; agriculture large, sans « inondés » (trop large).
 
 **Axes de la banque non exploités** : B2 co-aléa chaleur (sans lien direct avec l'inondation) ; B6 forces de l'ordre et justice (pas de cause criminelle). X3 proportionnalité : couvert par la courbe journalière (V2), rapprochée des événements. 🔴 [à décider : B5 aléas composés, C2 santé, C3 précarité du ménage, C4 personnes vulnérables, D2 solutions individuelles ou systémiques]
 
 **Termes des axes spécifiques**
 
+- **A1 Mentions explicites du changement climatique** (et B1, et regex CC de X1) : `changements? climatiques?`, `dereglement climatique`, `dereglement du climat`, `rechauffement climatique`, `rechauffement de la planete`, `rechauffement planetaire`, `crise climatique`, `urgence climatique`, `climat se rechauffe`, `le climat change`, `risques climatiques`
 - **A2 Mécanismes physiques** : `vapeur d eau`, `atmosphere plus chaude`, `evaporation`, `cycle de l eau`, `oceans? plus chauds?`, `mediterranee plus chaude`, `temperature de surface de la mer`, `clausius clapeyron`. `evaporation` est large : à contrôler.
-- **A3 Voix scientifiques** : `climatologues?`, `meteorologues?`, `hydrologues?`, `hydrogeologues?`, `scientifiques?`, `chercheu(r|se)s?`, `giec`, `meteo france`, `cnrs`, `universite`, `expert(e)?s? du climat`. `scientifiques?` et `universite` sont larges : à contrôler.
-- **A4 Mise en série** : `plus frequent(e)?s?` (couvre aussi « de plus en plus fréquents »), `de plus en plus intenses?`, `record`, `jamais vu`, `sans precedent`, `nouvelle norme`, `crue historique`, `comme en 2024`, `multiplication des (inondations|crues|episodes)` (ajouté le 29/10/2026, inspiré des posts LinkedIn de QuotaClimat). `record` est large : à contrôler.
-- **A5 Sécheresse** (liste de la banque arrêtée aux termes qui nomment explicitement la sécheresse) : `secheresses?`, `deficit hydrique`, `sols? secs?`, `sol tres sec`, `manque d eau`, `penurie d eau`
+- **A3 Voix scientifiques** : `climatologues?`, `meteorologues?`, `hydrologues?`, `hydrogeologues?`, `scientifiques?`, `chercheu(r|se)s?`, `giec`, `cnrs`, `universite`, `expert(e)?s? du climat`. `scientifiques?` et `universite` sont larges : à contrôler.
+- **A4 Mise en série** (réécrit dans la question 2429) : `(crues?|inondations?|episodes?) (plus|de plus en plus) frequent(e)?s?`, `(crues?|inondations?|episodes?) de plus en plus intenses?`, `(crues?|inondations?|episodes?) a repetitions?`, `(multiplication|intensification) des (inondations|crues|episodes)`. Chaque terme est ancré sur l'aléa : `record`, `jamais vu`, `nouvelle norme` et `comme en 2024` ne sont plus dans l'axe ; `inondations? sans precedent` et `(crues?|inondations?|episodes?) historiques?` retirés le 03/11/2026.
 - **A6 Causes du réchauffement climatique** : mots français du dictionnaire OME de thème changement_climatique_causes (direct et indirect), hors HRFP, lus dans public.dictionary et normalisés dans la requête (54 mots le 28/10/2026). Liste tenue à jour par le dictionnaire, plus besoin de la maintenir ici. Mots hors sujet possibles : a69, mercosur, greenwashing, bouilloire thermique.
-- **B2 Causes météorologiques directes** : `pluies? (diluviennes?|torrentielles?|extremes?|intenses?)`, `fortes? pluies?`, `precipitations? extremes?`, `orages?`, `cumuls? de pluie`, `millimetres de pluie`, `episodes? pluvieux`, `un mois de pluie` (ajouté le 29/10/2026, posts LinkedIn)
+- **B2 Causes météorologiques directes** (et regex météo de X1) : variantes de « forte pluie » du dictionnaire OME, `fortes? pluies?`, `pluies? (intenses?|extremes?|torrentielles?)`, `importantes precipitations`, `mega orages?`. `orages?`, `cumuls? de pluie`, `millimetres de pluie`, `episodes? pluvieux`, `un mois de pluie` et `pluies? diluviennes?` ne sont plus dans l'axe (pluie seule jugée trop large).
 - **B3 Gouvernance et politique locale** : `choix politiques?`, `defaillance de l etat`, `manque d anticipation`, `sous investissement`, `responsabilite des elus`, `cout de l inaction` (`court termisme` retiré le 29/10/2026 : jugement de valeur, jamais employé) ; ajoutés le 29/10/2026 depuis l'axe « absence de gouvernance » de l'analyse incendies 2026 (première liste sans résultat) : `prevention insuffisante`, `manque de (moyens|prevention)`, `aurai(en)?t pu etre evitee?s?` (accordé à « les inondations », 29/10/2026), `alertes? ignorees?` (`risques? connus?` et `risques? annonces?` retirés ensuite dans la question 2426). Écartés de cette liste incendies : termes propres au feu (`interdiction de fauchage`, `celex`, interdictions), arrêtés (ambigus avec les arrêtés de catastrophe naturelle et d'évacuation), `aurait du` (trop large).
-- **B4 Urbanisation et aménagement** (renommé le 29/10/2026 dans la question 2426) : `artificialisation`, `impermeabilisation`, `sols? impermeabilises?`, `beton(isation|nage)`, `etalement urbain`, `saturation des sols`, `arrachage des haies`, `remembrement`, `curage`, `entretien des cours d eau`, `embacles?`, `constructions? en zone a risque`, `vetuste des reseaux`, `gestion des eaux pluviales`. Limite : l'axe détecte la mention, pas ce qu'on en dit (méthode commune §3.10, valence) ; `curage` et `entretien des cours d eau` sont aussi des arguments contestés.
-- **C1 Conséquences humaines** : `evacue(e)?s?`, `sinistre(e)?s?`, `bilan humain`, `vies? humaines?`, `personnes? disparues?`, `disparu(e)?s`, `personnes? deplacee?s`, `deplacements? de (personnes|populations?)`, `morts?`, `deces`, `victimes?`, `detresse`, `traumatisme`, `traumatise(e)?s?`, `angoisse`, `stress post traumatique`. Féminins, disparus, déplacés et détresse psychologique ajoutés le 29/10/2026, inspirés des posts LinkedIn de QuotaClimat (question 2433).
-- **C2 Dommages matériels** : `degats materiels`, `milliards d euros de degats`, `millions d euros de degats`, `pertes economiques`, `coupures? d electricite`
-- **C3 Assurances** : `regime cat nat`, `catnat`, `arretes? de catastrophe naturelle`, `indemnisation`, `assureurs?`, `france assureurs`, `surprime`, `inassurable`, `reassurance` (`franchise` retiré le 29/10/2026 : trop large).
-- **C4 Agriculture** : `cultures inondees`, `parcelles inondees`, `champs inondes`, `terres agricoles inondees`, `recoltes? detruites?`, `pertes? de recolte`, `recolte compromise`, `semis detruits`, `semis retardes`, `impossibilite de semer`, `retard des semis`, `pertes? de rendement`, `baisse des rendements`, `cereales noyees`, `vergers inondes`, `vignes inondees`, `maraichage`, `cultures maraicheres`
-- **C5 Reconstruction, temps long** : `reconstruire`, `reconstruction`, `retour a la normale`
-- **C6 Emploi et activité économique** (29/10/2026) : `chomage (partiel|technique)`, `activite partielle`, `pertes? d emplois?`, `emplois? menaces?`, `perte d exploitation`, `entreprises? sinistrees?`, `commerces? (fermes?|sinistres?|detruits?)`, `commercants?`, `artisans?`, `salaries?`, `jours? de travail perdus?`. `salaries?`, `commercants?` et `artisans?` sont larges.
-- **C7 Routes et transports** (29/10/2026) : `routes? (coupees?|barrees?|fermees?|inondees?)`, `axes? routiers?`, `autoroutes? (coupees?|fermees?)`, `circulation (interrompue|coupee|perturbee)`, `trafic (interrompu|perturbe|ferroviaire)`, `trains? (supprimes?|annules?)`. Retirés car trop larges : `sncf`, `voies? ferrees?`, `ponts? (effondres?|emportes?|fermes?)`, `vehicules? emportes?`, `voitures? emportees?`, `automobilistes?`, `deviations?`, `transports? scolaires?`, `vols? annules?`
-- **D1 Secours** : `secours`, `sapeurs? pompiers?`, `sauveteurs?`, `helicopteres?`, `cellule de crise`, `plan orsec`, `securite civile`
-- **D2 Alerte des habitants et préparation** : `batardeaux?`, `calfeutrer`, `sacs de sable`, `kit d urgence`, `plan communal de sauvegarde`, `exercices? d evacuation`, `systemes? d alerte`, `fr alert`, `vigilance orange`, `vigilance rouge`, `alerte precoce`, `evacuation preventive`, `vigicrues`, `vigicrues flash`, `apic`, `service de prevision des crues`, `hydrometrie`, `stations? hydrometriques?`, `reseau d observation`, `vigilance crues`, `avertissement automatique`
-- **D4 Aménagement** : `repli strategique`, `recul strategique`, `relocalisation`, `demolition des habitations`, `rachat des maisons`, `expropriation`, `non constructible`, `zone inondable`, `inconstructible`, `interdiction de construire`, `desartificialisation`, `fonds barnier`, `surelevation`, `pilotis`, `piece refuge`, `digues?`, `systeme d endiguement`, `bassins? de retention`, `bassins? ecreteurs?`, `ecretement`, `ouvrages? de protection`, `amenagement hydraulique`
-- **D5 Végétalisation** : `desimpermeabilisation`, `vegetalisation`, `renaturation`, `remeandrage`, `restauration des zones? humides?`, `ripisylve`, `agroforesterie`, `ville eponge`, `bio retention`, `zan`, `zero artificialisation nette`, `loi climat resilience`
-- **D6 Politiques et financements d'adaptation** : `fonds vert`, `plan national d adaptation`, `pnacc`
-- **D7 Absence de solution, fatalité** : `fatalite`, `il faut subir`, `rien a faire`, `phenomenes? naturels?`, `caprices? de la nature`. Axe exploratoire (29/10/2026), inspiré des posts LinkedIn de QuotaClimat (« il n'y a rien à faire, il faut subir », inondations « présentées comme une fatalité ») : l'inondation présentée comme naturelle ou inévitable, sans solution. `rien a faire` est large.
+- **B4 Urbanisation et aménagement** (renommé le 29/10/2026 dans la question 2426) : `artificialisation`, `impermeabilisation`, `sols? impermeabilises?`, `beton(isation|nage)`, `etalement urbain`, `saturation des sols`, `constructions? en zone a risque`, `vetuste des reseaux`, `gestion des eaux pluviales`. Limite : l'axe détecte la mention, pas ce qu'on en dit (méthode commune §3.10, valence). `curage`, `entretien des cours d eau` et `embacles?` retirés le 03/11/2026 : ils recoupaient D5. `arrachage des haies` et `remembrement` passés en B5 le 03/11/2026.
+- **B5 Modèle agricole** (03/11/2026) : modèle agricole, `agriculture (intensive|industrielle|productiviste)`, `monocultures?`, `grandes cultures` ; haies et bocage, `arrachage des haies`, `(suppression|destruction|disparition) des haies`, `haies arrachees`, `remembrement`, `disparition du bocage`, `talus arases` ; sols, `tassement des sols`, `sols? compactes?`, `compaction des sols`, `sols? nus?`, `battance`, `sols? battants?`, `erosion des sols` ; ruissellement agricole, `ruissellement (sur les|des) (champs|terres|parcelles)`, `ruissellement agricole`. Écartés : prairies et drainage (familles non retenues), `mais` (confondu avec la conjonction une fois normalisé), `coulee de boue` (noyau), `pesticides`, `engrais`, `nitrates` (pollution, pas cause), `agriculteurs?` seul (recoupe C4). `grandes cultures` et `erosion des sols` peuvent relever des conséquences : à contrôler. Limite : comme B4, l'axe détecte la mention, pas la mise en cause. 🔴 [lien entre ces pratiques et le ruissellement à faire valider par l'expert, avec source]
+- **B6 Sécheresse** (ancien A5, passé du constat aux causes le 03/11/2026 ; liste de la banque arrêtée aux termes qui nomment explicitement la sécheresse) : `secheresses?`, `deficit hydrique`, `sols? secs?`, `sol tres sec`, `manque d eau`, `penurie d eau`. Le code A6 est gardé tel quel pour ne pas renommer ses colonnes.
+- **C1 Conséquences humaines** : `evacue(e)?s?`, `sinistre(e)?s?`, `bilan humain`, `vies? humaines?`, `personnes? disparues?`, `disparu(e)?s`, `personnes? deplacee?s`, `deplacements? de (personnes|populations?)`, `morts?`, `deces`, `victimes?`. Féminins, disparus et déplacés ajoutés le 29/10/2026, inspirés des posts LinkedIn de QuotaClimat ; les termes de détresse psychologique (`detresse`, `traumatisme`, `traumatise(e)?s?`, `angoisse`, `stress post traumatique`) ne sont plus dans l'axe.
+- **C2 Dommages matériels et reconstruction** : `degats materiels`, `milliards d euros de degats`, `millions d euros de degats`, `coupures? d electricite`, `reconstruire`, `reconstruction`. `pertes economiques` passé en C6 ; `retour a la normale` retiré.
+- **C3 Assurances** : `regime cat nat`, `catnat`, `arretes? de catastrophe naturelle`, `indemnisations?`, `assureurs?`, `france assureurs`, `surprime`, `inassurable`, `reassurance`, `primes d assurance` (`franchise` retiré le 29/10/2026 : trop large).
+- **C4 Agriculture** : `cultures inondees`, `parcelles inondees`, `champs inondes`, `terres agricoles inondees`, `recoltes? detruites?`, `pertes? de recolte`, `recolte compromise`, `semis (detruits|retardes)`, `impossibilite de semer`, `retard des semis`, `pertes? de rendement`, `baisse des rendements`, `cereales noyees`, `vergers inondes`, `vignes inondees`, `maraichage`, `cultures maraicheres`
+- **C5 Routes et transports** (29/10/2026, ancien C7) : `(routes?|axes? routiers?|autoroutes?) (coupees?|barrees?|fermees?|inondees?)`, `circulation (interrompue|coupee|perturbee)`, `trafic (interrompu|perturbe|ferroviaire)`, `trains? (supprimes?|annules?)`. Retirés car trop larges : `sncf`, `voies? ferrees?`, `ponts? (effondres?|emportes?|fermes?)`, `vehicules? emportes?`, `voitures? emportees?`, `automobilistes?`, `deviations?`, `transports? scolaires?`, `vols? annules?`
+- **C6 Économie** (rendu générique le 03/11/2026 : aucun terme propre aux inondations, pour réutiliser l'axe sur d'autres épisodes ; le contexte vient du corpus noyau) : `commerces? (fermes?|sinistres?|impactes?|touches?|detruits?|devastes?|a l arret)`, `commercants? (sinistres?|touches?|impactes?|ruines?)`, `fermetures? des commerces`, `rideaux? baisses?`, `entreprises? (sinistrees?|a l arret|touchees?|impactees?|detruites?)`, `artisans? sinistres?`, `(usines?|ateliers?|entrepots?) (detruits?|sinistres?|a l arret)`, `zones? (artisanales?|industrielles?|commerciales?) (sinistrees?|touchees?|detruites?|devastees?)`, `pertes? economiques?`, `pertes? d exploitation`, `pertes? de chiffre d affaires`, `manque a gagner`, `stocks? (perdus|detruits)`, `activite economique (paralysee|a l arret|perturbee)`, `chomage (technique|partiel)`, `activite partielle`, `salaries? au chomage`, `aides? aux (entreprises|commercants|artisans)`, `fonds de solidarite`. Les termes seuls de l'ancien C6 (`commercants?`, `artisans?`, `salaries?`) sont maintenant qualifiés ; `pertes? d emplois?`, `emplois? menaces?` et `jours? de travail perdus?` ne sont plus dans l'axe. Retirés le 03/11/2026 : `inondes?`, `inondees?`, `sous l eau`.
+- **C7 Tourisme** : `tourisme (frappe|touche|impacte|en berne|a l arret|sinistre)`, `secteur touristique`, `frequentation touristique`, `saison touristique (compromise|gachee|perdue|ratee)`, `baisse (du tourisme|de la frequentation|des reservations)`, `annulations? (de reservations?|de sejours?)`, `campings? (inondes?|evacues?|fermes?|detruits?|devastes?)`, `(hotels?|hoteliers?|restaurateurs?) (fermes?|inondes?|vides|sinistres?|touches?)`, `gites? inondes?`, `touristes? (evacues?|bloques?|absents?|annulent)`, `vacanciers? (evacues?|bloques?)`. `secteur touristique` et `frequentation touristique` sont larges.
+- **D1 Secours** : `secours`, `sapeurs? pompiers?`, `sauveteurs?`, `gendarmes?`, `helicopteres?`, `cellule de crise`, `plan orsec`, `securite civile`
+- **D2 Alerte des habitants et préparation** : `batardeaux?`, `calfeutrer`, `sacs de sable`, `kit d urgence`, `plan communal de sauvegarde`, `exercices? d evacuation`, `systemes? d alerte`, `fr alert`, `vigilance (orange|rouge|crues)`, `alerte precoce`, `evacuation preventive`, `vigicrues( flash)?`, `service de prevision des crues`, `hydrometrie`, `stations? hydrometriques?`, `reseau d observation`, `avertissement automatique`. `apic` n'est plus dans l'axe.
+- **D3 Aménagement** (ancien D4) : `relocalisation`, `demolition des habitations`, `rachat des maisons`, `expropriation`, `non constructible`, `zone inondable`, `inconstructible`, `interdiction de construire`, `desartificialisation`, `surelevation`, `digues?`, `systemes? d endiguement`, `bassins? de retention`, `espaces? verts?`. Ne sont plus dans l'axe : `repli strategique`, `recul strategique`, `fonds barnier`, `pilotis`, `piece refuge`, `bassins? ecreteurs?`, `ecretement`, `ouvrages? de protection`, `amenagement hydraulique`. `espaces? verts?` est large.
+- **D4 Végétalisation** (ancien D5) : `desimpermeabilisation`, `desimpermeabiliser`, `vegetalisation`, `renaturation`, `zones? humides?`, `agroforesterie`, `ville eponge`, `bio retention`, `zan`, `zero artificialisation nette`, `loi climat (et )?resilience`, `replanter (d|l)es haies`, `replantage des haies`. Ne sont plus dans l'axe : `remeandrage`, `ripisylve` ; `restauration des zones? humides?` élargi à `zones? humides?`.
+- **D5 Entretien des cours d'eau** : `(curage|cure(r|ent)?) (d|l)es (cours d eau|fosses|rivieres)`, `entret(ien|enir) (d|l)es (cours d eau|fosses|rivieres|berges)`, `nettoy(age|er) (l|d)es (cours d eau|rivieres|fosses)`, `(retrait|enlevement) des embacles`, `desenvasement`. Limite : comme B4, l'axe détecte la mention, pas la position (l'entretien des cours d'eau est un argument contesté).
+- **D6 Politiques et financements d'adaptation** : `fonds vert`, `plan national d adaptation`, `pnacc`, `fond barnier`, `loi climat (et )?resilience`. La loi Climat et résilience est comptée en D4 et en D6, sous ses deux formes (03/11/2026). 🔴 [orthographe à vérifier : la regex a `fond barnier`, sans s ; « fonds Barnier » ne serait pas détecté]
+- **D7 Atténuation à la racine** (ancien D3, liste atténuation de la banque) : `reduire les emissions`, `reduction des emissions`, `baisse des emissions`, `decarbonation`, `decarboner`, `neutralite carbone`, `zero emission nette`, `sortie des energies fossiles`, `sortie du charbon`, `energies fossiles`, `puits de carbone`, `budget carbone`, `objectifs climatiques`, `accord de paris`, `green deal`, `plan climat`, `pniec`, `snbc`
+
+**Termes de X1** : regex CC = A1, regex météo = B2, comptées avec `regexp_count` (plusieurs occurrences par chunk). Le ratio météo / CC est un rapport de totaux, pas une moyenne de ratios.
 
 ## 4. Résultats
 

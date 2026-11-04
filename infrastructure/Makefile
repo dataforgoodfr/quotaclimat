@@ -26,7 +26,7 @@ define TG_CMD
 	mise exec -- terragrunt $(1) --terragrunt-working-dir live/$(target)/$(env)
 endef
 
-.PHONY: tg-init tg-plan tg-apply tg-fmt tg-state-pull tg-state-list tg-destroy tg-output
+.PHONY: tg-init tg-plan tg-apply tg-fmt tg-state-pull tg-state-list tg-state-rm tg-destroy tg-output
 
 tg-init:
 	$(call TG_CMD,init)
@@ -45,6 +45,13 @@ tg-state-pull:
 
 tg-state-list:
 	$(call TG_CMD,"state list")
+
+# Forgets resources in the state only: nothing is deleted in the cloud, the next
+# apply would create them again. addr takes one or more resource addresses, e.g.
+#   make target=orchestrator env=prod tg-state-rm addr="scaleway_object_bucket_policy.glitchtip scaleway_object_bucket.glitchtip"
+tg-state-rm:
+	@test -n "$(addr)" || { echo "usage: make target=<t> env=<e> tg-state-rm addr=\"<resource address> [...]\""; exit 1; }
+	$(call TG_CMD,state rm $(addr))
 
 tg-destroy:
 	$(call TG_CMD,destroy)

@@ -127,6 +127,7 @@ All `tg-*` commands take `env` (default: `dev`) and `target` (default: `advertis
 | `make tg-fmt` | Format `.hcl` files |
 | `make tg-state-list` | List resources in state |
 | `make tg-state-pull` | Pull raw state |
+| `make tg-state-rm addr="<address> [...]"` | Remove resources from the state only (nothing is deleted in the cloud) |
 | `make tg-output` | Show outputs as JSON, sensitive values in clear text (`name=<output>` prints one raw) |
 
 Examples:
@@ -357,7 +358,8 @@ Every target below is deployed once per environment (`dev`/`prod`) from its `tem
 | IAM SSH key | `scaleway_iam_ssh_key.paul_gabriel` | SSH access to the baremetal server |
 | IAM SSH key | `scaleway_iam_ssh_key.gmguarino` | SSH access to the baremetal server |
 | Object bucket | `scaleway_object_bucket.glitchtip` | GlitchTip file storage and cold storage (`cold_storage/` prefix) |
-| IAM application | `scaleway_iam_application.glitchtip_s3` | Identity used only by GlitchTip (no IAM policy, so no project-wide access) |
+| IAM application | `scaleway_iam_application.glitchtip_s3` | Identity used only by GlitchTip |
+| IAM policy | `scaleway_iam_policy.glitchtip_s3` | Object Storage read/write on the orchestrator project only (Scaleway combines it with the bucket policy) |
 | IAM API key | `scaleway_iam_api_key.glitchtip_s3` | Access/secret key, read with `make env=prod target=orchestrator tg-output name=glitchtip_s3_secret_key` |
 | Bucket policy | `scaleway_object_bucket_policy.glitchtip` | Read/write on the GlitchTip bucket only; needs `project_id` or Scaleway answers 403 |
 | Baremetal server | `scaleway_baremetal_server.orchestrator` | Elastic Metal server (EM-A610R-NVMe) hosting Kestra + GlitchTip via Docker Compose/Ansible |

@@ -45,3 +45,13 @@ variable "postgres_password_glitchtip" {
   type      = string
   sensitive = true
 }
+
+variable "glitchtip_bucket_admin_user_ids" {
+  type        = list(string)
+  description = "IAM user IDs allowed to administer the GlitchTip bucket (everyone running OpenTofu on this target). Without them the bucket policy locks them out of the bucket."
+
+  validation {
+    condition     = length(var.glitchtip_bucket_admin_user_ids) > 0
+    error_message = "At least one admin user ID is required, otherwise OpenTofu loses access to the bucket."
+  }
+}

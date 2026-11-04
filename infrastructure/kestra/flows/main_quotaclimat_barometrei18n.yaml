@@ -103,6 +103,7 @@ tasks:
           MEDIATREE_PASSWORD: "{{ secret('MEDIATREE_PASSWORD') }}"
           SENTRY_DSN: "{{ secret('SENTRY_DSN') }}"
           SENTRY_LOGGING: "true"
+          SERVICE_NAME: api-to-s3
 
       - id: detect_keywords
         allowFailure: true
@@ -150,6 +151,7 @@ tasks:
           POSTGRES_PASSWORD: "{{ secret('POSTGRES_PASSWORD') }}"
           SENTRY_DSN: "{{ secret('SENTRY_DSN') }}"
           SENTRY_LOGGING: "true"
+          SERVICE_NAME: detect-keywords
 
       - id: detect_misinformation
         allowFailure: true
@@ -206,6 +208,7 @@ tasks:
           POSTGRES_USER: "{{ secret('POSTGRES_USER_READ') }}"
           SENTRY_DSN: "{{ secret('SENTRY_DSN') }}"
           SENTRY_LOGGING: "true"
+          SERVICE_NAME: detect-misinformation
 
   - id: dbt_run_transformations
     type: io.kestra.plugin.core.flow.Subflow

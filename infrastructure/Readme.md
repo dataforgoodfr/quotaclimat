@@ -216,7 +216,7 @@ make tags=kestra ansible
 
 ### Failure alerts (Mattermost)
 
-The `main-pipeline` flow posts a message in a Mattermost channel when a step fails (`errors:` block, `MattermostExecution` task, with a link to the execution). The channel is the one of an [incoming webhook](https://developers.mattermost.com/integrate/webhooks/incoming/) (Integrations > Incoming Webhooks), whose URL is listed in the `MATTERMOST_WEBHOOK_URLS` secret (`.env.secrets`, provisioned as a Kestra secret by the `kestra` role). Several webhooks (channels or servers) can be given, comma-separated without spaces, and each gets the message. To change the channels, update the secret, then `make tags=kestra ansible`.
+The `main-pipeline` flow posts a message in a Mattermost channel when a step fails (`errors:` block, plain HTTP `Request` task posting to the webhook, with links to the execution and to the failed subflow). The channel is the one of an [incoming webhook](https://developers.mattermost.com/integrate/webhooks/incoming/) (Integrations > Incoming Webhooks), whose URL is listed in the `MATTERMOST_WEBHOOK_URLS` secret (`.env.secrets`, provisioned as a Kestra secret by the `kestra` role). Several webhooks (channels or servers) can be given, comma-separated without spaces, and each gets the message. To change the channels, update the secret, then `make tags=kestra ansible`.
 
 `metabase_sync` has `allowFailure: true`: its failure marks the run as WARNING and sends no alert.
 

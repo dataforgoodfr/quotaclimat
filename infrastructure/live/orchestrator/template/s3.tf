@@ -23,6 +23,9 @@ resource "scaleway_iam_api_key" "glitchtip_s3" {
 resource "scaleway_object_bucket_policy" "glitchtip" {
   bucket = scaleway_object_bucket.glitchtip.name
   region = "fr-par"
+  # Without this the policy is sent with the provider's default project, not the
+  # bucket's, and Scaleway answers 403 AccessDenied.
+  project_id = scaleway_account_project.project.id
 
   policy = jsonencode({
     Version = "2023-04-17"

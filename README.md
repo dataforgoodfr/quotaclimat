@@ -278,14 +278,16 @@ Every commit on the `main` branch will build an deploy to the Scaleway container
 Learn [more here.](https://www.scaleway.com/en/docs/tutorials/use-container-registry-github-actions/)
 
 ## Monitoring
-With Sentry, with env variable `SENTRY_DSN`.
+With Sentry or [GlitchTip](https://glitchtip.com) (Sentry-compatible, hosted on the orchestrator, see `infrastructure/Readme.md`), with env variable `SENTRY_DSN`. The jobs call `sentry_init()` (`quotaclimat/utils/sentry.py`), which tags events and logs with `country` (`COUNTRY`), `service` (`SERVICE_NAME`, or the name of the entry script) and sets `environment` from `ENV`.
 
 Learn more here : https://docs.sentry.io/platforms/python/configuration/options/
 
 ### Send logs to Sentry
-By setting `SENTRY_LOGGING` to `"true"` we can send the job logs to sentry (as Scaleway Cockpit is not always reliable).
+By setting `SENTRY_LOGGING` to `"true"` we can send the job logs (`INFO` and above) to sentry or GlitchTip (as Scaleway Cockpit is not always reliable). The Kestra flows `barometre`, `barometre-catchup` and `barometre-i18n` (and the dev one) set it.
 
-Be aware that the first 5GB/month of logs are free, after that it's 0,5$/GB.
+With Sentry, be aware that the first 5GB/month of logs are free, after that it's 0,5$/GB. GlitchTip, self-hosted, has no such fee: its retention is set by `GLITCHTIP_LOG_HOT_DAYS` and `GLITCHTIP_RETENTION_DAYS`, with older data archived to S3 (cold storage).
+
+To check that logs reach GlitchTip, run the dev Kestra flow `glitchtip-log-test` (see `docs/kestra_flows.md`).
 
 ## Mediatree - Import data
 Mediatree Documentation API : https://keywords.mediatree.fr/docs/

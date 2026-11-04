@@ -65,6 +65,7 @@ tasks:
       BUCKET_SECRET: "{{ secret('SCW_SECRET') }}"
       MEDIATREE_PASSWORD: "{{ secret('MEDIATREE_PASSWORD') }}"
       SENTRY_DSN: "{{ secret('SENTRY_DSN') }}"
+      SENTRY_LOGGING: "true"
 
   - id: detect_keywords
     logLevel: WARN          # filter per-row INFO spam at the Kestra level (UI freeze fix)
@@ -111,6 +112,7 @@ tasks:
       POSTGRES_HOST: "{{ secret('POSTGRES_HOST') }}"
       POSTGRES_PASSWORD: "{{ secret('POSTGRES_PASSWORD') }}"
       SENTRY_DSN: "{{ secret('SENTRY_DSN') }}"
+      SENTRY_LOGGING: "true"
 
   - id: detect_misinformation
     logLevel: WARN          # filter per-row INFO spam at the Kestra level (UI freeze fix)
@@ -160,6 +162,7 @@ tasks:
       POSTGRES_PASSWORD: "{{ secret('POSTGRES_PASSWORD_READ') }}"
       POSTGRES_USER: "{{ secret('POSTGRES_USER_READ') }}"
       SENTRY_DSN: "{{ secret('SENTRY_DSN') }}"
+      SENTRY_LOGGING: "true"
 
   - id: dbt_run_transformations
     type: io.kestra.plugin.core.flow.Subflow

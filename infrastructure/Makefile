@@ -49,8 +49,11 @@ tg-state-list:
 tg-destroy:
 	$(call TG_CMD,destroy)
 
+# Prints all outputs as JSON, including sensitive values in clear text.
+# With name=<output>, prints that one output raw (no quotes), e.g.
+#   make target=orchestrator env=prod tg-output name=glitchtip_s3_secret_key
 tg-output:
-	$(call TG_CMD,output)
+	$(call TG_CMD,output $(if $(name),-raw $(name),-json))
 
 # --- Ansible ---
 

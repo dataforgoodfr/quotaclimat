@@ -17,6 +17,13 @@ resource "scaleway_rdb_instance" "barometre_rdb" {
   password_wo         = var.postgres_admin_password
   password_wo_version = var.postgres_admin_password_version
   region              = "fr-par"
+
+  # GlitchTip (hosted on this instance via the orchestrator target) recommends
+  # 512 for its partitioned tables:
+  # https://glitchtip.com/documentation/install#postgresql-tuning
+  settings = {
+    max_locks_per_transaction = "512"
+  }
 }
 
 

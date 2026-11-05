@@ -436,11 +436,13 @@ poetry run python3 transform_excel_to_json.py
 ```
 
 ## Program Metadata table
-The media perimeter is defined here : "quotaclimat/data_processing/mediatree/channel_program_data.py"
+The media perimeter is defined per country in `quotaclimat/data_processing/mediatree/i8n/<country>/channel_program.py` (France: `i8n/france/channel_program.py`).
 
-To evolve the media perimeter, we use `program_grid_start` and `program_grid_end` columns to version all evolutions.
+To evolve the media perimeter, we use `program_grid_start` and `program_grid_end` columns to version all evolutions. Never delete or modify a line used by past data: close it with a `program_grid_end` (the day before the change) and add a new line starting the next day (`program_grid_start`). The program id is computed from the channel, weekday, program name and `program_grid_start`, so closed lines keep their id.
 
-To calculate the right total duration for each channel, after updating "quotaclimat/data_processing/mediatree/channel_program_data.py" you need to execute this command to update `postgres/program_metadata.json` 
+The France grid follows the perimeter Mediatree records for us (contract annex). The times are those of the shows, without the 15 minutes margins Mediatree adds before and after each block (see "Check what is missing in Mediatree's bucket" above).
+
+To calculate the right total duration for each channel, after updating a `channel_program.py` you need to execute this command to update `postgres/program_metadata.json` 
 ```
 poetry run python3 transform_program.py
 ```

@@ -24,7 +24,20 @@ REGION = "fr-par"
 ENDPOINT_URL = f"https://s3.{REGION}.scw.cloud"
 AD_S3_PREFIX = "ads"
 
-MEDIATREE_CHANNEL_MAPPING = {"fr3-idf": "france3"}
+# Our channel name -> name of its folder and files in mediatree's bucket, when they differ
+MEDIATREE_CHANNEL_MAPPING = {"sud-radio": "sudradio"}
+
+# For a while, mediatree sent fr3-idf (France 3 Paris Île-de-France) in the folder of
+# france3 (the national channel). A day without any fr3-idf file is read from france3.
+MEDIATREE_CHANNEL_FALLBACKS = {"fr3-idf": ["france3"]}
+
+
+def _mediatree_channels(channel: str) -> list[str]:
+    """Names of the bucket folders holding `channel`, the usual one first."""
+    return [
+        MEDIATREE_CHANNEL_MAPPING.get(channel, channel),
+        *MEDIATREE_CHANNEL_FALLBACKS.get(channel, []),
+    ]
 
 
 def get_s3_filesystem(**kwargs) -> s3fs.S3FileSystem:
@@ -37,30 +50,60 @@ def get_s3_filesystem(**kwargs) -> s3fs.S3FileSystem:
     )
 
 
-def _get_s3_folder(channel: str, day: date) -> str:
+def _get_s3_folder(mediatree_channel: str, day: date) -> str:
     # /mediatree-videos-prod/output/franceinfotv/2026/09/07/
-    mediatree_channel = MEDIATREE_CHANNEL_MAPPING.get(channel, channel)
     return f"/{BUCKET_NAME}/output/{mediatree_channel}/{day.strftime('%Y/%m/%d')}"
 
 
 def _get_s3_file_basename(
-    channel: str, start_date: datetime, end_date: datetime
+    mediatree_channel: str, start_date: datetime, end_date: datetime
 ) -> str:
     # franceinfotv_2026-09-07T04-36-00Z_2026-09-07T04-38-00Z.tar
     start_date_utc = start_date.astimezone(tz=ZoneInfo("UTC"))
     end_date_utc = end_date.astimezone(tz=ZoneInfo("UTC"))
-    mediatree_channel = MEDIATREE_CHANNEL_MAPPING.get(channel, channel)
     return f"{mediatree_channel}_{start_date_utc.strftime('%Y-%m-%dT%H-%M-%SZ')}_{end_date_utc.strftime('%Y-%m-%dT%H-%M-%SZ')}"
 
 
-def _get_s3_archive_key_for_part(
+def _get_s3_archive_keys_for_part(
     channel: str, start_date: datetime, end_date: datetime
-) -> str:
+) -> list[str]:
     # /mediatree-videos-prod/output/franceinfotv/2026/09/07/franceinfotv_2026-09-07T04-36-00Z_2026-09-07T04-38-00Z.tar
+    # One key per folder that may hold the channel, the usual one first
 
-    folder = _get_s3_folder(channel, start_date.date())
-    basename = _get_s3_file_basename(channel, start_date, end_date)
-    return f"{folder}/{basename}.tar"
+    keys = []
+    for mediatree_channel in _mediatree_channels(channel):
+        folder = _get_s3_folder(mediatree_channel, start_date.date())
+        basename = _get_s3_file_basename(mediatree_channel, start_date, end_date)
+        keys.append(f"{folder}/{basename}.tar")
+    return keys
+
+
+async def _ls_day_archives(
+    fs: s3fs.S3FileSystem, channel: str, day: date, refresh: bool = False
+) -> list[str]:
+    """Keys of the 2-minutes archives of `channel` on `day` (UTC calendar date). When the
+    usual folder has none, the fallback folders are tried (see MEDIATREE_CHANNEL_FALLBACKS).
+    Raises FileNotFoundError when no folder exists for that day.
+    """
+    usual_channel, *fallbacks = _mediatree_channels(channel)
+    folder_found = False
+    for mediatree_channel in [usual_channel, *fallbacks]:
+        try:
+            keys = await fs._ls(_get_s3_folder(mediatree_channel, day), refresh=refresh)
+        except FileNotFoundError:
+            continue
+        folder_found = True
+        keys = [key for key in keys if key.endswith(".tar")]
+        if keys:
+            if mediatree_channel != usual_channel:
+                logger.warning(
+                    f"No {usual_channel} file on {day}, using the {mediatree_channel} folder"
+                )
+            return keys
+
+    if not folder_found:
+        raise FileNotFoundError(f"No mediatree folder for {channel} on {day}")
+    return []
 
 
 def get_datetime_from_basename(basename: str) -> datetime:
@@ -170,7 +213,7 @@ async def list_days_parts(
 
     async def _ls_day(day: date) -> list[str]:
         try:
-            return await fs._ls(_get_s3_folder(channel, day))
+            return await _ls_day_archives(fs, channel, day)
         except FileNotFoundError:
             return []
 
@@ -179,7 +222,6 @@ async def list_days_parts(
         get_datetime_from_basename(os.path.splitext(os.path.basename(key))[0])
         for keys in keys_per_day
         for key in keys
-        if key.endswith(".tar")
     )
 
 
@@ -200,11 +242,9 @@ async def download_days_audio_parts(
     chronologically.
     """
     keys_per_day = await asyncio.gather(
-        *(fs._ls(_get_s3_folder(channel, day)) for day in days)
+        *(_ls_day_archives(fs, channel, day) for day in days)
     )
-    s3_keys = sorted(
-        key for keys in keys_per_day for key in keys if key.endswith(".tar")
-    )
+    s3_keys = sorted(key for keys in keys_per_day for key in keys)
 
     os.makedirs(dest_dir, exist_ok=True)
     inflight = asyncio.Semaphore(max_concurrent_downloads)
@@ -451,15 +491,29 @@ async def download_media_parts(
 
     parts: dict[datetime, dict[str, str]] = {}
 
+    async def _download_first_existing(
+        s3_keys: list[str], archive_dir: str
+    ) -> dict[str, str]:
+        # The part may only be in a fallback folder (see MEDIATREE_CHANNEL_FALLBACKS)
+        s3_key = s3_keys[-1]
+        for candidate in s3_keys[:-1]:
+            if await fs._exists(candidate):
+                s3_key = candidate
+                break
+        return await _download_and_extract_media(
+            fs, s3_key, archive_dir, dest_dir, formats
+        )
+
     async def _bounded_download(part_start: datetime, archive_dir: str) -> None:
-        s3_key = _get_s3_archive_key_for_part(
+        s3_keys = _get_s3_archive_keys_for_part(
             channel, part_start, part_start + timedelta(minutes=2)
         )
+        s3_key = s3_keys[0]
         try:
             async with inflight:
                 try:
-                    parts[part_start] = await _download_and_extract_media(
-                        fs, s3_key, archive_dir, dest_dir, formats
+                    parts[part_start] = await _download_first_existing(
+                        s3_keys, archive_dir
                     )
                     progress.count("downloaded")
                 except Exception as e:
@@ -492,15 +546,13 @@ async def list_available_part_starts(
     (UTC calendar date), without downloading them. Empty when the day folder doesn't exist.
     """
     try:
-        keys = await fs._ls(_get_s3_folder(channel, day), refresh=True)
+        keys = await _ls_day_archives(fs, channel, day, refresh=True)
     except FileNotFoundError:
         return set()
 
     starts = set()
     for key in keys:
         basename = os.path.basename(key)
-        if not basename.endswith(".tar"):
-            continue
         try:
             start_date, _ = get_datetime_from_basename(os.path.splitext(basename)[0])
         except ValueError:

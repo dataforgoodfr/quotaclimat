@@ -3,7 +3,9 @@ services:
     image: glitchtip/glitchtip:latest
     container_name: glitchtip-web
     restart: unless-stopped
-    env_file: .env
+    env_file:
+      - .env
+      - .env.s3
     networks:
       - traefik-public
       - glitchtip-internal
@@ -31,7 +33,9 @@ services:
     container_name: glitchtip-worker
     restart: unless-stopped
     command: ./bin/run-celery-with-beat.sh
-    env_file: .env
+    env_file:
+      - .env
+      - .env.s3
     networks:
       - glitchtip-internal
     depends_on:

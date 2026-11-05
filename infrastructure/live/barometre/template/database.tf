@@ -3,6 +3,27 @@ resource "scaleway_account_project" "project" {
   name = var.project_name
 }
 
+locals {
+  # prod: node db-dev-l, anything else (dev): node DB-DEV-S.
+  rdb_settings = var.environment == "prod" ? {
+    effective_cache_size            = "5400"
+    maintenance_work_mem            = "400"
+    max_connections                 = "200"
+    max_locks_per_transaction       = "512"
+    max_parallel_workers            = "2"
+    max_parallel_workers_per_gather = "1"
+    work_mem                        = "12"
+    } : {
+    effective_cache_size            = "1300"
+    maintenance_work_mem            = "150"
+    max_connections                 = "100"
+    max_locks_per_transaction       = "512"
+    max_parallel_workers            = "0"
+    max_parallel_workers_per_gather = "0"
+    work_mem                        = "4"
+  }
+}
+
 # PostgreSQL instance — smallest available node type for dev.
 resource "scaleway_rdb_instance" "barometre_rdb" {
   name                = var.rdb_instance_name
@@ -17,6 +38,14 @@ resource "scaleway_rdb_instance" "barometre_rdb" {
   password_wo         = var.postgres_admin_password
   password_wo_version = var.postgres_admin_password_version
   region              = "fr-par"
+
+  # Engine settings. Scaleway fills these in per node type, and the provider
+  # removes any key missing from this map, so every current value is listed
+  # (local.rdb_settings). max_locks_per_transaction is the one we set for
+  # GlitchTip (hosted on this instance via the orchestrator target), which
+  # recommends 512 for its partitioned tables:
+  # https://glitchtip.com/documentation/install#postgresql-tuning
+  settings = local.rdb_settings
 }
 
 

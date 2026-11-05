@@ -17,6 +17,12 @@
     dest: /opt/services/glitchtip/.env
     mode: "0600"
 
+- name: Template glitchtip S3 .env
+  template:
+    src: "{{ playbook_dir }}/../compose/glitchtip/.env.s3.j2"
+    dest: /opt/services/glitchtip/.env.s3
+    mode: "0600"
+
 - name: Start glitchtip
   community.docker.docker_compose_v2:
     project_src: /opt/services/glitchtip

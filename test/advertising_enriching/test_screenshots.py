@@ -395,3 +395,60 @@ def test_screenshot_ad_from_exported_video(tmp_path, monkeypatch):
     assert done.details == {"margin_sec": 1.0}
     assert missing.status == "missing_source"
     assert missing.image_url is None
+
+
+@needs_ffmpeg
+def test_exportation_makes_the_ad_mosaic(tmp_path, monkeypatch):
+    """The exportation (s02) makes the mosaic of the ad from the mp4 it has just cut, with the margin
+    it has just applied, and a failed mosaic does not fail the export."""
+    from quotaclimat.data_ingestion.advertising.s02_exportation import (
+        run as exportation,
+    )
+
+    monkeypatch.setattr(exportation, "SCREENSHOT_ON_EXPORT", True)
+    monkeypatch.setattr(exportation, "MARGIN_ON_MEDIA_EXPORT", timedelta(seconds=1))
+    video = _test_video(str(tmp_path / "source.mp4"), duration_sec=14)
+
+    async def _extract_segment(parts, from_date, to_date, media_format, output_path):
+        shutil.copy(video, output_path)
+        return True
+
+    uploaded = []
+
+    async def _put_file(local_path, s3_key, **kwargs):
+        uploaded.append(s3_key)
+
+    fs = SimpleNamespace(_put_file=_put_file)
+    ad = SimpleNamespace(id="ad-a", duration_sec=12.0)
+    occurrence = SimpleNamespace(channel_name="tf1")
+    start = T0.replace(tzinfo=ZoneInfo("UTC"))
+
+    def _export(local_dir):
+        return asyncio.run(
+            exportation._export_ad(
+                ad, occurrence, start, start + timedelta(seconds=14), {}, local_dir, fs
+            )
+        )
+
+    monkeypatch.setattr(exportation, "extract_segment", _extract_segment)
+    with patch(f"{RUN_MODULE}._upload_mosaic", AsyncMock(return_value="https://img")):
+        done = _export(str(tmp_path))
+    with patch(
+        f"{RUN_MODULE}._upload_mosaic", AsyncMock(side_effect=RuntimeError("s3 down"))
+    ):
+        failed = _export(str(tmp_path))
+
+    assert done.status == "done"
+    assert done.source == "ad_export"
+    assert done.image_url == "https://img"
+    assert done.nb_frames == 6
+    assert done.frame_offsets_sec == [1.0, 3.0, 5.0, 7.0, 9.0, 11.0]
+    assert done.details == {"margin_sec": 1.0}
+    assert failed.status == "error"
+    assert "s3 down" in failed.details["error"]
+    # mp3 and mp4 uploaded both times, local files and frames deleted
+    assert len(uploaded) == 4
+    assert sorted(p.name for p in tmp_path.iterdir()) == ["source.mp4"]
+
+    monkeypatch.setattr(exportation, "SCREENSHOT_ON_EXPORT", False)
+    assert _export(str(tmp_path)) is None

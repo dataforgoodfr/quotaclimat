@@ -286,28 +286,65 @@ def export_margin_sec(
     return margin.total_seconds() if margin is not None else 0.0
 
 
+def _ad_result(ad_id: str, duration_sec: float) -> ScreenshotResult:
+    return ScreenshotResult(
+        target_type="ad",
+        target_id=ad_id,
+        ad_id=ad_id,
+        status="done",
+        source="ad_export",
+        frame_offsets_sec=frame_offsets(duration_sec),
+    )
+
+
+async def screenshot_ad_from_video(
+    fs: s3fs.S3FileSystem,
+    ad_id: str,
+    duration_sec: float,
+    video_path: str,
+    margin_sec: float,
+    work_dir: str,
+) -> ScreenshotResult:
+    """Mosaic of the ad from a local copy of its exported video (raw.mp4), which starts margin_sec
+    before the ad. Used by the exportation (s02) right after it cuts the video, and by screenshot_ad.
+
+    Never raises: a failure gives an `error` result, so that the caller's own work goes on.
+    work_dir receives the frames and the mosaic; the caller deletes it.
+    """
+    result = _ad_result(ad_id, duration_sec)
+    try:
+        frames = [
+            (video_path, margin_sec + offset) for offset in result.frame_offsets_sec
+        ]
+        result.image_url, result.nb_frames = await _mosaic_from_frames(
+            fs, frames, work_dir, "ad", ad_id
+        )
+        result.details = {"margin_sec": margin_sec}
+    except Exception as e:
+        logger.error(f"Failed to screenshot ad {ad_id}: {e}")
+        result.status = "error"
+        result.details = {"error": str(e)[:2000]}
+    return result
+
+
 async def screenshot_ad(
     fs: s3fs.S3FileSystem,
     ad_id: str,
     duration_sec: float,
     first_detection_date: datetime,
 ) -> ScreenshotResult:
-    """Mosaic of the ad, from the video saved by the exportation (s02): ads/<ad_id>/raw.mp4."""
-    offsets = frame_offsets(duration_sec)
-    result = ScreenshotResult(
-        target_type="ad",
-        target_id=ad_id,
-        ad_id=ad_id,
-        status="done",
-        source="ad_export",
-        frame_offsets_sec=offsets,
-    )
+    """Mosaic of the ad, from the video saved by the exportation (s02): ads/<ad_id>/raw.mp4.
+
+    The exportation makes the mosaic of the ads it exports; this catches up the others (exported
+    before, or whose mosaic failed).
+    """
     work_dir = tempfile.mkdtemp(dir=LOCAL_CACHE_DIR)
     try:
         video_path = os.path.join(work_dir, "raw.mp4")
         try:
             await fs._get_file(ad_media_s3_key(ad_id, "mp4"), video_path)
         except FileNotFoundError:
+            result = _ad_result(ad_id, duration_sec)
             result.status = "missing_source"
             result.details = {"missing": ad_media_s3_key(ad_id, "mp4")}
             return result
@@ -316,18 +353,17 @@ async def screenshot_ad(
         margin = export_margin_sec(
             duration_sec, first_detection_date, await video_duration(video_path)
         )
-        frames = [(video_path, margin + offset) for offset in offsets]
-        result.image_url, result.nb_frames = await _mosaic_from_frames(
-            fs, frames, work_dir, "ad", ad_id
+        return await screenshot_ad_from_video(
+            fs, ad_id, duration_sec, video_path, margin, work_dir
         )
-        result.details = {"margin_sec": margin}
     except Exception as e:
         logger.error(f"Failed to screenshot ad {ad_id}: {e}")
+        result = _ad_result(ad_id, duration_sec)
         result.status = "error"
         result.details = {"error": str(e)[:2000]}
+        return result
     finally:
         shutil.rmtree(work_dir, ignore_errors=True)
-    return result
 
 
 async def _screenshot_occurrence(

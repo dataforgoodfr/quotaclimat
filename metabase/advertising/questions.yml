@@ -110,3 +110,22 @@ queries:
       - params: {debut: 2025-01-01, fin: 2025-12-31, entreprise: [pytest volkswagen]}
         min_rows: 1
       - params: {debut: 2025-01-01, fin: 2025-12-31, marque: [aucune marque]}
+
+  metabase_pub_spots_annonceur.sql:
+    questions:
+      - 2486 # tableau des spots, filtré par un clic sur le camembert 2485
+    variables:
+      debut: {type: date}
+      fin: {type: date}
+      marque: {type: dimension, field: curated.publicite.marque, widget: string/contains}
+      entreprise: {type: dimension, field: curated.publicite.entreprise, widget: string/contains}
+      groupe: {type: dimension, field: curated.publicite.societe_mere, widget: string/contains}
+      secteur: {type: text}
+      categorie: {type: text}
+    tests:
+      - params: {debut: 2025-01-01, fin: 2025-12-31}
+        min_rows: 1
+      - params: {debut: 2025-01-01, fin: 2025-12-31, entreprise: [pytest volkswagen], secteur: Automobile,
+                 categorie: Voiture électrique}
+        min_rows: 1
+      - params: {debut: 2025-01-01, fin: 2025-12-31, secteur: Aucun}

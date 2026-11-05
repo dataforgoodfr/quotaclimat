@@ -145,6 +145,23 @@ def create_advertising_tables(db_connection):
                 ad_id text REFERENCES advertising.ad (id)
             )
         """)
+        # read by the Metabase queries only (written by the screenshots job, not by dbt)
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS advertising.ad_screenshot (
+                target_type varchar NOT NULL,
+                target_id text NOT NULL,
+                ad_id text NOT NULL,
+                status varchar NOT NULL,
+                source varchar,
+                image_url text,
+                frame_offsets_sec double precision[],
+                nb_frames integer,
+                details json,
+                created_at timestamp NOT NULL DEFAULT now(),
+                updated_at timestamp NOT NULL DEFAULT now(),
+                PRIMARY KEY (target_type, target_id)
+            )
+        """)
         cur.execute("DELETE FROM advertising.ad_occurrence WHERE id LIKE 'pytest_%' OR id LIKE 'mesinfo_pytest_%' OR id LIKE 'program_pytest_%' OR id LIKE 'emission_pytest_%'")
         cur.execute("DELETE FROM advertising.ad WHERE id LIKE 'pytest_%'")
         cur.execute("""

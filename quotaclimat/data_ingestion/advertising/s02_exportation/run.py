@@ -1,6 +1,8 @@
 import asyncio
 import logging
 import os
+import shutil
+import tempfile
 import time
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
@@ -15,6 +17,11 @@ from postgres.schemas.advertising.models import Ad, Ad_Occurrence
 from quotaclimat.data_ingestion.advertising.s02_exportation.ad_bucket import (
     ad_media_s3_key,
     ad_prefix_in_bucket,
+)
+from quotaclimat.data_ingestion.advertising.s05_enrichment.e02_screenshots.run import (
+    ScreenshotResult,
+    save_results,
+    screenshot_ad_from_video,
 )
 from quotaclimat.data_ingestion.advertising.tools.interactive_tqdm import (
     interactive_tqdm,
@@ -39,6 +46,14 @@ AD_S3_PREFIX = "ads"
 
 MARGIN_ON_MEDIA_EXPORT = timedelta(
     seconds=float(os.environ.get("MARGIN_ON_MEDIA_EXPORT", 0.1))
+)
+
+# Mosaic of the frames of every exported ad (s05_enrichment/e02_screenshots), made from the local
+# raw.mp4 before it is deleted: no download, and the margin is the one just applied.
+SCREENSHOT_ON_EXPORT = os.environ.get("SCREENSHOT_ON_EXPORT", "true").lower() in (
+    "1",
+    "true",
+    "yes",
 )
 
 MIN_BYTES_PER_SECOND_VIDEO = (
@@ -173,10 +188,14 @@ async def _export_ad(
     parts: dict[datetime, dict[str, str]],
     local_dir: str,
     fs: s3fs.S3FileSystem,
-):
+) -> ScreenshotResult | None:
     """Extract an ad's segment out of the downloaded mediatree parts and upload it to
     S3, for both the mp3 and mp4 formats.
+
+    With SCREENSHOT_ON_EXPORT, also makes the mosaic of the ad from the mp4 and returns its
+    result (an `error` result when only the mosaic failed: the export itself succeeded).
     """
+    screenshot = None
     for media_format in ("mp3", "mp4"):
         local_path = os.path.join(local_dir, f"{ad.id}.{media_format}")
         found = await extract_segment(
@@ -192,8 +211,30 @@ async def _export_ad(
         try:
             await fs._put_file(local_path, s3_key, StorageClass="ONEZONE_IA")
             logger.debug(f"Uploaded s3://{s3_key}")
+            if media_format == "mp4" and SCREENSHOT_ON_EXPORT:
+                screenshot = await _screenshot_exported_ad(
+                    ad, local_path, local_dir, fs
+                )
         finally:
             os.remove(local_path)
+    return screenshot
+
+
+async def _screenshot_exported_ad(
+    ad: Ad,
+    video_path: str,
+    local_dir: str,
+    fs: s3fs.S3FileSystem,
+) -> ScreenshotResult:
+    # The video starts the margin before the occurrence (see _ad_export_window)
+    margin_sec = MARGIN_ON_MEDIA_EXPORT.total_seconds()
+    work_dir = tempfile.mkdtemp(dir=local_dir, prefix=f"screenshot_{ad.id}_")
+    try:
+        return await screenshot_ad_from_video(
+            fs, ad.id, ad.duration_sec, video_path, margin_sec, work_dir
+        )
+    finally:
+        shutil.rmtree(work_dir, ignore_errors=True)
 
 
 async def _ad_needs_export(ad: Ad, fs: s3fs.S3FileSystem) -> bool:
@@ -215,6 +256,7 @@ async def _process_group(
     progress,
     missing_ads: list,
     reset_no_data_ads: list,
+    screenshots: list,
 ) -> None:
     """Check, download and export every ad in one (channel, day) group. Groups are
     independent of each other (own local_dir, own downloaded parts), so this is meant
@@ -283,10 +325,12 @@ async def _process_group(
         async def _limited_export(ad, occurrence, from_date, to_date):
             async with semaphore:
                 try:
-                    await _export_ad(
+                    screenshot = await _export_ad(
                         ad, occurrence, from_date, to_date, parts, local_dir, fs
                     )
                     progress.count("uploaded")
+                    if screenshot is not None:
+                        screenshots.append(screenshot)
                     if ad.fragment_type == "no_data":
                         # The ad was previously marked "no_data" because its media
                         # wasn't in the bucket yet; now that the export succeeded,
@@ -319,12 +363,29 @@ async def _process_group(
         cleanup_day_media_parts(local_dir)
 
 
+def _save_screenshots(session, screenshots: list[ScreenshotResult]) -> None:
+    """Rows of advertising.ad_screenshot, upserted: a new export replaces the mosaic of the previous
+    one. A failure is only logged: the screenshots job (s05_enrichment/e02_screenshots) catches up
+    the ads without a `done` row."""
+    if not screenshots:
+        return
+    try:
+        save_results(session, screenshots)
+    except Exception as e:
+        session.rollback()
+        logger.error(f"Failed to save {len(screenshots)} ad screenshots: {e}")
+
+
 async def run(start_date: datetime | None, end_date: datetime | None):
     session = get_db_session()
+    # Another session to save the screenshots of each group: a commit on `session` would close
+    # the streaming cursor of iter_ads_by_channel_day.
+    write_session = get_db_session()
     fs = get_s3_filesystem()
 
     missing_ads = []
     reset_no_data_ads = []
+    screenshot_statuses = []
 
     try:
         total = count_ads_since(session, start_date, end_date)
@@ -336,6 +397,7 @@ async def run(start_date: datetime | None, end_date: datetime | None):
         run_start = time.monotonic()
 
         async def _bounded_group(channel, day, ads):
+            screenshots = []
             try:
                 await _process_group(
                     channel,
@@ -346,8 +408,11 @@ async def run(start_date: datetime | None, end_date: datetime | None):
                     progress,
                     missing_ads,
                     reset_no_data_ads,
+                    screenshots,
                 )
             finally:
+                _save_screenshots(write_session, screenshots)
+                screenshot_statuses.extend(s.status for s in screenshots)
                 group_semaphore.release()
 
         tasks = []
@@ -383,8 +448,14 @@ async def run(start_date: datetime | None, end_date: datetime | None):
         progress.close()
         logger.info(f"Total export run time: {time.monotonic() - run_start:.1f}s")
     finally:
+        if SCREENSHOT_ON_EXPORT:
+            logger.info(
+                f"Ad screenshots: {screenshot_statuses.count('done')} done, "
+                f"{screenshot_statuses.count('error')} errors"
+            )
         logger.info(f"Finished, here are the {len(missing_ads)} missing ads")
         logger.info(",".join(missing_ads))
+        write_session.close()
         session.close()
 
 

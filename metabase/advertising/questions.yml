@@ -81,6 +81,7 @@ queries:
   metabase_pub_repartition_emissions.sql:
     questions:
       - 2354 # camembert
+      - 2355 # nuage de points, émissions de l'annonceur (cartographie)
     variables:
       debut: {type: date}
       fin: {type: date}
@@ -93,3 +94,19 @@ queries:
         min_rows: 1
       - params: {debut: 2025-01-01, fin: 2025-12-31, marque: [pytest skoda], groupe: [porsche], nb_emissions: 3}
         min_rows: 1
+
+  metabase_pub_repartition_secteurs.sql:
+    questions:
+      - 2485 # camembert à deux niveaux, secteur puis catégorie
+    variables:
+      debut: {type: date}
+      fin: {type: date}
+      marque: {type: dimension, field: advertising.pub_annonceur_emission_jour.marque, widget: string/contains}
+      entreprise: {type: dimension, field: advertising.pub_annonceur_emission_jour.entreprise, widget: string/contains}
+      groupe: {type: dimension, field: advertising.pub_annonceur_emission_jour.groupe, widget: string/contains}
+    tests:
+      - params: {debut: 2025-01-01, fin: 2025-12-31}
+        min_rows: 1
+      - params: {debut: 2025-01-01, fin: 2025-12-31, entreprise: [pytest volkswagen]}
+        min_rows: 1
+      - params: {debut: 2025-01-01, fin: 2025-12-31, marque: [aucune marque]}

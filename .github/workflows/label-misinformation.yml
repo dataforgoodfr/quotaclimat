@@ -25,6 +25,10 @@ on:
       - '.github/workflows/label-misinformation.yml'
   workflow_dispatch:
 
+# Read-only GITHUB_TOKEN by default; only the bump job writes (it pushes the version commit to main).
+permissions:
+  contents: read
+
 env:
   PYTHON_VERSION: '3.12'
   JOB_DIR: detect_misinformation/jobs/label_misinformation
@@ -79,6 +83,8 @@ jobs:
   bump:
     runs-on: ubuntu-latest
     if: ${{ github.ref == 'refs/heads/main' && github.event_name != 'pull_request' }}
+    permissions:
+      contents: write
     outputs:
       version: ${{ steps.bump.outputs.version }}
       sha: ${{ steps.bump.outputs.sha }}

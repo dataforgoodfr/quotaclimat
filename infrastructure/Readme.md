@@ -224,6 +224,8 @@ The `main-pipeline` flow posts a message in a Mattermost channel when a step fai
 
 `metabase_sync` has `allowFailure: true`: its failure marks the run as WARNING and sends no alert.
 
+To test the alert, run the dev `main-pipeline` (namespace `quotaclimat-dev`) by hand with `test_alert=true` (see `docs/kestra_flows.md`).
+
 ### Per-country secret (`I18N_COUNTRY_SECRETS`)
 
 The `barometre-i18n` flow runs the misinformation job for every country on the VM. Instead of one Kestra secret per country, the per-country credentials are in a single secret, `I18N_COUNTRY_SECRETS`: a **single-line JSON object** keyed by the flow's country codes (`bel`, `bel-fla`, `deu`, `esp`, `pol`), each value holding four strings:

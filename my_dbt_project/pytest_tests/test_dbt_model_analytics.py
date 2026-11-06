@@ -1129,9 +1129,9 @@ def test_ad_brand_agencies(db_connection):
                 media_scope, info_date
             FROM advertising.ad_brand_agencies
             WHERE brand_company LIKE 'Pytest%'
-            ORDER BY brand_name
         """)
-        rows = cur.fetchall()
+        # sorted in Python: the order of ORDER BY depends on the database collation (CI: en_US.utf8)
+        rows = sorted(cur.fetchall())
     assert rows == [
         ("PYTEST SKODA", "Pytest Volkswagen", "marque", "Pytest Agence Škoda", "Havas", "probable", "France", None, "2026"),
         (

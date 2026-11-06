@@ -16,6 +16,10 @@ sources:
       # built in this schema
       - name: brand_inventory
         identifier: ref_inventaire_marques
+      # Media agency of each company, or of a brand of it: dbt seed downloaded from the
+      # Inventaire_des_annonceurs Google Sheet (tab agence_entreprise), built in this schema
+      - name: advertiser_agencies
+        identifier: ref_annonceurs_agence_entreprise
 
   - name: public
     schema: public

@@ -554,6 +554,55 @@ models:
       - name: brand_ultimate_parent
         description: ultimate_parent unless its status is 'à vérifier', else brand_company.
 
+  - name: ad_brand_agencies
+    description: >
+      Media agency of each advertised brand, from the tab agence_entreprise of the Inventaire_des_annonceurs Google
+      Sheet: one row per brand of analytics.publicites (brand_name, brand_company) whose company or brand is in the
+      tab. A brand takes the row of the tab with its brand (marque) when there is one, else the row of its company
+      with an empty marque. Companies and brands are compared with name_key. Read by pub_annonceur_emission_jour.
+    tests:
+      - unique_name_keys:
+          arguments:
+            columns: ['brand_company', 'brand_name']
+    columns:
+      - name: brand_name
+        description: Brand, as in publicites.brand_name.
+        tests:
+          - not_null
+      - name: brand_company
+        description: Company of the brand, as in publicites.brand_company.
+        tests:
+          - not_null
+      - name: agency_level
+        description: "'marque' when the row of the brand was used, 'entreprise' when the row of its company was."
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['marque', 'entreprise']
+      - name: agency
+        description: Agency buying the TV space in France (column agence_media), NULL when unknown.
+      - name: agency_group
+        description: Group of the agency (groupe_agence) - Havas, Publicis, WPP, Omnicom, Dentsu, Indépendant, Interne.
+      - name: reliability
+        description: confirmee, probable, indice or inconnue (column fiabilite, defined in the tab _readme).
+      - name: geographic_scope
+        description: France, Europe or Monde (perimetre_geo).
+      - name: media_scope
+        description: tout or partiel (perimetre_media), NULL when not given.
+      - name: other_agencies
+        description: Other agencies of the advertiser and their scope (autres_agences).
+      - name: previous_agency
+        description: Previous agency and end date (agence_precedente).
+      - name: info_date
+        description: Date of the latest source, AAAA-MM or AAAA (date_info).
+      - name: checked_on
+        description: Date the source was opened and read (verifie_le), NULL when not checked.
+      - name: note
+        description: What the source says, with its caveats.
+      - name: source_1
+        description: Link to the main source.
+
   - name: ad_occurrence_tunnels
     description: >
       One row per non-OTHER, non-deleted ad occurrence with the ad tunnel it belongs to.
@@ -847,6 +896,16 @@ models:
         description: Seconds of ads attributed to the emission (whole or half durations).
       - name: nb_occurrences
         description: Occurrences attributed to the emission, wholly or by half.
+      - name: agence_media
+        description: >
+          Media agency of the brand, else of its company (ad_brand_agencies, from the Inventaire_des_annonceurs
+          Google Sheet), NULL when unknown.
+      - name: groupe_agence
+        description: Group of the agency (Havas, Publicis, WPP, Omnicom, Dentsu, Indépendant, Interne), NULL when unknown.
+      - name: fiabilite_agence
+        description: >
+          Reliability of the agency information - confirmee, probable, indice or inconnue - NULL when the advertiser is
+          not in the sheet.
   - name: cas_theme
     description: >
       In the analytics schema. Themes of the validated misinformation cases of the French channels, found by

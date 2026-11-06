@@ -103,6 +103,11 @@ def programmes_test_source() -> dict:
     return production_source("programmes")
 
 
+def advertiser_inventory_test_source() -> dict:
+    """Production advertiser inventory (media agencies) source settings."""
+    return production_source("inventaire_des_annonceurs")
+
+
 def fake_fetch(sheets: dict[str, list[list]], source: dict | None = None):
     """Stands for the Google Drive / Sheets API calls: returns the rows the API would return."""
     def fetch(folder_id, spreadsheet_name):
@@ -299,6 +304,33 @@ def load_test_external_sources():
         programmes_test_source(), SEEDS_DIR, fetch=fake_fetch(emission_sheets, programmes_test_source())
     )
     assert results == {"ref_programmes_emissions_infos_en_continue": True}
+    agency_sheets = {
+        "agence_entreprise": [
+            [
+                "entreprise", "marque", "agence_media", "groupe_agence", "fiabilite", "perimetre_geo",
+                "perimetre_media", "autres_agences", "agence_precedente", "date_info", "verifie_le", "note", "source_1",
+            ],
+            # company row of the company of "Pytest Škoda"
+            [
+                "Pytest Volkswagen", "", "Pytest Agence Groupe", "WPP", "confirmee", "Europe", "", "", "", "2025-11",
+                "2026-11-04", "Pytest note", "https://example.org/pytest-vw",
+            ],
+            # brand row of "Pytest Škoda", other spellings of the company and brand: wins over the company row
+            ["PYTEST VOLKSWAGEN", "pytest-škoda", "Pytest Agence Škoda", "Havas", "probable", "France", "", "", "", "2026"],
+            # brand without ads: no row in ad_brand_agencies
+            ["Pytest Volkswagen", "Pytest Audi", "Pytest Agence Audi", "Omnicom", "indice"],
+            # company row only: used by its brand "Pytest Biscuits"
+            ["Pytest Biscuits Company", "", "Pytest Agence Biscuits", "Dentsu", "indice", "", "partiel"],
+            # company without ads
+            ["Pytest Absente", "", "", "", "inconnue"],
+        ],
+        "_readme": [["note"], ["for humans only"]],
+    }
+    results = download_source(
+        advertiser_inventory_test_source(), SEEDS_DIR,
+        fetch=fake_fetch(agency_sheets, advertiser_inventory_test_source()),
+    )
+    assert results == {"ref_annonceurs_agence_entreprise": True}
     run_dbt_command(["seed", "--full-refresh", "--select", "path:seeds/ref"])
     run_dbt_command(["test", "--select", "path:seeds/ref"])
     yield
@@ -1086,6 +1118,38 @@ def test_publicites_brand_companies(db_connection):
         ("pytest_occ_1", "Pytest Škoda", "PYTEST SKODA", "Pytest Volkswagen", "Pytest Porsche SE"),
         ("pytest_occ_2", "Pytest Biscuits", "Pytest Biscuits", "Pytest Biscuits Company", "Pytest Biscuits Company"),
     ]
+
+
+def test_ad_brand_agencies(db_connection):
+    """The brand row of the agency sheet wins over the company row, the company row is used otherwise; names
+    compared with name_key, brands without ads left out."""
+    with db_connection.cursor() as cur:
+        cur.execute("""
+            SELECT brand_name, brand_company, agency_level, agency, agency_group, reliability, geographic_scope,
+                media_scope, info_date
+            FROM advertising.ad_brand_agencies
+            WHERE brand_company LIKE 'Pytest%'
+            ORDER BY brand_name
+        """)
+        rows = cur.fetchall()
+    assert rows == [
+        ("PYTEST SKODA", "Pytest Volkswagen", "marque", "Pytest Agence Škoda", "Havas", "probable", "France", None, "2026"),
+        (
+            "Pytest Biscuits", "Pytest Biscuits Company", "entreprise", "Pytest Agence Biscuits", "Dentsu", "indice",
+            None, "partiel", None,
+        ),
+    ]
+
+
+def test_pub_annonceur_emission_jour_agency(db_connection):
+    """The agency of the brand (ad_brand_agencies) is passed through, NULL for the brands without agency."""
+    with db_connection.cursor() as cur:
+        cur.execute("""
+            SELECT DISTINCT marque, agence_media, groupe_agence, fiabilite_agence
+            FROM advertising.pub_annonceur_emission_jour
+            WHERE channel_name IN ('bfmtv', 'france2')
+        """)
+        assert cur.fetchall() == [("PYTEST SKODA", "Pytest Agence Škoda", "Havas", "probable")]
 
 
 def test_brand_inventory_loaded_as_text(db_connection):

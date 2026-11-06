@@ -74,6 +74,70 @@ seeds:
               arguments:
                 values: ['vérifié', 'non vérifié', 'à vérifier']
 
+  # Inventaire_des_annonceurs spreadsheet, tab agence_entreprise: media agency of each company (marque empty),
+  # or of one brand of a company whose agency differs (marque filled), read by advertising.ad_brand_agencies
+  - name: ref_annonceurs_agence_entreprise
+    config:
+      # all text: dates are AAAA-MM or AAAA, the optional columns may still be empty
+      column_types:
+        entreprise: text
+        marque: text
+        agence_media: text
+        groupe_agence: text
+        fiabilite: text
+        perimetre_geo: text
+        perimetre_media: text
+        autres_agences: text
+        agence_precedente: text
+        date_info: text
+        verifie_le: text
+        note: text
+        source_1: text
+        source_2: text
+        source_3: text
+        maj_le: text
+        maj_par: text
+    tests:
+      # one row per company and brand (empty brand included), compared as the model joins them
+      - unique_name_keys:
+          arguments:
+            columns: ['entreprise', 'marque']
+    columns:
+      - name: entreprise
+        tests:
+          - not_null
+      - name: groupe_agence
+        tests:
+          - accepted_values:
+              arguments:
+                values: ['Havas', 'Publicis', 'WPP', 'Omnicom', 'Dentsu', 'Indépendant', 'Interne']
+      - name: fiabilite
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['confirmee', 'probable', 'indice', 'inconnue']
+      - name: perimetre_geo
+        tests:
+          - accepted_values:
+              arguments:
+                values: ['France', 'Europe', 'Monde']
+      - name: perimetre_media
+        tests:
+          - accepted_values:
+              arguments:
+                values: ['tout', 'partiel']
+      - name: date_info
+        tests:
+          - matches_pattern:
+              arguments:
+                pattern: '^[0-9]{4}(-[0-9]{2})?$'
+      - name: verifie_le
+        tests:
+          - matches_pattern:
+              arguments:
+                pattern: '^[0-9]{4}-[0-9]{2}-[0-9]{2}$'
+
   # Programmes spreadsheet, tab emissions-infos-en-continue: one row per emission of the 24h news
   # channels and per set of days, turned into one row per emission and per day by analytics.program
   - name: ref_programmes_emissions_infos_en_continue

@@ -41,10 +41,10 @@ tg-fmt:
 	$(call TG_CMD,hclfmt)
 
 tg-state-pull:
-	$(call TG_CMD,"state pull")
+	$(call TG_CMD,state pull)
 
 tg-state-list:
-	$(call TG_CMD,"state list")
+	$(call TG_CMD,state list)
 
 # Forgets resources in the state only: nothing is deleted in the cloud, the next
 # apply would create them again. addr takes one or more resource addresses, e.g.

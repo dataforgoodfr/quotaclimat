@@ -17,12 +17,14 @@ infrastructure/
 ├── .env.secrets.dist          # Template listing all required secrets
 ├── bin/
 │   ├── setup.sh               # Installs all dependencies
+│   ├── migrate_climateguard_state.sh  # One-off: climateguard states → live/misinformation
 │   └── lib/
 │       └── common.sh          # Vaultwarden secret fetch functions
 ├── live/
 │   ├── terragrunt.hcl         # Root config: backend, provider, terraform_binary
 │   ├── advertising/           # Label Studio + advertising detection infra
 │   ├── barometre/              # Barometre database infra
+│   ├── misinformation/        # Label Studio + label-misinformation job per country (climate-safeguards-<env>)
 │   ├── rrs/                   # RRS database + serverless jobs + extended perimeter (Droit à l'info)
 │   │   └── template/
 │   │       ├── database.tf    # rrs + extended-perimeter databases, users/privileges, ACL
@@ -235,12 +237,12 @@ The `barometre-i18n` flow runs the misinformation job for every country on the V
 {"bel":{"bucket_access":"...","bucket_secret":"...","label_studio_token":"...","label_studio_url":"https://..."},"bel-fla":{...},"deu":{...},"esp":{...},"pol":{...}}
 ```
 
-| Key | Source (climateguard, project `climate-safeguards-prod`) |
+| Key | Source (`misinformation` target, project `climate-safeguards-prod`) |
 |---|---|
 | `bucket_access` | Secret Manager `access-key-<country>` (path `/<country>`, e.g. `belgium-flanders` for `bel-fla`) |
 | `bucket_secret` | Secret Manager `secret-key-<country>` |
-| `label_studio_url` | `https://<namespace>-labelstudio-<country>-<env>.functions.fnc.fr-par.scw.cloud` (the Label Studio serverless container domain, Scaleway console) |
-| `label_studio_token` | Secret Manager `labelstudio-<country>-token` (`TF_VAR_labelstudio_user_token` in the country file on Vaultwarden) |
+| `label_studio_url` | `make env=prod target=misinformation tg-output name=labelstudio_urls` (`https://<namespace>-labelstudio-<country>-<env>.functions.fnc.fr-par.scw.cloud`) |
+| `label_studio_token` | Secret Manager `labelstudio-<country>-token` (`TF_VAR_labelstudio_user_token_<country>` in `live/misinformation/prod/.env.secrets`) |
 
 Build it once with `jq -n -c --arg ...` (so values are escaped), store it as one entry in the `Quotaclimat - Orchestrator/` collection, then `make sync-secrets` and `make tags=kestra ansible`. Check each code with `echo "$I18N_COUNTRY_SECRETS" | jq -e '.bel.bucket_access'` before deploying. Adding a country adds one key here, no playbook change. The key is already declared in `kestra_secrets` (`ansible/playbook.yml`); add `export I18N_COUNTRY_SECRETS=` to `.env.secrets.dist`.
 
@@ -256,6 +258,29 @@ To deploy/update just this target:
 make env=dev target=rrs tg-plan
 make env=dev target=rrs tg-apply
 ```
+
+## Misinformation (climate safeguards)
+
+The `misinformation` target deploys the infrastructure of the misinformation labelling jobs (code in `detect_misinformation/jobs/label_misinformation`, formerly the `climateguard` repository), in the Scaleway project `climate-safeguards-<env>`. For **every country** of the `countries` map of `live/misinformation/<env>/terragrunt.hcl` it creates:
+* a Label Studio serverless container `labelstudio-<country>-<env>`, whose database `labelstudio-climate-<country>-<env>-db` is on the barometre RDB instance (`rdb-poc`);
+* an output bucket `safeguards-climate-<country>-<env>`, an IAM application `app-climate-<country>-<env>` with its API key;
+* Secret Manager entries `access-key-<country>`, `secret-key-<country>`, `labelstudio-<country>-token` (path `/<country>`), read by Kestra's `barometre-i18n` flow (see `I18N_COUNTRY_SECRETS` above);
+* the Scaleway job `label-misinformation-<country>-<env>` (image `rg.fr-par.scw.cloud/misinformation/label-misinformation:<image_tag>`). Dev jobs only run on Jan 1st: they are launched by hand.
+
+Shared by all countries of an environment: the container namespace `climate-safeguards-containers-<env>` and the `/common` secrets (Mediatree password, OpenAI/Mistral keys, barometre password).
+
+Countries (dev and prod): `belgium`, `belgium-flanders`, `germany`, `poland`, `spain`. France is not part of this target: its labelling runs from the barometre pipeline.
+
+**Adding a country**: add an entry to `countries` (model, Label Studio project ids, cron) and its three secrets `TF_VAR_postgres_password_labelstudio_<country>`, `TF_VAR_labelstudio_admin_password_<country>`, `TF_VAR_labelstudio_user_token_<country>` (with `-` replaced by `_`) to `live/misinformation/<env>/.env.secrets`, its `.env.secrets.dist` and the `live/misinformation/<env>` Vaultwarden item, then `make env=<env> target=misinformation tg-plan`. Country names end up in resource names: never rename an existing one, it would recreate its resources.
+
+```bash
+make env=dev target=misinformation tg-plan
+make env=dev target=misinformation tg-apply
+```
+
+### Migration from climateguard
+
+Until this target, these resources were managed from the `climateguard` repository (plain OpenTofu, one state per country in the `climate-safeguards-terraform` bucket). Their states were merged into `quotaclimat-terraform-states/misinformation/<env>/terraform.tfstate` by `bin/migrate_climateguard_state.sh` (dry run by default, `--push` to write), without changing any resource: the resulting plan is empty. Dev's `france` resources, migrated with the rest, were then removed from the `countries` map and destroyed. The climateguard states are left in place as a backup; do not apply from climateguard any more. The `climate-safeguards-<env>-tofu` IAM applications that climateguard deployed with are no longer used (this target uses the shared key of `.env`) and can be deleted.
 
 ## A note on passwords
 When deploying for the first time you may need to create passwords and tokens. Use the following to generate a secure password:
@@ -290,6 +315,26 @@ Every target below is deployed once per environment (`dev`/`prod`) from its `tem
 | IAM Application | `scaleway_iam_application.project_application` | App identity for advertising detection jobs |
 | IAM Policy | `scaleway_iam_policy.project_policy` | Permissions for `project_application` |
 | IAM API key | `scaleway_iam_api_key.project_api_key` | Credentials for `project_application` |
+
+### `misinformation` (`live/misinformation/template/`)
+Resources marked *per country* are `for_each` over the `countries` input (address `<resource>["<country>"]`).
+
+| Resource | Address | Purpose |
+|---|---|---|
+| Scaleway Project | `scaleway_account_project.project` | `climate-safeguards-<env>` project |
+| Container Namespace | `scaleway_container_namespace.container_namespace` | Namespace for the Label Studio containers |
+| Container | `scaleway_container.labelstudio_container` | Label Studio serverless container, per country |
+| RDB user | `scaleway_rdb_user.labelstudio_user` | Label Studio DB user on the barometre instance, per country |
+| RDB database | `scaleway_rdb_database.labelstudio_db` | Label Studio database, per country |
+| RDB privilege | `scaleway_rdb_privilege.labelstudio_policy` | Grants for `labelstudio_user`, per country |
+| IAM Application | `scaleway_iam_application.project_application` | App identity of the container and the job, per country |
+| IAM Policy | `scaleway_iam_policy.project_application` | Permissions for `project_application` (this project and barometre), per country |
+| IAM API key | `scaleway_iam_api_key.project_api_key` | Credentials for `project_application`, per country |
+| Object Storage bucket | `scaleway_object_bucket.bucket` | `safeguards-climate-<country>-<env>` output bucket, per country |
+| Bucket policy | `scaleway_object_bucket_policy.bucket_policy` | Access for `project_application` (and one user, TEMP), per country |
+| Secret | `scaleway_secret.{mediatree_password,openai_api_key,mistral_api_key,postgres_password_barometre}` (+ `_version`) | Shared job secrets, path `/common` |
+| Secret | `scaleway_secret.{access_key_id,secret_key_id,secret_label_studio_token}` (+ `_version`) | Bucket keys and Label Studio token, path `/<country>`, per country |
+| Serverless job | `scaleway_job_definition.main` | `label-misinformation-<country>-<env>`, per country |
 
 ### `barometre` (`live/barometre/template/`)
 | Resource | Address | Purpose |

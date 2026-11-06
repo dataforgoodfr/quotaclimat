@@ -39,8 +39,8 @@
 --          cumulées sautent donc les rangs des annonceurs écartés
 --   agence, groupe_agence type Filtre de champ sur Advertising > Pub Annonceur Emission Jour > Agence Media /
 --          Groupe Agence, sélection multiple, facultatifs (vides : pas de filtre) : n'afficher que les annonceurs qui
---          ont de la pub achetée par ces agences / groupes d'agences (agence média de la marque, sinon de son
---          entreprise, d'après le Google Sheet Inventaire_des_annonceurs). Comme secteur et categorie, le filtre ne
+--          ont de la pub achetée par ces agences / groupes d'agences (agence média de l'entreprise de la
+--          marque, d'après le Google Sheet Inventaire_des_annonceurs). Comme secteur et categorie, le filtre ne
 --          choisit que les lignes affichées : rangs, parts et cumuls restent calculés sur tous les annonceurs, avec
 --          ou sans agence connue ; pub_secondes_selection, pub_dans_selection_pct et part_selection_pct se lisent
 --          alors pour la pub de ces agences
@@ -94,8 +94,8 @@
 --   perimetre_media_agence : périmètre média de l'agence d'après le Google Sheet (partiel : elle n'achète qu'une
 --     partie des médias de l'annonceur, ex. programmatique et réseaux sociaux seulement ; tout ; NULL si non dit) ;
 --   statut_agence : pour colorer les lignes du tableau (couleurs de metabase/couleurs.yml, groupe statut_agence) :
---     partiel quand agence_media n'achète qu'une partie de la pub de la ligne (part_pub_agence_pct < 100, ex. une
---     marque d'une entreprise chez une autre agence, ou un groupe dont les entreprises ont plusieurs agences) ou
+--     partiel quand agence_media n'achète qu'une partie de la pub de la ligne (part_pub_agence_pct < 100, ex. un
+--     groupe ou un secteur dont les entreprises ont plusieurs agences) ou
 --     quand son perimetre_media_agence est partiel ; sinon fiabilite_agence (confirmee, probable, indice, inconnue) ;
 --     NULL quand l'annonceur n'est pas dans le Google Sheet.
 -- Sources (dbt) : advertising.pub_annonceur_emission_jour (secondes de pub de chaque marque autour de chaque

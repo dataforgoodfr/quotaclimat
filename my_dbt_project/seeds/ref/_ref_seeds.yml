@@ -82,14 +82,13 @@ seeds:
               arguments:
                 values: ['vérifié', 'non vérifié', 'à vérifier']
 
-  # Inventaire_des_annonceurs spreadsheet, tab agence_entreprise: media agency of each company (marque empty),
-  # or of one brand of a company whose agency differs (marque filled), read by advertising.ad_brand_agencies
+  # Inventaire_des_annonceurs spreadsheet, tab agence_entreprise: media agency of each company, read by
+  # advertising.ad_brand_agencies
   - name: ref_annonceurs_agence_entreprise
     config:
       # all text: dates are AAAA-MM or AAAA, the optional columns may still be empty
       column_types:
         entreprise: text
-        marque: text
         agence_media: text
         groupe_agence: text
         fiabilite: text
@@ -106,10 +105,10 @@ seeds:
         maj_le: text
         maj_par: text
     tests:
-      # one row per company and brand (empty brand included), compared as the model joins them
+      # one row per company, compared as the model joins them
       - unique_name_keys:
           arguments:
-            columns: ['entreprise', 'marque']
+            columns: ['entreprise']
     columns:
       - name: entreprise
         tests:

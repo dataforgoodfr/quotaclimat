@@ -2,8 +2,11 @@
 account (generic, shared with other jobs, not the read-only account of the dbt import), shared as editor
 on this spreadsheet only.
 
-Rows are only ever appended, never modified: a human correction is never overwritten.
+New rows are appended; in the rows already there, only empty cells are filled (fill_empty_cells): a human
+correction is never overwritten.
 """
+
+import logging
 
 import json
 import os
@@ -45,8 +48,8 @@ class BrandInventorySheet:
         ensure_not_public(spreadsheet)
         return cls(session, spreadsheet["id"])
 
-    def read(self, tab: str) -> list[dict[str, str]]:
-        """Rows of a tab as {header: value}, an empty list when the tab does not exist."""
+    def _values(self, tab: str) -> list[list]:
+        """All the rows of a tab, header first, an empty list when the tab does not exist."""
         response = self.session.get(
             f"{SHEETS_API_URL}/{self.spreadsheet_id}/values/{_quote(tab)}",
             params={"valueRenderOption": "FORMATTED_VALUE"},
@@ -55,7 +58,12 @@ class BrandInventorySheet:
         if response.status_code == 400:  # unknown tab
             return []
         response.raise_for_status()
-        rows = response.json().get("values", [])
+        return response.json().get("values", [])
+
+    def read(self, tab: str) -> list[dict[str, str]]:
+        """Rows of a tab as {header: value}, an empty list when the tab does not exist. The index of a row in
+        the list is its line in the sheet minus 2 (fill_empty_cells)."""
+        rows = self._values(tab)
         if not rows:
             return []
         header = [str(h).strip() for h in rows[0]]
@@ -91,3 +99,48 @@ class BrandInventorySheet:
             timeout=TIMEOUT_SEC,
         )
         response.raise_for_status()
+
+    def fill_empty_cells(self, tab: str, updates: list[tuple[int, str, dict[str, str]]]) -> int:
+        """Writes the values (index of the row as given by read, its brand, {column: value}), each only when
+        the row still has this brand and the cell is still empty when written (the tab is read again just
+        before: a human edit during the run wins). Returns the number of cells written."""
+        rows = self._values(tab)
+        if not rows or not updates:
+            return 0
+        header = [str(h).strip() for h in rows[0]]
+        if "marque" not in header:
+            raise RuntimeError(f"tab {tab} has no column marque")
+
+        def cell(row: list, column: int) -> str:
+            return str(row[column]).strip() if column < len(row) else ""
+
+        data = []
+        for index, brand, cells in updates:
+            line = index + 2
+            current = rows[index + 1] if index + 1 < len(rows) else []
+            if cell(current, header.index("marque")) != brand.strip():
+                logging.warning("Tab %s, line %s: no longer the brand %s, not completed", tab, line, brand)
+                continue
+            for column, value in cells.items():
+                if column in header and value and not cell(current, header.index(column)):
+                    data.append({
+                        "range": f"{_quote(tab)}!{column_letter(header.index(column) + 1)}{line}",
+                        "values": [[value]],
+                    })
+        if data:
+            response = self.session.post(
+                f"{SHEETS_API_URL}/{self.spreadsheet_id}/values:batchUpdate",
+                json={"valueInputOption": "RAW", "data": data},
+                timeout=TIMEOUT_SEC,
+            )
+            response.raise_for_status()
+        return len(data)
+
+
+def column_letter(number: int) -> str:
+    """1 -> A, 26 -> Z, 27 -> AA."""
+    letters = ""
+    while number:
+        number, rest = divmod(number - 1, 26)
+        letters = chr(ord("A") + rest) + letters
+    return letters

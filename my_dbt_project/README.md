@@ -67,12 +67,12 @@ Tables built from the `advertising` schema (ad detection and classification pipe
 Reference data maintained in private Google Sheets is downloaded as dbt seeds, then loaded and tested, before `dbt run` (`entrypoints/dbt.sh` and `mediatree_import.sh`):
 ```
 poetry run python -m quotaclimat.data_ingestion.external_sources.download_external_sources
-poetry run dbt seed --full-refresh --select path:seeds/ref
+poetry run dbt seed --full-refresh --no-partial-parse --select path:seeds/ref
 poetry run dbt test --select path:seeds/ref
 ```
 Sources are listed in `external_sources.yml` by spreadsheet name. Each spreadsheet is looked up by its exact name in a Google Drive folder, then every tab is read with the Google Sheets API (displayed values only, never formulas or files) and written to `seeds/ref/<table_prefix><tab name in snake_case>.csv` (not versioned), e.g. tab `catégories` of `Dictionnaire_marques_secteurs` -> seed and table `advertising.ref_ome_categories` (`+schema: advertising` for `seeds/ref`). A new tab is loaded automatically on the next run, except the tabs whose name starts with `_` (e.g. `_lisez-moi`), kept for humans and never downloaded. Seed names must start with `ref_`, whatever the tab names or the config say.
 
-Column types are inferred by `dbt seed`, except the identifiers pinned as `text` in `seeds/ref/_ref_seeds.yml` (a code `001` would otherwise become `1`), which also holds the seed tests (`unique`, `not_null`). A failing test is logged but does not block the run.
+Column types are inferred by `dbt seed`, except the identifiers pinned as `text` in `seeds/ref/_ref_seeds.yml` (a code `001` would otherwise become `1`), which also holds the seed tests (`unique`, `not_null`). `--no-partial-parse`: when dbt reuses an earlier parse (`target/partial_parse.msgpack`, left by a previous dbt command in the same container or locally), it ignores these types for the CSV files just downloaded. A failing test is logged but does not block the run.
 
 When a spreadsheet cannot be downloaded (not configured, API error, public spreadsheet), no CSV is written for it and its tables keep their previous version. A tab without header, with duplicated column names, values without header or no rows is not written either. A tab that is written replaces its table, even if its tests fail afterwards.
 

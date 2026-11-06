@@ -9,9 +9,10 @@
     ultimate parent company. Used by analytics.publicites, which falls back on the predicted brand
     for the brands not listed here.
     - entreprise: company of the brand (Activia -> Danone, Free -> Free: a brand can be its own company),
-      with its SIREN and the department of its head office (departement_siege_social), empty for a company
-      registered abroad;
-    - societe_mere_ultime: ultimate parent company of the company (consolidation level);
+      with the country of its head office (pays_siege_social), its SIREN and the department of its head
+      office (departement_siege_social), these two empty for a company registered abroad;
+    - societe_mere_ultime: ultimate parent company of the company (consolidation level), with the same
+      three columns (smu_pays, smu_siren, smu_departement);
     - actionnaire_maj_ultime: ultimate majority shareholder (e.g. a family holding), passed through only.
     Each value has its status (e_statut, smu_statut, amu_statut): 'vérifié', 'non vérifié' or 'à vérifier'. A value is
     used unless its status is 'à vérifier' (the job writes the ultimate parent company 'à vérifier').
@@ -21,22 +22,19 @@ WITH inventory AS (
     {{ name_key('marque') }} AS brand_key,
     TRIM(marque) AS brand,
     NULLIF(TRIM(entreprise), '') AS company,
-    -- 9 digits: spaces and dots removed, leading zeros put back when the sheet turned the SIREN into a number
-    CASE
-      WHEN REGEXP_REPLACE(siren, '[\s.]', '', 'g') ~ '^\d{7,9}$'
-        THEN LPAD(REGEXP_REPLACE(siren, '[\s.]', '', 'g'), 9, '0')
-    END AS company_siren,
-    -- "1" -> "01" (number in the sheet); "2A", "971" kept
-    CASE
-      WHEN TRIM(departement_siege_social) ~ '^\d$' THEN '0' || TRIM(departement_siege_social)
-      ELSE NULLIF(UPPER(TRIM(departement_siege_social)), '')
-    END AS company_head_office_department,
+    -- macros/brand_inventory_identity.sql
+    {{ clean_country('pays_siege_social') }} AS company_country,
+    {{ clean_siren('siren') }} AS company_siren,
+    {{ clean_department('departement_siege_social') }} AS company_head_office_department,
     NULLIF(TRIM(societe_mere_ultime), '') AS ultimate_parent,
+    {{ clean_country('smu_pays') }} AS ultimate_parent_country,
+    {{ clean_siren('smu_siren') }} AS ultimate_parent_siren,
+    {{ clean_department('smu_departement') }} AS ultimate_parent_head_office_department,
     NULLIF(TRIM(e_statut), '') AS company_status,
     NULLIF(TRIM(smu_statut), '') AS ultimate_parent_status,
     NULLIF(TRIM(actionnaire_maj_ultime), '') AS ultimate_majority_shareholder,
     NULLIF(TRIM(amu_statut), '') AS ultimate_majority_shareholder_status
-  FROM ({{ source_or_empty('advertising', 'brand_inventory', ['marque', 'entreprise', 'siren', 'departement_siege_social', 'societe_mere_ultime', 'e_statut', 'smu_statut', 'actionnaire_maj_ultime', 'amu_statut']) }}) inventory
+  FROM ({{ source_or_empty('advertising', 'brand_inventory', ['marque', 'entreprise', 'pays_siege_social', 'siren', 'departement_siege_social', 'societe_mere_ultime', 'smu_pays', 'smu_siren', 'smu_departement', 'e_statut', 'smu_statut', 'actionnaire_maj_ultime', 'amu_statut']) }}) inventory
 ),
 usable AS (
   SELECT
@@ -63,10 +61,14 @@ SELECT
   brand,
   company,
   company_status,
+  company_country,
   company_siren,
   company_head_office_department,
   ultimate_parent,
   ultimate_parent_status,
+  ultimate_parent_country,
+  ultimate_parent_siren,
+  ultimate_parent_head_office_department,
   ultimate_majority_shareholder,
   ultimate_majority_shareholder_status,
   -- the company unless 'à vérifier', else the brand itself

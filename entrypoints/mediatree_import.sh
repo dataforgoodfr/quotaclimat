@@ -21,7 +21,7 @@ poetry run python -m quotaclimat.data_ingestion.labelstudio.ingest_labelstudio
 
 echo "download reference Google Sheets as dbt seeds, then load and test them"
 poetry run python -m quotaclimat.data_ingestion.external_sources.download_external_sources
-poetry run dbt seed --full-refresh --select path:seeds/ref
+poetry run dbt seed --full-refresh --no-partial-parse --select path:seeds/ref  # see entrypoints/dbt.sh
 poetry run dbt test --select path:seeds/ref
 
 echo "load the methodology seeds versioned in the repository (keywords of the misinformation themes), then test them"

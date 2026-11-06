@@ -103,6 +103,7 @@ queries:
   metabase_pub_emissions_score_mesinfo.sql:
     questions:
       - 2489 # nuage de points, émissions par note de mésinfo et pub rattachée
+      - 2490 # tableau, émissions par poids (pub x note)
     variables:
       debut: {type: date}
       fin: {type: date}

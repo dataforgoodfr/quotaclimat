@@ -1,7 +1,8 @@
 -- Carte des émissions (chaînes françaises) : note de mésinformation et publicité rattachée, pour voir si la pub va
 -- plutôt aux émissions qui font le plus de mésinformation. Une ligne par émission.
 -- Pour un nuage de points : abscisse cas_par_heure_env (la note), ordonnée pub_minutes (ou pub_min_par_heure),
--- taille volume_heures, couleur chaine.
+-- taille volume_heures, couleur chaine. Pour un tableau : poids_pub_x_note, part_poids_pct et rang_poids donnent
+-- le poids de chaque émission dans la pub pondérée par la note ; lignes triées par ce poids.
 -- Variables Metabase :
 --   debut  type Date, premier jour inclus (heure de Paris), ex. 2026-09-01
 --   fin    type Date, dernier jour inclus, ex. 2026-09-30
@@ -34,6 +35,13 @@
 --     différente (une émission longue a mécaniquement plus de pub) ;
 --   part_pub_pct, part_cas_pct, part_volume_pct : part de l'émission dans la pub, les cas et les heures de
 --     programme de toutes les émissions gardées ;
+--   poids_pub_x_note : minutes de pub rattachée x note de l'émission, son poids dans la pub pondérée par la note
+--     (le même poids d'une seconde de pub que metabase_pub_annonceurs_ponderes_cas.sql avec
+--     ponderation_par_temps_denv, ici en minutes) ; 0 pour une émission sans cas ou sans pub. Ce n'est pas un
+--     nombre de cas : seuls les parts et les rangs se lisent ;
+--   part_poids_pct : part de l'émission dans la somme des poids de toutes les émissions gardées ;
+--   rang_poids : rang de l'émission par poids décroissant (1 : la plus lourde ; ex aequo départagés par la note,
+--     la chaîne et le nom) ;
 --   note_moyenne_pub : note moyenne d'une seconde de pub (notes des émissions pondérées par leur pub), la même
 --     sur toutes les lignes ;
 --   note_moyenne_programme : note moyenne d'une heure de programme (pondérée par volume_heures), la même sur
@@ -125,6 +133,11 @@ SELECT
     ROUND((100 * g.pub_secondes / NULLIF(SUM(g.pub_secondes) OVER (), 0))::numeric, 2) AS part_pub_pct,
     ROUND((100 * g.nb_cas / NULLIF(SUM(g.nb_cas) OVER (), 0))::numeric, 2) AS part_cas_pct,
     ROUND((100 * g.volume_heures / SUM(g.volume_heures) OVER ())::numeric, 2) AS part_volume_pct,
+    ROUND((g.pub_secondes / 60 * g.note)::numeric, 1) AS poids_pub_x_note,
+    ROUND((100 * g.pub_secondes * g.note / NULLIF(SUM(g.pub_secondes * g.note) OVER (), 0))::numeric, 2)
+        AS part_poids_pct,
+    ROW_NUMBER() OVER (ORDER BY g.pub_secondes * g.note DESC, g.note DESC, g.chaine, g.nom, g.rediffusion)
+        AS rang_poids,
     ROUND((SUM(g.pub_secondes * g.note) OVER () / NULLIF(SUM(g.pub_secondes) OVER (), 0))::numeric, 2)
         AS note_moyenne_pub,
     ROUND((SUM(g.volume_heures * g.note) OVER () / SUM(g.volume_heures) OVER ())::numeric, 2)
@@ -132,4 +145,4 @@ SELECT
     ROUND((SUM(g.nb_cas) OVER () / SUM(g.env_heures) OVER ())::numeric, 2) AS note_globale,
     ROUND((CORR(g.note, g.pub_secondes / 60 / g.volume_heures) OVER ())::numeric, 2) AS correlation_note_pub_par_heure
 FROM gardees g
-ORDER BY g.note DESC, g.pub_secondes DESC, g.chaine, g.nom
+ORDER BY rang_poids

@@ -87,7 +87,17 @@
 --     l'information (confirmee, probable, indice, inconnue) ; NULL quand l'annonceur n'est pas dans le Google
 --     Sheet. À un niveau qui regroupe plusieurs entreprises (groupe, secteur), l'agence principale seulement ;
 --   autres_agences_media : les autres agences connues de l'annonceur, par secondes de pub décroissantes (NULL
---     sans autre agence), utile aux niveaux groupe et secteur.
+--     sans autre agence), utile aux niveaux groupe et secteur ;
+--   part_pub_agence_pct : part des secondes de pub de l'annonceur achetées par agence_media (100 : toute sa pub ;
+--     NULL quand l'agence n'est pas connue). Calculée sur toute sa pub de la période, émissions écartées par
+--     env_heures_min comprises ;
+--   perimetre_media_agence : périmètre média de l'agence d'après le Google Sheet (partiel : elle n'achète qu'une
+--     partie des médias de l'annonceur, ex. programmatique et réseaux sociaux seulement ; tout ; NULL si non dit) ;
+--   statut_agence : pour colorer les lignes du tableau (couleurs de metabase/couleurs.yml, groupe statut_agence) :
+--     partiel quand agence_media n'achète qu'une partie de la pub de la ligne (part_pub_agence_pct < 100, ex. une
+--     marque d'une entreprise chez une autre agence, ou un groupe dont les entreprises ont plusieurs agences) ou
+--     quand son perimetre_media_agence est partiel ; sinon fiabilite_agence (confirmee, probable, indice, inconnue) ;
+--     NULL quand l'annonceur n'est pas dans le Google Sheet.
 -- Sources (dbt) : advertising.pub_annonceur_emission_jour (secondes de pub de chaque marque autour de chaque
 -- émission, par jour de la pub, avec son agence média) et public.emission_jour (cas, heures de programme et d'environnement par
 -- émission, par jour de programme : écart possible d'une journée aux bords de la période pour les émissions qui
@@ -129,6 +139,7 @@ pub AS MATERIALIZED (
         advertising.pub_annonceur_emission_jour.agence_media,
         advertising.pub_annonceur_emission_jour.groupe_agence,
         advertising.pub_annonceur_emission_jour.fiabilite_agence,
+        advertising.pub_annonceur_emission_jour.perimetre_media_agence,
         SUM(advertising.pub_annonceur_emission_jour.pub_secondes) AS pub_secondes,
         -- NULL sans pub dans les secteurs, catégories et agences choisis
         SUM(advertising.pub_annonceur_emission_jour.pub_secondes)
@@ -141,7 +152,7 @@ pub AS MATERIALIZED (
       AND CAST({{niveau}} AS text) IN ('marque', 'entreprise', 'groupe', 'secteur')
       AND pa.pertinence_min IN ('faible', 'moyenne', 'forte')
       AND (pa.info_continue OR NOT COALESCE(c.infocontinue, FALSE))
-    GROUP BY 1, 2, 3, 4, 5, 6
+    GROUP BY 1, 2, 3, 4, 5, 6, 7
 ),
 -- avec theme_cas : cas du thème par émission sur la période (jour de programme, comme emission_jour), à partir de
 -- la pertinence minimale
@@ -225,14 +236,15 @@ agences AS (
         agence_media,
         groupe_agence,
         fiabilite_agence,
+        perimetre_media_agence,
         SUM(pub_secondes_selection) AS pub_secondes_selection,
         SUM(pub_secondes) AS pub_secondes
     FROM pub
-    GROUP BY 1, 2, 3, 4
+    GROUP BY 1, 2, 3, 4, 5
 ),
 -- agence principale : la plus présente dans la sélection (l'agence choisie avec un filtre d'agence), puis au total
 agence_principale AS (
-    SELECT DISTINCT ON (annonceur) annonceur, agence_media, groupe_agence, fiabilite_agence
+    SELECT DISTINCT ON (annonceur) annonceur, agence_media, groupe_agence, fiabilite_agence, perimetre_media_agence
     FROM agences
     ORDER BY annonceur, pub_secondes_selection DESC NULLS LAST, pub_secondes DESC, agence_media
 ),
@@ -249,6 +261,17 @@ autres_agences AS (
     JOIN agence_principale ap ON ap.annonceur = a.annonceur
     WHERE a.agence_media IS DISTINCT FROM ap.agence_media
     GROUP BY a.annonceur
+),
+-- part de la pub de l'annonceur achetée par son agence principale
+part_agence AS (
+    SELECT
+        ag.annonceur,
+        ROUND((100 * SUM(ag.pub_secondes) FILTER (WHERE ag.agence_media = ap.agence_media) / SUM(ag.pub_secondes))::numeric, 2)
+            AS part_pub_agence_pct
+    FROM agences ag
+    JOIN agence_principale ap ON ap.annonceur = ag.annonceur
+    WHERE ap.agence_media IS NOT NULL
+    GROUP BY ag.annonceur
 ),
 -- parts, rangs et cumuls sur tous les annonceurs, avant la limite
 resultat AS (
@@ -297,11 +320,19 @@ SELECT
     ap.agence_media,
     ap.groupe_agence,
     ap.fiabilite_agence,
-    aa.autres_agences_media
+    aa.autres_agences_media,
+    pg.part_pub_agence_pct,
+    ap.perimetre_media_agence,
+    CASE
+        WHEN ap.agence_media IS NOT NULL
+         AND (pg.part_pub_agence_pct < 100 OR ap.perimetre_media_agence = 'partiel') THEN 'partiel'
+        ELSE ap.fiabilite_agence
+    END AS statut_agence
 FROM resultat r
 CROSS JOIN parametres p
 LEFT JOIN agence_principale ap ON ap.annonceur = r.annonceur
 LEFT JOIN autres_agences aa ON aa.annonceur = r.annonceur
+LEFT JOIN part_agence pg ON pg.annonceur = r.annonceur
 WHERE r.rang_pub <= p.nb_points
   AND r.rang_cas <= p.nb_points
   -- filtres secteur, categorie, agence et groupe_agence : lignes affichées seulement, valeurs calculées sur tous

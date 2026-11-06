@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "label-misinformation"
-version = "0.2.0"
+version = "0.2.1"
 description = "Label misinformation from Speech To Text (S2T)"
 authors = []
 

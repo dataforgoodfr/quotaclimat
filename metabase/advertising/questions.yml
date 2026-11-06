@@ -99,3 +99,17 @@ queries:
         min_rows: 1
       - params: {debut: 2025-01-01, fin: 2025-12-31, marque: [pytest skoda], groupe: [porsche], nb_emissions: 3}
         min_rows: 1
+
+  metabase_pub_emissions_score_mesinfo.sql:
+    questions:
+      - 2489 # nuage de points, émissions par note de mésinfo et pub rattachée
+    variables:
+      debut: {type: date}
+      fin: {type: date}
+      env_heures_min: {type: number}
+      inclure_info_continue: {type: boolean, default: true, required: true}
+      inclure_service_public: {type: boolean, default: true, required: true}
+    tests:
+      - params: {debut: 2025-01-01, fin: 2025-12-31}
+      - params: {debut: 2025-01-01, fin: 2025-12-31, env_heures_min: 0, inclure_info_continue: false,
+                 inclure_service_public: false}

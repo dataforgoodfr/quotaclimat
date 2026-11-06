@@ -165,6 +165,7 @@ Each README below is the authoritative source for its area — read it instead o
 | `rrs/clustering/README.md` | LLM clustering internals (`cluster_llm.py`, `cluster_llm_timeseries.py`): label generation/merge/classification steps, timeseries incremental mode, usage/flags, env vars |
 | `detect_misinformation/jobs/README.md` | Misinformation jobs (`label_misinformation`, `get_audio_video`): Poetry groups, building images from the repo root, docker compose services, env vars, CI/versioning |
 | `detect_misinformation/experiments/README.md` | Misinformation experiments: `misinformation-dev`/`misinformation-dev-cuda` groups, installing CUDA torch by hand |
+| `detect_misinformation/labelstudio/README.md` | Label Studio interfaces (XML) of the misinformation review projects (all countries / France), how to deploy them, tag names read by dbt |
 | `docs/data_tiers.md` | Data tiers (raw / syndicated / curated): which schema and table belongs to which tier, sources → raw, dbt lineage, curated tables, how to regenerate the Archify diagrams |
 | `docs/kestra_flows.md` | Every production Kestra flow step by step: what code runs, what it reads/writes, which technologies are involved, plus where Kestra itself is hosted (shared Elastic Metal orchestrator, see `infrastructure/Readme.md`) |
 

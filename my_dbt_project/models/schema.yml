@@ -929,6 +929,10 @@ models:
         description: >
           Reliability of the agency information - confirmee, probable, indice or inconnue - NULL when the advertiser is
           not in the sheet.
+      - name: perimetre_media_agence
+        description: >
+          Media scope of the agency (perimetre_media of the sheet) - 'partiel' when it buys only part of the media of the
+          advertiser (e.g. programmatic and social only), 'tout', or NULL when not given.
   - name: cas_theme
     description: >
       In the analytics schema. Themes of the validated misinformation cases of the French channels, found by

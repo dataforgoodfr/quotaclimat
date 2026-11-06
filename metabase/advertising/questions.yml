@@ -32,11 +32,17 @@ queries:
       pertinence_min: {type: text, values: [faible, moyenne, forte]}
       secteur: {type: dimension, field: advertising.pub_annonceur_emission_jour.secteur, widget: string/=}
       categorie: {type: dimension, field: advertising.pub_annonceur_emission_jour.categorie, widget: string/=}
+      agence: {type: dimension, field: advertising.pub_annonceur_emission_jour.agence_media, widget: string/=}
+      groupe_agence: {type: dimension, field: advertising.pub_annonceur_emission_jour.groupe_agence, widget: string/=}
     tests:
       - params: {debut: 2025-01-01, fin: 2025-12-31, niveau: entreprise}
         min_rows: 1
       - params: {debut: 2025-01-01, fin: 2025-12-31, niveau: secteur, ponderation_par_temps_denv: true,
                  env_heures_min: 0}
+      # agence de la marque de test (Inventaire_des_annonceurs de test, voir test_dbt_model_analytics.py)
+      - params: {debut: 2025-01-01, fin: 2025-12-31, niveau: entreprise, agence: [Pytest Agence Škoda],
+                 groupe_agence: [Havas]}
+        min_rows: 1
       - params: {debut: 2025-01-01, fin: 2025-12-31, niveau: marque, inclure_info_continue: false, nb_points: 10,
                  theme_cas: automobile, pertinence_min: moyenne, secteur: [Automobile],
                  categorie: [Voiture électrique]}

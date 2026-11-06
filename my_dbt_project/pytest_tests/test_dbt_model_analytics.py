@@ -1151,11 +1151,11 @@ def test_pub_annonceur_emission_jour_agency(db_connection):
     """The agency of the brand (ad_brand_agencies) is passed through, NULL for the brands without agency."""
     with db_connection.cursor() as cur:
         cur.execute("""
-            SELECT DISTINCT marque, agence_media, groupe_agence, fiabilite_agence
+            SELECT DISTINCT marque, agence_media, groupe_agence, fiabilite_agence, perimetre_media_agence
             FROM advertising.pub_annonceur_emission_jour
             WHERE channel_name IN ('bfmtv', 'france2')
         """)
-        assert cur.fetchall() == [("PYTEST SKODA", "Pytest Agence Škoda", "Havas", "probable")]
+        assert cur.fetchall() == [("PYTEST SKODA", "Pytest Agence Škoda", "Havas", "probable", None)]
 
 
 def test_ad_brands_siren_and_department(db_connection):

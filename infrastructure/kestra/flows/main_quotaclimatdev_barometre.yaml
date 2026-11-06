@@ -18,6 +18,10 @@ inputs:
     type: DATE
     required: false
     description: "Reference date (YYYY-MM-DD) from which to count days back. Defaults to now."
+  - id: full_refresh
+    type: BOOLEAN
+    defaults: false
+    description: "When true, dbt rebuilds the whole history of the incremental models of models/dashboards and models/homepage (after a change of their code, of the program grid or of the dictionary). Default: their recent weeks only."
 
 tasks:
   - id: ingest_data_to_s3
@@ -167,6 +171,10 @@ tasks:
       - -c
       - cd /app && /app/entrypoints/dbt.sh
     env:
+      # the incremental dbt models recompute at least the imported period (see entrypoints/dbt.sh)
+      DBT_FULL_REFRESH: "{{ inputs.full_refresh }}"
+      DBT_IMPORT_START_DATE: "{{ (inputs.start_date ?? now()) | date('yyyy-MM-dd') }}"
+      DBT_IMPORT_DAYS_BACK: "{{ inputs.days_back }}"
       EXTERNAL_SOURCES_DRIVE_FOLDER: "{{ secret('EXTERNAL_SOURCES_DRIVE_FOLDER') }}"
       GOOGLE_SHEETS_SERVICE_ACCOUNT_JSON: "{{ secret('GOOGLE_SHEETS_SERVICE_ACCOUNT_JSON') }}"
       DBT_ENV: dev

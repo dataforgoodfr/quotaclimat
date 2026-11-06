@@ -28,6 +28,7 @@ from quotaclimat.data_ingestion.advertising.s05_enrichment.e01_brand_groups.inpi
 from quotaclimat.data_ingestion.advertising.s05_enrichment.e01_brand_groups.propose import (
     KnownCompanies,
     choose_holder,
+    clean_siren,
     core_key,
     name_contains_brand,
     parse_nice_classes,
@@ -618,14 +619,21 @@ def test_propose_row_company_and_ultimate_parent():
         holder,
         wikidata_parent=Company("Iliad Holding", "Q1239347"),
         gleif_lei=Company("FREE", "LEI_FREE"),
-        gleif_parent=Company("ILIAD", "LEI_ILIAD"),
+        gleif_parent=Company("ILIAD", "LEI_ILIAD", "342376332", "FR"),
         known=KnownCompanies(),
         today=TODAY,
     )
     assert row == {
         "marque": "Free",
         "entreprise": "Free",
+        "pays_siege_social": "FR",
+        "siren": "421938861",
+        # looked up afterwards by run.fill_departments
+        "departement_siege_social": "",
         "societe_mere_ultime": "ILIAD",
+        "smu_pays": "FR",
+        "smu_siren": "342376332",
+        "smu_departement": "",
         "e_statut": "non vérifié",
         "smu_statut": "à vérifier",
         "commentaires": (
@@ -690,7 +698,9 @@ def test_propose_row_parents():
     row = propose_row("Acme", holder, None, None, None, KnownCompanies(), TODAY)
     assert "aucune société mère trouvée" in row["commentaires"]
     nothing = propose_row("Acme", None, None, None, None, KnownCompanies(), TODAY)
-    assert (nothing["marque"], nothing["entreprise"], nothing["e_statut"]) == ("Acme", "", "à vérifier")
+    # nothing found: no status, for a human to fill in
+    assert (nothing["marque"], nothing["entreprise"], nothing["e_statut"], nothing["smu_statut"]) == ("Acme", "", "", "")
+    assert row["smu_statut"] == ""
     assert "aucune marque en vigueur à ce nom" in nothing["commentaires"]
 
 
@@ -700,10 +710,11 @@ def test_print_rows_tab_separated():
     lines = out.getvalue().splitlines()
     assert lines[0] == "----- BRAND GROUPS PROPOSALS (tab-separated) -----"
     assert lines[1].split("\t") == [
-        "marque", "entreprise", "e_statut", "societe_mere_ultime", "smu_statut", "actionnaire_maj_ultime", "amu_statut",
-        "commentaires",
+        "marque", "entreprise", "pays_siege_social", "siren", "departement_siege_social", "e_statut",
+        "societe_mere_ultime", "smu_pays", "smu_siren", "smu_departement", "smu_statut", "actionnaire_maj_ultime",
+        "amu_statut", "commentaires",
     ]
-    assert lines[2].split("\t") == ["Acme", "ACME SAS", "", "", "", "", "", "ligne 1 ligne 2"]
+    assert lines[2].split("\t") == ["Acme", "ACME SAS"] + [""] * 11 + ["ligne 1 ligne 2"]
     assert lines[3] == "----- END OF BRAND GROUPS PROPOSALS -----"
 
 
@@ -775,7 +786,8 @@ def test_gleif_and_wikidata(monkeypatch):
         "CHRISTIAN DIOR COUTURE", "96950005T49LGF6G2042"
     )
     assert calls[0][1] == {
-        "filter[entity.registeredAs]": "612035832",
+        # GLEIF stores SIRENs with or without spaces (EDF: "552 081 317"), the comma is an OR
+        "filter[entity.registeredAs]": "612035832,612 035 832",
         "filter[entity.jurisdiction]": "FR",
     }
     assert registries.gleif_ultimate_parent("96950005T49LGF6G2042", delay_sec=0) is None
@@ -833,6 +845,7 @@ def test_brand_proposed_when_a_registry_fails(monkeypatch):
 
     monkeypatch.setattr(registries, "wikidata_ultimate_parent", failing)
     monkeypatch.setattr(registries, "gleif_lei", lambda siren: None)
+    monkeypatch.setattr(registries, "head_office_department", lambda siren: "92")
     holder_notice = notice("1", "781452511", "ACME SAS", {3})
 
     class FakeInpi:
@@ -840,9 +853,84 @@ def test_brand_proposed_when_a_registry_fails(monkeypatch):
             return [holder_notice]
 
     row = run_module.propose("Acme", None, FakeInpi(), {}, KnownCompanies(), TODAY)
-    assert (row["entreprise"], row["societe_mere_ultime"]) == ("Acme", "")
+    assert (row["entreprise"], row["siren"], row["departement_siege_social"], row["societe_mere_ultime"]) == (
+        "Acme", "781452511", "92", "",
+    )
     assert "Wikidata indisponible pendant le job, société mère à rechercher" in row["commentaires"]
     assert "aucune société mère trouvée" not in row["commentaires"]
+
+    # the department lookup failing: the SIREN kept, the department left to a human
+    def failing_department(siren):
+        raise registries.requests.HTTPError("503 Server Error")
+
+    monkeypatch.setattr(registries, "head_office_department", failing_department)
+    monkeypatch.setattr(registries, "wikidata_ultimate_parent", lambda siren: Company("Acme Group", "Q1"))
+    row = run_module.propose("Acme", None, FakeInpi(), {}, KnownCompanies(), TODAY)
+    assert (row["siren"], row["departement_siege_social"], row["societe_mere_ultime"]) == ("781452511", "", "Acme Group")
+    assert (
+        "Recherche d'entreprises indisponible pendant le job, département du siège de l'entreprise à rechercher"
+        in row["commentaires"]
+    )
+    assert "société mère à rechercher" not in row["commentaires"]
+
+
+def test_siren_and_department_of_a_company_already_in_the_tab(monkeypatch):
+    """Dacia, held by RENAULT s.a.s.: the SIREN and department of the company Renault of the tab, never
+    the holder's when the tab has none (the holder can be another legal entity)."""
+    lookups = []
+    monkeypatch.setattr(registries, "head_office_department", lambda siren: lookups.append(siren) or "78")
+    dacia = notice("2", "780129987", "RENAULT s.a.s.", {12})
+
+    class FakeInpi:
+        def brand_notices(self, brand):
+            return [dacia]
+
+    tab = {"marque": "Renault", "entreprise": "Renault", "societe_mere_ultime": "Renault SA", "smu_statut": "vérifié"}
+    # SIREN typed by a human, read as a number by the sheet: leading zeros put back
+    known = KnownCompanies.from_rows([{**tab, "siren": "5 520 135", "departement_siege_social": "92"}])
+    row = run_module.propose("Dacia", "AUT", FakeInpi(), {}, known, TODAY)
+    assert (row["entreprise"], row["siren"], row["departement_siege_social"], lookups) == ("Renault", "005520135", "92", [])
+
+    # a SIREN without department: looked up
+    known = KnownCompanies.from_rows([{**tab, "siren": "780129987"}])
+    row = run_module.propose("Dacia", "AUT", FakeInpi(), {}, known, TODAY)
+    assert (row["siren"], row["departement_siege_social"], lookups) == ("780129987", "78", ["780129987"])
+
+    # no SIREN in the tab: left empty, for a human
+    row = run_module.propose("Dacia", "AUT", FakeInpi(), {}, KnownCompanies.from_rows([tab]), TODAY)
+    assert (row["siren"], row["departement_siege_social"]) == ("", "")
+    assert "SIREN de l'entreprise à compléter" in row["commentaires"]
+    # another row of the company with its SIREN completes the first one
+    known = KnownCompanies.from_rows([tab, {"marque": "Alpine", "entreprise": "Renault", "siren": "780129987"}])
+    row = run_module.propose("Dacia", "AUT", FakeInpi(), {}, known, TODAY)
+    assert (row["societe_mere_ultime"], row["siren"]) == ("Renault SA", "780129987")
+
+
+def test_clean_siren():
+    assert clean_siren("552 081 317") == "552081317"
+    assert clean_siren("552.081.317") == "552081317"
+    assert clean_siren("5520135") == "005520135"
+    assert clean_siren("") == clean_siren(None) == clean_siren("à vérifier") == clean_siren("55208131766522") == ""
+
+
+def test_head_office_department(monkeypatch):
+    calls = []
+
+    def fake_get(url, headers, timeout, params=None):
+        calls.append((url, params))
+        return FakeResponse(json_data={"results": [
+            {"siren": "999999999", "siege": {"departement": "13"}},
+            {"siren": "552081317", "siege": {"departement": "75", "code_postal": "75008"}},
+        ]})
+
+    monkeypatch.setattr(registries.requests, "get", fake_get)
+    assert registries.head_office_department("552081317", delay_sec=0) == "75"
+    assert calls[0] == ("https://recherche-entreprises.api.gouv.fr/search", {"q": "552081317", "per_page": 5})
+    # only the company with exactly this SIREN
+    assert registries.head_office_department("111111111", delay_sec=0) is None
+    # never anything else than a SIREN in the request
+    assert registries.head_office_department("ACME", delay_sec=0) is None
+    assert len(calls) == 2
 
 
 class FakeSheetsSession:
@@ -857,7 +945,7 @@ class FakeSheetsSession:
         rows = self.tabs[tab][:1] if url.endswith("!1:1") else self.tabs[tab]
         return FakeResponse(json_data={"values": rows})
 
-    def post(self, url, params, json, timeout):
+    def post(self, url, json, timeout, params=None):
         self.appended.append((url, params, json))
         return FakeResponse()
 
@@ -887,3 +975,243 @@ def test_sheet_read_and_append_by_column_name():
     assert url.endswith("/values/'Marques'!A1:append")
     assert params == {"valueInputOption": "RAW", "insertDataOption": "INSERT_ROWS"}
     assert body == {"values": [["Acme", "ACME", "non vérifié", ""]]}
+
+
+# ---- identity of the companies and of their ultimate parents, completion of the rows of the tab ----
+
+from quotaclimat.data_ingestion.advertising.s05_enrichment.e01_brand_groups import complete as complete_module  # noqa: E402
+from quotaclimat.data_ingestion.advertising.s05_enrichment.e01_brand_groups.complete import (  # noqa: E402
+    Registries,
+    complete_row,
+    complete_rows,
+    is_the_holder,
+    noted_holder,
+)
+from quotaclimat.data_ingestion.advertising.s05_enrichment.e01_brand_groups.propose import Identity  # noqa: E402
+from quotaclimat.data_ingestion.advertising.s05_enrichment.e01_brand_groups.sheet import column_letter  # noqa: E402
+
+
+def test_lei_record_siren_with_spaces_and_country():
+    record = {"id": "549300X3UK4GG3FNMO06", "attributes": {"entity": {
+        "legalName": {"name": "ELECTRICITE DE FRANCE"}, "registeredAs": "552 081 317", "jurisdiction": "FR",
+        "legalAddress": {"country": "FR"},
+    }}}
+    assert registries._company_from_lei_record(record) == Company(
+        "ELECTRICITE DE FRANCE", "549300X3UK4GG3FNMO06", "552081317", "FR"
+    )
+    # registered abroad: its registration number is no SIREN
+    record["attributes"]["entity"].update(registeredAs="33012345", jurisdiction="NL", legalAddress={"country": "NL"})
+    assert registries._company_from_lei_record(record).siren == ""
+    assert registries.gleif_lei("ACME", delay_sec=0) is None
+
+
+def test_wikidata_parent_siren_and_country(monkeypatch):
+    """One line per SIREN x country of the parent: one company, the first 9-digit SIREN."""
+    def fake_get(url, headers, timeout, params=None):
+        assert "wdt:P17/wdt:P297 ?country" in params["query"]
+        return FakeResponse(json_data={"results": {"bindings": [
+            {"parent": {"value": "http://www.wikidata.org/entity/Q504998"}, "parentLabel": {"value": "LVMH"},
+             "siren": {"value": "775 670 417"}, "country": {"value": "FR"}},
+            {"parent": {"value": "http://www.wikidata.org/entity/Q504998"}, "parentLabel": {"value": "LVMH"},
+             "siren": {"value": "123"}},
+        ]}})
+
+    monkeypatch.setattr(registries.requests, "get", fake_get)
+    assert registries.wikidata_ultimate_parent("612035832", delay_sec=0) == Company("LVMH", "Q504998", "775670417", "FR")
+    assert registries.wikidata_item("Q504998", delay_sec=0) == Company("LVMH", "Q504998", "775670417", "FR")
+    assert registries.wikidata_item("Q1 } DROP", delay_sec=0) is None
+
+
+def test_parent_reused_with_its_identity():
+    known = KnownCompanies.from_rows([
+        {"marque": "Renault", "entreprise": "Renault", "pays_siege_social": "FR", "siren": "780129987",
+         "departement_siege_social": "78", "societe_mere_ultime": "Renault SA", "smu_statut": "vérifié"},
+        # the identity of the parent written on another row of the company
+        {"marque": "Alpine", "entreprise": "Renault", "societe_mere_ultime": "Renault SA", "smu_pays": "FR",
+         "smu_siren": "441639465", "smu_departement": "92"},
+    ])
+    dacia = choose_holder([notice("2", "780129987", "RENAULT s.a.s.", {12})], None)
+    row = propose_row("Dacia", dacia, None, None, None, known, TODAY)
+    assert {k: row[k] for k in ("pays_siege_social", "siren", "departement_siege_social", "smu_pays", "smu_siren",
+                                "smu_departement", "smu_statut")} == {
+        "pays_siege_social": "FR", "siren": "780129987", "departement_siege_social": "78",
+        "smu_pays": "FR", "smu_siren": "441639465", "smu_departement": "92", "smu_statut": "vérifié",
+    }
+
+
+def test_foreign_company_country():
+    holder = choose_holder([Notice("1", "IKEA", "Word", "Marque", "Inter IKEA Systems B.V.", None, True, {20}, "NL")], None)
+    row = propose_row("IKEA", holder, None, None, Company("INGKA", "LEI_P", "", "NL"), KnownCompanies(), TODAY)
+    assert (row["pays_siege_social"], row["siren"], row["smu_pays"], row["smu_siren"]) == ("NL", "", "NL", "")
+
+
+def test_noted_holder():
+    assert noted_holder(
+        "job 2026-10-02 : entreprise : titulaire INPI Association des Centres Distributeurs E. LECLERC (A.C.D. Lec) "
+        "(SIREN 784434268), marque FR123 ; autres titulaires : X (111111111)"
+    ) == complete_module.NotedHolder("Association des Centres Distributeurs E. LECLERC (A.C.D. Lec)", Identity("FR", "784434268"))
+    assert noted_holder("titulaire INPI Inter IKEA Systems B.V. (société étrangère, pays NL), marque EU1") == (
+        complete_module.NotedHolder("Inter IKEA Systems B.V.", Identity("NL"))
+    )
+    assert noted_holder("corrigé à la main") is None
+    assert noted_holder(None) is None
+
+
+def test_is_the_holder():
+    assert is_the_holder("FREE", "Free", "Free")
+    assert is_the_holder("RENAULT s.a.s.", "Renault", "Dacia")
+    assert is_the_holder("SOCIETE FRANCAISE DU RADIOTELEPHONE - SFR", "SFR", "SFR")
+    # another legal entity, or a company corrected by a human
+    assert not is_the_holder("RENAULT TRUCKS", "Renault", "Renault Trucks")
+    assert not is_the_holder("ACME HOLDING", "Danone", "Activia")
+
+
+class FakeRegistries:
+    """Registry answers by function, recording the calls."""
+
+    def __init__(self, monkeypatch, **answers):
+        self.calls = []
+        for name in ("wikidata_ultimate_parent", "gleif_lei", "gleif_lei_by_name", "gleif_ultimate_parent",
+                     "gleif_lei_record", "wikidata_item", "head_office_department"):
+            monkeypatch.setattr(registries, name, self._answer(name, answers.get(name, {})))
+
+    def _answer(self, name, by_args):
+        def answer(*args):
+            self.calls.append((name, *args))
+            value = by_args.get(args[0] if len(args) == 1 else args)
+            if isinstance(value, Exception):
+                raise value
+            return value
+        answer.__name__ = name
+        return answer
+
+
+JOB_NOTE = "job 2026-10-02 : entreprise : titulaire INPI FREE (SIREN 421938861), marque FR5205049"
+
+
+def test_complete_company_identity_from_the_job_note(monkeypatch):
+    fake = FakeRegistries(monkeypatch, head_office_department={"421938861": "75"})
+    row = {"marque": "Free", "entreprise": "Free", "e_statut": "non vérifié", "societe_mere_ultime": "Iliad",
+           "smu_statut": "vérifié", "commentaires": JOB_NOTE}
+    cells = complete_row(row, KnownCompanies.from_rows([row]), Registries())
+    assert cells == {"pays_siege_social": "FR", "siren": "421938861", "departement_siege_social": "75"}
+    assert fake.calls == [("head_office_department", "421938861")]
+
+    # company corrected by a human: the holder of the note is not it
+    human = {**row, "entreprise": "Iliad"}
+    assert complete_row(human, KnownCompanies.from_rows([human]), Registries()) == {}
+
+    # never a cell already filled in, nor another country than the one written by a human
+    filled = {**row, "pays_siege_social": "DE", "departement_siege_social": "13"}
+    assert complete_row(filled, KnownCompanies.from_rows([filled]), Registries()) == {}
+
+
+def test_complete_from_another_row_of_the_company(monkeypatch):
+    fake = FakeRegistries(monkeypatch)
+    rows = [
+        {"marque": "Renault", "entreprise": "Renault", "pays_siege_social": "FR", "siren": "780129987",
+         "departement_siege_social": "78", "societe_mere_ultime": "Renault SA", "smu_statut": "vérifié",
+         "smu_pays": "FR", "smu_siren": "441639465", "smu_departement": "92"},
+        # written by a human, without anything else
+        {"marque": "Dacia", "entreprise": "Renault"},
+    ]
+    assert complete_rows(rows, Registries()) == [(1, "Dacia", {
+        "pays_siege_social": "FR", "siren": "780129987", "departement_siege_social": "78",
+        "societe_mere_ultime": "Renault SA", "smu_statut": "vérifié",
+        "smu_pays": "FR", "smu_siren": "441639465", "smu_departement": "92",
+    })]
+    assert fake.calls == []
+
+
+def test_complete_ultimate_parent_searched_again(monkeypatch):
+    """Ultimate parent and status both empty (a human cleared 'à vérifier'): searched again, GLEIF finding the
+    LEI of the SIREN stored with spaces."""
+    fake = FakeRegistries(
+        monkeypatch,
+        gleif_lei={"552081317": Company("ELECTRICITE DE FRANCE", "LEI_EDF", "552081317", "FR")},
+        gleif_ultimate_parent={"LEI_EDF": Company("ETAT FRANCAIS", "LEI_ETAT", "110000015", "FR")},
+        head_office_department={"552081317": "75", "110000015": "75"},
+    )
+    row = {"marque": "EDF", "entreprise": "EDF", "pays_siege_social": "FR", "siren": "552081317",
+           "societe_mere_ultime": "", "smu_statut": "", "commentaires": "corrigé à la main"}
+    cells = complete_row(row, KnownCompanies.from_rows([row]), Registries())
+    assert cells == {
+        "departement_siege_social": "75", "societe_mere_ultime": "ETAT FRANCAIS", "smu_statut": "à vérifier",
+        "smu_pays": "FR", "smu_siren": "110000015", "smu_departement": "75",
+    }
+    # still 'à vérifier' without parent: not searched again
+    fake.calls.clear()
+    waiting = {**row, "departement_siege_social": "75", "smu_statut": "à vérifier"}
+    assert complete_row(waiting, KnownCompanies.from_rows([waiting]), Registries()) == {}
+    assert fake.calls == []
+
+
+def test_complete_foreign_holder_parent(monkeypatch):
+    FakeRegistries(
+        monkeypatch,
+        gleif_lei_by_name={("Inter IKEA Systems B.V.", "NL"): Company("Inter IKEA Systems B.V.", "LEI_IKEA", "", "NL")},
+        gleif_ultimate_parent={"LEI_IKEA": Company("Stichting INGKA Foundation", "LEI_P", "", "NL")},
+    )
+    row = {"marque": "IKEA", "entreprise": "IKEA",
+           "commentaires": "job : entreprise : titulaire INPI Inter IKEA Systems B.V. (société étrangère, pays NL)"}
+    assert complete_row(row, KnownCompanies.from_rows([row]), Registries()) == {
+        "pays_siege_social": "NL", "societe_mere_ultime": "Stichting INGKA Foundation", "smu_statut": "à vérifier",
+        "smu_pays": "NL",
+    }
+
+
+def test_complete_parent_identity_from_the_job_note(monkeypatch):
+    """The ultimate parent written by the job: its identity from the LEI noted for it, only while the parent of
+    the row is still that one."""
+    FakeRegistries(
+        monkeypatch,
+        gleif_lei_record={"LEIILIAD000000000000": Company("ILIAD", "LEIILIAD000000000000", "342376332", "FR")},
+        head_office_department={"342376332": "75"},
+    )
+    note = JOB_NOTE + " ; GLEIF : société mère ultime ILIAD (LEI LEIILIAD000000000000) ; Wikidata : société mère ultime Iliad Holding (Q1)"
+    row = {"marque": "Free", "entreprise": "Free", "pays_siege_social": "FR", "siren": "421938861",
+           "departement_siege_social": "75", "societe_mere_ultime": "Iliad", "smu_statut": "vérifié",
+           "commentaires": note}
+    assert complete_row(row, KnownCompanies.from_rows([row]), Registries()) == {
+        "smu_pays": "FR", "smu_siren": "342376332", "smu_departement": "75",
+    }
+    changed = {**row, "societe_mere_ultime": "Xavier Niel"}
+    assert complete_row(changed, KnownCompanies.from_rows([changed]), Registries()) == {}
+
+
+def test_complete_failures_and_budget(monkeypatch):
+    FakeRegistries(monkeypatch, head_office_department={"421938861": requests.HTTPError("503")})
+    rows = [
+        {"marque": "Free", "entreprise": "Free", "siren": "421938861", "societe_mere_ultime": "Iliad"},
+        {"marque": "Acme", "entreprise": "Acme", "siren": "781452511", "societe_mere_ultime": "Acme Group"},
+    ]
+    lookups = Registries(max_requests=1)
+    # the failed lookup leaves the cell empty; the budget stops before the second row
+    assert complete_rows(rows, lookups) == []
+    assert (lookups.requests_sent, lookups.failures) == (1, 1)
+
+
+def test_sheet_fill_empty_cells():
+    session = FakeSheetsSession({"Marques": [
+        ["marque", "entreprise", "siren", "departement_siege_social"],
+        ["Free", "Free", "", ""],
+        ["Moved", "X", "", ""],
+        ["Acme", "Acme", "781452511"],
+    ]})
+    sheet = BrandInventorySheet(session, "SHEET_ID")
+    written = sheet.fill_empty_cells("Marques", [
+        (0, "Free", {"siren": "421938861", "departement_siege_social": "75", "unknown": "x"}),
+        # the row moved since it was read: not written
+        (1, "Dacia", {"siren": "780129987"}),
+        # a human filled the cell in the meantime: kept
+        (2, "Acme", {"siren": "999999999", "departement_siege_social": "92"}),
+    ])
+    assert written == 3
+    url, params, body = session.appended[0]
+    assert url.endswith("/values:batchUpdate")
+    assert body == {"valueInputOption": "RAW", "data": [
+        {"range": "'Marques'!C2", "values": [["421938861"]]},
+        {"range": "'Marques'!D2", "values": [["75"]]},
+        {"range": "'Marques'!D4", "values": [["92"]]},
+    ]}
+    assert [column_letter(n) for n in (1, 26, 27, 52)] == ["A", "Z", "AA", "AZ"]

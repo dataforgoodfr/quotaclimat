@@ -17,7 +17,9 @@ poetry run python -m quotaclimat.data_ingestion.labelstudio.ingest_labelstudio
 
 echo "download reference Google Sheets as dbt seeds, then load and test them"
 poetry run python -m quotaclimat.data_ingestion.external_sources.download_external_sources
-poetry run dbt seed --full-refresh --select path:seeds/ref
+# --no-partial-parse: the CSV files just downloaded are new to a previous parse, which would leave out their
+# column_types (my_dbt_project/seeds/ref/_ref_seeds.yml) and load a column of digits (SIREN) as an integer
+poetry run dbt seed --full-refresh --no-partial-parse --select path:seeds/ref
 poetry run dbt test --select path:seeds/ref
 
 echo "load the methodology seeds versioned in the repository (keywords of the misinformation themes), then test them"

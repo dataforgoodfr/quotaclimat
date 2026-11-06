@@ -82,7 +82,7 @@ models:
 seeds:
   my_dbt_project:
     # reference data downloaded from Google Sheets (quotaclimat/data_ingestion/external_sources),
-    # always loaded with `dbt seed --full-refresh --select path:seeds/ref`
+    # always loaded with `dbt seed --full-refresh --no-partial-parse --select path:seeds/ref`
     ref:
       +quote_columns: true
       # next to the advertising models, see macros/generate_schema_name.sql

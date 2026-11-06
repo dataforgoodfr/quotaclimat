@@ -258,16 +258,21 @@ def load_test_external_sources():
         "Marques": [
             [
                 "marque", "entreprise", "e_statut", "societe_mere_ultime", "smu_statut",
-                "actionnaire_maj_ultime", "amu_statut", "commentaires",
+                "actionnaire_maj_ultime", "amu_statut", "commentaires", "siren", "departement_siege_social",
+                "pays_siege_social", "smu_pays", "smu_siren", "smu_departement",
             ],
-            # same key as the predicted brand "Pytest Škoda": the verified row wins
+            # same key as the predicted brand "Pytest Škoda": the verified row wins. SIREN and department
+            # read as numbers by the sheet (leading zeros lost)
             [
                 "PYTEST SKODA", "Pytest Volkswagen", "non vérifié", "Pytest Porsche SE", "vérifié",
-                "Pytest Porsche Piëch", "non vérifié",
+                "Pytest Porsche Piëch", "non vérifié", "", "5520135", "1", "fr", "DE", "", "",
             ],
             ["pytest-škoda", "Pytest Wrong Company", "non vérifié", "Pytest Wrong Parent", "à vérifier"],
             # ultimate parent to check: not used, the company instead
-            ["Pytest Biscuits", "Pytest Biscuits Company", "non vérifié", "Pytest Holding", "à vérifier"],
+            [
+                "Pytest Biscuits", "Pytest Biscuits Company", "non vérifié", "Pytest Holding", "à vérifier", "",
+                "", "", "552 081 317", "2a", "FR", "FR", "775670417", "75",
+            ],
             # listed but company not filled in yet
             ["Pytest Brand Without Group"],
             # company to check: not used; numeric looking brand stays text
@@ -331,7 +336,8 @@ def load_test_external_sources():
         fetch=fake_fetch(agency_sheets, advertiser_inventory_test_source()),
     )
     assert results == {"ref_annonceurs_agence_entreprise": True}
-    run_dbt_command(["seed", "--full-refresh", "--select", "path:seeds/ref"])
+    # as entrypoints/dbt.sh: without --no-partial-parse, the column_types of the CSV files just written are ignored
+    run_dbt_command(["seed", "--full-refresh", "--no-partial-parse", "--select", "path:seeds/ref"])
     run_dbt_command(["test", "--select", "path:seeds/ref"])
     yield
     os.environ.pop("EXTERNAL_SOURCES_DRIVE_FOLDER", None)
@@ -1152,10 +1158,31 @@ def test_pub_annonceur_emission_jour_agency(db_connection):
         assert cur.fetchall() == [("PYTEST SKODA", "Pytest Agence Škoda", "Havas", "probable")]
 
 
+def test_ad_brands_siren_and_department(db_connection):
+    with db_connection.cursor() as cur:
+        cur.execute("""
+            SELECT brand, company_country, company_siren, company_head_office_department,
+              ultimate_parent_country, ultimate_parent_siren, ultimate_parent_head_office_department
+            FROM advertising.ad_brands
+            WHERE brand IN ('PYTEST SKODA', 'Pytest Biscuits', '1664')
+        """)
+        assert sorted(cur.fetchall()) == [
+            ("1664", None, None, None, None, None, None),
+            ("PYTEST SKODA", "FR", "005520135", "01", "DE", None, None),
+            ("Pytest Biscuits", "FR", "552081317", "2A", "FR", "775670417", "75"),
+        ]
+
+
 def test_brand_inventory_loaded_as_text(db_connection):
     with db_connection.cursor() as cur:
         cur.execute("SELECT marque, entreprise FROM advertising.ref_inventaire_marques WHERE marque = '1664'")
         assert cur.fetchall() == [("1664", "Pytest Carlsberg")]
+        # a column with digits only (smu_siren) stays text: column_types applied
+        cur.execute("""
+            SELECT data_type FROM information_schema.columns
+            WHERE table_schema = 'advertising' AND table_name = 'ref_inventaire_marques' AND column_name = 'smu_siren'
+        """)
+        assert cur.fetchall() == [("text",)]
 
 
 @pytest.mark.parametrize(

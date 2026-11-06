@@ -1,6 +1,7 @@
 """Stage 5 (enriching), step 1: propose the company and the ultimate parent company of the broadcast
-brands missing from the tab Marques of the Inventaires_des_marques Google Sheet, and append them to it
-with e_statut and smu_statut 'non vérifié'.
+brands missing from the tab Marques of the Inventaire_des_marques Google Sheet, and append them to it
+with e_statut 'non vérifié' and smu_statut 'à vérifier' (both empty when nothing was found). Then, with
+BRAND_GROUPS_COMPLETE_ROWS=true, fill the empty cells of the rows already in the tab (complete.py).
 
 For each brand, by decreasing broadcast duration:
 1. INPI: trademarks in force named exactly like the brand, holder (company, SIREN) of the most
@@ -8,17 +9,22 @@ For each brand, by decreasing broadcast duration:
    the Dictionnaire_marques_secteurs Google Sheet, loaded by dbt in advertising.ref_ome_secteurs);
 2. company of the brand: the holder, named like the brand when its name contains it (FREE SAS -> Free),
    else under its own name (Dacia -> Renault). A company already in the tab (same name, or same name
-   without legal form) is reused with its ultimate parent company;
+   without legal form) is reused with its identity (country, SIREN, department) and ultimate parent
+   company. Country and SIREN of a new company: the holder's;
 3. ultimate parent company of a new company: GLEIF ultimate consolidating parent of the holder's LEI (by
    SIREN, or by exact legal name and country for a holder registered abroad), else the top of the
-   Wikidata P749 chain of the item with its SIREN;
-4. a row is appended to the tab Marques, commentaires explaining how. A brand without any trademark
-   found is written too, without company and with e_statut 'à vérifier' (for a human to fill in), so that
-   it is not searched again on every run.
+   Wikidata P749 chain of the item with its SIREN, with its country and SIREN;
+4. departments of the head offices of the company and of its ultimate parent: API Recherche d'entreprises
+   (Sirene), from their SIREN;
+5. a row is appended to the tab Marques, commentaires explaining how. A brand without any trademark
+   found is written too, without company nor status (for a human to fill in), so that it is not searched
+   again on every run.
 
 Env: POSTGRES_*, INPI_USERNAME, INPI_PASSWORD, GOOGLE_SHEETS_EDITOR_SERVICE_ACCOUNT_JSON,
 EXTERNAL_SOURCES_DRIVE_FOLDER, BRAND_GROUPS_MAX_BRANDS (default 50), BRAND_GROUPS_DRY_RUN (true: write
-the rows to BRAND_GROUPS_DRY_RUN_CSV and print them in the logs, tab-separated, instead of the sheet).
+the rows to BRAND_GROUPS_DRY_RUN_CSV and print them in the logs, tab-separated, instead of the sheet; the
+completed cells only printed), BRAND_GROUPS_COMPLETE_ROWS (default false), BRAND_GROUPS_COMPLETE_MAX_REQUESTS
+(registry requests of the completion step, default 1000).
 """
 
 import csv
@@ -30,6 +36,10 @@ from datetime import date
 from quotaclimat.data_ingestion.advertising.s05_enrichment.e01_brand_groups import (
     registries,
 )
+from quotaclimat.data_ingestion.advertising.s05_enrichment.e01_brand_groups.complete import (
+    Registries,
+    complete_rows,
+)
 from quotaclimat.data_ingestion.advertising.s05_enrichment.e01_brand_groups.inpi import (
     InpiClient,
     InpiQuotaExceeded,
@@ -39,7 +49,10 @@ from quotaclimat.data_ingestion.advertising.s05_enrichment.e01_brand_groups.inpi
 from quotaclimat.data_ingestion.advertising.s05_enrichment.e01_brand_groups.propose import (
     KnownCompanies,
     KnownCompany,
+    PARENT_COLUMNS,
     choose_holder,
+    clean_siren,
+    identity_from_row,
     parse_nice_classes,
     propose_row,
 )
@@ -71,8 +84,14 @@ NICE_CLASSES_QUERY = text(
 CSV_COLUMNS = [
     "marque",
     "entreprise",
+    "pays_siege_social",
+    "siren",
+    "departement_siege_social",
     "e_statut",
     "societe_mere_ultime",
+    "smu_pays",
+    "smu_siren",
+    "smu_departement",
     "smu_statut",
     "actionnaire_maj_ultime",
     "amu_statut",
@@ -117,6 +136,29 @@ def brands_to_process(
     ]
 
 
+DEPARTMENT_COLUMNS = (
+    ("siren", "departement_siege_social", "de l'entreprise"),
+    ("smu_siren", "smu_departement", "de la société mère ultime"),
+)
+
+
+def fill_departments(row: dict, departments: Registries) -> list[str]:
+    """Departments of the head offices of the company and of its ultimate parent, from their SIREN, unless
+    already given; notes for the ones not found."""
+    notes = []
+    for siren_column, department_column, label in DEPARTMENT_COLUMNS:
+        siren = clean_siren(row.get(siren_column))
+        if not siren or row.get(department_column):
+            continue
+        failures = departments.failures
+        row[department_column] = departments.department(siren)
+        if departments.failures > failures:
+            notes.append(f"Recherche d'entreprises indisponible pendant le job, département du siège {label} à rechercher")
+        elif not row[department_column]:
+            notes.append(f"département du siège {label} non trouvé (Recherche d'entreprises)")
+    return notes
+
+
 def propose(
     brand: str,
     sector: str | None,
@@ -124,6 +166,7 @@ def propose(
     nice_classes,
     known: KnownCompanies,
     today: date,
+    departments: Registries | None = None,
 ) -> dict:
     """Row of the tab Marques for the brand."""
     holder = choose_holder(
@@ -154,9 +197,11 @@ def propose(
         gleif_lei = lookup("GLEIF", registries.gleif_lei_by_name, holder.name, holder.country)
     if gleif_lei:
         gleif_parent = lookup("GLEIF", registries.gleif_ultimate_parent, gleif_lei.identifier)
-    return propose_row(
-        brand, holder, wikidata_parent, gleif_lei, gleif_parent, known, today, unavailable=errors
-    )
+    row = propose_row(brand, holder, wikidata_parent, gleif_lei, gleif_parent, known, today, unavailable=errors)
+    notes = fill_departments(row, departments or Registries())
+    if notes:
+        row["commentaires"] += " ; " + " ; ".join(notes)
+    return row
 
 
 def run() -> int:
@@ -190,12 +235,13 @@ def run() -> int:
     engine.dispose()
     logging.info("%s brands to process", len(brands))
 
-    inpi = InpiClient(os.environ["INPI_USERNAME"], os.environ["INPI_PASSWORD"])
     today = date.today()
     rows = []
+    departments = Registries()
+    inpi = InpiClient(os.environ["INPI_USERNAME"], os.environ["INPI_PASSWORD"]) if brands else None
     for brand, sector in brands:
         try:
-            row = propose(brand, sector, inpi, nice_classes, known, today)
+            row = propose(brand, sector, inpi, nice_classes, known, today, departments)
         except (InpiQuotaExceeded, InpiUnavailable) as e:
             # every following brand would fail too: stop, keep the rows found so far. The quota stops most
             # runs (about 100 requests an hour): an error only when the run processed no brand at all
@@ -211,13 +257,17 @@ def run() -> int:
                 "Brand %s: company %r, ultimate parent %r", brand, row["entreprise"], row["societe_mere_ultime"]
             )
             # the next brands of the same company reuse it
-            known.add(KnownCompany(row["entreprise"], row["societe_mere_ultime"], row["smu_statut"], brand))
+            known.add(KnownCompany(
+                row["entreprise"], row["societe_mere_ultime"], row["smu_statut"], brand, identity_from_row(row),
+                identity_from_row(row, PARENT_COLUMNS),
+            ))
         else:
             logging.info("Brand %s: no trademark in force found (FR, EU, WO), written without company", brand)
         rows.append(row)
         logging.info("%s rows proposed, %s so far", len(rows), inpi.requests_summary)
 
-    logging.info("INPI: %s for %s brands", inpi.requests_summary, len(rows))
+    if inpi:
+        logging.info("INPI: %s for %s brands", inpi.requests_summary, len(rows))
     if dry_run:
         path = os.environ.get("BRAND_GROUPS_DRY_RUN_CSV", "brand_groups_proposals.csv")
         with open(path, "w", newline="", encoding="utf-8") as f:
@@ -233,7 +283,30 @@ def run() -> int:
         rows = [r for r in rows if name_key(r["marque"]) not in inventory_keys]
         sheet.append(BRANDS_TAB, rows)
         logging.info("%s rows appended to the tab %s", len(rows), BRANDS_TAB)
+
+    if os.environ.get("BRAND_GROUPS_COMPLETE_ROWS", "false").lower() == "true":
+        complete(sheet, dry_run, int(os.environ.get("BRAND_GROUPS_COMPLETE_MAX_REQUESTS", "1000")), departments)
     return len(rows)
+
+
+def complete(sheet: BrandInventorySheet, dry_run: bool, max_requests: int, departments: Registries) -> int:
+    """Fills the empty cells of the rows of the tab (complete.py); dry run: only in the logs."""
+    lookups = Registries(max_requests=max_requests, cache=departments.cache)
+    updates = complete_rows(sheet.read(BRANDS_TAB), lookups)
+    cells = sum(len(c) for _, _, c in updates)
+    logging.info(
+        "Completion: %s cells to fill in %s rows, %s registry requests (%s failed)",
+        cells, len(updates), lookups.requests_sent, lookups.failures,
+    )
+    if dry_run:
+        print("----- BRAND GROUPS COMPLETION (line, brand, cells) -----")
+        for index, brand, values in updates:
+            print(f"{index + 2}\t{brand}\t{values}")
+        print("----- END OF BRAND GROUPS COMPLETION -----", flush=True)
+        return 0
+    written = sheet.fill_empty_cells(BRANDS_TAB, updates)
+    logging.info("Completion: %s cells written to the tab %s", written, BRANDS_TAB)
+    return written
 
 if __name__ == "__main__":
     logging.basicConfig(level=os.getenv("LOGLEVEL", "INFO"), stream=sys.stdout)

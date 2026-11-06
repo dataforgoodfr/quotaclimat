@@ -522,7 +522,7 @@ models:
 
   - name: ad_brands
     description: >
-      Brand reference, built from the tab Marques of the Inventaires_des_marques Google Sheet only (no ad
+      Brand reference, built from the tab Marques of the Inventaire_des_marques Google Sheet only (no ad
       table): one row per brand, with the company that sells under the brand and its ultimate parent
       company, each used unless its status is 'à vérifier'. Used by analytics.publicites.
     columns:
@@ -539,10 +539,33 @@ models:
         description: Company of the brand as written in the tab (column entreprise), NULL when empty.
       - name: company_status
         description: vérifié, non vérifié or à vérifier (column e_statut).
+      - name: company_country
+        description: >
+          Country of the head office of the company (column pays_siege_social), ISO 3166-1 alpha-2 code
+          (FR, NL), NULL when empty. Passed through, whatever company_status.
+      - name: company_siren
+        description: >
+          SIREN of the company (column siren), 9 digits: spaces and dots removed, leading zeros put back when
+          the sheet read it as a number. NULL when empty, not a SIREN, or for a company registered abroad.
+          Passed through, whatever company_status.
+      - name: company_head_office_department
+        description: >
+          Department of the head office of the company (column departement_siege_social), like 75, 01, 2A
+          or 971. NULL when empty or for a company registered abroad.
       - name: ultimate_parent
         description: Ultimate parent company as written in the tab (column societe_mere_ultime), NULL when empty.
       - name: ultimate_parent_status
         description: vérifié, non vérifié or à vérifier (column smu_statut).
+      - name: ultimate_parent_country
+        description: >
+          Country of the head office of the ultimate parent company (column smu_pays), like company_country.
+          Passed through, whatever ultimate_parent_status.
+      - name: ultimate_parent_siren
+        description: SIREN of the ultimate parent company (column smu_siren), cleaned like company_siren.
+      - name: ultimate_parent_head_office_department
+        description: >
+          Department of the head office of the ultimate parent company (column smu_departement), like
+          company_head_office_department.
       - name: ultimate_majority_shareholder
         description: >
           Ultimate majority shareholder as written in the tab (column actionnaire_maj_ultime), NULL when empty.

@@ -1,6 +1,6 @@
 # Reference data from private Google Sheets, downloaded as dbt seeds before `dbt run`, by
 # quotaclimat/data_ingestion/external_sources/download_external_sources.py, then loaded by
-# `dbt seed --full-refresh --select path:seeds/ref` (see entrypoints/dbt.sh).
+# `dbt seed --full-refresh --no-partial-parse --select path:seeds/ref` (see entrypoints/dbt.sh).
 #
 # The spreadsheets are looked up by name in a Google Drive folder, shared as viewer with the Google
 # service account whose JSON key is in GOOGLE_SHEETS_SERVICE_ACCOUNT_JSON. Only the folder id
@@ -30,7 +30,7 @@ sources:
   # by a human), see my_dbt_project/models/advertising/ad_brands.sql
   - name: inventaire_des_marques
     folder_env: EXTERNAL_SOURCES_DRIVE_FOLDER
-    spreadsheet: Inventaires_des_marques
+    spreadsheet: Inventaire_des_marques
     table_prefix: ref_inventaire_
     sheets:
       Marques:

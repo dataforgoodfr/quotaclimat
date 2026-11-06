@@ -1,0 +1,131 @@
+Table Task.data {
+	item json [ not null, unique ]
+}
+
+Table Keywords {
+	id text [ pk, not null, unique ]
+	channel_name text [ not null ]
+	channel_title text
+	channel_program text
+	channel_program_type text
+	channel_radio boolean
+	start timestamp [ not null ]
+	plaintext text
+	theme timestamp
+	created_at timestamp
+	updated_at timestamp
+	keywords_with_timestamp json
+	number_of_keywords_climat integer
+	number_of_keywords integer
+	country text
+}
+
+Table Task {
+	id integer [ pk, increment, not null, unique ]
+	data json [ not null ]
+	created_at timestamp [ not null ]
+	updated_at timestamp [ not null ]
+	is_labeled boolean [ not null ]
+	meta json
+	overlap integer [ not null ]
+	file_upload_id integer
+	updated_by_id integer
+	inner_id bigint
+	total_annotations integer [ not null ]
+	cancelled_annotations integer [ not null ]
+	total_predictions integer [ not null ]
+	comment_count integer [ not null ]
+	last_comment_updated_at timestamp
+	unresolved_comment_count integer [ not null ]
+}
+
+Table PipelineOutput {
+	id text [ not null, unique ]
+	score integer [ not null ]
+	reason text [ not null ]
+	cards_category text
+	probability decimal
+}
+
+Table OpenAIWhisper {
+	id text [ pk, not null, unique ]
+	plaintext_whisper text
+	url_mediatree text
+}
+
+Table Task.data.item {
+	id text [ pk, not null, unique ]
+	plaintext text [ not null ]
+	plaintext_whisper text [ not null ]
+	start timestamp [ not null ]
+	channel_title text [ not null ]
+	channel_program text [ not null ]
+	channel_program_type text [ not null ]
+	model_name text [ not null ]
+	prompt_version text
+	pipeline_version text
+	model_result integer [ not null ]
+	model_reason text
+	year integer [ not null ]
+	month integer [ not null ]
+	day integer [ not null ]
+	channel text
+	country text
+	url_mediatree text
+}
+
+Ref  {
+	Task.data.item - Task.data [ delete: no action, update: no action ]
+}
+
+Ref  {
+	Task.data.item.id - OpenAIWhisper.id [ delete: no action, update: no action ]
+}
+
+Ref  {
+	Task.data.item.plaintext_whisper - OpenAIWhisper.plaintext_whisper [ delete: no action, update: no action ]
+}
+
+Ref  {
+	Task.data.item.channel - Keywords.channel_name [ delete: no action, update: no action ]
+}
+
+Ref  {
+	Task.data.item.channel_title - Keywords.channel_title [ delete: no action, update: no action ]
+}
+
+Ref  {
+	Task.data.item.channel_program - Keywords.channel_program [ delete: no action, update: no action ]
+}
+
+Ref  {
+	Task.data.item.channel_program_type - Keywords.channel_program_type [ delete: no action, update: no action ]
+}
+
+Ref  {
+	Task.data.item.id - PipelineOutput.id [ delete: no action, update: no action ]
+}
+
+Ref  {
+	Task.data.item.model_result - PipelineOutput.score [ delete: no action, update: no action ]
+}
+
+Ref  {
+	Task.data.item.model_reason - PipelineOutput.reason [ delete: no action, update: no action ]
+}
+
+Ref  {
+	Task.data.item.start - Keywords.start [ delete: no action, update: no action ]
+}
+
+Ref  {
+	Task.data.item.country - Keywords.country [ delete: no action, update: no action ]
+}
+
+Ref  {
+	Task.data.item.url_mediatree - OpenAIWhisper.url_mediatree [ delete: no action, update: no action ]
+}
+
+Ref  {
+	Keywords.id - Task.data.item.id [ delete: no action, update: no action ]
+}

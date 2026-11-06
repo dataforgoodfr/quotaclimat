@@ -1,0 +1,12 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "label-misinformation"
+version = "0.2.0"
+description = "Label misinformation from Speech To Text (S2T)"
+authors = []
+
+[tool.setuptools]
+packages = ["label-misinformation"]

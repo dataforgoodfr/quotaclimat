@@ -122,6 +122,104 @@ mcp = "^1.28.1"
 griffe = "^2.1.0"
 tqdm = "^4.67.1"
 
+# detect_misinformation/jobs/label_misinformation — misinformation labelling job
+# (image built with `poetry install --only misinformation`).
+[tool.poetry.group.misinformation]
+optional = true
+
+[tool.poetry.group.misinformation.dependencies]
+boto3 = "*"
+s3fs = {extras = ["boto3"], version = ">=2025.2.0"}
+modin = {extras = ["ray"], version = ">=0.32.0"}
+ray = ">=2.42.1"
+pandas = ">=2.2.3"
+numpy = ">=2.2.3"
+pyarrow = ">=19.0.1"
+sqlalchemy = ">=2.0.38"
+psycopg2-binary = ">=2.9.10"
+requests = ">=2.32.3"
+pydantic = ">=2.11.2"
+mistralai = ">=2.9.1"
+openai = "*"
+moviepy = ">=2.1.2"
+sentry-sdk = ">=2.53.0"
+tomli = ">=2.4.1"
+pyyaml = ">=6.0.2"
+tqdm = ">=4.67.1"
+pytest = ">=8.3.4"
+pytest-mock = ">=3.14.0"
+# Used by the shadow pipeline's sentence splitter (shadow image adds the rrs group for torch/transformers).
+llama-index-core = "*"
+
+# detect_misinformation/jobs/get_audio_video — Germany audio/video collector.
+[tool.poetry.group.germany-audio-video-collector]
+optional = true
+
+[tool.poetry.group.germany-audio-video-collector.dependencies]
+google-cloud-storage = ">=2.0.0"
+google-auth = ">=2.0.0"
+google-auth-oauthlib = "*"
+google-api-python-client = ">=2.0.0"
+moviepy = ">=1.0.0"
+sqlalchemy = ">=2.0.0"
+pandas = ">=2.0.0"
+psycopg2-binary = ">=2.9.0"
+requests = ">=2.28.0"
+
+# detect_misinformation/experiments — research / fine-tuning environment.
+# torch comes from the pytorch-cpu source (one torch entry in the lock for every group):
+# on a GPU machine, install CUDA torch over the venv (see detect_misinformation/experiments/README.md).
+[tool.poetry.group.misinformation-dev]
+optional = true
+
+[tool.poetry.group.misinformation-dev.dependencies]
+accelerate = ">=1.10.1"
+datasets = ">=4.1.1"
+evaluate = ">=0.4.6"
+ipykernel = ">=6.30.1"
+ipywidgets = ">=8.1.7"
+jupyter = ">=1.1.1"
+keybert = ">=0.9.0"
+numpy = ">=2.3.3"
+ollama = ">=0.6.0"
+openai = ">=1.108.1"
+# climateguard asked for >=2.3.2, but main's modin ^0.32 caps pandas <2.3.
+pandas = ">=2.2.3"
+peft = ">=0.17.1"
+plotly = ">=6.5.0"
+protobuf = ">=6.32.1"
+psutil = ">=7.1.0"
+psycopg = {version = ">=3.3.3", extras = ["binary"]}
+psycopg2-binary = ">=2.9.11"
+python-dotenv = ">=1.1.1"
+requests = ">=2.32.5"
+rouge-score = ">=0.1.2"
+ruff = ">=0.13.1"
+scikit-learn = ">=1.7.2"
+sentencepiece = ">=0.2.1"
+setfit = ">=1.1.3"
+torch-optimi = ">=0.3.2"
+torch = {version = ">=2.10.0", source = "pytorch-cpu"}
+transformers = ">=5.5"
+trl = ">=0.23.1"
+wandb = ">=0.22.2"
+wordcloud = ">=1.9.4"
+tomli = ">=2.4.1"
+pymupdf = ">=1.28.0"
+# climateguard asked for >=0.121.0, but the rrs group pins ^0.102.0 (one resolution for all groups).
+anthropic = "^0.102.0"
+mistralai = ">=2.9.1"
+openpyxl = ">=3.1.5"
+
+[tool.poetry.group.misinformation-dev-cuda]
+optional = true
+
+[tool.poetry.group.misinformation-dev-cuda.dependencies]
+bitsandbytes = ">=0.50.0"
+unsloth = ">=2026.6.1"
+mistralai = ">=2.5.0"
+pydantic = ">=2.11.9"
+
 [[tool.poetry.source]]
 name = "pytorch-cpu"
 url = "https://download.pytorch.org/whl/cpu"

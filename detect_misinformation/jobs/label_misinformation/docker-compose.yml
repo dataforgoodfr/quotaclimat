@@ -1,0 +1,280 @@
+services:
+  app:
+    build:
+      context: ../../../
+      dockerfile: detect_misinformation/jobs/label_misinformation/Dockerfile
+    environment:
+      LOGLEVEL: INFO
+      ENV: prod
+      APP_NAME: label-misinformation
+      LLM_PROVIDER: mistral
+      PIPELINE_PRODUCTION_PROMPT: "0.1.0"
+      OPENAI_API_KEY: /run/secrets/openai_key
+      MISTRAL_API_KEY: /run/secrets/mistral_key
+      MODEL_NAME:  mistral-small-2603
+      MODEL_NAME_BRAZIL:  mistral-small-2603
+      MODEL_NAME_GERMANY:  mistral-small-2603
+      BUCKET_OUTPUT: test-bucket-mediatree
+      BUCKET_OUTPUT_BELGIUM: test-bucket-mediatree
+      BUCKET_OUTPUT_BRAZIL: test-bucket-mediatree
+      BUCKET_OUTPUT_GERMANY: test-bucket-mediatree
+      BUCKET_OUTPUT_FOLDER: label-misinformation-input
+      BUCKET_ACCESS: /run/secrets/bucket_access
+      BUCKET_SECRET: /run/secrets/bucket_secret
+      AWS_DEFAULT_REGION: fr-par
+      MIN_MISINFORMATION_SCORE: 8 # the minimum score to have to be kept (10 out of 10)
+      DATE: "2026-06-03" # YYYY-MM-DD 
+      NUMBER_OF_PREVIOUS_DAYS: 33
+      # SENTRY_DSN: prod_only
+      # CHANNEL: tvrecord # mediatree former channel name, not title (cnews) ---- rmc or tvrecord for testing
+      COUNTRY: france # brazil, france, belgium, all, prod
+      MEDIATREE_USER : /run/secrets/username_api
+      MEDIATREE_PASSWORD: /run/secrets/pwd_api
+      MEDIATREE_AUTH_URL: https://keywords.mediatree.fr/api/auth/token/
+      KEYWORDS_URL: https://keywords.mediatree.fr/api/export/single # https://keywords.mediatree.fr/api/docs/#/paths/~1api~1export~1single/get
+      POSTGRES_USER: user
+      POSTGRES_DB: barometre
+      POSTGRES_DB_LS: barometre
+      POSTGRES_PASSWORD: password
+      POSTGRES_HOST: postgres_db
+      POSTGRES_PORT: 5432
+      LABEL_STUDIO_URL: http://labelstudio:8080
+      LABEL_STUDIO_PROJECT_ID: 4
+      LABEL_STUDIO_PROJECT: 6
+      LABEL_STUDIO_PROJECT_ID_BRAZIL: 5
+      LABEL_STUDIO_PROJECT_BRAZIL: 9
+      LABEL_STUDIO_PROJECT_ID_BELGIUM: 12
+      LABEL_STUDIO_PROJECT_BELGIUM: 17
+      LABEL_STUDIO_PROJECT_ID_GERMANY: 14
+      LABEL_STUDIO_PROJECT_GERMANY: 20
+      API_LABEL_STUDIO_KEY: /run/secrets/labelstudio_api_key
+      FORCE_WHISPER_TRANSCRIPTION: 0
+    depends_on:
+      - postgres_db
+      - labelstudio
+    secrets:
+       - openai_key
+       - mistral_key
+       - bucket_access
+       - bucket_secret
+       - pwd_api
+       - username_api
+       - labelstudio_api_key
+    volumes:
+      - ./app:/app/
+
+
+  shadow:
+    build:
+      context: ../../../
+      dockerfile: detect_misinformation/jobs/label_misinformation/Dockerfile
+      args:
+        # rrs group brings CPU torch + transformers for the BERT shadow pipeline
+        POETRY_GROUPS: misinformation,rrs
+    entrypoint: ["python", "shadow.py"]
+    shm_size: '6gb'
+    deploy:
+      resources:
+          reservations:
+            memory: 16G
+    environment:
+      LOGLEVEL: INFO
+      ENV: prod
+      APP_NAME: label-misinformation 
+      OPENAI_API_KEY: /run/secrets/openai_key
+      MODEL_NAME:  ft:gpt-4o-mini-2024-07-18:personal::B1xWiJRm
+      MODEL_NAME_BRAZIL:  ft:gpt-4o-mini-2024-07-18:personal::BJfrFQR1
+      BUCKET_OUTPUT: test-bucket-mediatree # change to test-bucket-mediatree for testing 
+      BUCKET_OUTPUT_FOLDER: france-shadow
+      BUCKET_ACCESS: /run/secrets/bucket_access
+      BUCKET_SECRET: /run/secrets/bucket_secret
+      AWS_DEFAULT_REGION: fr-par
+      MIN_MISINFORMATION_SCORE: 8 # the minimum score to have to be kept (10 out of 10)
+      DATE: "2025-06-10" # YYYY-MM-DD 
+      NUMBER_OF_PREVIOUS_DAYS: 1
+      # SENTRY_DSN: prod_only
+      # CHANNEL: tvrecord # mediatree former channel name, not title (cnews) ---- rmc or tvrecord for testing
+      COUNTRY: france # brazil, france, belgium, all, prod
+      MEDIATREE_USER : /run/secrets/username_api
+      MEDIATREE_PASSWORD: /run/secrets/pwd_api
+      MEDIATREE_AUTH_URL: https://keywords.mediatree.fr/api/auth/token/
+      KEYWORDS_URL: https://keywords.mediatree.fr/api/export/single # https://keywords.mediatree.fr/api/docs/#/paths/~1api~1export~1single/get
+      POSTGRES_USER: user
+      POSTGRES_DB: barometre
+      POSTGRES_DB_LS: barometre
+      POSTGRES_PASSWORD: password
+      POSTGRES_HOST: postgres_db
+      POSTGRES_PORT: 5432
+      LABEL_STUDIO_URL: http://labelstudio:8080
+      LABEL_STUDIO_PROJECT_ID: 4
+      LABEL_STUDIO_PROJECT: 6
+      API_LABEL_STUDIO_KEY: /run/secrets/labelstudio_api_key
+      SHADOW_MODEL: "gmguarino/ModernBERT-large-climateguard"
+      SHADOW_LABEL_STUDIO_PROJECT_ID: 15
+      SHADOW_PIPELINE_NAME: bert
+      SHADOW_PIPELINE_ARGS: "{\"chunk_size\": 512, \"chunk_overlap\": 256, \"batch_size\": 128, \"min_probability\": 0.75, \"verbose\": true}"
+    depends_on:
+      - postgres_db
+      - labelstudio
+    secrets:
+       - openai_key
+       - bucket_access
+       - bucket_secret
+       - pwd_api
+       - username_api
+       - labelstudio_api_key
+    volumes:
+      - ./app:/app/
+
+  labelstudio:
+    image: heartexlabs/label-studio:1.17.0
+    container_name: labelstudio
+    ports:
+      - 8080:8080
+    environment:
+      LOG_LEVEL: DEBUG
+      LABEL_STUDIO_ENABLE_LEGACY_API_TOKEN: True
+      # LABEL_STUDIO_HOST: 0.0.0.0
+      # LABEL_STUDIO_ALLOW_ORIGIN: "*"
+      # ALLOWED_HOSTS: "*"
+      # LABEL_STUDIO_CORS_ORIGIN_ALLOW_ALL: true  # Enable CORS
+      # LABEL_STUDIO_CORS_ALLOW_CREDENTIALS: true  # Allow credentials
+    volumes:
+      - ./tests:/label-studio/data
+
+  postgres_db:
+    image: postgres:15
+    ports:
+      - 5432:5432
+    volumes:
+      - './pgdata:/var/lib/postgresql/data' # persist data https://stackoverflow.com/a/41650891/3535853
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_DB: barometre
+      POSTGRES_PASSWORD: password
+    logging: # no logs for postgres container
+            driver: none
+
+  test:
+    build:
+      context: ../../../
+      dockerfile: detect_misinformation/jobs/label_misinformation/Dockerfile
+    entrypoint: ["pytest", "-vv", "--capture=tee-sys"]   # use to debug the container if needed ["pytest", "-vv"] 
+    shm_size: '6gb'
+    environment:
+      LOGLEVEL: DEBUG
+      ENV: docker
+      APP_NAME: label-misinformation
+      LLM_PROVIDER: mistral
+      PIPELINE_PRODUCTION_PROMPT: "0.1.0"
+      OPENAI_API_KEY: /run/secrets/openai_key
+      MISTRAL_API_KEY: /run/secrets/mistral_key
+      MODEL_NAME:  mistral-small-2603
+      BUCKET_OUTPUT: test-bucket-mediatree # change to test-bucket-mediatree for testing
+      BUCKET_OUTPUT_BRAZIL: test-bucket-mediatree # change to test-bucket-mediatree for testing
+      BUCKET_OUTPUT_GERMANY: test-bucket-mediatree # change to test-bucket-mediatree for testing
+      BUCKET_OUTPUT_FOLDER: label-misinformation-tmp
+      BUCKET_ACCESS: /run/secrets/bucket_access
+      BUCKET_SECRET: /run/secrets/bucket_secret
+      AWS_DEFAULT_REGION: fr-par
+      MIN_MISINFORMATION_SCORE: 10 # the minimum score to have to be kept (10 out of 10)
+      # DATE: 2024-06-01 # YYYY-MM-DD
+      # SENTRY_DSN: prod_only
+      CHANNEL: itele # mediatree former channel name, not title (cnews)
+      COUNTRY: brazil
+      MEDIATREE_USER : /run/secrets/username_api
+      MEDIATREE_PASSWORD: /run/secrets/pwd_api
+      MEDIATREE_AUTH_URL: https://keywords.mediatree.fr/api/auth/token/
+      KEYWORDS_URL: https://keywords.mediatree.fr/api/export/single
+      POSTGRES_USER: user
+      POSTGRES_DB: barometre
+      POSTGRES_DB_LS: barometre
+      POSTGRES_PASSWORD: password
+      POSTGRES_HOST: postgres_db
+      POSTGRES_PORT: 5432
+    depends_on:
+      - postgres_db
+    secrets:
+       - openai_key
+       - mistral_key
+       - bucket_access
+       - bucket_secret
+       - pwd_api
+       - username_api
+    volumes:
+      - ./app:/app/
+      - ./tests:/app/tests
+
+  testconsole:
+    build:
+      context: ../../../
+      dockerfile: detect_misinformation/jobs/label_misinformation/Dockerfile
+    entrypoint: ["sleep", "12000"]
+    environment:
+      LOGLEVEL: DEBUG
+      ENV: docker
+      APP_NAME: label-misinformation
+      LLM_PROVIDER: mistral
+      PIPELINE_PRODUCTION_PROMPT: "0.1.0"
+      OPENAI_API_KEY: /run/secrets/openai_key
+      MISTRAL_API_KEY: /run/secrets/mistral_key
+      MODEL_NAME:  mistral-small-2603
+      MODEL_NAME_BRAZIL: mistral-small-2603
+      MODEL_NAME_GERMANY: mistral-small-2603
+      BUCKET_OUTPUT: test-bucket-mediatree
+      BUCKET_OUTPUT_BELGIUM: test-bucket-mediatree
+      BUCKET_OUTPUT_BRAZIL: test-bucket-mediatree
+      BUCKET_OUTPUT_GERMANY: test-bucket-mediatree
+      BUCKET_OUTPUT_FOLDER: label-misinformation-tmp
+      BUCKET_ACCESS: /run/secrets/bucket_access
+      BUCKET_SECRET: /run/secrets/bucket_secret
+      AWS_DEFAULT_REGION: fr-par
+      MIN_MISINFORMATION_SCORE: 10 # the minimum score to have to be kept (10 out of 10)
+      # DATE: 2024-06-01 # YYYY-MM-DD
+      # SENTRY_DSN: prod_only
+      CHANNEL: itele # mediatree former channel name, not title (cnews)
+      COUNTRY: brazil
+      MEDIATREE_USER : /run/secrets/username_api
+      MEDIATREE_PASSWORD: /run/secrets/pwd_api
+      MEDIATREE_AUTH_URL: https://keywords.mediatree.fr/api/auth/token/
+      KEYWORDS_URL: https://keywords.mediatree.fr/api/export/single 
+      POSTGRES_USER: user
+      POSTGRES_DB: barometre
+      POSTGRES_PASSWORD: password
+      POSTGRES_HOST: postgres_db
+      POSTGRES_PORT: 5432
+    depends_on:
+      - postgres_db
+    secrets:
+       - openai_key
+       - mistral_key
+       - bucket_access
+       - bucket_secret
+       - pwd_api
+       - username_api
+    volumes:
+      - ./app:/app/
+      - ./tests:/app/tests
+
+secrets: # https://docs.docker.com/compose/use-secrets/
+  openai_key:
+    file: secrets/openai_key
+  mistral_key:
+    file: secrets/mistral_key
+  model_name_brazil:
+    file: secrets/model_name_brazil
+  bucket_access:
+    file: secrets/bucket_access
+  bucket_secret:
+    file: secrets/bucket_secret
+  pwd_api:
+    file: secrets/pwd_api.txt
+  username_api:
+    file: secrets/username_api.txt
+  labelstudio_api_key:
+    file: secrets/labelstudio_api_key

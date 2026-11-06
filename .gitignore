@@ -171,3 +171,14 @@ germany_s3_bucket
 .aws/
 # reference seeds downloaded from Google Sheets before dbt seed
 my_dbt_project/seeds/ref/*.csv
+
+# detect_misinformation (migrated from climateguard)
+detect_misinformation/**/secrets/*
+!detect_misinformation/**/secrets/.empty
+detect_misinformation/**/.gcloud/
+detect_misinformation/**/wandb/
+detect_misinformation/experiments/finetuning/**/runs/
+detect_misinformation/experiments/finetuning/**/models/
+# local outputs of the label_misinformation job and its tests
+detect_misinformation/jobs/label_misinformation/app/s3/json/
+detect_misinformation/jobs/label_misinformation/app/s3/parquet/*/

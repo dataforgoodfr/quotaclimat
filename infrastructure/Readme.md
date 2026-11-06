@@ -203,7 +203,8 @@ make tags=kestra ansible     # Redeploy Kestra + re-upload flows + sync secrets
 make tags=glitchtip ansible  # Redeploy GlitchTip only
 ```
 
-GlitchTip stores files and archived events/logs (DuckDB cold storage) in S3. After `make env=prod target=orchestrator tg-apply`, copy the `glitchtip_s3_*` outputs into `GLITCHTIP_S3_ACCESS_KEY`, `GLITCHTIP_S3_SECRET_KEY` and `GLITCHTIP_S3_BUCKET` in `.env.secrets` (rendered by `compose/glitchtip/.env.s3.j2`). The managed Postgres sets `max_locks_per_transaction = 512` for GlitchTip (`live/barometre/template/database.tf`).
+GlitchTip stores files and archived events/logs (DuckDB cold storage) in S3. After `make env=prod target=orchestrator tg-apply`, copy the `glitchtip_s3_*` outputs into `GLITCHTIP_S3_ACCESS_KEY`, `GLITCHTIP_S3_SECRET_KEY` and `GLITCHTIP_S3_BUCKET` in `.env.secrets` (rendered by `compose/glitchtip/.env.s3.j2`). Invitation emails go through [Brevo](https://www.brevo.com) SMTP (`compose/glitchtip/.env.email.j2`, loaded after `.env`). Verify the `quotaclimat.org` domain in Brevo (DKIM/DMARC), create an SMTP key (SMTP & API), then set in `.env.secrets`: `BREVO_SMTP_LOGIN` (Brevo login email), `BREVO_SMTP_KEY`, and optionally `GLITCHTIP_FROM_EMAIL` (default `glitchtip@quotaclimat.org`), `BREVO_SMTP_HOST` (default `smtp-relay.brevo.com`), `BREVO_SMTP_PORT` (default `587`). Without `BREVO_SMTP_LOGIN`/`BREVO_SMTP_KEY`, emails are only printed in the container logs (`consolemail://`). Redeploy with `make tags=glitchtip ansible`. If sending fails, check the Brevo logs and try port 465 with `smtp+ssl` in the template.
+The managed Postgres sets `max_locks_per_transaction = 512` for GlitchTip (`live/barometre/template/database.tf`).
 
 ### Kestra flows
 

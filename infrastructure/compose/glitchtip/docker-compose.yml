@@ -6,6 +6,7 @@ services:
     env_file:
       - .env
       - .env.s3
+      - .env.email
     networks:
       - traefik-public
       - glitchtip-internal
@@ -36,6 +37,7 @@ services:
     env_file:
       - .env
       - .env.s3
+      - .env.email
     networks:
       - glitchtip-internal
     depends_on:

@@ -26,8 +26,8 @@
     secteur, categorie: the predicted sector and product category of the ads (French label, else code; NULL when
     not predicted), also in the grain, a brand having ads in several sectors and categories; a category belongs
     to a sector.
-    agence_media, groupe_agence, fiabilite_agence, perimetre_media_agence: media agency of the brand, of its company
-    else, with its group, reliability and media scope ('partiel' when it buys only part of the media) (see ad_brand_agencies, from the Inventaire_des_annonceurs Google Sheet), NULL when unknown; a
+    agence_media, groupe_agence, fiabilite_agence, perimetre_media_agence: media agency of the company of the brand,
+    with its group, reliability and media scope ('partiel' when it buys only part of the media) (see ad_brand_agencies, from the Inventaire_des_annonceurs Google Sheet), NULL when unknown; a
     function of marque and entreprise, so not in the grain. -#}
 
 {% set window_minutes = var('ad_emission_window_minutes', 15) %}

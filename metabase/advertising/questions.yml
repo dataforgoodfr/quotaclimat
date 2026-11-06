@@ -39,9 +39,9 @@ queries:
         min_rows: 1
       - params: {debut: 2025-01-01, fin: 2025-12-31, niveau: secteur, ponderation_par_temps_denv: true,
                  env_heures_min: 0}
-      # agence de la marque de test (Inventaire_des_annonceurs de test, voir test_dbt_model_analytics.py)
-      - params: {debut: 2025-01-01, fin: 2025-12-31, niveau: entreprise, agence: [Pytest Agence Škoda],
-                 groupe_agence: [Havas]}
+      # agence de l'entreprise de test (Inventaire_des_annonceurs de test, voir test_dbt_model_analytics.py)
+      - params: {debut: 2025-01-01, fin: 2025-12-31, niveau: entreprise, agence: [Pytest Agence Groupe],
+                 groupe_agence: [WPP]}
         min_rows: 1
       - params: {debut: 2025-01-01, fin: 2025-12-31, niveau: marque, inclure_info_continue: false, nb_points: 10,
                  theme_cas: automobile, pertinence_min: moyenne, secteur: [Automobile],

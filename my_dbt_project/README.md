@@ -30,13 +30,22 @@ Both read `POSTGRES_HOST`/`POSTGRES_PORT`/`POSTGRES_USER`/`POSTGRES_PASSWORD`/`P
 ## Models
 
 ### `homepage/`
-`homepage_environment_by_media_by_month`: materialized as a `view` (set in `dbt_project.yml`), aggregated monthly environmental coverage percentage by channel.
+`homepage_environment_by_media_by_month`: aggregated monthly environmental coverage percentage by channel (mean of the weekly shares, a week counting in the month of its Monday). Incremental, by month (see below).
 
 ### `dashboards/`
-The core queries feeding Metabase dashboards. All are `materialized='incremental'` (most with `on_schema_change='append_new_columns'`), each keyed to avoid duplicate rows on re-run (`unique_key`):
+The core queries feeding Metabase dashboards. All are `materialized='incremental'` (most with `on_schema_change='append_new_columns'`), recomputed by period (see below):
 * `core_query_environmental_shares` / `core_query_environmental_shares_i8n` / `core_query_environmental_shares_be`: % of airtime dedicated to environmental topics (climate/biodiversity/resources), by week and channel, for France / other countries / Belgium respectively. The `_be` (and `_i8n`) variants compute the denominator (`sum_duration_minutes`) differently depending on whether a channel has an editorial grid in `program_metadata` (`has_grid`): in-perimeter captured minutes if it does, full `time_monitored` otherwise - see `models/schema.yml` for the full column documentation, including the `sum_time_monitored`/`sum_monitored_in_perimeter_min` control columns.
 * `core_query_thematics_keywords` / `core_query_thematics_keywords_i8n` / `core_query_thematics_keywords_be`: keyword-level occurrence counts by week, channel, theme and category, sharing the same denominator logic as the environmental shares queries above.
 * `thematic_query_ocean`: ocean-specific thematic keyword query.
+
+### Incremental models of `dashboards/` and `homepage/`
+These models aggregate the whole `public.keywords` table (45 monthly partitions, about 41 GB in November 2026). Rebuilt from scratch, they took about 22 minutes of each dbt run. A normal run (`entrypoints/dbt.sh` without `DBT_FULL_REFRESH=true`) only recomputes their recent periods, with the macros of `macros/recompute_window.sql`:
+* **Window.** It starts at the earliest of: today (Paris) minus `recompute_lookback_days` (dbt var, default 35), and `recompute_since` (dbt var, set by `dbt.sh` to the day before the period imported by the Kestra flow, `DBT_IMPORT_START_DATE` and `DBT_IMPORT_DAYS_BACK`). That day is moved back to the start of its period: Monday for the weekly models, the 1st of the month for `homepage_environment_by_media_by_month`.
+* **Reads.** `recompute_window_condition` filters each scan of `keywords` and `time_monitored` on the window (one more day as a margin); the program grid and the dictionary are read whole.
+* **Writes.** A pre-hook (`recompute_window_delete`) deletes the rows of the window, then the recomputed rows are inserted (`incremental_strategy='delete+insert'`, `unique_key` on the period, or `id` for `thematic_query_ocean`), in the same transaction: a period or a segment that no longer exists in the sources disappears too. `recompute_window_begin`/`recompute_window_end` keep only the complete periods of the window, so a partly read period never replaces a complete one. Older periods keep their last build.
+* **Full rebuild** (`dbt run --full-refresh`; Kestra input `full_refresh` of the `dbt` and `barometre` flows, and every Sunday by the `weekly_full_refresh` trigger of the `dbt` flow, see [`docs/kestra_flows.md`](../docs/kestra_flows.md#dbt)): needed after a change of the code of these models (a new column is ignored by an incremental run of a model without `on_schema_change`), of the program grid (`program_metadata`), of the dictionary or of keywords older than the window (an `UPDATE` reprocessing through `entrypoints/mediatree_import.sh` already runs dbt with `--full-refresh`). The extended perimeter flow always rebuilds them entirely.
+* **Grants.** An incremental run compares the grants of the existing table with the `+grants` of `dbt_project.yml`; `macros/show_grants_quoted.sql` returns them between double quotes, like the configuration, otherwise dbt revokes `rrs-read-dev` without quotes and fails.
+* **Test.** `test_incremental_run_matches_full_refresh` (`pytest_tests/test_dbt_model_homepage.py`) checks that an incremental run over the fixtures gives back the tables of a full rebuild, deletes the window and keeps the older periods.
 
 ### `analytics/`
 Intermediate/pre-aggregated tables (used by dashboards, or directly as a faster source for Metabase - see the root README's "Analytics" section), built with `dbt run --target analytics`:

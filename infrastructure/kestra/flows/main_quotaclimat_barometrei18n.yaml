@@ -216,3 +216,7 @@ tasks:
     flowId: dbt
     wait: true
     transmitFailed: true
+    inputs:
+      # the incremental dbt models recompute at least the imported period
+      start_date: "{{ (inputs.start_date ?? now()) | date('yyyy-MM-dd') }}"
+      days_back: "{{ inputs.days_back }}"

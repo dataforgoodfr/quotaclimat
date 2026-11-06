@@ -1,9 +1,13 @@
+{# incremental: recomputes the recent weeks only, see macros/recompute_window.sql #}
 {{ config(
     materialized='incremental'
-    ,unique_key=['start','channel_title']
+    ,incremental_strategy='delete+insert'
+    ,pre_hook="{{ recompute_window_delete('start', 'week') }}"
+    ,unique_key=['start']
   )
 }}
 
+{{ recompute_window_begin() }}
 WITH grid_channels AS (
     SELECT unnest(ARRAY[
         'vtm','stu-bru','la-premiere','canvas','qmusic','radio-1',
@@ -22,6 +26,7 @@ kw_scoped AS (
     SELECT k.*
     FROM "public"."keywords" k
     WHERE k.country = 'belgium'
+      AND {{ recompute_window_condition('k.start', 'week') }}
       AND k.channel_name IN (SELECT channel_name FROM grid_channels)
       AND EXISTS (
           SELECT 1 FROM "public"."program_metadata" pm
@@ -37,6 +42,7 @@ kw_scoped AS (
     SELECT k.*
     FROM "public"."keywords" k
     WHERE k.country = 'belgium'
+      AND {{ recompute_window_condition('k.start', 'week') }}
       AND k.channel_name NOT IN (SELECT channel_name FROM grid_channels)
 ),
 
@@ -71,6 +77,7 @@ tm_daily AS (
         SUM(duration_minutes)    AS duration_minutes
     FROM "public"."time_monitored"
     WHERE country = 'belgium'
+      AND {{ recompute_window_condition('start', 'week') }}
     GROUP BY 1, 2
 ),
 
@@ -79,6 +86,7 @@ jours_captes AS (
     SELECT channel_name, CAST(start AS date) AS day
     FROM "public"."keywords"
     WHERE country = 'belgium'
+      AND {{ recompute_window_condition('start', 'week') }}
     GROUP BY 1, 2
 ),
 
@@ -175,3 +183,4 @@ SELECT
 FROM daily
 GROUP BY "start", channel_name, channel_title, country
 ORDER BY "start" ASC, channel_title ASC
+{{ recompute_window_end('"start"', 'week') }}

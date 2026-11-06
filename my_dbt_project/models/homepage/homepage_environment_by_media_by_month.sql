@@ -1,9 +1,15 @@
+{# incremental: recomputes the recent months only, see macros/recompute_window.sql.
+   A week counts in the month of its Monday: the window starts on the 1st of a month, so the weeks of the
+   recomputed months are complete. #}
 {{ config(
     materialized='incremental'
-    ,unique_key=['start','channel_title']
+    ,incremental_strategy='delete+insert'
+    ,pre_hook="{{ recompute_window_delete('start', 'month') }}"
+    ,unique_key=['start']
   )
 }}
 
+{{ recompute_window_begin() }}
 
 WITH grouped_data AS (
   SELECT
@@ -149,6 +155,7 @@ WITH grouped_data AS (
                   )
                 )
             WHERE "public"."keywords"."country" = 'france' AND  "Program Metadata - Channel Name"."country" = 'france'
+              AND {{ recompute_window_condition('"public"."keywords"."start"', 'month') }}
             ) AS "source"
         
   GROUP BY
@@ -192,3 +199,4 @@ FROM grouped_data
 GROUP BY "start"
 
 ORDER BY "start", "channel_title"
+{{ recompute_window_end('"start"', 'month') }}

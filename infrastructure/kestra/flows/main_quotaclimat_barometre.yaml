@@ -21,6 +21,10 @@ inputs:
     type: DATE
     required: false
     description: "Reference date (YYYY-MM-DD) from which to count days back. Defaults to now."
+  - id: full_refresh
+    type: BOOLEAN
+    defaults: false
+    description: "When true, dbt rebuilds the whole history of the incremental models of models/dashboards and models/homepage (after a change of their code, of the program grid or of the dictionary). Default: their recent weeks only."
 
 tasks:
   - id: ingest_data_to_s3
@@ -164,3 +168,8 @@ tasks:
     flowId: dbt
     wait: true
     transmitFailed: true
+    inputs:
+      # the incremental dbt models recompute at least the imported period
+      start_date: "{{ (inputs.start_date ?? now()) | date('yyyy-MM-dd') }}"
+      days_back: "{{ inputs.days_back }}"
+      full_refresh: "{{ inputs.full_refresh }}"

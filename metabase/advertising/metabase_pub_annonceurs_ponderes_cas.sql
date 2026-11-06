@@ -37,6 +37,13 @@
 --          seul secteur Automobile, si ses annonceurs ont 10 % de la pub, leurs part_pub_pct totalisent 10 %, pas
 --          100 %) ; un annonceur gardé l'est avec toute sa pub, y compris dans d'autres secteurs. Les courbes
 --          cumulées sautent donc les rangs des annonceurs écartés
+--   agence, groupe_agence type Filtre de champ sur Advertising > Pub Annonceur Emission Jour > Agence Media /
+--          Groupe Agence, sélection multiple, facultatifs (vides : pas de filtre) : n'afficher que les annonceurs qui
+--          ont de la pub achetée par ces agences / groupes d'agences (agence média de la marque, sinon de son
+--          entreprise, d'après le Google Sheet Inventaire_des_annonceurs). Comme secteur et categorie, le filtre ne
+--          choisit que les lignes affichées : rangs, parts et cumuls restent calculés sur tous les annonceurs, avec
+--          ou sans agence connue ; pub_secondes_selection, pub_dans_selection_pct et part_selection_pct se lisent
+--          alors pour la pub de ces agences
 --   nb_points type Nombre, facultatif (2000 si vide) : annonceurs gardés, ceux classés dans les nb_points premiers
 --           des deux classements (rang_pub et rang_cas) ; les parts et les cumuls restent calculés sur tous les
 --           annonceurs (le dernier point n'atteint donc pas 100 %)
@@ -48,7 +55,7 @@
 --   nb_entreprises : entreprises distinctes qui ont de la pub dans la ligne (1 au niveau marque ou entreprise,
 --     les entreprises du groupe ou du secteur sinon) ;
 --   pub_secondes, part_pub_pct : sa pub rattachée à une émission (gardée) et sa part, pour comparer ;
---   pub_secondes_selection : sa pub dans les secteurs et catégories choisis (toute sa pub sans filtre) ;
+--   pub_secondes_selection : sa pub dans les secteurs, catégories et agences choisis (toute sa pub sans filtre) ;
 --   pub_dans_selection_pct : part de sa pub qui est dans ces secteurs / catégories (ex. 60 % de la pub d'un
 --     groupe est dans l'automobile) ; 100 % sans filtre ;
 --   part_selection_pct : sa part dans la pub de ces secteurs / catégories, tous annonceurs confondus (ex. le
@@ -74,9 +81,15 @@
 --     comptés ;
 --   cas_par_heure_moyen, cas_par_heure_env_moyen : cas par heure de programme et cas par heure d'environnement des
 --     émissions de l'annonceur, moyennes pondérées par ses secondes de pub (la seconde sur les seules émissions
---     d'au moins env_heures_min heures d'environnement), quelle que soit la pondération.
+--     d'au moins env_heures_min heures d'environnement), quelle que soit la pondération ;
+--   agence_media, groupe_agence, fiabilite_agence : agence média de l'annonceur qui a le plus de ses secondes de
+--     pub dans la sélection (avec un filtre d'agence : l'agence choisie), son groupe et la fiabilité de
+--     l'information (confirmee, probable, indice, inconnue) ; NULL quand l'annonceur n'est pas dans le Google
+--     Sheet. À un niveau qui regroupe plusieurs entreprises (groupe, secteur), l'agence principale seulement ;
+--   autres_agences_media : les autres agences connues de l'annonceur, par secondes de pub décroissantes (NULL
+--     sans autre agence), utile aux niveaux groupe et secteur.
 -- Sources (dbt) : advertising.pub_annonceur_emission_jour (secondes de pub de chaque marque autour de chaque
--- émission, par jour de la pub) et public.emission_jour (cas, heures de programme et d'environnement par
+-- émission, par jour de la pub, avec son agence média) et public.emission_jour (cas, heures de programme et d'environnement par
 -- émission, par jour de programme : écart possible d'une journée aux bords de la période pour les émissions qui
 -- passent minuit).
 WITH bornes AS NOT MATERIALIZED (
@@ -100,9 +113,9 @@ chaines AS (
     WHERE country = 'france'
     GROUP BY channel_name
 ),
--- secondes de pub par annonceur (au niveau choisi), entreprise et émission, et si cette pub est dans les secteurs
--- et catégories choisis ; table sans alias : les filtres de champ de Metabase (secteur, categorie) la nomment en
--- entier (sans valeur, Metabase les remplace par 1 = 1)
+-- secondes de pub par annonceur (au niveau choisi), entreprise, émission et agence, et si cette pub est dans les
+-- secteurs, catégories et agences choisis ; table sans alias : les filtres de champ de Metabase (secteur, categorie,
+-- agence, groupe_agence) la nomment en entier (sans valeur, Metabase les remplace par 1 = 1)
 pub AS MATERIALIZED (
     SELECT
         CASE CAST({{niveau}} AS text)
@@ -113,10 +126,13 @@ pub AS MATERIALIZED (
         END AS annonceur,
         advertising.pub_annonceur_emission_jour.entreprise,
         advertising.pub_annonceur_emission_jour.emission_cle,
+        advertising.pub_annonceur_emission_jour.agence_media,
+        advertising.pub_annonceur_emission_jour.groupe_agence,
+        advertising.pub_annonceur_emission_jour.fiabilite_agence,
         SUM(advertising.pub_annonceur_emission_jour.pub_secondes) AS pub_secondes,
-        -- NULL sans pub dans les secteurs et catégories choisis
-        SUM(advertising.pub_annonceur_emission_jour.pub_secondes) FILTER (WHERE {{secteur}} AND {{categorie}})
-            AS pub_secondes_selection
+        -- NULL sans pub dans les secteurs, catégories et agences choisis
+        SUM(advertising.pub_annonceur_emission_jour.pub_secondes)
+            FILTER (WHERE {{secteur}} AND {{categorie}} AND {{agence}} AND {{groupe_agence}}) AS pub_secondes_selection
     FROM advertising.pub_annonceur_emission_jour
     CROSS JOIN bornes b
     CROSS JOIN parametres pa
@@ -125,7 +141,7 @@ pub AS MATERIALIZED (
       AND CAST({{niveau}} AS text) IN ('marque', 'entreprise', 'groupe', 'secteur')
       AND pa.pertinence_min IN ('faible', 'moyenne', 'forte')
       AND (pa.info_continue OR NOT COALESCE(c.infocontinue, FALSE))
-    GROUP BY 1, 2, 3
+    GROUP BY 1, 2, 3, 4, 5, 6
 ),
 -- avec theme_cas : cas du thème par émission sur la période (jour de programme, comme emission_jour), à partir de
 -- la pertinence minimale
@@ -202,6 +218,38 @@ par_annonceur AS (
     JOIN emissions e ON e.emission_cle = pu.emission_cle
     GROUP BY pu.annonceur
 ),
+-- agences de chaque annonceur, par secondes de pub dans la sélection puis au total
+agences AS (
+    SELECT
+        annonceur,
+        agence_media,
+        groupe_agence,
+        fiabilite_agence,
+        SUM(pub_secondes_selection) AS pub_secondes_selection,
+        SUM(pub_secondes) AS pub_secondes
+    FROM pub
+    GROUP BY 1, 2, 3, 4
+),
+-- agence principale : la plus présente dans la sélection (l'agence choisie avec un filtre d'agence), puis au total
+agence_principale AS (
+    SELECT DISTINCT ON (annonceur) annonceur, agence_media, groupe_agence, fiabilite_agence
+    FROM agences
+    ORDER BY annonceur, pub_secondes_selection DESC NULLS LAST, pub_secondes DESC, agence_media
+),
+autres_agences AS (
+    SELECT
+        a.annonceur,
+        STRING_AGG(a.agence_media, ', ' ORDER BY a.pub_secondes DESC, a.agence_media) AS autres_agences_media
+    FROM (
+        SELECT annonceur, agence_media, SUM(pub_secondes) AS pub_secondes
+        FROM agences
+        WHERE agence_media IS NOT NULL
+        GROUP BY 1, 2
+    ) a
+    JOIN agence_principale ap ON ap.annonceur = a.annonceur
+    WHERE a.agence_media IS DISTINCT FROM ap.agence_media
+    GROUP BY a.annonceur
+),
 -- parts, rangs et cumuls sur tous les annonceurs, avant la limite
 resultat AS (
     SELECT
@@ -245,11 +293,18 @@ resultat AS (
 SELECT
     p.par_temps_env AS ponderation_par_temps_denv,
     p.theme AS theme_cas,
-    r.*
+    r.*,
+    ap.agence_media,
+    ap.groupe_agence,
+    ap.fiabilite_agence,
+    aa.autres_agences_media
 FROM resultat r
 CROSS JOIN parametres p
+LEFT JOIN agence_principale ap ON ap.annonceur = r.annonceur
+LEFT JOIN autres_agences aa ON aa.annonceur = r.annonceur
 WHERE r.rang_pub <= p.nb_points
   AND r.rang_cas <= p.nb_points
-  -- filtres secteur et categorie : lignes affichées seulement, valeurs calculées sur tous les annonceurs
+  -- filtres secteur, categorie, agence et groupe_agence : lignes affichées seulement, valeurs calculées sur tous
+  -- les annonceurs
   AND r.pub_secondes_selection IS NOT NULL
 ORDER BY r.rang_cas, r.rang_pub, r.annonceur

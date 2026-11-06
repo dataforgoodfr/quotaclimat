@@ -84,3 +84,17 @@ groupes:
     couleurs:
       "true": "#98D9D9" # Public
       "false": "#EF8C8C" # Privé
+
+  fiabilite_agence:
+    description: >-
+      Fiabilité de l'agence média d'un annonceur (Google Sheet Inventaire_des_annonceurs). Colonne
+      fiabilite_agence de la requête metabase/advertising/metabase_pub_annonceurs_ponderes_cas.sql : couleur de
+      fond de la ligne entière dans le tableau (mise en forme conditionnelle de la question), du vert (source
+      sûre) au gris (agence inconnue).
+    reference:
+      - 2358 # tableau, onglet « Annonceurs x programmes » du tableau de bord 200
+    couleurs:
+      confirmee: "#88BF4D"
+      probable: "#C9E4A8"
+      indice: "#F9D45C"
+      inconnue: "#D9D9D9"

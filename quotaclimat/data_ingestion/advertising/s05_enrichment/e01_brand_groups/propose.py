@@ -1,9 +1,10 @@
 """Row of the tab Marques for a brand: its company, the INPI trademark holder, named like the brand when the
 holder's name contains it (FREE -> Free, SOCIETE FRANCAISE DU RADIOTELEPHONE - SFR -> SFR), else like the
-holder (Dacia -> Renault); and the ultimate parent company of the holder (GLEIF, else Wikidata).
+holder (Dacia -> Renault); its SIREN and the department of its head office (API Recherche d'entreprises);
+and the ultimate parent company of the holder (GLEIF, else Wikidata).
 
-A company already in the tab (written by the job or corrected by a human) is reused, with its ultimate
-parent company. Statuses: 'vérifié', 'non vérifié' (used anyway) or 'à vérifier' (not used by dbt). The
+A company already in the tab (written by the job or corrected by a human) is reused, with its SIREN,
+head office department and ultimate parent company. Statuses: 'vérifié', 'non vérifié' (used anyway) or 'à vérifier' (not used by dbt). The
 job writes the company 'non vérifié' and the ultimate parent company 'à vérifier' (no company, 'à vérifier',
 when no trademark was found): a human checks and corrects them afterwards in the sheet.
 """
@@ -125,12 +126,21 @@ def core_key(name: str) -> str:
     return "".join(words) or name_key(name)
 
 
+def clean_siren(value: str | None) -> str:
+    """9-digit SIREN from a cell of the sheet: spaces and dots removed ("552 081 317"), leading zeros put
+    back when the sheet read it as a number ("5520135" -> "005520135"); empty when not a SIREN."""
+    digits = "".join(c for c in str(value or "") if c not in " .\u00a0\u202f")
+    return digits.zfill(9) if digits.isdigit() and 7 <= len(digits) <= 9 else ""
+
+
 @dataclass
 class KnownCompany:
     name: str
     parent: str
     parent_status: str
     brand: str
+    siren: str = ""
+    department: str = ""
 
 
 @dataclass
@@ -151,13 +161,17 @@ class KnownCompanies:
             if row.get("entreprise"):
                 known.add(KnownCompany(
                     row["entreprise"], row.get("societe_mere_ultime", ""), row.get("smu_statut", ""),
-                    row.get("marque", ""),
+                    row.get("marque", ""), clean_siren(row.get("siren")),
+                    row.get("departement_siege_social", "").strip(),
                 ))
         return known
 
     def add(self, company: KnownCompany) -> None:
-        self.by_key.setdefault(name_key(company.name), company)
-        self.by_core.setdefault(core_key(company.name), company)
+        for index, key in ((self.by_key, name_key(company.name)), (self.by_core, core_key(company.name))):
+            first = index.setdefault(key, company)
+            # the first row wins (its ultimate parent), completed by the SIREN of another row of the company
+            if first is not company and not first.siren and company.siren:
+                first.siren, first.department = company.siren, company.department
 
     def find(self, holder: Holder, brand: str) -> KnownCompany | None:
         """Company of the holder already in the tab, by name (company_name, or the holder's), else by name
@@ -176,6 +190,13 @@ class KnownCompanies:
         -> the company IKEA, written for the brand IKEA. The longest name when several."""
         found = [c for c in self.by_key.values() if name_contains_brand(holder_name, c.name)]
         return max(found, key=lambda c: len(name_key(c.name)), default=None)
+
+
+def company_siren(holder: Holder, existing: KnownCompany | None) -> str:
+    """SIREN of the company of the row: the one of the company already in the tab, else the holder's (the
+    company is the holder). Never the holder's for a company of the tab without SIREN: the holder can be
+    another legal entity than the one the tab names (a subsidiary, a holding)."""
+    return existing.siren if existing else holder.siren
 
 
 def _parent(wikidata_parent: Company | None, gleif_parent: Company | None) -> tuple[Company | None, str]:
@@ -198,17 +219,20 @@ def propose_row(
     known: KnownCompanies,
     today: date,
     unavailable: list[str] | None = None,
+    department: str | None = None,
 ) -> dict[str, str]:
     """Row of the tab Marques: the company (company_name, or the company already in the tab with its
-    ultimate parent), the ultimate parent company (GLEIF, else Wikidata), and in commentaires all that
-    explains them."""
+    SIREN and ultimate parent), its SIREN and head office department (`department`, looked up from the
+    SIREN, used when the company of the tab has none), the ultimate parent company (GLEIF, else Wikidata),
+    and in commentaires all that explains them."""
     job = f"job {today.isoformat()} : "
     row = {"marque": brand, "e_statut": UNVERIFIED, "smu_statut": TO_CHECK}
     if holder is None:
         # written anyway, so that the brand is not searched again (and its INPI quota spent) on every run;
         # 'à vérifier': for a human to fill in the company
         return {
-            **row, "entreprise": "", "e_statut": TO_CHECK, "societe_mere_ultime": "",
+            **row, "entreprise": "", "siren": "", "departement_siege_social": "", "e_statut": TO_CHECK,
+            "societe_mere_ultime": "",
             "commentaires": job + "aucune marque en vigueur à ce nom à l'INPI (bases FR, EU, WO)",
         }
 
@@ -220,6 +244,20 @@ def propose_row(
         notes.append("autres titulaires : " + ", ".join(holder.other_holders))
 
     existing = known.find(holder, brand)
+    unavailable = set(unavailable or [])
+    row["siren"] = company_siren(holder, existing)
+    row["departement_siege_social"] = (
+        (existing.department if existing else "") or (department if row["siren"] else "") or ""
+    )
+    if existing and not existing.siren and holder.siren:
+        notes.append("SIREN de l'entreprise à compléter (celui du titulaire peut être une autre société)")
+    if row["siren"] and not row["departement_siege_social"]:
+        notes.append(
+            "Recherche d'entreprises indisponible pendant le job, département du siège à rechercher"
+            if "Recherche d'entreprises" in unavailable
+            else "département du siège non trouvé (Recherche d'entreprises)"
+        )
+    unavailable.discard("Recherche d'entreprises")
     if existing and existing.parent:
         notes.append(f"entreprise et société mère ultime reprises de la marque {existing.brand}")
         return {
@@ -243,7 +281,7 @@ def propose_row(
     if parent:
         notes.append(f"société mère ultime retenue : {parent_source}")
     if unavailable:
-        notes.append(f"{', '.join(sorted(set(unavailable)))} indisponible pendant le job, société mère à rechercher")
+        notes.append(f"{', '.join(sorted(unavailable))} indisponible pendant le job, société mère à rechercher")
     elif not parent:
         notes.append("aucune société mère trouvée")
     return {

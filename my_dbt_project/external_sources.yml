@@ -30,7 +30,7 @@ sources:
   # by a human), see my_dbt_project/models/advertising/ad_brands.sql
   - name: inventaire_des_marques
     folder_env: EXTERNAL_SOURCES_DRIVE_FOLDER
-    spreadsheet: Inventaires_des_marques
+    spreadsheet: Inventaire_des_marques
     table_prefix: ref_inventaire_
     sheets:
       Marques:

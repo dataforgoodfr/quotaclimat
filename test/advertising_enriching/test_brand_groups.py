@@ -28,6 +28,7 @@ from quotaclimat.data_ingestion.advertising.s05_enrichment.e01_brand_groups.inpi
 from quotaclimat.data_ingestion.advertising.s05_enrichment.e01_brand_groups.propose import (
     KnownCompanies,
     choose_holder,
+    clean_siren,
     core_key,
     name_contains_brand,
     parse_nice_classes,
@@ -621,10 +622,13 @@ def test_propose_row_company_and_ultimate_parent():
         gleif_parent=Company("ILIAD", "LEI_ILIAD"),
         known=KnownCompanies(),
         today=TODAY,
+        department="75",
     )
     assert row == {
         "marque": "Free",
         "entreprise": "Free",
+        "siren": "421938861",
+        "departement_siege_social": "75",
         "societe_mere_ultime": "ILIAD",
         "e_statut": "non vérifié",
         "smu_statut": "à vérifier",
@@ -700,10 +704,10 @@ def test_print_rows_tab_separated():
     lines = out.getvalue().splitlines()
     assert lines[0] == "----- BRAND GROUPS PROPOSALS (tab-separated) -----"
     assert lines[1].split("\t") == [
-        "marque", "entreprise", "e_statut", "societe_mere_ultime", "smu_statut", "actionnaire_maj_ultime", "amu_statut",
-        "commentaires",
+        "marque", "entreprise", "siren", "departement_siege_social", "e_statut", "societe_mere_ultime", "smu_statut",
+        "actionnaire_maj_ultime", "amu_statut", "commentaires",
     ]
-    assert lines[2].split("\t") == ["Acme", "ACME SAS", "", "", "", "", "", "ligne 1 ligne 2"]
+    assert lines[2].split("\t") == ["Acme", "ACME SAS", "", "", "", "", "", "", "", "ligne 1 ligne 2"]
     assert lines[3] == "----- END OF BRAND GROUPS PROPOSALS -----"
 
 
@@ -833,6 +837,7 @@ def test_brand_proposed_when_a_registry_fails(monkeypatch):
 
     monkeypatch.setattr(registries, "wikidata_ultimate_parent", failing)
     monkeypatch.setattr(registries, "gleif_lei", lambda siren: None)
+    monkeypatch.setattr(registries, "head_office_department", lambda siren: "92")
     holder_notice = notice("1", "781452511", "ACME SAS", {3})
 
     class FakeInpi:
@@ -840,9 +845,81 @@ def test_brand_proposed_when_a_registry_fails(monkeypatch):
             return [holder_notice]
 
     row = run_module.propose("Acme", None, FakeInpi(), {}, KnownCompanies(), TODAY)
-    assert (row["entreprise"], row["societe_mere_ultime"]) == ("Acme", "")
+    assert (row["entreprise"], row["siren"], row["departement_siege_social"], row["societe_mere_ultime"]) == (
+        "Acme", "781452511", "92", "",
+    )
     assert "Wikidata indisponible pendant le job, société mère à rechercher" in row["commentaires"]
     assert "aucune société mère trouvée" not in row["commentaires"]
+
+    # the department lookup failing: the SIREN kept, the department left to a human
+    def failing_department(siren):
+        raise registries.requests.HTTPError("503 Server Error")
+
+    monkeypatch.setattr(registries, "head_office_department", failing_department)
+    monkeypatch.setattr(registries, "wikidata_ultimate_parent", lambda siren: Company("Acme Group", "Q1"))
+    row = run_module.propose("Acme", None, FakeInpi(), {}, KnownCompanies(), TODAY)
+    assert (row["siren"], row["departement_siege_social"], row["societe_mere_ultime"]) == ("781452511", "", "Acme Group")
+    assert "Recherche d'entreprises indisponible pendant le job, département du siège à rechercher" in row["commentaires"]
+    assert "société mère à rechercher" not in row["commentaires"]
+
+
+def test_siren_and_department_of_a_company_already_in_the_tab(monkeypatch):
+    """Dacia, held by RENAULT s.a.s.: the SIREN and department of the company Renault of the tab, never
+    the holder's when the tab has none (the holder can be another legal entity)."""
+    lookups = []
+    monkeypatch.setattr(registries, "head_office_department", lambda siren: lookups.append(siren) or "78")
+    dacia = notice("2", "780129987", "RENAULT s.a.s.", {12})
+
+    class FakeInpi:
+        def brand_notices(self, brand):
+            return [dacia]
+
+    tab = {"marque": "Renault", "entreprise": "Renault", "societe_mere_ultime": "Renault SA", "smu_statut": "vérifié"}
+    # SIREN typed by a human, read as a number by the sheet: leading zeros put back
+    known = KnownCompanies.from_rows([{**tab, "siren": "5 520 135", "departement_siege_social": "92"}])
+    row = run_module.propose("Dacia", "AUT", FakeInpi(), {}, known, TODAY)
+    assert (row["entreprise"], row["siren"], row["departement_siege_social"], lookups) == ("Renault", "005520135", "92", [])
+
+    # a SIREN without department: looked up
+    known = KnownCompanies.from_rows([{**tab, "siren": "780129987"}])
+    row = run_module.propose("Dacia", "AUT", FakeInpi(), {}, known, TODAY)
+    assert (row["siren"], row["departement_siege_social"], lookups) == ("780129987", "78", ["780129987"])
+
+    # no SIREN in the tab: left empty, for a human
+    row = run_module.propose("Dacia", "AUT", FakeInpi(), {}, KnownCompanies.from_rows([tab]), TODAY)
+    assert (row["siren"], row["departement_siege_social"]) == ("", "")
+    assert "SIREN de l'entreprise à compléter" in row["commentaires"]
+    # another row of the company with its SIREN completes the first one
+    known = KnownCompanies.from_rows([tab, {"marque": "Alpine", "entreprise": "Renault", "siren": "780129987"}])
+    row = run_module.propose("Dacia", "AUT", FakeInpi(), {}, known, TODAY)
+    assert (row["societe_mere_ultime"], row["siren"]) == ("Renault SA", "780129987")
+
+
+def test_clean_siren():
+    assert clean_siren("552 081 317") == "552081317"
+    assert clean_siren("552.081.317") == "552081317"
+    assert clean_siren("5520135") == "005520135"
+    assert clean_siren("") == clean_siren(None) == clean_siren("à vérifier") == clean_siren("55208131766522") == ""
+
+
+def test_head_office_department(monkeypatch):
+    calls = []
+
+    def fake_get(url, headers, timeout, params=None):
+        calls.append((url, params))
+        return FakeResponse(json_data={"results": [
+            {"siren": "999999999", "siege": {"departement": "13"}},
+            {"siren": "552081317", "siege": {"departement": "75", "code_postal": "75008"}},
+        ]})
+
+    monkeypatch.setattr(registries.requests, "get", fake_get)
+    assert registries.head_office_department("552081317", delay_sec=0) == "75"
+    assert calls[0] == ("https://recherche-entreprises.api.gouv.fr/search", {"q": "552081317", "per_page": 5})
+    # only the company with exactly this SIREN
+    assert registries.head_office_department("111111111", delay_sec=0) is None
+    # never anything else than a SIREN in the request
+    assert registries.head_office_department("ACME", delay_sec=0) is None
+    assert len(calls) == 2
 
 
 class FakeSheetsSession:

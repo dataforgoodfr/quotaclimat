@@ -258,16 +258,20 @@ def load_test_external_sources():
         "Marques": [
             [
                 "marque", "entreprise", "e_statut", "societe_mere_ultime", "smu_statut",
-                "actionnaire_maj_ultime", "amu_statut", "commentaires",
+                "actionnaire_maj_ultime", "amu_statut", "commentaires", "siren", "departement_siege_social",
             ],
-            # same key as the predicted brand "Pytest Škoda": the verified row wins
+            # same key as the predicted brand "Pytest Škoda": the verified row wins. SIREN and department
+            # read as numbers by the sheet (leading zeros lost)
             [
                 "PYTEST SKODA", "Pytest Volkswagen", "non vérifié", "Pytest Porsche SE", "vérifié",
-                "Pytest Porsche Piëch", "non vérifié",
+                "Pytest Porsche Piëch", "non vérifié", "", "5520135", "1",
             ],
             ["pytest-škoda", "Pytest Wrong Company", "non vérifié", "Pytest Wrong Parent", "à vérifier"],
             # ultimate parent to check: not used, the company instead
-            ["Pytest Biscuits", "Pytest Biscuits Company", "non vérifié", "Pytest Holding", "à vérifier"],
+            [
+                "Pytest Biscuits", "Pytest Biscuits Company", "non vérifié", "Pytest Holding", "à vérifier", "",
+                "", "", "552 081 317", "2a",
+            ],
             # listed but company not filled in yet
             ["Pytest Brand Without Group"],
             # company to check: not used; numeric looking brand stays text
@@ -1150,6 +1154,20 @@ def test_pub_annonceur_emission_jour_agency(db_connection):
             WHERE channel_name IN ('bfmtv', 'france2')
         """)
         assert cur.fetchall() == [("PYTEST SKODA", "Pytest Agence Škoda", "Havas", "probable")]
+
+
+def test_ad_brands_siren_and_department(db_connection):
+    with db_connection.cursor() as cur:
+        cur.execute("""
+            SELECT brand, company_siren, company_head_office_department
+            FROM advertising.ad_brands
+            WHERE brand IN ('PYTEST SKODA', 'Pytest Biscuits', '1664')
+        """)
+        assert sorted(cur.fetchall()) == [
+            ("1664", None, None),
+            ("PYTEST SKODA", "005520135", "01"),
+            ("Pytest Biscuits", "552081317", "2A"),
+        ]
 
 
 def test_brand_inventory_loaded_as_text(db_connection):

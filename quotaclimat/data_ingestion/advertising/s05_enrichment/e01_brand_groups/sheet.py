@@ -1,4 +1,4 @@
-"""Read and append rows to the Inventaires_des_marques Google Sheet, with the Google Sheets editor service
+"""Read and append rows to the Inventaire_des_marques Google Sheet, with the Google Sheets editor service
 account (generic, shared with other jobs, not the read-only account of the dbt import), shared as editor
 on this spreadsheet only.
 
@@ -16,7 +16,7 @@ from quotaclimat.data_ingestion.external_sources.download_external_sources impor
 
 CREDENTIALS_ENV = "GOOGLE_SHEETS_EDITOR_SERVICE_ACCOUNT_JSON"
 FOLDER_ENV = "EXTERNAL_SOURCES_DRIVE_FOLDER"
-SPREADSHEET_NAME = "Inventaires_des_marques"
+SPREADSHEET_NAME = "Inventaire_des_marques"
 BRANDS_TAB = "Marques"
 SCOPES = [
     "https://www.googleapis.com/auth/drive.metadata.readonly",  # find the spreadsheet in the folder

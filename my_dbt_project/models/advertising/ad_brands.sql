@@ -4,11 +4,13 @@
     )
 }}
 
-{#- Brand reference, built from the tab Marques of the Inventaires_des_marques Google Sheet only (no ad
+{#- Brand reference, built from the tab Marques of the Inventaire_des_marques Google Sheet only (no ad
     table): one row per brand (name_key of the brand), with the company that sells under the brand and its
     ultimate parent company. Used by analytics.publicites, which falls back on the predicted brand
     for the brands not listed here.
-    - entreprise: company of the brand (Activia -> Danone, Free -> Free: a brand can be its own company);
+    - entreprise: company of the brand (Activia -> Danone, Free -> Free: a brand can be its own company),
+      with its SIREN and the department of its head office (departement_siege_social), empty for a company
+      registered abroad;
     - societe_mere_ultime: ultimate parent company of the company (consolidation level);
     - actionnaire_maj_ultime: ultimate majority shareholder (e.g. a family holding), passed through only.
     Each value has its status (e_statut, smu_statut, amu_statut): 'vérifié', 'non vérifié' or 'à vérifier'. A value is
@@ -19,12 +21,22 @@ WITH inventory AS (
     {{ name_key('marque') }} AS brand_key,
     TRIM(marque) AS brand,
     NULLIF(TRIM(entreprise), '') AS company,
+    -- 9 digits: spaces and dots removed, leading zeros put back when the sheet turned the SIREN into a number
+    CASE
+      WHEN REGEXP_REPLACE(siren, '[\s.]', '', 'g') ~ '^\d{7,9}$'
+        THEN LPAD(REGEXP_REPLACE(siren, '[\s.]', '', 'g'), 9, '0')
+    END AS company_siren,
+    -- "1" -> "01" (number in the sheet); "2A", "971" kept
+    CASE
+      WHEN TRIM(departement_siege_social) ~ '^\d$' THEN '0' || TRIM(departement_siege_social)
+      ELSE NULLIF(UPPER(TRIM(departement_siege_social)), '')
+    END AS company_head_office_department,
     NULLIF(TRIM(societe_mere_ultime), '') AS ultimate_parent,
     NULLIF(TRIM(e_statut), '') AS company_status,
     NULLIF(TRIM(smu_statut), '') AS ultimate_parent_status,
     NULLIF(TRIM(actionnaire_maj_ultime), '') AS ultimate_majority_shareholder,
     NULLIF(TRIM(amu_statut), '') AS ultimate_majority_shareholder_status
-  FROM ({{ source_or_empty('advertising', 'brand_inventory', ['marque', 'entreprise', 'societe_mere_ultime', 'e_statut', 'smu_statut', 'actionnaire_maj_ultime', 'amu_statut']) }}) inventory
+  FROM ({{ source_or_empty('advertising', 'brand_inventory', ['marque', 'entreprise', 'siren', 'departement_siege_social', 'societe_mere_ultime', 'e_statut', 'smu_statut', 'actionnaire_maj_ultime', 'amu_statut']) }}) inventory
 ),
 usable AS (
   SELECT
@@ -51,6 +63,8 @@ SELECT
   brand,
   company,
   company_status,
+  company_siren,
+  company_head_office_department,
   ultimate_parent,
   ultimate_parent_status,
   ultimate_majority_shareholder,

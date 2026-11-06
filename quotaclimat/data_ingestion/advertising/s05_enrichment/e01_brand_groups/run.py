@@ -1,5 +1,5 @@
 """Stage 5 (enriching), step 1: propose the company and the ultimate parent company of the broadcast
-brands missing from the tab Marques of the Inventaires_des_marques Google Sheet, and append them to it
+brands missing from the tab Marques of the Inventaire_des_marques Google Sheet, and append them to it
 with e_statut and smu_statut 'non vérifié'.
 
 For each brand, by decreasing broadcast duration:
@@ -8,7 +8,8 @@ For each brand, by decreasing broadcast duration:
    the Dictionnaire_marques_secteurs Google Sheet, loaded by dbt in advertising.ref_ome_secteurs);
 2. company of the brand: the holder, named like the brand when its name contains it (FREE SAS -> Free),
    else under its own name (Dacia -> Renault). A company already in the tab (same name, or same name
-   without legal form) is reused with its ultimate parent company;
+   without legal form) is reused with its SIREN and ultimate parent company. SIREN of a new company: the
+   holder's; department of its head office: API Recherche d'entreprises (Sirene);
 3. ultimate parent company of a new company: GLEIF ultimate consolidating parent of the holder's LEI (by
    SIREN, or by exact legal name and country for a holder registered abroad), else the top of the
    Wikidata P749 chain of the item with its SIREN;
@@ -40,6 +41,7 @@ from quotaclimat.data_ingestion.advertising.s05_enrichment.e01_brand_groups.prop
     KnownCompanies,
     KnownCompany,
     choose_holder,
+    company_siren,
     parse_nice_classes,
     propose_row,
 )
@@ -71,6 +73,8 @@ NICE_CLASSES_QUERY = text(
 CSV_COLUMNS = [
     "marque",
     "entreprise",
+    "siren",
+    "departement_siege_social",
     "e_statut",
     "societe_mere_ultime",
     "smu_statut",
@@ -154,8 +158,13 @@ def propose(
         gleif_lei = lookup("GLEIF", registries.gleif_lei_by_name, holder.name, holder.country)
     if gleif_lei:
         gleif_parent = lookup("GLEIF", registries.gleif_ultimate_parent, gleif_lei.identifier)
+    department = None
+    siren = company_siren(holder, existing) if holder else ""
+    if siren and not (existing and existing.department):
+        department = lookup("Recherche d'entreprises", registries.head_office_department, siren)
     return propose_row(
-        brand, holder, wikidata_parent, gleif_lei, gleif_parent, known, today, unavailable=errors
+        brand, holder, wikidata_parent, gleif_lei, gleif_parent, known, today, unavailable=errors,
+        department=department,
     )
 
 
@@ -211,7 +220,10 @@ def run() -> int:
                 "Brand %s: company %r, ultimate parent %r", brand, row["entreprise"], row["societe_mere_ultime"]
             )
             # the next brands of the same company reuse it
-            known.add(KnownCompany(row["entreprise"], row["societe_mere_ultime"], row["smu_statut"], brand))
+            known.add(KnownCompany(
+                row["entreprise"], row["societe_mere_ultime"], row["smu_statut"], brand, row["siren"],
+                row["departement_siege_social"],
+            ))
         else:
             logging.info("Brand %s: no trademark in force found (FR, EU, WO), written without company", brand)
         rows.append(row)

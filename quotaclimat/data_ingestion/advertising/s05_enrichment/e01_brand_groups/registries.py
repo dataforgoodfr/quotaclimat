@@ -1,8 +1,10 @@
-"""Company -> ultimate parent company, from public registries without API key:
+"""Company -> ultimate parent company and head office department, from public registries without API key:
 - GLEIF (https://api.gleif.org/api/v1): LEI of a French company by its SIREN, and its ultimate accounting
   consolidating parent when published (many companies report NON_PUBLIC or NON_CONSOLIDATING instead);
 - Wikidata: top of the chain of parent organizations (P749) of the item whose SIREN (P1616) is the
-  company's.
+  company's;
+- API Recherche d'entreprises (https://recherche-entreprises.api.gouv.fr, Sirene data of the INSEE):
+  department of the head office (siège) of a company by its SIREN.
 """
 
 import logging
@@ -13,6 +15,7 @@ import requests
 
 GLEIF_URL = "https://api.gleif.org/api/v1"
 WIKIDATA_SPARQL_URL = "https://query.wikidata.org/sparql"
+RECHERCHE_ENTREPRISES_URL = "https://recherche-entreprises.api.gouv.fr"
 USER_AGENT = "QuotaClimat-brand-groups/1.0 (https://www.quotaclimat.org)"
 TIMEOUT_SEC = 60
 # answers of an overloaded service (e.g. HTTP 502 of the Wikidata query service), retried after a wait
@@ -121,3 +124,16 @@ def wikidata_ultimate_parent(siren: str, delay_sec: float = 1.0) -> Company | No
     qid = bindings[0]["parent"]["value"].rsplit("/", 1)[-1]
     label = bindings[0].get("parentLabel", {}).get("value", "")
     return Company(name="" if label == qid else label, identifier=qid)
+
+
+def head_office_department(siren: str, delay_sec: float = 1.0) -> str | None:
+    """Department code of the head office (siège) of the company registered under this SIREN, from the
+    API Recherche d'entreprises ("75", "2A", "971"), None when the SIREN is not found or the head office
+    has no French department (abroad)."""
+    if not (siren.isdigit() and len(siren) == 9):
+        return None
+    response = _get(f"{RECHERCHE_ENTREPRISES_URL}/search", delay_sec, params={"q": siren, "per_page": 5})
+    response.raise_for_status()
+    # a full-text search: only the company with exactly this SIREN
+    company = next((r for r in response.json().get("results", []) if r.get("siren") == siren), None)
+    return ((company or {}).get("siege") or {}).get("departement") or None

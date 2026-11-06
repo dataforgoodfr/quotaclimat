@@ -39,14 +39,18 @@ seeds:
         tests:
           - not_null
 
-  # Inventaires_des_marques spreadsheet, tab Marques: brand -> company -> ultimate parent company, and the
-  # ultimate majority shareholder, each value used unless its status is 'à vérifier'
+  # Inventaire_des_marques spreadsheet, tab Marques: brand -> company (with its SIREN and the department of
+  # its head office) -> ultimate parent company, and the ultimate majority shareholder, each value used
+  # unless its status is 'à vérifier'
   - name: ref_inventaire_marques
     config:
       # all text, even when a column looks numeric (e.g. the brand "1664") or is still empty
       column_types:
         marque: text
         entreprise: text
+        # text: leading zeros of the SIREN ("005520135") and departments "01", "2A"
+        siren: text
+        departement_siege_social: text
         societe_mere_ultime: text
         e_statut: text
         smu_statut: text

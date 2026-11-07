@@ -2,8 +2,9 @@
 account (generic, shared with other jobs, not the read-only account of the dbt import), shared as editor
 on this spreadsheet only.
 
-New rows are appended; in the rows already there, only empty cells are filled (fill_empty_cells): a human
-correction is never overwritten.
+New rows are appended; in the rows already there, only empty cells are filled (fill_empty_cells), except
+for the uniformization of the rows of a company (replace_cells, uniformize.py), which overwrites the values of
+a lower row with the ones of the highest row of the company.
 """
 
 import logging
@@ -127,6 +128,44 @@ class BrandInventorySheet:
                         "range": f"{_quote(tab)}!{column_letter(header.index(column) + 1)}{line}",
                         "values": [[value]],
                     })
+        self._batch_update(data)
+        return len(data)
+
+    def replace_cells(self, tab: str, updates: list[tuple[int, str, dict[str, tuple[str, str]]]]) -> int:
+        """Overwrites cells (index of the row as given by read, its brand, {column: (value read, new value)}),
+        a row only when it still has this brand and all its cells to overwrite still hold the values read (the
+        tab is read again just before: a row edited by a human during the run is left as it is, logged).
+        Returns the number of cells written."""
+        rows = self._values(tab)
+        if not rows or not updates:
+            return 0
+        header = [str(h).strip() for h in rows[0]]
+        if "marque" not in header:
+            raise RuntimeError(f"tab {tab} has no column marque")
+
+        def cell(row: list, column: int) -> str:
+            return str(row[column]).strip() if column < len(row) else ""
+
+        data = []
+        for index, brand, cells in updates:
+            line = index + 2
+            current = rows[index + 1] if index + 1 < len(rows) else []
+            if cell(current, header.index("marque")) != brand.strip():
+                logging.warning("Tab %s, line %s: no longer the brand %s, not uniformized", tab, line, brand)
+                continue
+            cells = {column: values for column, values in cells.items() if column in header}
+            edited = [c for c, (read, _) in cells.items() if cell(current, header.index(c)) != read]
+            if edited:
+                logging.warning("Tab %s, line %s (%s): %s edited during the run, not uniformized", tab, line, brand, edited)
+                continue
+            data.extend(
+                {"range": f"{_quote(tab)}!{column_letter(header.index(column) + 1)}{line}", "values": [[new]]}
+                for column, (_, new) in cells.items()
+            )
+        self._batch_update(data)
+        return len(data)
+
+    def _batch_update(self, data: list[dict]) -> None:
         if data:
             response = self.session.post(
                 f"{SHEETS_API_URL}/{self.spreadsheet_id}/values:batchUpdate",
@@ -134,7 +173,6 @@ class BrandInventorySheet:
                 timeout=TIMEOUT_SEC,
             )
             response.raise_for_status()
-        return len(data)
 
 
 def column_letter(number: int) -> str:

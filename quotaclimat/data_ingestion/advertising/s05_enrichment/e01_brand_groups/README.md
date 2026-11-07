@@ -1,6 +1,6 @@
 # Stage 5 (enriching), step 1: brand company and ultimate parent company proposals
 
-Scaleway job (`entrypoints/advertising_brand_groups_enrichment.sh`; the technical names keep "brand groups"). For each broadcast brand missing from the tab `Marques` of the `Inventaire_des_marques` Google Sheet, it proposes the company that sells under the brand and its ultimate parent company, each with the country, SIREN and department of its head office, and appends the row to the tab. A human checks and corrects it afterwards, directly in the sheet. The dbt model `ad_brands` reads it at the next dbt run. With `BRAND_GROUPS_COMPLETE_ROWS=true`, the job then fills the empty cells of the rows already in the tab (see [Completion of the rows of the tab](#completion-of-the-rows-of-the-tab)).
+Scaleway job (`entrypoints/advertising_brand_groups_enrichment.sh`; the technical names keep "brand groups"). For each broadcast brand missing from the tab `Marques` of the `Inventaire_des_marques` Google Sheet, it proposes the company that sells under the brand and its ultimate parent company, each with the country, SIREN and department of its head office, and appends the row to the tab. A human checks and corrects it afterwards, directly in the sheet. The dbt model `ad_brands` reads it at the next dbt run. The job then gives the rows of the same company the same values, the highest row of the tab winning (see [Uniformization of the rows of a company](#uniformization-of-the-rows-of-a-company)). With `BRAND_GROUPS_COMPLETE_ROWS=true`, it then fills the empty cells of the rows already in the tab (see [Completion of the rows of the tab](#completion-of-the-rows-of-the-tab)).
 
 ## The tab `Marques`
 
@@ -30,6 +30,16 @@ For each brand of `analytics.publicites` missing from the tab `Marques`, by decr
 4. **Head office departments** (`registries.py`), of the company and of its ultimate parent, unless the tab already gives them: API Recherche d'entreprises (`https://recherche-entreprises.api.gouv.fr/search?q=<siren>`, Sirene data of the INSEE, no key), field `siege.departement` of the result with exactly this SIREN. A failing lookup leaves it empty, noted in `commentaires`.
 5. **Sheet** (`sheet.py`): new rows are appended; the job stops when a column is missing from the tab. A brand with no trademark found is written too, without company nor status (`commentaires`: no trademark in force at the INPI), so that it is not searched again, spending the INPI quota, on every run. dbt treats it like a brand missing from the tab (company: the brand itself) until a human fills in its company. A brand whose search failed (API error) is not written: it is searched again on the next run.
 
+## Uniformization of the rows of a company
+
+Unless `BRAND_GROUPS_UNIFORMIZE_ROWS=false`, after the new brands and before the completion, the job gives the rows of the same company (same `entreprise`, ignoring case, accents and punctuation: `Danone` = `DANONE`; `Renault` and `Renault SA` stay two companies) the same values (`uniformize.py`), so that an ultimate parent company or an ultimate majority shareholder written on one row of the company is on all of them. **On a conflict, the highest row of the tab wins**: to change a value of a company, change it on its highest row. Three blocks of columns, each taken as a whole, so that a value is never written with the identity of another one:
+
+1. `pays_siege_social`, `siren`, `departement_siege_social`: the ones of the highest row with a SIREN or a country; its department, when that row has none, the one of the highest row with the same SIREN;
+2. `societe_mere_ultime`: the one of the highest row with an ultimate parent used by dbt (`smu_statut` other than `à vérifier`), else of the highest row with one `à vérifier`: a proposal of the job not checked yet does not replace a parent used by dbt. Its `smu_statut`: the best one of the rows with this parent (`vérifié`, then `non vérifié` or empty, then `à vérifier`), so that a parent verified on a lower row stays verified. Its `smu_pays`, `smu_siren`, `smu_departement`: as in 1, among the rows with this parent; emptied on the other rows when none gives them (they were the identity of another parent);
+3. `actionnaire_maj_ultime` and `amu_statut`: as the ultimate parent.
+
+A block no row of the company fills is left as it is, and so are a company on a single row and the rows without company. Unlike the completion, the step **overwrites** cells, human values included: each changed row gets in `commentaires` the changed columns, the line their new value comes from and their previous value (`job 2026-11-07 : valeurs de l'entreprise Free uniformisées sur la ligne la plus haute qui les donne : societe_mere_ultime Iliad (ligne 2, avant : Xavier Niel)`), to undo a change by hand. The tab is read again just before writing: a row whose brand moved or whose cells were edited in the meantime is left as it is. No API is called. With `BRAND_GROUPS_DRY_RUN=true`, nothing is written, the changes are printed between two markers.
+
 ## Completion of the rows of the tab
 
 With `BRAND_GROUPS_COMPLETE_ROWS=true` (on a manual run of the Scaleway job, for instance), after the new brands, the job goes through every row of the tab with a company (`complete.py`) and fills its **empty cells only**, never a value written by a human or by the job:
@@ -56,6 +66,7 @@ INPI is never called, so the step spends none of its quota. The values are writt
 | `INPI_SEARCH_MAX_RESULTS` | INPI search results read per brand, all pages, default 1000: the search returns every trademark containing the brand's words, most recent first, and the exact one can be old |
 | `INPI_MAX_NOTICES` | notices read per brand and collection group (FR, then EU and WO), default 3: one request each, they make most of the requests of a run. The logs give the quota left (header `x-rate-limit-remaining`) after each brand |
 | `BRAND_GROUPS_DRY_RUN` | `true`: nothing written to the sheet, the rows written to `BRAND_GROUPS_DRY_RUN_CSV` and printed in the logs |
+| `BRAND_GROUPS_UNIFORMIZE_ROWS` | `false`: no uniformization of the rows of a company, default `true` |
 | `BRAND_GROUPS_COMPLETE_ROWS` | `true`: completion of the rows of the tab after the new brands, default `false` |
 | `BRAND_GROUPS_COMPLETE_MAX_REQUESTS` | registry requests (GLEIF, Wikidata, Recherche d'entreprises) of the completion step, default 1000 |
 

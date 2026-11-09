@@ -581,9 +581,9 @@ models:
   - name: ad_brand_agencies
     description: >
       Media agency of each advertised brand, from the tab agence_entreprise of the Inventaire_des_annonceurs Google
-      Sheet: one row per brand of analytics.publicites (brand_name, brand_company) whose company or brand is in the
-      tab. A brand takes the row of the tab with its brand (marque) when there is one, else the row of its company
-      with an empty marque. Companies and brands are compared with name_key. Read by pub_annonceur_emission_jour.
+      Sheet (one row per company): one row per brand of analytics.publicites (brand_name, brand_company) whose company
+      is in the tab, with the agency of its company. Companies are compared with name_key. Read by
+      pub_annonceur_emission_jour.
     tests:
       - unique_name_keys:
           arguments:
@@ -597,13 +597,6 @@ models:
         description: Company of the brand, as in publicites.brand_company.
         tests:
           - not_null
-      - name: agency_level
-        description: "'marque' when the row of the brand was used, 'entreprise' when the row of its company was."
-        tests:
-          - not_null
-          - accepted_values:
-              arguments:
-                values: ['marque', 'entreprise']
       - name: agency
         description: Agency buying the TV space in France (column agence_media), NULL when unknown.
       - name: agency_group

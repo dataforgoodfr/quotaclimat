@@ -28,6 +28,7 @@ resource "terraform_data" "windmill_database" {
   input = {
     conn     = "host=${data.scaleway_rdb_instance.shared.endpoint_ip} port=${data.scaleway_rdb_instance.shared.endpoint_port} user=${scaleway_rdb_user.windmill.name} sslmode=require"
     password = var.postgres_password_windmill
+    user     = scaleway_rdb_user.windmill.name
   }
 
   # Destroyed before the privilege, so the destroy step can still connect to `rdb`
@@ -37,8 +38,9 @@ resource "terraform_data" "windmill_database" {
   # the database is missing (\gexec), from Scaleway's default database `rdb`.
   provisioner "local-exec" {
     environment = {
-      CONN   = self.input.conn
-      PGPASS = self.input.password
+      CONN     = self.input.conn
+      PGPASS   = self.input.password
+      APP_USER = self.input.user
     }
     command = <<-EOF
       set -eu
@@ -47,7 +49,7 @@ resource "terraform_data" "windmill_database" {
       SELECT 'CREATE DATABASE windmill' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'windmill')\gexec
       SQL
       docker run --rm -i -e PGPASSWORD="$PGPASS" postgres:15 \
-        psql -v ON_ERROR_STOP=1 "$CONN dbname=windmill" -f - <<'SQL'
+        psql -v ON_ERROR_STOP=1 -v app_user="$APP_USER" "$CONN dbname=windmill" -f - <<'SQL'
       DO $$
       BEGIN
         IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'windmill_user') THEN
@@ -60,8 +62,9 @@ resource "terraform_data" "windmill_database" {
       $$;
 
       GRANT windmill_user TO windmill_admin;
-      GRANT windmill_admin TO CURRENT_USER;
-      GRANT windmill_user TO CURRENT_USER;
+      -- CURRENT_USER is not accepted as a grantee of a role: the name comes from the app_user psql variable
+      GRANT windmill_admin TO :"app_user";
+      GRANT windmill_user TO :"app_user";
 
       -- Windmill switches to windmill_user / windmill_admin to run queries
       GRANT USAGE ON SCHEMA public TO windmill_user, windmill_admin;

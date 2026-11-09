@@ -1,0 +1,5 @@
+---
+windmill_service_dir: /opt/services/windmill
+# Pin a released tag (https://github.com/windmill-labs/windmill/pkgs/container/windmill) for reproducible deploys
+windmill_image: ghcr.io/windmill-labs/windmill:main
+windmill_worker_replicas: 2

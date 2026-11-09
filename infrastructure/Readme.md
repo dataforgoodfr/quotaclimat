@@ -44,7 +44,8 @@ infrastructure/
 ├── compose/                   # Docker Compose stacks deployed by Ansible
 │   ├── traefik/
 │   ├── kestra/
-│   └── glitchtip/
+│   ├── glitchtip/
+│   └── windmill/
 ├── kestra/
 │   └── flows/                 # Kestra flow definitions (uploaded by Ansible)
 └── ansible/
@@ -55,7 +56,8 @@ infrastructure/
         ├── common/            # Docker, fail2ban, unattended-upgrades
         ├── traefik/           # Reverse proxy with auto-TLS
         ├── kestra/            # Orchestrator + secrets/KV provisioning + flow upload
-        └── glitchtip/         # Error tracking + Redis
+        ├── glitchtip/         # Error tracking + Redis
+        └── windmill/          # Windmill server + workers (Kestra alternative)
 ```
 
 The root `live/terragrunt.hcl` generates the S3 backend and Scaleway provider configuration for every environment automatically, so there is no duplicated `backend.tf` or `provider.tf` to maintain. Each environment folder only needs a `terragrunt.hcl` with its specific input values.
@@ -147,7 +149,7 @@ make env=prod target=orchestrator tg-apply
 | `make tags=kestra ansible` | Run only the kestra role |
 | `make tags=traefik,kestra ansible` | Run specific roles |
 
-Available tags: `common`, `traefik`, `kestra`, `glitchtip`.
+Available tags: `common`, `traefik`, `kestra`, `glitchtip`, `windmill`.
 
 Before running Ansible for the first time, create the inventory file from the template:
 ```bash
@@ -192,7 +194,7 @@ cd ansible && cp inventory.yml.j2 inventory.yml
 #     (rdb-poc's ACL is managed outside this repo). On migration, remove the old IP.
 
 # 5b. Point DNS records to the server IP
-#     traefik.<domain>, kestra.<domain>, glitchtip.<domain>
+#     traefik.<domain>, kestra.<domain>, glitchtip.<domain>, windmill.<domain>
 
 # 6. Deploy services
 cd .. && make ansible
@@ -203,7 +205,10 @@ cd .. && make ansible
 ```bash
 make tags=kestra ansible     # Redeploy Kestra + re-upload flows + sync secrets
 make tags=glitchtip ansible  # Redeploy GlitchTip only
+make tags=windmill ansible   # Redeploy Windmill only
 ```
+
+[Windmill](https://www.windmill.dev/docs/advanced/self_host) (Kestra alternative) runs as a server plus default and native workers (`compose/windmill/docker-compose.yml.j2`, role `windmill`), on its own `windmill` database on the managed Postgres. Traefik routes `WINDMILL_DOMAIN` to the server (port 8000) with automatic TLS. Set `WINDMILL_DOMAIN`, `WINDMILL_DB_USER`, `WINDMILL_DB_PASSWORD`, `WINDMILL_DB_NAME` in `.env.secrets` and `TF_VAR_postgres_password_windmill` for OpenTofu. The image defaults to `ghcr.io/windmill-labs/windmill:main`: pin a tag with `windmill_image` (`ansible/roles/windmill/defaults/main.yml`). First login is `admin@windmill.dev` / `changeme`: change it right away.
 
 GlitchTip stores files and archived events/logs (DuckDB cold storage) in S3. After `make env=prod target=orchestrator tg-apply`, copy the `glitchtip_s3_*` outputs into `GLITCHTIP_S3_ACCESS_KEY`, `GLITCHTIP_S3_SECRET_KEY` and `GLITCHTIP_S3_BUCKET` in `.env.secrets` (rendered by `compose/glitchtip/.env.s3.j2`). Invitation emails go through [Brevo](https://www.brevo.com) SMTP (`compose/glitchtip/.env.email.j2`, loaded after `.env`). Verify the `quotaclimat.org` domain in Brevo (DKIM/DMARC), create an SMTP key (SMTP & API), then set in `.env.secrets`: `BREVO_SMTP_LOGIN` (Brevo login email), `BREVO_SMTP_KEY`, and optionally `GLITCHTIP_FROM_EMAIL` (default `glitchtip@quotaclimat.org`), `BREVO_SMTP_HOST` (default `smtp-relay.brevo.com`), `BREVO_SMTP_PORT` (default `587`). Without `BREVO_SMTP_LOGIN`/`BREVO_SMTP_KEY`, emails are only printed in the container logs (`consolemail://`). Redeploy with `make tags=glitchtip ansible`. If sending fails, check the Brevo logs and try port 465 with `smtp+ssl` in the template.
 The managed Postgres sets `max_locks_per_transaction = 512` for GlitchTip (`live/barometre/template/database.tf`).
@@ -403,6 +408,7 @@ Resources marked *per country* are `for_each` over the `countries` input (addres
 | RDB user | `scaleway_rdb_user.glitchtip` | GlitchTip app DB user |
 | RDB database | `scaleway_rdb_database.glitchtip` | GlitchTip database |
 | RDB privilege | `scaleway_rdb_privilege.glitchtip` | Grants for `glitchtip` user |
+| RDB user / database / privilege | `scaleway_rdb_{user,database,privilege}.windmill` | Windmill database and its owner |
 | IAM SSH key | `scaleway_iam_ssh_key.paul_gabriel` | SSH access to the baremetal server |
 | IAM SSH key | `scaleway_iam_ssh_key.gmguarino` | SSH access to the baremetal server |
 | Object bucket | `scaleway_object_bucket.glitchtip` | GlitchTip file storage and cold storage (`cold_storage/` prefix) |

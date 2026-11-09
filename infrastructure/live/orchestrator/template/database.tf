@@ -1,4 +1,4 @@
-# Databases for Kestra and GlitchTip on the existing managed Postgres instance.
+# Databases for Kestra, GlitchTip and Windmill on the existing managed Postgres instance.
 
 data "scaleway_account_project" "pg_project" {
   name = var.pg_project_name
@@ -49,4 +49,27 @@ resource "scaleway_rdb_privilege" "glitchtip" {
   database_name = scaleway_rdb_database.glitchtip.name
   permission    = "all"
   depends_on    = [scaleway_rdb_user.glitchtip, scaleway_rdb_database.glitchtip]
+}
+
+# --- Windmill ---
+# Windmill's migrations create its own roles (windmill_admin, windmill_user), so the
+# owner user needs CREATEROLE-like rights on the managed instance.
+
+resource "scaleway_rdb_user" "windmill" {
+  instance_id = data.scaleway_rdb_instance.shared.id
+  name        = "windmill"
+  password    = var.postgres_password_windmill
+}
+
+resource "scaleway_rdb_database" "windmill" {
+  instance_id = data.scaleway_rdb_instance.shared.id
+  name        = "windmill"
+}
+
+resource "scaleway_rdb_privilege" "windmill" {
+  instance_id   = data.scaleway_rdb_instance.shared.id
+  user_name     = scaleway_rdb_user.windmill.name
+  database_name = scaleway_rdb_database.windmill.name
+  permission    = "all"
+  depends_on    = [scaleway_rdb_user.windmill, scaleway_rdb_database.windmill]
 }

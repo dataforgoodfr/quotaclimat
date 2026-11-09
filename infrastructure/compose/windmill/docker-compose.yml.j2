@@ -1,0 +1,82 @@
+x-windmill-common: &windmill-common
+  image: {{ windmill_image }}
+  restart: unless-stopped
+  security_opt:
+    - no-new-privileges:true
+
+x-windmill-env: &windmill-env
+  DATABASE_URL: "postgres://{{ windmill_db_user }}:{{ windmill_db_password | urlencode }}@{{ postgres_host }}:{{ postgres_port }}/{{ windmill_db_name }}"
+  BASE_URL: "https://{{ windmill_domain }}"
+  RUST_LOG: info
+
+services:
+  windmill-server:
+    <<: *windmill-common
+    container_name: windmill-server
+    environment:
+      <<: *windmill-env
+      MODE: server
+    networks:
+      - traefik-public
+      - windmill-internal
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=traefik-public
+      - traefik.http.routers.windmill.rule=Host(`{{ windmill_domain }}`)
+      - traefik.http.routers.windmill.entrypoints=websecure
+      - traefik.http.routers.windmill.tls.certresolver=letsencrypt
+      - traefik.http.services.windmill.loadbalancer.server.port=8000
+      # security-headers is defined on the traefik container
+      - traefik.http.routers.windmill.middlewares=security-headers@docker
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8000/api/version || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  windmill-worker:
+    <<: *windmill-common
+    environment:
+      <<: *windmill-env
+      MODE: worker
+      WORKER_GROUP: default
+    deploy:
+      replicas: {{ windmill_worker_replicas }}
+      resources:
+        limits:
+          cpus: "1"
+          memory: 2048M
+    networks:
+      - windmill-internal
+    volumes:
+      - windmill-worker-dependency-cache:/tmp/windmill/cache
+      - windmill-worker-logs:/tmp/windmill/logs
+
+  windmill-worker-native:
+    <<: *windmill-common
+    container_name: windmill-worker-native
+    environment:
+      <<: *windmill-env
+      MODE: worker
+      WORKER_GROUP: native
+      NUM_WORKERS: 8
+      SLEEP_QUEUE: 200
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 1024M
+    networks:
+      - windmill-internal
+    volumes:
+      - windmill-worker-logs:/tmp/windmill/logs
+
+volumes:
+  windmill-worker-dependency-cache:
+  windmill-worker-logs:
+
+networks:
+  traefik-public:
+    external: true
+  windmill-internal:

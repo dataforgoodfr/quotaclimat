@@ -11,6 +11,7 @@
     traefik_domain: "{{ lookup('env', 'TRAEFIK_DOMAIN') }}"
     kestra_domain: "{{ lookup('env', 'KESTRA_DOMAIN') }}"
     glitchtip_domain: "{{ lookup('env', 'GLITCHTIP_DOMAIN') }}"
+    windmill_domain: "{{ lookup('env', 'WINDMILL_DOMAIN') }}"
 
     # Traefik
     traefik_dashboard_auth: "{{ lookup('env', 'TRAEFIK_DASHBOARD_AUTH') }}"
@@ -37,6 +38,11 @@
     brevo_smtp_host: "{{ lookup('env', 'BREVO_SMTP_HOST') | default('smtp-relay.brevo.com', true) }}"
     brevo_smtp_port: "{{ lookup('env', 'BREVO_SMTP_PORT') | default('587', true) }}"
     brevo_from_email: "{{ lookup('env', 'GLITCHTIP_FROM_EMAIL') | default('glitchtip@quotaclimat.org', true) }}"
+
+    # Windmill
+    windmill_db_user: "{{ lookup('env', 'WINDMILL_DB_USER') }}"
+    windmill_db_password: "{{ lookup('env', 'WINDMILL_DB_PASSWORD') }}"
+    windmill_db_name: "{{ lookup('env', 'WINDMILL_DB_NAME') }}"
 
     # Managed Postgres
     postgres_host: "{{ lookup('env', 'POSTGRES_HOST') }}"
@@ -111,3 +117,5 @@
       tags: [kestra]
     - role: glitchtip
       tags: [glitchtip]
+    - role: windmill
+      tags: [windmill]

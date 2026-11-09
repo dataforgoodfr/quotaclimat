@@ -38,3 +38,11 @@ output "glitchtip_s3_secret_key" {
   value     = scaleway_iam_api_key.glitchtip_s3.secret_key
   sensitive = true
 }
+
+output "windmill_db_name" {
+  value = scaleway_rdb_database.windmill.name
+}
+
+output "windmill_db_user" {
+  value = scaleway_rdb_user.windmill.name
+}

@@ -155,14 +155,17 @@ errors:
     values: "{{ secret('MATTERMOST_WEBHOOK_URLS') | split(',') | toJson }}"
     concurrencyLimit: 0
     tasks:
+      # plain HTTP call rather than the notifications plugin (not bundled in the Kestra image)
       - id: send
-        type: io.kestra.plugin.notifications.mattermost.MattermostExecution
-        url: "{{ taskrun.value | trim }}"
-        username: Kestra
-        customMessage: |
-          {% set failed = (execution.taskRunList | jq('.[] | select(.state.current == "FAILED")') | first) -%}
-          main-pipeline failed at step `{{ failed.taskId ?? 'unknown' }}`.
-          {%- if failed.outputs.executionId is defined and vars.subflows[failed.taskId] is defined %}
-          Failed subflow: {{ kestra.url }}ui/main/executions/{{ vars.subflows[failed.taskId] }}/{{ failed.outputs.executionId }}
-          {%- endif %}
-        executionId: "{{ execution.id }}"
+        type: io.kestra.plugin.core.http.Request
+        uri: "{{ taskrun.value | trim }}"
+        method: POST
+        contentType: application/json
+        body: |
+          {%- set failed_steps = outputs | jq('to_entries[] | select((.value | type) == "object" and (.value.state? == "FAILED")) | .key') -%}
+          {%- set step = failed_steps | first -%}
+          {%- set subflow_link = (step is not empty and outputs[step].executionId is defined and vars.subflows[step] is defined) ? (kestra.url ~ 'ui/main/executions/' ~ vars.subflows[step] ~ '/' ~ outputs[step].executionId) : '' -%}
+          {{ {
+            'username': 'Kestra',
+            'text': 'main-pipeline failed at step `' ~ (step ?? 'unknown') ~ '`.\nFailed subflow: ' ~ subflow_link ~ '\nExecution: ' ~ kestra.url ~ 'ui/main/executions/' ~ flow.namespace ~ '/' ~ flow.id ~ '/' ~ execution.id
+          } | toJson }}

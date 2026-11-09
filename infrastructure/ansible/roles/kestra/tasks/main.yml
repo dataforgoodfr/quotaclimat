@@ -12,6 +12,8 @@
   loop:
     - /opt/services/kestra/.env
     - /opt/services/kestra/application.yml
+    - /opt/services/kestra/flows
+
 
 - name: Get docker.sock group id on host
   stat:
@@ -33,25 +35,25 @@
     src: "{{ playbook_dir }}/../kestra/flows/"
     dest: /opt/services/kestra/flows/
 
-# The flows directory is bind-mounted into the container: deleting and
-# recreating it would leave the container on the old, empty directory.
-# Only remove the files of flows deleted from the repository instead.
-- name: List deployed kestra flow files
-  find:
-    paths: /opt/services/kestra/flows
-    file_type: file
-  register: kestra_deployed_flows
+# # The flows directory is bind-mounted into the container: deleting and
+# # recreating it would leave the container on the old, empty directory.
+# # Only remove the files of flows deleted from the repository instead.
+# - name: List deployed kestra flow files
+#   find:
+#     paths: /opt/services/kestra/flows
+#     file_type: file
+#   register: kestra_deployed_flows
 
-- name: Remove flows deleted from the repository
-  file:
-    path: "{{ item.path }}"
-    state: absent
-  loop: "{{ kestra_deployed_flows.files }}"
-  loop_control:
-    label: "{{ item.path | basename }}"
-  when: (item.path | basename) not in kestra_repo_flows
-  vars:
-    kestra_repo_flows: "{{ lookup('fileglob', playbook_dir ~ '/../kestra/flows/*', wantlist=True) | map('basename') | list }}"
+# - name: Remove flows deleted from the repository
+#   file:
+#     path: "{{ item.path }}"
+#     state: absent
+#   loop: "{{ kestra_deployed_flows.files }}"
+#   loop_control:
+#     label: "{{ item.path | basename }}"
+#   when: (item.path | basename) not in kestra_repo_flows
+#   vars:
+#     kestra_repo_flows: "{{ lookup('fileglob', playbook_dir ~ '/../kestra/flows/*', wantlist=True) | map('basename') | list }}"
 
 - name: Set ownership of flows directory to kestra container user (uid/gid 1000)
   file:

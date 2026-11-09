@@ -207,7 +207,10 @@ def apply_update_program(row, df_programs):
 
 def update_programs_and_filter_out_of_scope_programs_from_df(df: pd.DataFrame, df_programs: pd.DataFrame) -> pd.DataFrame :
     try:
-        if df_programs is not None:
+        if df.empty:
+            # apply(result_type='expand') on an empty df cannot produce the 3 columns
+            logging.info("Not updating programs because df is empty")
+        elif df_programs is not None:
             df[['channel_program', 'channel_program_type', 'program_metadata_id']] = df.apply(
                 lambda row: apply_update_program(row, df_programs),
                 axis=1,

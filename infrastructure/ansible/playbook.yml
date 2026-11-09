@@ -26,6 +26,17 @@
     glitchtip_db_password: "{{ lookup('env', 'GLITCHTIP_DB_PASSWORD') }}"
     glitchtip_db_name: "{{ lookup('env', 'GLITCHTIP_DB_NAME') }}"
     glitchtip_secret_key: "{{ lookup('env', 'GLITCHTIP_SECRET_KEY') }}"
+    glitchtip_s3_access_key: "{{ lookup('env', 'GLITCHTIP_S3_ACCESS_KEY') }}"
+    glitchtip_s3_secret_key: "{{ lookup('env', 'GLITCHTIP_S3_SECRET_KEY') }}"
+    glitchtip_s3_bucket: "{{ lookup('env', 'GLITCHTIP_S3_BUCKET') }}"
+    glitchtip_s3_endpoint: "{{ lookup('env', 'GLITCHTIP_S3_ENDPOINT') | default('https://s3.fr-par.scw.cloud', true) }}"
+    glitchtip_s3_region: "{{ lookup('env', 'GLITCHTIP_S3_REGION') | default('fr-par', true) }}"
+    # GlitchTip email (Brevo SMTP); leave BREVO_SMTP_* empty to keep console emails
+    brevo_smtp_login: "{{ lookup('env', 'BREVO_SMTP_LOGIN') }}"
+    brevo_smtp_key: "{{ lookup('env', 'BREVO_SMTP_KEY') }}"
+    brevo_smtp_host: "{{ lookup('env', 'BREVO_SMTP_HOST') | default('smtp-relay.brevo.com', true) }}"
+    brevo_smtp_port: "{{ lookup('env', 'BREVO_SMTP_PORT') | default('587', true) }}"
+    brevo_from_email: "{{ lookup('env', 'GLITCHTIP_FROM_EMAIL') | default('glitchtip@quotaclimat.org', true) }}"
 
     # Managed Postgres
     postgres_host: "{{ lookup('env', 'POSTGRES_HOST') }}"

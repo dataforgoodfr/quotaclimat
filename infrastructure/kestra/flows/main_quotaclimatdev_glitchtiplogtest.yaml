@@ -1,0 +1,121 @@
+id: glitchtip-log-test
+namespace: quotaclimat-dev
+
+description: |
+  Dev: manual check that logs and errors reach GlitchTip. Runs a small Python script
+  (Docker task runner, python image) that initialises the Sentry SDK with the
+  `SENTRY_DSN` secret, sends a series of logs (debug to error), then raises an
+  error that the script handles: the error is caught, reported to GlitchTip
+  (with its traceback) and the task still succeeds.
+  The messages, tags and attributes carry the `run_id` input: filter on it in
+  GlitchTip (Logs and Issues pages) to find this run.
+  It sets the same `country` and `service` tags as `quotaclimat/utils/sentry.py`.
+  No schedule: run it by hand.
+
+labels:
+  pipeline: ome
+  environment: dev
+  purpose: monitoring-test
+
+inputs:
+  - id: country
+    type: STRING
+    defaults: test
+    description: "Value of the `country` tag and log attribute."
+  - id: service
+    type: STRING
+    defaults: glitchtip-log-test
+    description: "Value of the `service` tag and log attribute."
+  - id: send_logs
+    type: BOOLEAN
+    defaults: true
+    description: "Send the logs as Sentry logs (same as SENTRY_LOGGING=true in the pipeline flows). When false, only the handled error is sent."
+
+tasks:
+  - id: send_test_logs_and_error
+    type: io.kestra.plugin.scripts.python.Script
+    taskRunner:
+      type: io.kestra.plugin.scripts.runner.docker.Docker
+    containerImage: python:3.12-slim
+    beforeCommands:
+      - pip install --quiet sentry-sdk
+    env:
+      SENTRY_DSN: "{{ secret('SENTRY_DSN') }}"
+      SENTRY_LOGGING: "{{ inputs.send_logs }}"
+      ENV: dev
+      COUNTRY: "{{ inputs.country }}"
+      SERVICE_NAME: "{{ inputs.service }}"
+      RUN_ID: "{{ execution.id }}"
+    script: |
+      import logging
+      import os
+      import sys
+
+      import sentry_sdk
+      from sentry_sdk.integrations.logging import LoggingIntegration
+
+      dsn = os.environ.get("SENTRY_DSN")
+      if not dsn:
+          sys.exit("SENTRY_DSN is empty: the secret is not set")
+
+      run_id = os.environ["RUN_ID"]
+      country = os.environ["COUNTRY"]
+      service = os.environ["SERVICE_NAME"]
+      send_logs = os.environ["SENTRY_LOGGING"].lower() == "true"
+
+
+      def add_context_to_log(log, _hint):
+          # Tags are not attached to Sentry logs: add them as attributes
+          attributes = log.setdefault("attributes", {})
+          attributes["country"] = country
+          attributes["service"] = service
+          attributes["run_id"] = run_id
+          return log
+
+
+      logging_kwargs = {}
+      if send_logs:
+          logging_kwargs = dict(
+              enable_logs=True,
+              before_send_log=add_context_to_log,
+              integrations=[LoggingIntegration(sentry_logs_level=logging.INFO)],
+          )
+
+      sentry_sdk.init(
+          dsn=dsn,
+          environment=os.environ.get("ENV"),
+          release="glitchtip-log-test",
+          **logging_kwargs,
+      )
+      sentry_sdk.set_tag("country", country)
+      sentry_sdk.set_tag("service", service)
+      sentry_sdk.set_tag("run_id", run_id)
+
+      logging.basicConfig(level=logging.DEBUG, stream=sys.stdout)
+      logger = logging.getLogger("glitchtip_log_test")
+
+      # A series of logs: only INFO and above are sent to GlitchTip
+      logger.debug("[%s] log test: debug (printed here, not sent)", run_id)
+      logger.info("[%s] log test: info 1/3", run_id)
+      logger.info("[%s] log test: info 2/3", run_id)
+      logger.info("[%s] log test: info 3/3", run_id)
+      logger.warning("[%s] log test: warning, something looks odd", run_id)
+
+      # An error that is handled: caught, reported with its traceback, and the
+      # script carries on (the task does not fail).
+      try:
+          processed = 10
+          total = 0
+          ratio = processed / total
+      except ZeroDivisionError:
+          logger.error(
+              "[%s] log test: handled error, division by zero while computing a ratio",
+              run_id,
+              exc_info=True,
+          )
+
+      logger.info("[%s] log test: finished, the error above was handled", run_id)
+
+      # The SDK sends in a background thread: wait for the queue before exiting
+      sentry_sdk.flush(timeout=15)
+      print("Done. Look for run_id %s in GlitchTip (Logs and Issues)." % run_id)

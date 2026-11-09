@@ -90,7 +90,7 @@ The RRS flows (`rrs-climate`, `rrs-insecurity`, `rrs-pollution`, `pulsar-themes`
 | Anthropic API | RRS: Claude Haiku 4.5 for narrative clustering |
 | RAG (expert-model index) | RRS pollution: PDF source documents chunked and embedded (Mistral/e5/bge-m3) into a cosine-search index on S3, queried by the fact-checking agent as a tool call |
 | Pulsar TRAC API | Social media themes, topics and posts (GraphQL) |
-| Sentry | Error and cron monitoring of the Python jobs |
+| Sentry SDK / [GlitchTip](https://glitchtip.com) | Error, cron and log monitoring of the Python jobs. GlitchTip, hosted on the orchestrator, is Sentry-compatible: the jobs only need `SENTRY_DSN` (Kestra secret) to point at it. `SENTRY_LOGGING=true` also sends the logs. `quotaclimat/utils/sentry.py` tags events and logs with `country` (from `COUNTRY`), `service` (from `SERVICE_NAME`, else the entry script name) and sets `environment` from `ENV` |
 
 ## main-pipeline
 
@@ -119,7 +119,7 @@ Steps:
 
 ### Failure alert
 
-When a step fails, the flow-level `errors:` block posts a message to Mattermost (not for `metabase_sync`, whose `allowFailure: true` ends the run as WARNING). It is a `ForEach` over the comma-separated URLs of the `MATTERMOST_WEBHOOK_URLS` secret (incoming webhooks, one per channel), with `concurrencyLimit: 0` so that a failing webhook does not block the others. Each iteration runs a `io.kestra.plugin.notifications.mattermost.MattermostExecution` task whose message names the first failed task and links to the execution of the failed subflow in the Kestra UI (`kestra.url`, set in the Kestra compose config, plus the `namespace/flowId` of the step from the flow's `subflows` variable, to update when a step is added). See `infrastructure/Readme.md`, "Failure alerts (Mattermost)".
+When a step fails, the flow-level `errors:` block posts a message to Mattermost (not for `metabase_sync`, whose `allowFailure: true` ends the run as WARNING). It is a `ForEach` over the comma-separated URLs of the `MATTERMOST_WEBHOOK_URLS` secret (incoming webhooks, one per channel), with `concurrencyLimit: 0` so that a failing webhook does not block the others. Each iteration POSTs a JSON message (`io.kestra.plugin.core.http.Request`: the notifications plugin is not bundled in the Kestra image) naming the first failed task and links to the execution of the failed subflow in the Kestra UI (`kestra.url`, set in the Kestra compose config, plus the `namespace/flowId` of the step from the flow's `subflows` variable, to update when a step is added). See `infrastructure/Readme.md`, "Failure alerts (Mattermost)". It can be tested end to end in dev (see the dev twins below).
 
 The RRS subflows receive no dates: `rrs-climate` resumes from what is already in the `rrs` DB, `rrs-insecurity` uses its own `days_back` default of 1, and `rrs-pollution`'s `filter_keywords` step likewise resumes from the latest `environmental_health` segment already in `rrs.segments` through now.
 
@@ -135,21 +135,21 @@ The main OME pipeline for France (`COUNTRY=fra`): it fetches yesterday's TV/radi
 
 - **Runs:** `quotaclimat/data_processing/mediatree/s3/api_to_s3.py` in `quotaclimat_base`.
 - **What happens:** for each day of the window and each French channel, the job takes the program grid (`program_metadata`), calls the Mediatree subtitle API once per program slot (`type_sub=s2t`, up to 10 requests in parallel with `aiohttp`) and turns the responses into a dataframe of 2-minute transcript chunks. Each channel/day is written as gzip parquet to the `mediatree` bucket under `year=/month=/day=/channel=` (France has no `country=` prefix, for legacy reasons). `API_DATA_OVERWRITE=1` makes the job fetch again and overwrite a channel/day that already exists, because the Mediatree API is not always stable from one call to the next. A Ray runtime and a health-check server are started alongside.
-- **Technologies:** Mediatree API, `aiohttp`, Ray + Modin, pandas/pyarrow parquet, `boto3` to Scaleway S3, Sentry cron monitor `api-to-s3`.
+- **Technologies:** Mediatree API, `aiohttp`, Ray + Modin, pandas/pyarrow parquet, `boto3` to Scaleway S3, Sentry cron monitor `api-to-s3`. The task sets `SENTRY_DSN`, `SENTRY_LOGGING=true` and `SERVICE_NAME=api-to-s3`, so its logs and errors reach GlitchTip tagged with the service and the country.
 - **Reads:** Mediatree API (`MEDIATREE_USER`/`MEDIATREE_PASSWORD`). **Writes:** S3 `mediatree`.
 
 ### 2. `detect_keywords`: S3 to the `keywords` table
 
 - **Runs:** `entrypoints/detect_keywords.sh` in `quotaclimat_base`, which runs `alembic upgrade head`, refreshes the program metadata (`transform_program.py`) and then `quotaclimat/data_processing/mediatree/api_import.py`.
 - **What happens:** for each day and channel, the parquet folder is read back from S3 and every chunk is matched against the keyword dictionary (climate, biodiversity, resources and their sub-categories). Validated stop words (ads and repeated phrases from the `stop_word` table) are removed from the text first. Each match gets a timestamp, and counts are computed per 20-second window, with and without "high risk false positive" keywords. Chunks without any theme are dropped. Rows are mapped to their program, given a hash id and upserted into `keywords` (`BATCH_SIZE=5000`). The number of rows read per channel/day is logged in `time_monitored`.
-- **Technologies:** Alembic, Ray + Modin (`MODIN_ENGINE=ray`), regex keyword matching, SQLAlchemy upserts. Ray uses all the CPUs of the host (`ray.init()` without `num_cpus`); `MODIN_CPUS=8` sets the number of partitions of the Modin dataframes, so the number of rows processed in parallel. `logLevel: WARN` keeps the per-row logs out of the Kestra UI.
+- **Technologies:** Alembic, Ray + Modin (`MODIN_ENGINE=ray`), regex keyword matching, SQLAlchemy upserts. The task sets `SERVICE_NAME=detect-keywords`; only `api_import.py` initialises Sentry, so the migration and `transform_program.py` steps before it send nothing to GlitchTip. Ray uses all the CPUs of the host (`ray.init()` without `num_cpus`); `MODIN_CPUS=8` sets the number of partitions of the Modin dataframes, so the number of rows processed in parallel. `logLevel: WARN` keeps the per-row logs out of the Kestra UI.
 - **Reads:** S3 `mediatree`, `barometre.stop_word`, program metadata. **Writes:** `barometre.keywords`, `barometre.time_monitored`.
 
 ### 3. `detect_misinformation`: LLM screening
 
 - **Runs:** `python /app/main.py` in the `label-misinformation` image, built from the [climateguard](https://github.com/dataforgoodfr/climateguard) repo (code not in this repo).
 - **What happens:** the job reads the chunks with climate keywords from `barometre.keywords` (with the read-only user) over `days_back + 1` days, and asks Mistral (`LLM_PROVIDER=mistral`, `MODEL_NAME=mistral-small-2603`) for a binary misinformation verdict with a short reasoning. `MIN_MISINFORMATION_SCORE` does not apply to this prompt. Chunks classified as misinformation get their audio fetched from Mediatree (`/api/export/single`) and re-transcribed with Whisper, then are saved to the `climateguard` bucket (`label-misinformation-input/`). The job then calls Label Studio's storage sync, so they appear as tasks in project 6 (S3 storage id 4) for annotators. `LABEL_MISINFORMATION_OVERWRITE=1` reprocesses the window.
-- **Technologies:** Mistral API (`mistral-small-2603`), OpenAI API (Whisper), Scaleway S3, Label Studio API.
+- **Technologies:** Mistral API (`mistral-small-2603`), OpenAI API (Whisper), Scaleway S3, Label Studio API. The task passes `SENTRY_DSN`, `SENTRY_LOGGING` and `SERVICE_NAME=detect-misinformation`, but the external image decides whether it uses them.
 - **Reads:** `barometre.keywords`, Mediatree export API. **Writes:** S3 `climateguard`, Label Studio project 6.
 
 ### 4. `dbt_run_transformations`: models
@@ -334,12 +334,12 @@ A safety net that runs [`barometre`](#barometre)'s four steps every night at 03:
 
 Interactive version: [`diagrams/flows/barometre-i18n.html`](diagrams/flows/barometre-i18n.html).
 
-The OME pipeline for the other countries, every day at 04:07. Inputs: `days_back` (default 1), `start_date` (default now).
+The OME pipeline for the other countries, every day at 04:07. Inputs: `days_back` (default 1), `start_date` (default now), `countries` (multiselect, all five by default: untick all but one to run a single country), `api_data_overwrite` and `label_misinformation_overwrite` (booleans, off by default, see below).
 
-1. **`i18n_loop`** (`ForEach` over `bel`, `bel-fla`, `deu`, `esp`, `pol`, one country at a time) runs three tasks per country, each with `allowFailure: true` so that one country failing does not stop the others (the run then ends in WARNING):
-   - `ingest_data_to_s3`: same as `barometre` step 1 with `COUNTRY` set to the loop value. Objects go to the `mediatree` bucket under `country=<name>/year=/...`, and channels and program grids come from that country's config.
+1. **`i18n_loop`** (`ForEach` over the `countries` input, `bel`, `bel-fla`, `deu`, `esp`, `pol` by default, one country at a time) runs three tasks per country, each with `allowFailure: true` so that one country failing does not stop the others (the run then ends in WARNING):
+   - `ingest_data_to_s3`: same as `barometre` step 1 with `COUNTRY` set to the loop value. `API_DATA_OVERWRITE=1` only when the `api_data_overwrite` input is on (otherwise the variable is empty, because the job tests its truthiness). Objects go to the `mediatree` bucket under `country=<name>/year=/...`, and channels and program grids come from that country's config.
    - `detect_keywords`: same as `barometre` step 2, writing to `barometre.keywords` with the country's name. Keywords are filtered on the country's language. Non-French languages are matched on spaCy lemmas plus exact forms, instead of the French regex.
-   - `detect_misinformation`: same as `barometre` step 3, run on the Kestra VM (`label-misinformation:latest` image). `COUNTRY` is the country's full name (`belgium`, `belgium-flanders`, `germany`, `spain`, `poland`), taken from `variables.countries`, which also holds the country bucket (`safeguards-climate-<country>-prod`) and the Label Studio project and project id (the Label Studio URL is in the secret). It runs without `LABEL_MISINFORMATION_OVERWRITE`.
+   - `detect_misinformation`: same as `barometre` step 3, run on the Kestra VM (`label-misinformation:latest` image). `COUNTRY` is the country's full name (`belgium`, `belgium-flanders`, `germany`, `spain`, `poland`), taken from `variables.countries`, which also holds the country bucket (`safeguards-climate-<country>-prod`) and the Label Studio project and project id (the Label Studio URL is in the secret). `LABEL_MISINFORMATION_OVERWRITE=1` only when the `label_misinformation_overwrite` input is on.
 2. **`dbt_run_transformations`**: once, after all countries, the [`dbt`](#dbt) subflow (`wait: true`, `transmitFailed: true`).
 
 **Per-country secrets.** The country bucket keys and Label Studio token and URL live in one Kestra secret, `I18N_COUNTRY_SECRETS`: a single-line JSON object keyed by country code, `{"bel": {"bucket_access": "...", "bucket_secret": "...", "label_studio_token": "...", "label_studio_url": "https://..."}, "bel-fla": {...}, ...}`. The task reads a key with `secret('I18N_COUNTRY_SECRETS') | jq('.["' ~ taskrun.value ~ '"].bucket_access') | first`. The other secrets (`MISTRAL_API_KEY`, `OPENAI_API_KEY`, `POSTGRES_*_READ`...) are shared with the France flows. To add a country: add its code to the `ForEach` values, an entry to `variables.countries` and a key to the JSON secret. See [`infrastructure/Readme.md`](../infrastructure/Readme.md#per-country-secret-i18n_country_secrets) for how to build and deploy the secret.
@@ -361,7 +361,19 @@ Pulls social media "themes" (clusters of topics, like Pulsar's "What's the story
 
 ## Dev flows
 
-Every prod flow except `barometre-catchup`, `barometre-i18n`, `dbt` and `dbt-analytics` has a dev twin: `main_quotaclimatdev_mainpipeline.yaml` and `main_quotaclimatdev_barometre.yaml` (namespace `quotaclimat-dev`), and `main_rrsdev_*.yaml` (namespace `rrs-dev`). They run the same tasks with the `_DEV` secrets, `-dev` buckets, dev databases, `DBT_ENV=dev` and the dev Label Studio project for the extended perimeter (23 / tab 137). The dev `main-pipeline` has no schedule.
+Every prod flow except `barometre-catchup`, `barometre-i18n`, `dbt` and `dbt-analytics` has a dev twin: `main_quotaclimatdev_mainpipeline.yaml` and `main_quotaclimatdev_barometre.yaml` (namespace `quotaclimat-dev`), and `main_rrsdev_*.yaml` (namespace `rrs-dev`). They run the same tasks with the `_DEV` secrets, `-dev` buckets, dev databases, `DBT_ENV=dev` and the dev Label Studio project for the extended perimeter (23 / tab 137). The dev `main-pipeline` has no schedule. It also has the same failure alert (message prefixed with `[dev]`, same `MATTERMOST_WEBHOOK_URLS` secret) and a `test_alert` input (default `false`): with `test_alert=true` its first step, `alert_test`, runs the `alert-test` subflow (`main_quotaclimatdev_alerttest.yaml`, namespace `quotaclimat-dev`, always fails), so the run fails right away and sends the alert, whose message names `alert_test` and links to the failed `alert-test` execution. Nothing else runs. (No diagram yet for `alert-test`.)
+
+### glitchtip-log-test (dev only)
+
+`main_quotaclimatdev_glitchtiplogtest.yaml`, namespace `quotaclimat-dev`, no schedule: run it by hand to check that logs and errors reach GlitchTip. One `io.kestra.plugin.scripts.python.Script` task (Docker task runner, `python:3.12-slim`, `pip install sentry-sdk`) initialises the Sentry SDK with the `SENTRY_DSN` secret and sends a series of logs (`INFO` and `WARNING` are sent, `DEBUG` stays in the Kestra log), then triggers a division by zero that it catches and reports with `logger.error(..., exc_info=True)`: the error and its traceback reach GlitchTip and the task still succeeds. Everything carries the Kestra execution id as `run_id` (message, tag, log attribute): filter on it in GlitchTip, under Logs and Issues.
+
+| Input | Default | Effect |
+|---|---|---|
+| `country` | `test` | Value of the `country` tag and log attribute |
+| `service` | `glitchtip-log-test` | Value of the `service` tag and log attribute |
+| `send_logs` | `true` | `false` sends only the handled error, not the logs |
+
+The script is self-contained: it does not import `quotaclimat/utils/sentry.py`, so it tests GlitchTip and the DSN, not the repo's `sentry_init()`.
 
 ## Updating the diagrams
 

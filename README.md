@@ -278,14 +278,16 @@ Every commit on the `main` branch will build an deploy to the Scaleway container
 Learn [more here.](https://www.scaleway.com/en/docs/tutorials/use-container-registry-github-actions/)
 
 ## Monitoring
-With Sentry, with env variable `SENTRY_DSN`.
+With Sentry or [GlitchTip](https://glitchtip.com) (Sentry-compatible, hosted on the orchestrator, see `infrastructure/Readme.md`), with env variable `SENTRY_DSN`. The jobs call `sentry_init()` (`quotaclimat/utils/sentry.py`), which tags events and logs with `country` (`COUNTRY`), `service` (`SERVICE_NAME`, or the name of the entry script) and sets `environment` from `ENV`.
 
 Learn more here : https://docs.sentry.io/platforms/python/configuration/options/
 
 ### Send logs to Sentry
-By setting `SENTRY_LOGGING` to `"true"` we can send the job logs to sentry (as Scaleway Cockpit is not always reliable).
+By setting `SENTRY_LOGGING` to `"true"` we can send the job logs (`INFO` and above) to sentry or GlitchTip (as Scaleway Cockpit is not always reliable). The Kestra flows `barometre`, `barometre-catchup` and `barometre-i18n` (and the dev one) set it.
 
-Be aware that the first 5GB/month of logs are free, after that it's 0,5$/GB.
+With Sentry, be aware that the first 5GB/month of logs are free, after that it's 0,5$/GB. GlitchTip, self-hosted, has no such fee: its retention is set by `GLITCHTIP_LOG_HOT_DAYS` and `GLITCHTIP_RETENTION_DAYS`, with older data archived to S3 (cold storage).
+
+To check that logs reach GlitchTip, run the dev Kestra flow `glitchtip-log-test` (see `docs/kestra_flows.md`).
 
 ## Mediatree - Import data
 Mediatree Documentation API : https://keywords.mediatree.fr/docs/
@@ -545,6 +547,23 @@ UPDATE stop_word set validated=false WHERE id = 'MY_ID';
 ```
 poetry version minor
 ```
+
+## Misinformation detection - `detect_misinformation/`
+Code migrated from the `climateguard` repository:
+- `detect_misinformation/jobs/`: the `label_misinformation` job (LLM misinformation labelling → Label Studio) and the `get_audio_video` job (Germany audio/video collector). See [detect_misinformation/jobs/README.md](detect_misinformation/jobs/README.md).
+- `detect_misinformation/experiments/`: fine-tuning and research experiments, not deployed. See [detect_misinformation/experiments/README.md](detect_misinformation/experiments/README.md).
+- `detect_misinformation/labelstudio/`: Label Studio labelling interfaces (XML) of the misinformation review projects. See [detect_misinformation/labelstudio/README.md](detect_misinformation/labelstudio/README.md).
+
+Their dependencies are optional Poetry groups of the root `pyproject.toml`, so they are not installed by a plain `poetry install`:
+
+| Group | Used by |
+|---|---|
+| `misinformation` | `label_misinformation` image |
+| `germany-audio-video-collector` | `get_audio_video` image |
+| `misinformation-dev` | experiments (`poetry install --with misinformation-dev`) |
+| `misinformation-dev-cuda` | experiments on GPU (unsloth, bitsandbytes) |
+
+The `label_misinformation` job keeps its own version (bump2version) and is built and pushed by `.github/workflows/label-misinformation.yml` (`dev` tag on pull requests, `<version>` and `latest` on main). `deploy-main.yml` ignores `detect_misinformation/**`.
 
 ## Materialized view - dbt
 We can define some slow queries to make them efficient with materialized views using [DBT](https://www.getdbt.com/), used via docker :

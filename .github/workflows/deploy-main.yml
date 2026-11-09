@@ -9,6 +9,8 @@ on:
       - 'rrs/**'
       - 'infrastructure/**'
       - '.github/workflows/rrs.yaml'
+      - 'detect_misinformation/**'
+      - '.github/workflows/label-misinformation.yml'
 
   # to be able to force deploy
   workflow_dispatch:

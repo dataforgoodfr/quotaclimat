@@ -81,38 +81,23 @@ l'agriculture, l'industrie, l'alimentation et la régulation sanitaire.
 """.strip(),
 
     "purchase_power": """
-Le thème couvre les débats publics portant sur l'argent des ménages français
-et sur les finances publiques considérées sous l'angle de ce qu'elles coûtent
-ou rapportent aux Français.
+Tout débat public sur l'argent en France : ce qu'il coûte de vivre, ce qu'il
+coûte de produire, ce que l'État prélève et dépense, et les choix économiques
+proposés pour changer cela.
 
-Il comprend quatre registres :
+Cela couvre le budget des ménages (revenus, prix, logement, santé, retraites,
+prestations), les charges et les aides des entreprises, les impôts et la
+question de qui doit les payer, les finances publiques (dépense, dette,
+déficit, notation, fraude), l'économie du pays (emploi, salaires, croissance,
+industrie, énergie, Europe), ainsi que les causes avancées, les
+responsabilités désignées et les programmes économiques de campagne.
 
-CE QUE LES MÉNAGES REÇOIVENT
-salaires, Smic, primes, pensions de retraite, allocations chômage,
-prestations sociales et minima sociaux.
-CE QUE LES MÉNAGES DÉPENSENT
-prix et inflation, alimentation, énergie et carburants, logement et loyers,
-santé et mutuelles, transports, assurances, crédits et frais bancaires.
-CE QUI EST PRÉLEVÉ
-impôts, taxes, TVA, cotisations sociales, fiscalité du patrimoine et des
-successions, fiscalité locale.
-CE QUI EST FAIT DE CET ARGENT
-dépense publique, dette et déficit, fonction publique et bureaucratie,
-fraude sociale et fiscale, compétitivité et commerce extérieur, et les
-modèles économiques invoqués dans le débat.
-Le thème inclut aussi bien les affirmations chiffrées que les récits et
-accusations qui les accompagnent (« on nous vole », « le travail ne paie
-plus », « l'État gaspille »), ainsi que la contestation des chiffres officiels
-et des institutions qui les produisent.
+Y figurent les chiffres comme les récits qui les accompagnent, la contestation
+des chiffres officiels et des institutions, les exemples étrangers invoqués
+comme argument, et les contre-récits autant que les récits dominants.
 
-Il inclut les contre-récits au même titre que les récits dominants.
-
-NE RELÈVENT PAS DU THÈME :
-– les emplois figurés du vocabulaire économique (inflation des normes,
-  gaspillage alimentaire, capitalisation boursière) ;
-– l'économie d'autres pays sans lien établi avec la France ;
-– la vie financière des entreprises sans effet énoncé sur les ménages ;
-– les termes du dictionnaire employés dans un tout autre sens
+Hors thème : le vocabulaire économique au figuré, l'économie d'un autre pays
+traitée pour elle-même, la vie d'une entreprise sans enjeu collectif.
 """.strip(),
 }
 

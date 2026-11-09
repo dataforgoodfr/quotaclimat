@@ -33,26 +33,10 @@ _SYSTEM_PROMPTS: dict[str, str] = {
     "purchase_power": (
         "You are an assistant helping editors to aggregate claims about purchasing power and "
         "household finances in French media, defined as follows:\n"
-        "Le thème couvre les débats publics portant sur l'argent des ménages français et sur les "
-        "finances publiques considérées sous l'angle de ce qu'elles coûtent ou rapportent aux "
-        "Français.\n"
-        "Il comprend quatre registres : ce que les ménages reçoivent (salaires, Smic, primes, "
-        "pensions de retraite, allocations chômage, prestations sociales et minima sociaux) ; ce "
-        "que les ménages dépensent (prix et inflation, alimentation, énergie et carburants, "
-        "logement et loyers, santé et mutuelles, transports, assurances, crédits et frais "
-        "bancaires) ; ce qui est prélevé (impôts, taxes, TVA, cotisations sociales, fiscalité du "
-        "patrimoine et des successions, fiscalité locale) ; ce qui est fait de cet argent "
-        "(dépense publique, dette et déficit, fonction publique et bureaucratie, fraude sociale et "
-        "fiscale, compétitivité et commerce extérieur, et les modèles économiques invoqués dans "
-        "le débat).\n"
-        "Le thème inclut aussi bien les affirmations chiffrées que les récits et accusations qui "
-        "les accompagnent (« on nous vole », « le travail ne paie plus », « l'État gaspille »), "
-        "ainsi que la contestation des chiffres officiels et des institutions qui les produisent. "
-        "Il inclut les contre-récits au même titre que les récits dominants.\n"
-        "Ne relèvent pas du thème : les emplois figurés du vocabulaire économique (inflation des "
-        "normes, gaspillage alimentaire, capitalisation boursière) ; l'économie d'autres pays sans "
-        "lien établi avec la France ; la vie financière des entreprises sans effet énoncé sur les "
-        "ménages ; les termes du dictionnaire employés dans un tout autre sens."
+        "Tout débat public sur l'argent en France : ce qu'il coûte de vivre, ce qu'il coûte de produire, ce que l'État prélève et dépense, et les choix économiques proposés pour changer cela.\n"
+        "Cela couvre le budget des ménages (revenus, prix, logement, santé, retraites, prestations), les charges et les aides des entreprises, les impôts et la question de qui doit les payer, les finances publiques (dépense, dette, déficit, notation, fraude), l'économie du pays (emploi, salaires, croissance, industrie, énergie, Europe), ainsi que les causes avancées, les responsabilités désignées et les programmes économiques de campagne.\n"
+        "Y figurent les chiffres comme les récits qui les accompagnent, la contestation des chiffres officiels et des institutions, les exemples étrangers invoqués comme argument, et les contre-récits autant que les récits dominants.\n"
+        "Hors thème : le vocabulaire économique au figuré, l'économie d'un autre pays traitée pour elle-même, la vie d'une entreprise sans enjeu collectif."
     ),
 }
 
@@ -60,7 +44,7 @@ _DOMAIN_LABELS: dict[str, str] = {
     "climate": "climate change",
     "insecurity": "immigration et insécurité liée à l'immigration",
     "environmental_health": "santé environnementale",
-    "purchase_power": "pouvoir d'achat et finances publiques",
+    "purchase_power": "pouvoir d'achat et économie",
 }
 
 _DOMAIN_EXAMPLES: dict[str, str] = {
@@ -144,11 +128,11 @@ _RELEVANCE_CRITERIA: dict[str, str] = {
         "santé sans lien explicite avec une exposition à une substance chimique polluante"
     ),
     "purchase_power": (
-        "l'argent des ménages français (revenus, prix, prélèvements) ou l'usage des finances "
-        "publiques sous l'angle de ce qu'elles coûtent ou rapportent aux Français en constitue "
-        "l'élément moteur, y compris la contestation des chiffres officiels — et pas seulement "
-        "un emploi figuré du vocabulaire économique, l'économie d'un autre pays sans lien avec la "
-        "France, ou la vie financière d'une entreprise sans effet énoncé sur les ménages"
+        "l'argent en France (coût de la vie, coût de production, prélèvements et dépenses de "
+        "l'État, choix économiques proposés), y compris la contestation des chiffres officiels, "
+        "en constitue l'élément moteur — et pas seulement un emploi figuré du vocabulaire "
+        "économique, l'économie d'un autre pays traitée pour elle-même, ou la vie d'une "
+        "entreprise sans enjeu collectif"
     ),
 }
 

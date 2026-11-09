@@ -1,0 +1,6 @@
+---
+windmill_service_dir: /opt/services/windmill
+# Pinned release (https://github.com/windmill-labs/windmill/releases, image tags have no "v" prefix).
+# Keep it recent: the row-level-security migration for databases without BYPASSRLS is needed on the managed Postgres.
+windmill_image: ghcr.io/windmill-labs/windmill:1.864.1
+windmill_worker_replicas: 2

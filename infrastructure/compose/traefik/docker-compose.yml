@@ -1,8 +1,15 @@
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "100m"
+    max-file: "3"
+
 services:
   traefik:
     image: traefik:v3.6
     container_name: traefik
     restart: unless-stopped
+    logging: *default-logging
     command:
       - --api.dashboard=true
       - --providers.docker=true

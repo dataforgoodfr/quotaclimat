@@ -1,0 +1,27 @@
+---
+- name: Create windmill directory
+  file:
+    path: "{{ windmill_service_dir }}"
+    state: directory
+    mode: "0755"
+
+# The compose file embeds the DB password, hence the restrictive mode.
+- name: Template windmill docker-compose
+  template:
+    src: "{{ playbook_dir }}/../compose/windmill/docker-compose.yml.j2"
+    dest: "{{ windmill_service_dir }}/docker-compose.yml"
+    mode: "0600"
+
+- name: Start windmill
+  community.docker.docker_compose_v2:
+    project_src: "{{ windmill_service_dir }}"
+    state: present
+    pull: always
+
+- name: Wait for Windmill to be healthy
+  shell: docker exec windmill-server curl -sf http://localhost:8000/api/version
+  register: windmill_health
+  retries: 30
+  delay: 5
+  until: windmill_health.rc == 0
+  changed_when: false

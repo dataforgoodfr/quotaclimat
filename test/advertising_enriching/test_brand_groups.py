@@ -1215,3 +1215,140 @@ def test_sheet_fill_empty_cells():
         {"range": "'Marques'!D4", "values": [["92"]]},
     ]}
     assert [column_letter(n) for n in (1, 26, 27, 52)] == ["A", "Z", "AA", "AZ"]
+
+
+# ---- uniformization of the rows of a company ----
+
+from quotaclimat.data_ingestion.advertising.s05_enrichment.e01_brand_groups.uniformize import (  # noqa: E402
+    uniformize_rows,
+    with_notes,
+)
+
+
+def _cells(changes):
+    return {c.index: {column: new for column, (_, new) in c.cells.items()} for c in changes}
+
+
+def test_uniformize_parent_and_shareholder_written_on_one_row():
+    """The ultimate parent and the majority shareholder written on one row of the company are written on the
+    others, with their identity; the spelling of the company does not matter."""
+    rows = [
+        {"marque": "Activia", "entreprise": "Danone", "siren": "552032534"},
+        {"marque": "Evian", "entreprise": "DANONE", "societe_mere_ultime": "Danone SA", "smu_statut": "vérifié",
+         "smu_pays": "FR", "smu_siren": "552 032 534", "smu_departement": "75"},
+        {"marque": "Volvic", "entreprise": "Danone", "actionnaire_maj_ultime": "Flottant", "amu_statut": "non vérifié"},
+        {"marque": "Free", "entreprise": "Free", "societe_mere_ultime": "Iliad"},
+    ]
+    changes = uniformize_rows(rows)
+    assert _cells(changes) == {
+        0: {"societe_mere_ultime": "Danone SA", "smu_statut": "vérifié", "smu_pays": "FR", "smu_siren": "552032534",
+            "smu_departement": "75", "actionnaire_maj_ultime": "Flottant", "amu_statut": "non vérifié"},
+        1: {"siren": "552032534", "actionnaire_maj_ultime": "Flottant",
+            "amu_statut": "non vérifié"},
+        2: {"siren": "552032534", "societe_mere_ultime": "Danone SA", "smu_statut": "vérifié", "smu_pays": "FR",
+            "smu_siren": "552032534", "smu_departement": "75"},
+    }
+    # the source lines in the note
+    assert changes[0].sources["societe_mere_ultime"] == 3
+    assert changes[0].sources["actionnaire_maj_ultime"] == 4
+
+
+def test_uniformize_highest_row_wins():
+    rows = [
+        {"marque": "Free", "entreprise": "Free", "societe_mere_ultime": "Iliad", "smu_statut": "non vérifié",
+         "smu_pays": "FR"},
+        # another parent with its identity: replaced, its identity cleared
+        {"marque": "Freebox", "entreprise": "Free", "societe_mere_ultime": "Iliad Holding", "smu_statut": "vérifié",
+         "smu_pays": "FR", "smu_siren": "999999999", "smu_departement": "75"},
+        # the same parent, verified: its identity and its status win
+        {"marque": "Free Mobile", "entreprise": "Free", "societe_mere_ultime": "ILIAD", "smu_statut": "vérifié",
+         "smu_siren": "342376332"},
+    ]
+    assert _cells(uniformize_rows(rows)) == {
+        0: {"smu_statut": "vérifié"},
+        1: {"societe_mere_ultime": "Iliad", "smu_siren": "", "smu_departement": ""},
+        2: {"societe_mere_ultime": "Iliad", "smu_pays": "FR", "smu_siren": ""},
+    }
+
+
+def test_uniformize_parent_to_check_only_when_no_other():
+    """A parent 'à vérifier' (not used by dbt) does not win over a lower one used by dbt."""
+    rows = [
+        {"marque": "Dacia", "entreprise": "Renault", "societe_mere_ultime": "Nissan", "smu_statut": "à vérifier"},
+        {"marque": "Alpine", "entreprise": "Renault", "societe_mere_ultime": "Renault SA", "smu_statut": ""},
+        {"marque": "Renault", "entreprise": "Renault"},
+    ]
+    assert _cells(uniformize_rows(rows)) == {
+        0: {"societe_mere_ultime": "Renault SA", "smu_statut": ""},
+        2: {"societe_mere_ultime": "Renault SA"},
+    }
+    only_to_check = [rows[0], rows[2]]
+    assert _cells(uniformize_rows(only_to_check)) == {
+        1: {"societe_mere_ultime": "Nissan", "smu_statut": "à vérifier"},
+    }
+
+
+def test_uniformize_nothing_to_change():
+    rows = [
+        {"marque": "Free", "entreprise": "Free", "siren": "421 938 861", "societe_mere_ultime": "Iliad"},
+        {"marque": "Freebox", "entreprise": "Free", "siren": "421938861", "societe_mere_ultime": "Iliad"},
+        # alone, or without company: left as they are
+        {"marque": "Acme", "entreprise": "Acme", "societe_mere_ultime": "Acme Group"},
+        {"marque": "Inconnue", "entreprise": ""},
+        {"marque": "Inconnue 2", "entreprise": ""},
+    ]
+    assert uniformize_rows(rows) == []
+
+
+def test_uniformize_note_in_commentaires():
+    rows = [
+        {"marque": "Free", "entreprise": "Free", "societe_mere_ultime": "Iliad"},
+        {"marque": "Freebox", "entreprise": "Free", "societe_mere_ultime": "Xavier Niel", "commentaires": "job 2026-10-02 : x"},
+    ]
+    [change] = with_notes(uniformize_rows(rows), rows, TODAY)
+    assert change.cells["commentaires"] == (
+        "job 2026-10-02 : x",
+        f"job 2026-10-02 : x ; job {TODAY.isoformat()} : valeurs de l'entreprise Free uniformisées sur la ligne la "
+        "plus haute qui les donne : societe_mere_ultime Iliad (ligne 2, avant : Xavier Niel)",
+    )
+
+
+def test_sheet_replace_cells():
+    session = FakeSheetsSession({"Marques": [
+        ["marque", "entreprise", "societe_mere_ultime", "commentaires"],
+        ["Free", "Free", "Iliad", ""],
+        ["Freebox", "Free", "Xavier Niel", "x"],
+        ["Moved", "Free", "", ""],
+        ["Edited", "Free", "Edited by a human", ""],
+    ]})
+    sheet = BrandInventorySheet(session, "SHEET_ID")
+    written = sheet.replace_cells("Marques", [
+        (1, "Freebox", {"societe_mere_ultime": ("Xavier Niel", "Iliad"), "commentaires": ("x", "x ; note"),
+                        "unknown": ("", "y")}),
+        # the row moved since it was read: not written
+        (2, "Free Mobile", {"societe_mere_ultime": ("", "Iliad")}),
+        # a human changed a cell in the meantime: the whole row is left as it is
+        (3, "Edited", {"societe_mere_ultime": ("", "Iliad"), "commentaires": ("", "note")}),
+    ])
+    assert written == 2
+    url, params, body = session.appended[0]
+    assert url.endswith("/values:batchUpdate")
+    assert body == {"valueInputOption": "RAW", "data": [
+        {"range": "'Marques'!C3", "values": [["Iliad"]]},
+        {"range": "'Marques'!D3", "values": [["x ; note"]]},
+    ]}
+
+
+def test_run_uniformize_writes_the_cells_and_the_note():
+    session = FakeSheetsSession({"Marques": [
+        ["marque", "entreprise", "societe_mere_ultime", "smu_statut", "commentaires"],
+        ["Free", "Free", "Iliad", "vérifié", ""],
+        ["Freebox", "Free", "", "", ""],
+    ]})
+    sheet = BrandInventorySheet(session, "SHEET_ID")
+    assert run_module.uniformize(sheet, dry_run=True, today=TODAY) == 0
+    assert session.appended == []
+    assert run_module.uniformize(sheet, dry_run=False, today=TODAY) == 3
+    _, _, body = session.appended[0]
+    assert [d["range"] for d in body["data"]] == ["'Marques'!C3", "'Marques'!D3", "'Marques'!E3"]
+    assert body["data"][2]["values"][0][0].startswith(f"job {TODAY.isoformat()} : valeurs de l'entreprise Free")

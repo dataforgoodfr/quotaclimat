@@ -1,7 +1,9 @@
 """Stage 5 (enriching), step 1: propose the company and the ultimate parent company of the broadcast
 brands missing from the tab Marques of the Inventaire_des_marques Google Sheet, and append them to it
-with e_statut 'non vérifié' and smu_statut 'à vérifier' (both empty when nothing was found). Then, with
-BRAND_GROUPS_COMPLETE_ROWS=true, fill the empty cells of the rows already in the tab (complete.py).
+with e_statut 'non vérifié' and smu_statut 'à vérifier' (both empty when nothing was found). Then, unless
+BRAND_GROUPS_UNIFORMIZE_ROWS=false, give the rows of the same company the same identity, ultimate parent
+company and ultimate majority shareholder, the highest row of the tab winning on a conflict (uniformize.py).
+Then, with BRAND_GROUPS_COMPLETE_ROWS=true, fill the empty cells of the rows already in the tab (complete.py).
 
 For each brand, by decreasing broadcast duration:
 1. INPI: trademarks in force named exactly like the brand, holder (company, SIREN) of the most
@@ -23,7 +25,8 @@ For each brand, by decreasing broadcast duration:
 Env: POSTGRES_*, INPI_USERNAME, INPI_PASSWORD, GOOGLE_SHEETS_EDITOR_SERVICE_ACCOUNT_JSON,
 EXTERNAL_SOURCES_DRIVE_FOLDER, BRAND_GROUPS_MAX_BRANDS (default 50), BRAND_GROUPS_DRY_RUN (true: write
 the rows to BRAND_GROUPS_DRY_RUN_CSV and print them in the logs, tab-separated, instead of the sheet; the
-completed cells only printed), BRAND_GROUPS_COMPLETE_ROWS (default false), BRAND_GROUPS_COMPLETE_MAX_REQUESTS
+completed and uniformized cells only printed), BRAND_GROUPS_UNIFORMIZE_ROWS (default true),
+BRAND_GROUPS_COMPLETE_ROWS (default false), BRAND_GROUPS_COMPLETE_MAX_REQUESTS
 (registry requests of the completion step, default 1000).
 """
 
@@ -59,6 +62,10 @@ from quotaclimat.data_ingestion.advertising.s05_enrichment.e01_brand_groups.prop
 from quotaclimat.data_ingestion.advertising.s05_enrichment.e01_brand_groups.sheet import (
     BRANDS_TAB,
     BrandInventorySheet,
+)
+from quotaclimat.data_ingestion.advertising.s05_enrichment.e01_brand_groups.uniformize import (
+    uniformize_rows,
+    with_notes,
 )
 import requests
 from sqlalchemy import text
@@ -284,9 +291,30 @@ def run() -> int:
         sheet.append(BRANDS_TAB, rows)
         logging.info("%s rows appended to the tab %s", len(rows), BRANDS_TAB)
 
+    if os.environ.get("BRAND_GROUPS_UNIFORMIZE_ROWS", "true").lower() == "true":
+        uniformize(sheet, dry_run, today)
     if os.environ.get("BRAND_GROUPS_COMPLETE_ROWS", "false").lower() == "true":
         complete(sheet, dry_run, int(os.environ.get("BRAND_GROUPS_COMPLETE_MAX_REQUESTS", "1000")), departments)
     return len(rows)
+
+
+def uniformize(sheet: BrandInventorySheet, dry_run: bool, today: date) -> int:
+    """Gives the rows of the same company the same values, the highest row winning (uniformize.py); dry run:
+    only in the logs."""
+    rows = sheet.read(BRANDS_TAB)
+    changes = with_notes(uniformize_rows(rows), rows, today)
+    logging.info(
+        "Uniformization: %s cells to overwrite in %s rows", sum(len(c.cells) - 1 for c in changes), len(changes)
+    )
+    if dry_run:
+        print("----- BRAND GROUPS UNIFORMIZATION (line, brand, {column: (before, after)}) -----")
+        for change in changes:
+            print(f"{change.index + 2}\t{change.brand}\t{change.cells}")
+        print("----- END OF BRAND GROUPS UNIFORMIZATION -----", flush=True)
+        return 0
+    written = sheet.replace_cells(BRANDS_TAB, [(c.index, c.brand, c.cells) for c in changes])
+    logging.info("Uniformization: %s cells written to the tab %s (commentaires included)", written, BRANDS_TAB)
+    return written
 
 
 def complete(sheet: BrandInventorySheet, dry_run: bool, max_requests: int, departments: Registries) -> int:

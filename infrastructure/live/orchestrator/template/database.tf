@@ -62,3 +62,12 @@ resource "scaleway_rdb_user" "windmill" {
   password    = var.postgres_password_windmill
   is_admin    = var.windmill_bootstrap
 }
+
+# CONNECT on Scaleway's default database `rdb`: the windmill user connects there to create its own database
+# (CREATE DATABASE needs a connection to an existing database) and to drop it on destroy.
+resource "scaleway_rdb_privilege" "windmill_rdb" {
+  instance_id   = data.scaleway_rdb_instance.shared.id
+  user_name     = scaleway_rdb_user.windmill.name
+  database_name = "rdb"
+  permission    = "readonly"
+}

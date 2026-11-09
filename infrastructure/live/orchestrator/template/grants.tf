@@ -30,6 +30,9 @@ resource "terraform_data" "windmill_database" {
     password = var.postgres_password_windmill
   }
 
+  # Destroyed before the privilege, so the destroy step can still connect to `rdb`
+  depends_on = [scaleway_rdb_privilege.windmill_rdb]
+
   # CREATE DATABASE has no IF NOT EXISTS and cannot run in a transaction or a DO block: psql generates it only when
   # the database is missing (\gexec), from Scaleway's default database `rdb`.
   provisioner "local-exec" {

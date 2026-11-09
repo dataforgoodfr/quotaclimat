@@ -31,8 +31,6 @@ services:
       - traefik.http.routers.windmill.entrypoints=websecure
       - traefik.http.routers.windmill.tls.certresolver=letsencrypt
       - traefik.http.services.windmill.loadbalancer.server.port=8000
-      # security-headers is defined on the traefik container
-      - traefik.http.routers.windmill.middlewares=security-headers@docker
     healthcheck:
       test: ["CMD-SHELL", "curl -sf http://localhost:8000/api/version || exit 1"]
       interval: 30s

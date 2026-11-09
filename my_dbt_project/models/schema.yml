@@ -546,12 +546,13 @@ models:
       - name: company_siren
         description: >
           SIREN of the company (column siren), 9 digits: spaces and dots removed, leading zeros put back when
-          the sheet read it as a number. NULL when empty, not a SIREN, or for a company registered abroad.
+          the sheet read it as a number. NULL when empty or not a SIREN; a company registered abroad can have
+          one when it is also registered in France (Stellantis N.V.).
           Passed through, whatever company_status.
       - name: company_head_office_department
         description: >
           Department of the head office of the company (column departement_siege_social), like 75, 01, 2A
-          or 971. NULL when empty or for a company registered abroad.
+          or 971. NULL when empty or for a company whose head office is abroad.
       - name: ultimate_parent
         description: Ultimate parent company as written in the tab (column societe_mere_ultime), NULL when empty.
       - name: ultimate_parent_status

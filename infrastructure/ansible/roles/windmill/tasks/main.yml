@@ -36,8 +36,14 @@
   until: windmill_health.rc == 0
   changed_when: false
 
+# API calls to the public URL: run from the machine running Ansible, without SSH or sudo
+# (one call per secret: through SSH + sudo, a single slow sudo prompt fails the run)
 - name: Sync the secrets
-  include_tasks: secrets.yml
+  include_tasks:
+    file: secrets.yml
+    apply:
+      delegate_to: localhost
+      become: false
 
 - name: Push the flows
   include_tasks: flows.yml

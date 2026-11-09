@@ -208,7 +208,16 @@ make tags=glitchtip ansible  # Redeploy GlitchTip only
 make tags=windmill ansible   # Redeploy Windmill only
 ```
 
-[Windmill](https://www.windmill.dev/docs/advanced/self_host) (Kestra alternative) runs as a server plus default and native workers (`compose/windmill/docker-compose.yml.j2`, role `windmill`), on its own `windmill` database on the managed Postgres. Traefik routes `WINDMILL_DOMAIN` to the server (port 8000) with automatic TLS. Set `WINDMILL_DOMAIN`, `WINDMILL_DB_USER`, `WINDMILL_DB_PASSWORD`, `WINDMILL_DB_NAME` in `.env.secrets` and `TF_VAR_postgres_password_windmill` for OpenTofu. The image is pinned with `windmill_image` (`ansible/roles/windmill/defaults/main.yml`): keep it recent, because the managed Postgres has no superuser, so `windmill_admin` is created without `BYPASSRLS` (`live/orchestrator/template/grants.tf`) and relies on Windmill's row-level-security migration. First login is `admin@windmill.dev` / `changeme`: change it right away.
+[Windmill](https://www.windmill.dev/docs/advanced/self_host) (Kestra alternative) runs as a server plus default and native workers (`compose/windmill/docker-compose.yml.j2`, role `windmill`), on its own `windmill` database on the managed Postgres. Traefik routes `WINDMILL_DOMAIN` to the server (port 8000) with automatic TLS. Set `WINDMILL_DOMAIN`, `WINDMILL_DB_USER`, `WINDMILL_DB_PASSWORD`, `WINDMILL_DB_NAME` in `.env.secrets` and `TF_VAR_postgres_password_windmill` (same value as `WINDMILL_DB_PASSWORD`) for OpenTofu. First login is `admin@windmill.dev` / `changeme`: change it right away.
+
+The `windmill` user creates and owns its own database (`live/orchestrator/template/grants.tf`, `terraform_data.windmill_database`): a database created by Scaleway's API would be owned by `_rdb_superadmin`, and nobody else could grant the Windmill roles `USAGE` on its `public` schema. The managed Postgres has no superuser, so `windmill_admin` is created without `BYPASSRLS` and relies on Windmill's row-level-security migration: keep the image (`windmill_image`, `ansible/roles/windmill/defaults/main.yml`) recent. Creating the database and roles needs `CREATEDB`/`CREATEROLE`, so `windmill` is a Scaleway admin only during the bootstrap:
+
+```bash
+TF_VAR_windmill_bootstrap=true make env=prod target=orchestrator tg-apply   # windmill is admin, creates its database and roles
+make env=prod target=orchestrator tg-apply                                  # removes admin; windmill stays owner of its database
+```
+
+Before removing Windmill, apply once with `TF_VAR_windmill_bootstrap=true`: the destroy step (`DROP DATABASE windmill`, `DROP ROLE windmill_admin, windmill_user`) needs `CREATEROLE` to drop the roles.
 
 GlitchTip stores files and archived events/logs (DuckDB cold storage) in S3. After `make env=prod target=orchestrator tg-apply`, copy the `glitchtip_s3_*` outputs into `GLITCHTIP_S3_ACCESS_KEY`, `GLITCHTIP_S3_SECRET_KEY` and `GLITCHTIP_S3_BUCKET` in `.env.secrets` (rendered by `compose/glitchtip/.env.s3.j2`). Invitation emails go through [Brevo](https://www.brevo.com) SMTP (`compose/glitchtip/.env.email.j2`, loaded after `.env`). Verify the `quotaclimat.org` domain in Brevo (DKIM/DMARC), create an SMTP key (SMTP & API), then set in `.env.secrets`: `BREVO_SMTP_LOGIN` (Brevo login email), `BREVO_SMTP_KEY`, and optionally `GLITCHTIP_FROM_EMAIL` (default `glitchtip@quotaclimat.org`), `BREVO_SMTP_HOST` (default `smtp-relay.brevo.com`), `BREVO_SMTP_PORT` (default `587`). Without `BREVO_SMTP_LOGIN`/`BREVO_SMTP_KEY`, emails are only printed in the container logs (`consolemail://`). Redeploy with `make tags=glitchtip ansible`. If sending fails, check the Brevo logs and try port 465 with `smtp+ssl` in the template.
 The managed Postgres sets `max_locks_per_transaction = 512` for GlitchTip (`live/barometre/template/database.tf`).
@@ -408,7 +417,8 @@ Resources marked *per country* are `for_each` over the `countries` input (addres
 | RDB user | `scaleway_rdb_user.glitchtip` | GlitchTip app DB user |
 | RDB database | `scaleway_rdb_database.glitchtip` | GlitchTip database |
 | RDB privilege | `scaleway_rdb_privilege.glitchtip` | Grants for `glitchtip` user |
-| RDB user / database / privilege | `scaleway_rdb_{user,database,privilege}.windmill` | Windmill database and its owner |
+| RDB user | `scaleway_rdb_user.windmill` | Windmill app DB user, Scaleway admin only while `TF_VAR_windmill_bootstrap=true` |
+| Terraform data | `terraform_data.windmill_database` | Creates the `windmill` database (owned by the `windmill` user) and the `windmill_admin`/`windmill_user` roles with `psql`; drops them on destroy |
 | IAM SSH key | `scaleway_iam_ssh_key.paul_gabriel` | SSH access to the baremetal server |
 | IAM SSH key | `scaleway_iam_ssh_key.gmguarino` | SSH access to the baremetal server |
 | Object bucket | `scaleway_object_bucket.glitchtip` | GlitchTip file storage and cold storage (`cold_storage/` prefix) |

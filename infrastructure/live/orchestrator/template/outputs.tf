@@ -39,8 +39,9 @@ output "glitchtip_s3_secret_key" {
   sensitive = true
 }
 
+# Created by the windmill user itself (grants.tf), not by a Scaleway resource
 output "windmill_db_name" {
-  value = scaleway_rdb_database.windmill.name
+  value = "windmill"
 }
 
 output "windmill_db_user" {

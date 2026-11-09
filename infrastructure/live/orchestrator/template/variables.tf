@@ -46,19 +46,15 @@ variable "postgres_password_glitchtip" {
   sensitive = true
 }
 
-variable "postgres_admin_user" {
-  type        = string
-  description = "Admin user of the shared managed PG instance, used to create the Windmill roles (grants.tf)."
-}
-
-variable "postgres_admin_password" {
-  type      = string
-  sensitive = true
-}
-
 variable "postgres_password_windmill" {
   type      = string
   sensitive = true
+}
+
+variable "windmill_bootstrap" {
+  type        = bool
+  default     = false
+  description = "Makes the windmill user a Scaleway admin (CREATEDB + CREATEROLE), to create its database and roles (grants.tf) or drop them on destroy. Set it for those applies only, then apply again without it."
 }
 
 variable "glitchtip_bucket_admin_user_ids" {

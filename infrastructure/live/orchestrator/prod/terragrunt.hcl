@@ -18,9 +18,9 @@ inputs = {
   postgres_password_glitchtip = get_env("TF_VAR_postgres_password_glitchtip")
   postgres_password_windmill  = get_env("TF_VAR_postgres_password_windmill")
 
-  # Admin of the shared instance, runs the Windmill role grants (template/grants.tf)
-  postgres_admin_user     = get_env("TF_VAR_postgres_admin_user")
-  postgres_admin_password = get_env("TF_VAR_postgres_admin_password")
+  # Makes the windmill user a Scaleway admin while it creates its database and roles (template/grants.tf).
+  # TF_VAR_windmill_bootstrap=true for the first apply and before a destroy only.
+  windmill_bootstrap = get_env("TF_VAR_windmill_bootstrap", "false") == "true"
 
   # IAM user IDs (JSON list) allowed to administer the GlitchTip bucket, e.g.
   # '["<user-id>"]'. Get yours with: scw iam api-key get <SCW_ACCESS_KEY> (user_id).

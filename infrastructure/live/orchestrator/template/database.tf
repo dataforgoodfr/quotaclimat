@@ -52,24 +52,13 @@ resource "scaleway_rdb_privilege" "glitchtip" {
 }
 
 # --- Windmill ---
-# Windmill's migrations create its own roles (windmill_admin, windmill_user), so the
-# owner user needs CREATEROLE-like rights on the managed instance.
+# Only the user: the windmill database is created and owned by this user itself (grants.tf), so that it owns the
+# `public` schema and can grant it to the Windmill roles. is_admin (CREATEDB + CREATEROLE) is only needed while
+# bootstrapping the database and roles, and before a destroy: set TF_VAR_windmill_bootstrap=true for those applies.
 
 resource "scaleway_rdb_user" "windmill" {
   instance_id = data.scaleway_rdb_instance.shared.id
   name        = "windmill"
   password    = var.postgres_password_windmill
-}
-
-resource "scaleway_rdb_database" "windmill" {
-  instance_id = data.scaleway_rdb_instance.shared.id
-  name        = "windmill"
-}
-
-resource "scaleway_rdb_privilege" "windmill" {
-  instance_id   = data.scaleway_rdb_instance.shared.id
-  user_name     = scaleway_rdb_user.windmill.name
-  database_name = scaleway_rdb_database.windmill.name
-  permission    = "all"
-  depends_on    = [scaleway_rdb_user.windmill, scaleway_rdb_database.windmill]
+  is_admin    = var.windmill_bootstrap
 }

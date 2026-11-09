@@ -5,7 +5,6 @@
 - Entrée de `thematic_jobs_config.yml` : 🔴 [à créer après l'étape 0]
 - Tables : `thematic_extracts.prix_carburant_articles_<pays>`, `thematic_extracts.prix_carburant_keywords_<pays>`
 - Collection Metabase : 🔴 [`03. Analyses thématiques/NN. Prix des carburants <Année>`, à créer]
-- Document de résultats (avant publication) : 🔴 [lien document Metabase à créer]
 
 ## Idées
 

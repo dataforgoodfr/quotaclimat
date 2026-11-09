@@ -6,7 +6,6 @@
 - Entrée de `thematic_jobs_config.yml` : `inondations` (mots-clés mis à jour le 28/10/2026 ; périodes au §1 ; job lancé)
 - Tables : `thematic_extracts.inondations_articles_fr`, `thematic_extracts.inondations_keywords_fr`
 - Collection Metabase : `03. Analyses thématiques/21. Inondations 2026` (id 469)
-- Document de résultats (avant publication) : 🔴 [lien document Metabase à créer]
 
 ## Angle
 

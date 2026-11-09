@@ -31,7 +31,7 @@ Pour nourrir l'angle, on regarde aussi ce que QuotaClimat a déjà publié sur l
 | 1. Extraction | Entrée de `thematic_jobs_config.yml` (mots-clés, périodes), tables thématiques générées, contrôles | `decisions.md` de l'analyse, §1 et §2 |
 | 2. Axes | Axes de la banque appliqués ou non exploités, axes spécifiques, termes, graphiques prévus | `decisions.md` de l'analyse, §3 |
 | 3. Requêtes | Questions Metabase sur les tables thématiques | Colonne « Question Metabase » du §3 |
-| 4. Résultats | Takeaways triés (publiable, à creuser, rien à signaler), encadré méthodologique | Document Metabase avant publication, `decisions.md` de l'analyse §4 après publication |
+| 4. Résultats | Takeaways triés (publiable, à creuser, rien à signaler), encadré méthodologique | `decisions.md` de l'analyse §4, après publication |
 
 **Étape 0, cadrage.** Elle précède l'entrée du YAML et se fait donc sur les tables sources (`public.keywords`, `public.factiva_articles`). Ses trois sous-étapes se valident une par une, comme les étapes : on ne propose pas la suivante (événements, courbe, périodes) tant que la précédente n'est pas validée par l'équipe.
 
@@ -46,7 +46,7 @@ Pour nourrir l'angle, on regarde aussi ce que QuotaClimat a déjà publié sur l
 
 La recherche donne les événements marquants, susceptibles d'être cités dans la publication ; les pics servent de tamis pour ce qu'elle a manqué. La liste fixe ensuite les périodes d'analyse et de comparaison (§3.2) déclarées dans le YAML.
 
-**Le repo est public** : aucun chiffre ni takeaway non publié n'y entre. Avant publication, les résultats vivent dans un document Metabase `Résultats - <Sujet> <Année>` de la collection de l'analyse. Le statut d'un axe reste « testé » jusqu'à la publication.
+**Le repo est public** : aucun chiffre ni takeaway non publié n'y entre. Le statut d'un axe reste « testé » jusqu'à la publication.
 
 **Conventions Metabase.** Collection `03. Analyses thématiques/NN. <Sujet> <Année>`. Préfixe `AV -` pour l'audiovisuel, `PE -` pour la presse. Après le préfixe, le code de l'axe ([§4.1](#41-catégories-et-codes)) : `AV - V1 - Volume`, `PE - A1 - Lien CC`. Une question qui regroupe tous les axes d'un maillon prend la lettre du maillon : `AV - A - Constat`, `AV - B - Causes`, `AV - C - Conséquences`, `AV - D - Solutions`. Les questions sur les tables thématiques prennent la période en variable Metabase `{{period}}` (texte, libellé « Period ») : `[[WHERE k.period = {{period}}]]`, sans valeur toutes les périodes. Dans Metabase, la variable s'affiche en liste déroulante alimentée par une question de la collection de l'analyse, à créer à chaque analyse : `<thematique> period filters`, qui fait `SELECT DISTINCT period FROM thematic_extracts.<thematique>_keywords_fr` (exemple : question 2435 pour les inondations). La liste suit ainsi les périodes réellement extraites, sans saisie à la main. Le connecteur ne sait pas brancher cette source : elle se choisit dans les réglages de la variable (liste déroulante, depuis une question, colonne `period`). Versions abandonnées préfixées `OLD-`. On ne modifie jamais une question d'une autre analyse : on la duplique. Dans le SQL, `<sujet>` (en-tête) et `<thematique>` (commentaires, noms de CTE et de colonnes) se remplacent par le thème : `Courbe journalière inondations`, `dictionnaire_inondations`, `nb_articles_inondations`. On n'emploie pas « noyau » dans les requêtes. L'extrait audiovisuel de 2 minutes s'y appelle `chunk`, comme la colonne `thematic_chunk`, et non segment (`nb_chunks_inondations`, CTE `chunks`). Une part en pourcentage (de 0 à 100) se nomme `pct_<mesure>` (`pct_a1_lien_cc`, `pct_articles_inondations`), un nombre `nb_<mesure>`. Toutes les questions sont versionnées dans Metabase, et leur SQL commence par un chapeau en commentaire : le média (audiovisuel ou presse écrite), le titre de la question, une description courte de ce qu'elle fait. Les modèles du §7 suivent ce format. Après publication, le SQL des questions utilisées est copié dans `<AAAA-MM>-<sujet>/queries/`.
 
@@ -369,7 +369,6 @@ Notre sujet est l'écologie. Une référence qui traite d'un autre sujet ne sert
 - Entrée de `thematic_jobs_config.yml` : `<thème>`
 - Tables : `thematic_extracts.<thème>_articles_<pays>`, `thematic_extracts.<thème>_keywords_<pays>`
 - Collection Metabase : `03. Analyses thématiques/NN. <Sujet> <Année>`
-- Document de résultats (avant publication) : <lien document Metabase>
 
 ## Angle
 

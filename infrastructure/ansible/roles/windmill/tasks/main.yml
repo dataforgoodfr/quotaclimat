@@ -5,6 +5,16 @@
     state: directory
     mode: "0755"
 
+# The workers start the flow containers on the host's Docker (f/shared/docker_run)
+- name: Get docker.sock group id on host
+  stat:
+    path: /var/run/docker.sock
+  register: docker_sock_stat
+
+- name: Set windmill docker group id fact
+  set_fact:
+    windmill_docker_gid: "{{ docker_sock_stat.stat.gid }}"
+
 # The compose file embeds the DB password, hence the restrictive mode.
 - name: Template windmill docker-compose
   template:
@@ -25,3 +35,9 @@
   delay: 5
   until: windmill_health.rc == 0
   changed_when: false
+
+- name: Sync the secrets
+  include_tasks: secrets.yml
+
+- name: Push the flows
+  include_tasks: flows.yml

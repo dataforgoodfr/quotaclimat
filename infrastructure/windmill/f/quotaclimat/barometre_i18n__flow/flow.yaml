@@ -1,0 +1,306 @@
+summary: quotaclimat/barometre-i18n
+description: |-
+  OME pipeline for international scope. For each country: ingest Mediatree data to S3,
+  detect keywords, then detect misinformation (label-misinformation image, run on the
+  orchestrator). The dbt subflow runs once at the end, after all countries.
+
+  Per-country credentials and endpoint (country bucket keys, Label Studio token and URL) are
+  read from the single JSON variable f/secrets/I18N_COUNTRY_SECRETS, keyed by country code. Other
+  per-country config is in the table of the loop's iterator (`i18n_loop`). To add a country: add its code to the
+  `countries` input (values and default), an entry in the iterator's table and a key in the secret.
+value:
+  modules:
+  - id: i18n_loop
+    summary: i18n loop
+    value:
+      type: forloopflow
+      iterator:
+        type: javascript
+        expr: |-
+          flow_input.countries.map((code) => ({ code, ...({
+            "bel": {
+              "name": "belgium",
+              "bucket": "safeguards-climate-belgium-prod",
+              "label_studio_project": 2,
+              "label_studio_project_id": 1
+            },
+            "bel-fla": {
+              "name": "belgium-flanders",
+              "bucket": "safeguards-climate-belgium-flanders-prod",
+              "label_studio_project": 1,
+              "label_studio_project_id": 1
+            },
+            "deu": {
+              "name": "germany",
+              "bucket": "safeguards-climate-germany-prod",
+              "label_studio_project": 1,
+              "label_studio_project_id": 1
+            },
+            "esp": {
+              "name": "spain",
+              "bucket": "safeguards-climate-spain-prod",
+              "label_studio_project": 1,
+              "label_studio_project_id": 1
+            },
+            "pol": {
+              "name": "poland",
+              "bucket": "safeguards-climate-poland-prod",
+              "label_studio_project": 1,
+              "label_studio_project_id": 1
+            }
+          })[code] }))
+      skip_failures: false
+      parallel: false
+      modules:
+      - id: ingest_data_to_s3
+        summary: ingest data to s3
+        value:
+          type: script
+          path: f/shared/docker_run
+          input_transforms:
+            image:
+              type: static
+              value: rg.fr-par.scw.cloud/namespace-barometre/quotaclimat_base:latest
+            entrypoint:
+              type: static
+              value:
+              - /bin/sh
+              - -c
+              - cd /app && python /app/quotaclimat/data_processing/mediatree/s3/api_to_s3.py
+            env:
+              type: javascript
+              expr: |-
+                ({
+                  "API_TO_S3_CONCURRENCY": 10,
+                  "API_DATA_OVERWRITE": flow_input.api_data_overwrite ? '1' : '',
+                  "BUCKET_NAME": "mediatree",
+                  "COUNTRY": flow_input.iter.value.code,
+                  "ENV": "prod",
+                  "KEYWORDS_URL": "https://keywords.mediatree.fr/api/subtitle/",
+                  "LOGLEVEL": "INFO",
+                  "MEDIATREE_AUTH_URL": "https://keywords.mediatree.fr/api/auth/token/",
+                  "MEDIATREE_USER": "quotaclimat",
+                  "MODIN_CPUS": 2,
+                  "MODIN_ENGINE": "python",
+                  "MODIN_MEMORY": 3000000000,
+                  "NUMBER_OF_PREVIOUS_DAYS": flow_input.days_back,
+                  "OMP_NUM_THREADS": 3,
+                  "PORT_HS": 5666,
+                  "START_DATE": Math.floor((flow_input.start_date ? Date.parse(flow_input.start_date) : Date.now()) / 1000),
+                  "SENTRY_LOGGING": "true",
+                  "SERVICE_NAME": "api-to-s3"
+                })
+            secret_env:
+              type: static
+              value:
+                BUCKET: f/secrets/SCW_ACCESS
+                BUCKET_SECRET: f/secrets/SCW_SECRET
+                MEDIATREE_PASSWORD: f/secrets/MEDIATREE_PASSWORD
+                SENTRY_DSN: f/secrets/SENTRY_DSN
+            registry:
+              type: static
+              value: rg.fr-par.scw.cloud/namespace-barometre
+            registry_password_secret:
+              type: static
+              value: f/secrets/SCW_SECRET
+            shm_size:
+              type: static
+              value: 6g
+            stdout_logs:
+              type: static
+              value: true
+        continue_on_error: true
+      - id: detect_keywords
+        summary: detect keywords
+        value:
+          type: script
+          path: f/shared/docker_run
+          input_transforms:
+            image:
+              type: static
+              value: rg.fr-par.scw.cloud/namespace-barometre/quotaclimat_base:latest
+            entrypoint:
+              type: static
+              value:
+              - /bin/sh
+              - -c
+              - cd /app && /app/entrypoints/detect_keywords.sh
+            env:
+              type: javascript
+              expr: |-
+                ({
+                  "BATCH_SIZE": 5000,
+                  "BUCKET_NAME": "mediatree",
+                  "COMPARE_DURATION": true,
+                  "COUNTRY": flow_input.iter.value.code,
+                  "DBT_PROFILES_DIR": "/app/my_dbt_project/dbt",
+                  "DBT_PROJECT_DIR": "/app/my_dbt_project",
+                  "ENV": "prod",
+                  "FILTER_DAYS_STOP_WORD": 3000,
+                  "HEALTHCHECK_SERVER": "0.0.0.0",
+                  "KEYWORDS_URL": "https://keywords.mediatree.fr/api/v2/subtitle/",
+                  "LOGLEVEL": "INFO",
+                  "MEDIATREE_AUTH_URL": "https://keywords.mediatree.fr/api/auth/token/",
+                  "MEDIATREE_USER": "quotaclimat",
+                  "MODIN_CPUS": 2,
+                  "MODIN_ENGINE": "ray",
+                  "MODIN_MEMORY": 3000000000,
+                  "NUMBER_OF_PREVIOUS_DAYS": flow_input.days_back,
+                  "POSTGRES_DB": "barometre",
+                  "POSTGRES_PORT": 22737,
+                  "RAY_COLOR_PREFIX": 1,
+                  "RAY_memory_monitor_refresh_ms": 0,
+                  "START_DATE": Math.floor((flow_input.start_date ? Date.parse(flow_input.start_date) : Date.now()) / 1000),
+                  "SENTRY_LOGGING": "true",
+                  "SERVICE_NAME": "detect-keywords"
+                })
+            secret_env:
+              type: static
+              value:
+                BUCKET: f/secrets/SCW_ACCESS
+                BUCKET_SECRET: f/secrets/SCW_SECRET
+                MEDIATREE_PASSWORD: f/secrets/MEDIATREE_PASSWORD
+                POSTGRES_USER: f/secrets/POSTGRES_USER
+                POSTGRES_HOST: f/secrets/POSTGRES_HOST
+                POSTGRES_PASSWORD: f/secrets/POSTGRES_PASSWORD
+                SENTRY_DSN: f/secrets/SENTRY_DSN
+            registry:
+              type: static
+              value: rg.fr-par.scw.cloud/namespace-barometre
+            registry_password_secret:
+              type: static
+              value: f/secrets/SCW_SECRET
+            shm_size:
+              type: static
+              value: 6g
+            stdout_logs:
+              type: static
+              value: false
+        continue_on_error: true
+      - id: detect_misinformation
+        summary: detect misinformation
+        value:
+          type: script
+          path: f/shared/docker_run
+          input_transforms:
+            image:
+              type: static
+              value: rg.fr-par.scw.cloud/misinformation/label-misinformation:latest
+            entrypoint:
+              type: static
+              value:
+              - /bin/sh
+              - -c
+              - cd /app && python /app/main.py
+            env:
+              type: javascript
+              expr: |-
+                ({
+                  "APP_NAME": `label-misinformation-${flow_input.iter.value.name}-prod`,
+                  "AWS_DEFAULT_REGION": "fr-par",
+                  "BUCKET_INPUT": "mediatree",
+                  "BUCKET_OUTPUT": flow_input.iter.value.bucket,
+                  "BUCKET_OUTPUT_FOLDER": "label-misinformation-input",
+                  "COUNTRY": flow_input.iter.value.name,
+                  "ENV": "production",
+                  "KEYWORDS_URL": "https://keywords.mediatree.fr/api/export/single",
+                  "LABEL_MISINFORMATION_OVERWRITE": flow_input.label_misinformation_overwrite ? '1' : '',
+                  "LABEL_STUDIO_PROJECT": flow_input.iter.value.label_studio_project,
+                  "LABEL_STUDIO_PROJECT_ID": flow_input.iter.value.label_studio_project_id,
+                  "LLM_PROVIDER": "mistral",
+                  "LOGLEVEL": "INFO",
+                  "MEDIATREE_AUTH_URL": "https://keywords.mediatree.fr/api/auth/token/",
+                  "MEDIATREE_USER": "quotaclimat",
+                  "MODEL_NAME": "mistral-small-2603",
+                  "MODIN_MEMORY": 3000000000,
+                  "NUMBER_OF_PREVIOUS_DAYS": flow_input.days_back + 1,
+                  "POSTGRES_DB": "barometre",
+                  "POSTGRES_PORT": 22737,
+                  "RAY_COLOR_PREFIX": 1,
+                  "DATE": (flow_input.start_date ? String(flow_input.start_date).slice(0, 10) : new Date().toISOString().slice(0, 10)),
+                  "SENTRY_LOGGING": "true",
+                  "SERVICE_NAME": "detect-misinformation"
+                })
+            secret_env:
+              type: javascript
+              expr: |-
+                ({
+                  "LABEL_STUDIO_URL": 'f/secrets/I18N_COUNTRY_SECRETS#' + flow_input.iter.value.code + '.label_studio_url',
+                  "API_LABEL_STUDIO_KEY": 'f/secrets/I18N_COUNTRY_SECRETS#' + flow_input.iter.value.code + '.label_studio_token',
+                  "BUCKET_ACCESS": 'f/secrets/I18N_COUNTRY_SECRETS#' + flow_input.iter.value.code + '.bucket_access',
+                  "BUCKET_SECRET": 'f/secrets/I18N_COUNTRY_SECRETS#' + flow_input.iter.value.code + '.bucket_secret',
+                  "MEDIATREE_PASSWORD": "f/secrets/MEDIATREE_PASSWORD",
+                  "MISTRAL_API_KEY": "f/secrets/MISTRAL_API_KEY",
+                  "OPENAI_API_KEY": "f/secrets/OPENAI_API_KEY",
+                  "POSTGRES_HOST": "f/secrets/POSTGRES_HOST",
+                  "POSTGRES_PASSWORD": "f/secrets/POSTGRES_PASSWORD_READ",
+                  "POSTGRES_USER": "f/secrets/POSTGRES_USER_READ",
+                  "SENTRY_DSN": "f/secrets/SENTRY_DSN"
+                })
+            registry:
+              type: static
+              value: rg.fr-par.scw.cloud/misinformation
+            registry_password_secret:
+              type: static
+              value: f/secrets/SCW_SECRET
+            shm_size:
+              type: static
+              value: 6g
+            stdout_logs:
+              type: static
+              value: false
+        continue_on_error: true
+  - id: dbt_run_transformations
+    summary: dbt run transformations
+    value:
+      type: flow
+      path: f/quotaclimat/dbt
+      input_transforms: {}
+schema:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  order:
+  - days_back
+  - start_date
+  - countries
+  - api_data_overwrite
+  - label_misinformation_overwrite
+  properties:
+    days_back:
+      type: integer
+      description: Days prior to the start date to process. Defaults to 1.
+      default: 1
+    start_date:
+      type: string
+      format: date
+      description: Reference date (YYYY-MM-DD) from which to count days back. Defaults to now.
+    countries:
+      type: array
+      items:
+        type: string
+        enum:
+        - bel
+        - bel-fla
+        - deu
+        - esp
+        - pol
+      description: Countries to process. Defaults to all; untick all but one to run a single country.
+      default:
+      - bel
+      - bel-fla
+      - deu
+      - esp
+      - pol
+    api_data_overwrite:
+      type: boolean
+      description: 'Set API_DATA_OVERWRITE=1: fetch from Mediatree again and overwrite channel/days already on S3.'
+      default: false
+    label_misinformation_overwrite:
+      type: boolean
+      description: 'Set LABEL_MISINFORMATION_OVERWRITE=1: reprocess extracts not yet included in Label Studio.'
+      default: false
+  required:
+  - days_back
+  - countries
+  - api_data_overwrite
+  - label_misinformation_overwrite

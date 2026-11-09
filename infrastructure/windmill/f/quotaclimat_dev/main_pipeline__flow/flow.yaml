@@ -1,0 +1,156 @@
+summary: quotaclimat-dev/main-pipeline
+description: |-
+  Dev main pipeline. Runs the extended perimeter pipeline, processes it in RRS
+  (without clustering), runs the dev OME `barometre` pipeline, then the RRS
+  flows on the barometre source. Each step is a subflow that must succeed
+  before the next one starts. No schedule in dev: run it manually.
+value:
+  modules:
+  - id: alert_test
+    summary: alert test
+    value:
+      type: flow
+      path: f/quotaclimat_dev/alert_test
+      input_transforms: {}
+    skip_if:
+      expr: '!(flow_input.test_alert)'
+  - id: extended_perimeter
+    summary: extended perimeter
+    value:
+      type: flow
+      path: f/rrs_dev/extended_perimeter
+      input_transforms:
+        days_back:
+          type: javascript
+          expr: flow_input.days_back
+        start_date:
+          type: javascript
+          expr: '(flow_input.start_date ? String(flow_input.start_date).slice(0, 10) : new Date().toISOString().slice(0, 10))'
+    skip_if:
+      expr: '!(flow_input.with_rrs)'
+  - id: rrs_climate_extended
+    summary: rrs climate extended
+    value:
+      type: flow
+      path: f/rrs_dev/rrs_climate
+      input_transforms:
+        source:
+          type: static
+          value: extended
+        run_clustering:
+          type: static
+          value: false
+    skip_if:
+      expr: '!(flow_input.with_rrs)'
+  - id: rrs_insecurity_extended
+    summary: rrs insecurity extended
+    value:
+      type: flow
+      path: f/rrs_dev/rrs_insecurity
+      input_transforms:
+        source:
+          type: static
+          value: extended
+        run_clustering:
+          type: static
+          value: false
+    skip_if:
+      expr: '!(flow_input.with_rrs)'
+  - id: rrs_pollution_extended
+    summary: rrs pollution extended
+    value:
+      type: flow
+      path: f/rrs_dev/rrs_pollution
+      input_transforms:
+        source:
+          type: static
+          value: extended
+        run_detect_misinformation_rag:
+          type: static
+          value: false
+        run_clustering:
+          type: static
+          value: false
+    skip_if:
+      expr: '!(flow_input.with_rrs)'
+  - id: barometre
+    summary: barometre
+    value:
+      type: flow
+      path: f/quotaclimat_dev/barometre
+      input_transforms:
+        days_back:
+          type: javascript
+          expr: flow_input.days_back
+        start_date:
+          type: javascript
+          expr: '(flow_input.start_date ? String(flow_input.start_date).slice(0, 10) : new Date().toISOString().slice(0, 10))'
+  - id: rrs_climate
+    summary: rrs climate
+    value:
+      type: flow
+      path: f/rrs_dev/rrs_climate
+      input_transforms: {}
+    skip_if:
+      expr: '!(flow_input.with_rrs)'
+  - id: rrs_insecurity
+    summary: rrs insecurity
+    value:
+      type: flow
+      path: f/rrs_dev/rrs_insecurity
+      input_transforms: {}
+    skip_if:
+      expr: '!(flow_input.with_rrs)'
+  - id: rrs_pollution
+    summary: rrs pollution
+    value:
+      type: flow
+      path: f/rrs_dev/rrs_pollution
+      input_transforms: {}
+    skip_if:
+      expr: '!(flow_input.with_rrs)'
+  failure_module:
+    id: failure
+    summary: Post the failure to Mattermost
+    value:
+      type: script
+      path: f/shared/mattermost_alert
+      input_transforms:
+        flow_name:
+          type: static
+          value: f/quotaclimat_dev/main_pipeline
+        error:
+          type: javascript
+          expr: error
+        webhooks_secret:
+          type: static
+          value: f/secrets/MATTERMOST_WEBHOOK_URLS
+schema:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  order:
+  - test_alert
+  - with_rrs
+  - days_back
+  - start_date
+  properties:
+    test_alert:
+      type: boolean
+      description: When true, the first step is a subflow that always fails, to test the Mattermost alert. Nothing else runs.
+      default: false
+    with_rrs:
+      type: boolean
+      description: When false, skips the extended perimeter and all RRS jobs and only runs barometre.
+      default: true
+    days_back:
+      type: integer
+      description: Days prior to the start date to process. Defaults to 1.
+      default: 1
+    start_date:
+      type: string
+      format: date
+      description: Reference date (YYYY-MM-DD) from which to count days back. Defaults to now.
+  required:
+  - test_alert
+  - with_rrs
+  - days_back

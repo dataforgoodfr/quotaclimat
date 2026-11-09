@@ -2,5 +2,17 @@
 windmill_service_dir: /opt/services/windmill
 # Pinned release (https://github.com/windmill-labs/windmill/releases, image tags have no "v" prefix).
 # Keep it recent: the row-level-security migration for databases without BYPASSRLS is needed on the managed Postgres.
-windmill_image: ghcr.io/windmill-labs/windmill:1.864.1
+windmill_version: 1.864.1
+windmill_image: "ghcr.io/windmill-labs/windmill:{{ windmill_version }}"
 windmill_worker_replicas: 2
+# Maximum duration of a job (6 h): the longest pipeline steps run for hours
+windmill_timeout_secs: 21600
+
+# Flows and secrets (tasks/flows.yml, tasks/secrets.yml)
+# The CLI is pinned to the server version
+windmill_cli_version: "{{ windmill_version }}"
+windmill_cli_image: node:22-alpine
+windmill_workspace_dir: "{{ windmill_service_dir }}/workspace"
+windmill_api_url: "https://{{ windmill_domain }}/api/w/{{ windmill_workspace }}"
+windmill_secrets_folder: secrets
+windmill_secret_description: Synced from .env.secrets by Ansible (make tags=windmill ansible), do not edit by hand

@@ -312,22 +312,18 @@ def load_test_external_sources():
     agency_sheets = {
         "agence_entreprise": [
             [
-                "entreprise", "marque", "agence_media", "groupe_agence", "fiabilite", "perimetre_geo",
-                "perimetre_media", "autres_agences", "agence_precedente", "date_info", "verifie_le", "note", "source_1",
+                "entreprise", "agence_media", "groupe_agence", "fiabilite", "perimetre_geo", "perimetre_media",
+                "autres_agences", "agence_precedente", "date_info", "verifie_le", "note", "source_1",
             ],
-            # company row of the company of "Pytest Škoda"
+            # company of "Pytest Škoda" (Pytest Volkswagen), spelled differently: compared with name_key
             [
-                "Pytest Volkswagen", "", "Pytest Agence Groupe", "WPP", "confirmee", "Europe", "", "", "", "2025-11",
+                "PYTEST VOLKSWAGEN", "Pytest Agence Groupe", "WPP", "confirmee", "Europe", "", "", "", "2025-11",
                 "2026-11-04", "Pytest note", "https://example.org/pytest-vw",
             ],
-            # brand row of "Pytest Škoda", other spellings of the company and brand: wins over the company row
-            ["PYTEST VOLKSWAGEN", "pytest-škoda", "Pytest Agence Škoda", "Havas", "probable", "France", "", "", "", "2026"],
-            # brand without ads: no row in ad_brand_agencies
-            ["Pytest Volkswagen", "Pytest Audi", "Pytest Agence Audi", "Omnicom", "indice"],
-            # company row only: used by its brand "Pytest Biscuits"
-            ["Pytest Biscuits Company", "", "Pytest Agence Biscuits", "Dentsu", "indice", "", "partiel"],
-            # company without ads
-            ["Pytest Absente", "", "", "", "inconnue"],
+            # company of "Pytest Biscuits"
+            ["Pytest Biscuits Company", "Pytest Agence Biscuits", "Dentsu", "indice", "", "partiel"],
+            # company without ads: no row in ad_brand_agencies
+            ["Pytest Absente", "", "", "inconnue"],
         ],
         "_readme": [["note"], ["for humans only"]],
     }
@@ -1127,35 +1123,32 @@ def test_publicites_brand_companies(db_connection):
 
 
 def test_ad_brand_agencies(db_connection):
-    """The brand row of the agency sheet wins over the company row, the company row is used otherwise; names
-    compared with name_key, brands without ads left out."""
+    """Each brand takes the agency of its company in the agency sheet, companies compared with name_key, companies
+    without ads left out."""
     with db_connection.cursor() as cur:
         cur.execute("""
-            SELECT brand_name, brand_company, agency_level, agency, agency_group, reliability, geographic_scope,
-                media_scope, info_date
+            SELECT brand_name, brand_company, agency, agency_group, reliability, geographic_scope, media_scope,
+                info_date
             FROM advertising.ad_brand_agencies
             WHERE brand_company LIKE 'Pytest%'
         """)
         # sorted in Python: the order of ORDER BY depends on the database collation (CI: en_US.utf8)
         rows = sorted(cur.fetchall())
     assert rows == [
-        ("PYTEST SKODA", "Pytest Volkswagen", "marque", "Pytest Agence Škoda", "Havas", "probable", "France", None, "2026"),
-        (
-            "Pytest Biscuits", "Pytest Biscuits Company", "entreprise", "Pytest Agence Biscuits", "Dentsu", "indice",
-            None, "partiel", None,
-        ),
+        ("PYTEST SKODA", "Pytest Volkswagen", "Pytest Agence Groupe", "WPP", "confirmee", "Europe", None, "2025-11"),
+        ("Pytest Biscuits", "Pytest Biscuits Company", "Pytest Agence Biscuits", "Dentsu", "indice", None, "partiel", None),
     ]
 
 
 def test_pub_annonceur_emission_jour_agency(db_connection):
-    """The agency of the brand (ad_brand_agencies) is passed through, NULL for the brands without agency."""
+    """The agency of the company of the brand (ad_brand_agencies) is passed through, NULL for the brands without agency."""
     with db_connection.cursor() as cur:
         cur.execute("""
-            SELECT DISTINCT marque, agence_media, groupe_agence, fiabilite_agence
+            SELECT DISTINCT marque, agence_media, groupe_agence, fiabilite_agence, perimetre_media_agence
             FROM advertising.pub_annonceur_emission_jour
             WHERE channel_name IN ('bfmtv', 'france2')
         """)
-        assert cur.fetchall() == [("PYTEST SKODA", "Pytest Agence Škoda", "Havas", "probable")]
+        assert cur.fetchall() == [("PYTEST SKODA", "Pytest Agence Groupe", "WPP", "confirmee", None)]
 
 
 def test_ad_brands_siren_and_department(db_connection):

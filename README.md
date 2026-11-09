@@ -552,6 +552,7 @@ poetry version minor
 Code migrated from the `climateguard` repository:
 - `detect_misinformation/jobs/`: the `label_misinformation` job (LLM misinformation labelling → Label Studio) and the `get_audio_video` job (Germany audio/video collector). See [detect_misinformation/jobs/README.md](detect_misinformation/jobs/README.md).
 - `detect_misinformation/experiments/`: fine-tuning and research experiments, not deployed. See [detect_misinformation/experiments/README.md](detect_misinformation/experiments/README.md).
+- `detect_misinformation/labelstudio/`: Label Studio labelling interfaces (XML) of the misinformation review projects. See [detect_misinformation/labelstudio/README.md](detect_misinformation/labelstudio/README.md).
 
 Their dependencies are optional Poetry groups of the root `pyproject.toml`, so they are not installed by a plain `poetry install`:
 

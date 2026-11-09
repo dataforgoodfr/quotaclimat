@@ -61,11 +61,24 @@ inputs:
     type: DATE
     required: false
     description: "Reference date (YYYY-MM-DD) from which to count days back. Defaults to now."
+  - id: countries
+    type: MULTISELECT
+    values: ["bel", "bel-fla", "deu", "esp", "pol"]
+    defaults: ["bel", "bel-fla", "deu", "esp", "pol"]
+    description: "Countries to process. Defaults to all; untick all but one to run a single country."
+  - id: api_data_overwrite
+    type: BOOL
+    defaults: false
+    description: "Set API_DATA_OVERWRITE=1: fetch from Mediatree again and overwrite channel/days already on S3."
+  - id: label_misinformation_overwrite
+    type: BOOL
+    defaults: false
+    description: "Set LABEL_MISINFORMATION_OVERWRITE=1: reprocess extracts not yet included in Label Studio."
 
 tasks:
   - id: i18n_loop
     type: io.kestra.plugin.core.flow.ForEach
-    values: ["bel", "bel-fla", "deu", "esp", "pol"]
+    values: "{{ inputs.countries }}"
     concurrencyLimit: 1
     tasks:
       - id: ingest_data_to_s3
@@ -84,6 +97,8 @@ tasks:
         shmSize: 6gb
         env:
           API_TO_S3_CONCURRENCY: 10
+          # The job tests bool(env), so the variable must be empty (not "0") when off.
+          API_DATA_OVERWRITE: "{{ inputs.api_data_overwrite ? '1' : '' }}"
           BUCKET_NAME: mediatree
           COUNTRY: "{{ taskrun.value }}"
           ENV: prod
@@ -177,6 +192,7 @@ tasks:
           COUNTRY: "{{ vars.countries[taskrun.value].name }}"
           ENV: production
           KEYWORDS_URL: https://keywords.mediatree.fr/api/export/single
+          LABEL_MISINFORMATION_OVERWRITE: "{{ inputs.label_misinformation_overwrite ? '1' : '' }}"
           LABEL_STUDIO_PROJECT: "{{ vars.countries[taskrun.value].label_studio_project }}"
           LABEL_STUDIO_PROJECT_ID: "{{ vars.countries[taskrun.value].label_studio_project_id }}"
           LLM_PROVIDER: mistral

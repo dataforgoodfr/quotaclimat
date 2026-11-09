@@ -170,8 +170,8 @@ tasks:
       - -c
       - cd /app && /app/entrypoints/dbt.sh
     env:
-      # full rebuild of the incremental models of models/dashboards and models/homepage on every run, as before
-      # they became incremental (entrypoints/dbt.sh): this small database has no weekly full rebuild
+      # full rebuild of the daily layer (models/daily) on every run: this small database has no weekly full
+      # rebuild (entrypoints/dbt.sh)
       DBT_FULL_REFRESH: "true"
       DBT_ENV: prod
       DBT_PROFILES_DIR: /app/my_dbt_project/dbt

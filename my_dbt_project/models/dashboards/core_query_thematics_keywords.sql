@@ -1,14 +1,10 @@
-{# incremental: recomputes the recent weeks only, see macros/recompute_window.sql #}
 {{ config(
     materialized='incremental',
-    incremental_strategy='delete+insert',
-    pre_hook="{{ recompute_window_delete('week', 'week') }}",
-    unique_key=['week'],
+    unique_key=['week','channel_title'],
     on_schema_change='append_new_columns'
   )
 }}
 
-{{ recompute_window_begin() }}
 -- Core Query Thematics Keywords makes only sense when looking for keywords,theme, and category together (otherwise duplicates
 -- as a keyword inside keyword_with_timestamp is present 4 times, if the keyword has 4 themes)
 
@@ -92,7 +88,6 @@ keyword_occurrences AS (
   WHERE
     LOWER(kw ->> 'theme') NOT LIKE '%indirect%'
     AND k.country = 'france'
-    AND {{ recompute_window_condition('k.start', 'week') }}
 )
 SELECT
   ko.channel_title,
@@ -150,4 +145,3 @@ GROUP BY
   wpd.weekly_duration_minutes
 ORDER BY
   ko.channel_title, ko.week, ko.crise_type
-{{ recompute_window_end('week', 'week') }}

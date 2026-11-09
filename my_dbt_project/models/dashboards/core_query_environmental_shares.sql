@@ -1,13 +1,9 @@
-{# incremental: recomputes the recent weeks only, see macros/recompute_window.sql #}
 {{ config(
     materialized='incremental'
-    ,incremental_strategy='delete+insert'
-    ,pre_hook="{{ recompute_window_delete('start', 'week') }}"
-    ,unique_key=['start']
+    ,unique_key=['start','"Program Metadata - Channel Name__channel_title"']
   )
 }}
 
-{{ recompute_window_begin() }}
 SELECT
   DATE_TRUNC('week', CAST("source"."start" AS timestamp)) AS "start",
   "source"."Program Metadata - Channel Name__channel_title" AS "Program Metadata - Channel Name__channel_title",
@@ -259,7 +255,6 @@ FROM
             )
           )
           WHERE "public"."keywords"."country" = 'france'
-            AND {{ recompute_window_condition('"public"."keywords"."start"', 'week') }}
       ) AS "source"
    
 GROUP BY
@@ -294,4 +289,3 @@ ORDER BY
   "source"."Program Metadata - Channel Name__public" ASC,
   "source"."Program Metadata - Channel Name__infocontinue" ASC,
   "source"."Program Metadata - Channel Name__radio" ASC
-{{ recompute_window_end('"start"', 'week') }}

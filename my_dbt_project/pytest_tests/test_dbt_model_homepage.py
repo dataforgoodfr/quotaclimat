@@ -407,75 +407,37 @@ def test_core_query_environmental_shares_values_i8n(db_connection):
         # expected = (datetime.datetime(2025, 1, 27, 0, 0), 'TF1', Decimal('0.1333'),Decimal('0.1111'),Decimal('0.0074'),Decimal('0.0000'),Decimal('0.0074'),Decimal('0.0000'),Decimal('0.0963'),Decimal('0.0667'),Decimal('0.0667'),Decimal('0.0000'),Decimal('0.0000'),Decimal('0.0000'),Decimal('0.0593'),Decimal('0.0593'),Decimal('0.0222'), "france")
         assert row == expected, f"Unexpected values: {row}"
 
-INCREMENTAL_MODELS = [
-    "core_query_environmental_shares",
-    "core_query_environmental_shares_be",
-    "core_query_environmental_shares_i8n",
-    "core_query_thematics_keywords",
-    "core_query_thematics_keywords_be",
-    "core_query_thematics_keywords_i8n",
-    "thematic_query_ocean",
-    "homepage_environment_by_media_by_month",
-]
 
-
-def rounded_rows(cur, table):
-    """Sorted rows of a table, floats rounded: their sums change in the last digits with the order of the rows."""
+def double_run_differences(cur):
     cur.execute(
         """
-        SELECT string_agg(
-            CASE WHEN data_type IN ('double precision', 'real', 'numeric')
-                 THEN 'round(' || quote_ident(column_name) || '::numeric, 9)'
-                 ELSE quote_ident(column_name) END,
-            ', ' ORDER BY ordinal_position)
-        FROM information_schema.columns
-        WHERE table_schema = 'public' AND table_name = %s
-        """,
-        (table,),
+        SELECT old_table, old_rows, new_rows, only_in_old, only_in_new
+        FROM public.double_run_comparison
+        WHERE only_in_old > 0 OR only_in_new > 0 OR old_rows <> new_rows
+        """
     )
-    columns = cur.fetchone()[0]
-    cur.execute(f"SELECT {columns} FROM public.{table}")
-    return sorted(cur.fetchall(), key=repr)
+    return cur.fetchall()
 
 
-def test_incremental_run_matches_full_refresh(db_connection):
-    """The models of models/dashboards and models/homepage only recompute their recent periods
-    (macros/recompute_window.sql). On unchanged data, an incremental run over a window that covers the fixtures
-    (2025-02-01) gives back the tables of a full rebuild, deletes the rows of the window that no longer exist and
-    keeps the older periods. It also runs on tables that already carry their select grants (dbt compares them with
-    the configured ones in an incremental run only, macros/show_grants_quoted.sql)."""
-    select = [arg for model in INCREMENTAL_MODELS for arg in ("--select", model)]
+def test_daily_layer_matches_dashboards(db_connection):
+    """models/daily (one row per day, incremental by day, macros/daily_window.sql) rebuilds the tables of
+    models/dashboards and models/homepage from its days. double_run_comparison compares each pair: on the fixtures,
+    after a full build of both, then after an incremental run of the daily layer over a window that covers the
+    fixtures (2025-02-01), the tables are identical. The incremental run also runs on tables that already carry their
+    select grants (dbt compares them with the configured ones in an incremental run only,
+    macros/show_grants_quoted.sql)."""
     # ends the read transaction of the previous tests: its locks would block dbt replacing the tables
     db_connection.commit()
-    run_dbt_command(["run", *select, "--full-refresh"])
+    run_dbt_command(["run", "--select", "path:models/dashboards", "--select", "path:models/homepage", "--full-refresh"])
+    run_dbt_command(["run", "--select", "path:models/daily", "--full-refresh"])
     with db_connection.cursor() as cur:
-        full = {model: rounded_rows(cur, model) for model in INCREMENTAL_MODELS}
-        # a period of the window that no longer exists in the sources, and an older one
-        cur.execute(
-            """
-            INSERT INTO public.core_query_environmental_shares ("start", "Program Metadata - Channel Name__channel_title")
-            VALUES ('2025-01-27', 'gone in the window'), ('2024-01-01', 'before the window')
-            """
-        )
+        cur.execute("SELECT count(*), sum(old_rows) FROM public.double_run_comparison")
+        nb_tables, nb_rows = cur.fetchone()
+        assert nb_tables == 8 and nb_rows > 0
+        assert double_run_differences(cur) == [], "full build of the daily layer"
     db_connection.commit()
 
-    try:
-        # window from Monday 2025-01-20: the fixtures are on 2025-02-01
-        run_dbt_command(["run", *select, "--vars", "{recompute_since: '2025-01-21'}"])
-        with db_connection.cursor() as cur:
-            cur.execute(
-                """
-                SELECT "Program Metadata - Channel Name__channel_title" FROM public.core_query_environmental_shares
-                WHERE "Program Metadata - Channel Name__channel_title" IN ('gone in the window', 'before the window')
-                """
-            )
-            assert cur.fetchall() == [("before the window",)], "the window is deleted, the older periods are kept"
-            cur.execute("""DELETE FROM public.core_query_environmental_shares WHERE "start" = '2024-01-01'""")
-            for model in INCREMENTAL_MODELS:
-                assert rounded_rows(cur, model) == full[model], f"{model}: incremental run != full refresh"
-    finally:
-        db_connection.rollback()
-        with db_connection.cursor() as cur:
-            cur.execute("""DELETE FROM public.core_query_environmental_shares WHERE "start" = '2024-01-01'""")
-        db_connection.commit()
-    assert sum(len(rows) for rows in full.values()) > 0
+    run_dbt_command(["run", "--select", "path:models/daily", "--vars", "{recompute_since: '2025-01-21'}"])
+    with db_connection.cursor() as cur:
+        assert double_run_differences(cur) == [], "incremental run of the daily layer"
+    db_connection.commit()

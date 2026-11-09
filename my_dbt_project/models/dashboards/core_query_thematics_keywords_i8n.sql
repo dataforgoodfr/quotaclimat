@@ -1,15 +1,13 @@
-{# incremental: recomputes the recent weeks only, see macros/recompute_window.sql #}
-{# the key is the week alone: an incremental run recomputes every channel and country of the weeks of the window #}
+{# country is part of the key because several countries share a channel title (e.g. "RTL").
+   Not needed while the whole result is rebuilt on every run, but it keeps one country's rows
+   from being deleted if a run ever rebuilds only part of the data (e.g. with is_incremental()). #}
 {{ config(
     materialized='incremental',
-    incremental_strategy='delete+insert',
-    pre_hook="{{ recompute_window_delete('week', 'week') }}",
-    unique_key=['week'],
+    unique_key=['week','channel_title','country'],
     on_schema_change='append_new_columns'
   )
 }}
 
-{{ recompute_window_begin() }}
 
 WITH program_durations AS (
   SELECT
@@ -67,10 +65,9 @@ weekly_program_durations AS (
 		DATE_TRUNC('week', tm.start::timestamp)::date as week,
 		SUM(tm.duration_minutes) weekly_duration_minutes
 	from time_monitored tm 
-	where (tm.country='belgium' 
+	where tm.country='belgium' 
     or tm.channel_name='zdf' 
-    or tm.channel_name='daserste')
-    and {{ recompute_window_condition('tm.start', 'week') }}
+    or tm.channel_name='daserste'
 	group by
 		channel_title,
 		tm.country,
@@ -115,7 +112,6 @@ keyword_occurrences AS (
   , json_array_elements(k.keywords_with_timestamp::json) AS kw
   WHERE
     LOWER(kw ->> 'theme') NOT LIKE '%indirect%'
-    AND {{ recompute_window_condition('k.start', 'week') }}
 )
 SELECT
   ko.channel_title,
@@ -175,4 +171,3 @@ GROUP BY
   wpd.weekly_duration_minutes
 ORDER BY
   ko.channel_title, ko.week, ko.crise_type
-{{ recompute_window_end('week', 'week') }}

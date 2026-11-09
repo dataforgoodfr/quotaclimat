@@ -1,14 +1,12 @@
-{# incremental: recomputes the recent weeks only, see macros/recompute_window.sql.
-   The key is the week alone: an incremental run recomputes every channel and country of the weeks of the window. #}
+{# country is part of the key because several countries share a channel title (e.g. "RTL").
+   Not needed while the whole result is rebuilt on every run, but it keeps one country's rows
+   from being deleted if a run ever rebuilds only part of the data (e.g. with is_incremental()). #}
 {{ config(
     materialized='incremental'
-    ,incremental_strategy='delete+insert'
-    ,pre_hook="{{ recompute_window_delete('start', 'week') }}"
-    ,unique_key=['start']
+    ,unique_key=['start','channel_title','country']
   )
 }}
 
-{{ recompute_window_begin() }}
 SELECT
   DATE_TRUNC('week', CAST("source"."start" AS timestamp)) AS "start",
   "source"."channel_name" AS "channel_name",
@@ -204,8 +202,6 @@ FROM
             ON "public"."keywords"."channel_name" = "time_monitored"."channel_name"
             AND "public"."keywords"."country" = "time_monitored"."country"
             AND DATE("public"."keywords"."start") = DATE("time_monitored"."start")
-        WHERE {{ recompute_window_condition('"public"."keywords"."start"', 'week') }}
-          AND {{ recompute_window_condition('"time_monitored"."start"', 'week') }}
       ) AS "source"
    
 GROUP BY
@@ -223,4 +219,3 @@ GROUP BY
 ORDER BY
   DATE_TRUNC('week', CAST("source"."start" AS timestamp)) ASC,
   "source"."channel_name" ASC
-{{ recompute_window_end('"start"', 'week') }}

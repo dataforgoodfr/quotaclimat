@@ -1,10 +1,5 @@
-{# incremental: recomputes the segments of the recent weeks only, see macros/recompute_window.sql.
-   One row per keywords segment (key id): no period to complete, so no recompute_window_begin/end; the pre-hook
-   deletes the segments of the window, which are inserted again if they still match. #}
 {{ config(
     materialized='incremental'
-    ,incremental_strategy='delete+insert'
-    ,pre_hook="{{ recompute_window_delete('start', 'week') }}"
     ,unique_key=['id']
   )
 }}
@@ -19,7 +14,6 @@ with clean_keywords AS (
         "public"."keywords"
 	 WHERE
         "public"."keywords"."start" >= '2025-01-01'
-		AND {{ recompute_window_condition('"public"."keywords"."start"', 'week') }}
 		AND "public"."keywords"."number_of_keywords" > 0
 		AND "public"."keywords"."country" = 'france'
 		AND "public"."keywords"."channel_title" <> 'C8'
@@ -118,7 +112,6 @@ FROM
 INNER JOIN distinct_kw ON distinct_kw.distinct_id = "public"."keywords".id
 WHERE
   "public"."keywords"."start" >= '2025-01-01'
-  AND {{ recompute_window_condition('"public"."keywords"."start"', 'week') }}
   AND "public"."keywords"."number_of_keywords" > 0
   AND "public"."keywords"."country" = 'france'
   AND "public"."keywords"."channel_title" <> 'C8'

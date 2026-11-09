@@ -24,7 +24,7 @@ inputs:
   - id: full_refresh
     type: BOOLEAN
     defaults: false
-    description: "When true, dbt rebuilds the whole history of the incremental models of models/dashboards and models/homepage (after a change of their code, of the program grid or of the dictionary). Default: their recent weeks only."
+    description: "When true, dbt rebuilds the whole history of the daily layer models/daily (after a change of its code, of the program grid or of the dictionary). Default: its recent days only."
 
 tasks:
   - id: ingest_data_to_s3
@@ -169,7 +169,7 @@ tasks:
     wait: true
     transmitFailed: true
     inputs:
-      # the incremental dbt models recompute at least the imported period
+      # the daily layer of dbt recomputes at least the imported period
       start_date: "{{ (inputs.start_date ?? now()) | date('yyyy-MM-dd') }}"
       days_back: "{{ inputs.days_back }}"
       full_refresh: "{{ inputs.full_refresh }}"

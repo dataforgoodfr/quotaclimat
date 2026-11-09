@@ -1,8 +1,15 @@
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "100m"
+    max-file: "3"
+
 services:
   kestra:
     image: kestra/kestra:v1.3
     container_name: kestra
     restart: unless-stopped
+    logging: *default-logging
     command: server standalone
     environment:
       KESTRA_CONFIGURATION: |
@@ -87,6 +94,7 @@ services:
     image: willfarrell/autoheal:latest
     container_name: autoheal
     restart: always
+    logging: *default-logging
     environment:
       AUTOHEAL_CONTAINER_LABEL: autoheal
       AUTOHEAL_INTERVAL: 30

@@ -1,6 +1,11 @@
 x-windmill-common: &windmill-common
   image: {{ windmill_image }}
   restart: unless-stopped
+  logging:
+    driver: json-file
+    options:
+      max-size: "100m"
+      max-file: "3"
   security_opt:
     - no-new-privileges:true
 

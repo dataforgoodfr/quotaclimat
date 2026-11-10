@@ -24,9 +24,10 @@ Flow names are the Kestra ids with `_` instead of `-` (`rrs/rrs-pollution` → `
 `make tags=windmill ansible` (role `ansible/roles/windmill`) deploys everything, after starting Windmill:
 
 1. **Secrets** (`tasks/secrets.yml`): every entry of `kestra_secrets` and `kestra_secrets_dev` (`ansible/playbook.yml`, read from `.env.secrets`) is written as the secret variable `f/secrets/<NAME>`, through the Windmill API. A variable is written only when it is missing or its value changed. Entries left empty in `.env.secrets` are skipped and listed ("Empty, skipped: ...").
-2. **Flows and scripts** (`tasks/flows.yml`): `infrastructure/windmill/` is copied to the server and pushed with the Windmill CLI (`wmill sync push`, version pinned to the server's), run in a `node` container on the `windmill-internal` network.
+2. **SMTP** (`tasks/smtp.yml`): the instance's invitation emails use the Brevo account of GlitchTip, with `WINDMILL_FROM_EMAIL` as sender (see `infrastructure/Readme.md`, "Orchestrator deployment").
+3. **Flows and scripts** (`tasks/flows.yml`): `infrastructure/windmill/` is copied to the server and pushed with the Windmill CLI (`wmill sync push`, version pinned to the server's), run in a `node` container on the `windmill-internal` network.
 
-Both need `WINDMILL_TOKEN` (a token of an admin of the workspace: account settings → Tokens) and `WINDMILL_WORKSPACE` (the workspace **id**, e.g. `quotaclimat`, not its display name) in `.env.secrets`. The workspace is created once by hand in the UI.
+They need `WINDMILL_TOKEN` (a token of a **superadmin**, since SMTP is an instance setting: account settings → Tokens) and `WINDMILL_WORKSPACE` (the workspace **id**, e.g. `quotaclimat`, not its display name) in `.env.secrets`. The workspace is created once by hand in the UI.
 
 `wmill sync push` makes the workspace match the repository, **deletions included**, but only in the folders listed in `infrastructure/windmill/wmill.yaml` (`includes`). Variables, resources and schedules are left out of the sync. So:
 

@@ -224,7 +224,7 @@ class CoverReport:
             f"-{_minutes_of(MARGIN_BEFORE)}/+{_minutes_of(MARGIN_AFTER)} min)"
         )
         if not self.shows:
-            return f"{header}\n  No show in program_metadata.json for this channel and week"
+            return f"{header}\n  No show in the program grid for this channel and week"
 
         lines = [
             header,

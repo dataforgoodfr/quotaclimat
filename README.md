@@ -225,7 +225,7 @@ Before running the detection, you can check which 2-minutes files of a week are 
 COVER_CHECK_ONLY=true START_DATE=2026-10-12 poetry run python quotaclimat/data_ingestion/advertising/s01_detection/run.py
 ```
 - `START_DATE` is the Monday of the week (at least 7 days ago). `COVER_CHECK_CHANNELS=tf1,france2` limits the check to some channels.
-- The expected files are the shows of `postgres/program_metadata.json` whose program grid is valid that week, with margins of 15 minutes before and after (`PROGRAM_MARGIN_BEFORE_MINUTES`, `PROGRAM_MARGIN_AFTER_MINUTES`), rounded up to Mediatree's even minutes.
+- The expected files are the shows of the program grid (see "Program Metadata table") whose grid is valid that week, with margins of 15 minutes before and after (`PROGRAM_MARGIN_BEFORE_MINUTES`, `PROGRAM_MARGIN_AFTER_MINUTES`), rounded up to Mediatree's even minutes.
 - The report gives a table per channel (missing time, shows entirely missing, partly missing, or complete but with missing margins), then for each channel the shows not fully received and the missing time slots, grouped by time of day (a slot missing every day is written once, `every day`).
 
 The same summary is written in the text report of a normal detection run.
@@ -442,24 +442,15 @@ To evolve the media perimeter, we use `program_grid_start` and `program_grid_end
 
 The France grid follows the perimeter Mediatree records for us (contract annex). The times are those of the shows, without the 15 minutes margins Mediatree adds before and after each block (see "Check what is missing in Mediatree's bucket" above).
 
-To calculate the right total duration for each channel, after updating a `channel_program.py` you need to execute this command to update `postgres/program_metadata.json` 
-```
-poetry run python3 transform_program.py
-```
-The SQL queries are based on this file that generate the Program Metadata table.
+`quotaclimat/data_processing/mediatree/program_metadata.py` builds the grid from these files (one entry per weekday, with its duration and an id), and `create_tables()` (`postgres/schemas/models.py`) writes it into the Program Metadata table at each import: there is no file to regenerate after updating a `channel_program.py`. The SQL queries and the advertising detection read this grid.
 
 Program data will not be updated to avoid lock concurrent issues when using `UPDATE=true` for keywords logic. Note: The default case will update them.
-
-**With the docker-entrypoint.sh this command is done automatically, so for production uses, you will not have to run this command.**
 
 ### Extended perimeter (Droit à l'info)
 For the "Droit à l'info" scope, we track an extended set of France programs (`tf1`, `france2`, `fr3-idf`, `rtl`, `france5`, `tmc`, `lcp`) on top of the regular France perimeter, defined in `quotaclimat/data_processing/mediatree/i8n/extended_france/`. This uses the country code `ext-fra` (`EXTENDED_FRANCE` in `country.py`), which shares the `french` language and subtitle format with `fra`/`bel` - subtitle matching in `detect_keywords.py` is routed by `country.language == "french"`, not by a per-country code allowlist, so extended perimeter automatically reuses the same French subtitle matching logic.
 
 The `EXTENDED_PERIMETER` env variable (`"true"`/`"false"`, default `"false"`) toggles extended perimeter behaviour across the pipeline:
-* `transform_program.py`: also includes the extended perimeter programs in `postgres/program_metadata.json`.
-  ```
-  EXTENDED_PERIMETER=true poetry run python3 transform_program.py
-  ```
+* `quotaclimat/data_processing/mediatree/program_metadata.py`: also includes the extended perimeter programs in the Program Metadata table.
 * `quotaclimat/data_ingestion/labelstudio/ingest_labelstudio.py`: uses `db_config_extended_perimeter` (`quotaclimat/data_ingestion/labelstudio/configs.py`) instead of the regular `db_config`, to only ingest the extended perimeter's Label Studio project into the aggregate tables.
 * `my_dbt_project/dbt_project.yml`: the `analytics`/`dashboards` model grants only select to the `rrs-read` user matching `DBT_ENV` (`rrs-read-dev` or `rrs-read-prod`) instead of the regular grant list, since the extended-perimeter database has no `climateguard-reader-user`.
 

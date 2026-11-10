@@ -17,7 +17,7 @@ Interactive version: [`diagrams/data_tiers.html`](diagrams/data_tiers.html). Eve
 | Source | Loaded by | Lands in |
 |---|---|---|
 | Mediatree (S3 transcripts, API) | `entrypoints/mediatree_import.sh`, `quotaclimat/data_processing/mediatree/api_import.py` | `keywords`, `stop_word`, `time_monitored` |
-| `program_metadata.json` (git) | `transform_program.py` | `program_metadata`, `channel_metadata` |
+| Program grids `quotaclimat/data_processing/mediatree/i8n/<country>/channel_program.py` and `postgres/channel_metadata.json` (git) | `create_tables()` in `postgres/schemas/models.py` (grid built by `quotaclimat/data_processing/mediatree/program_metadata.py`) | `program_metadata`, `channel_metadata` |
 | Label Studio (6 databases, one project per country, see `quotaclimat/data_ingestion/labelstudio/configs.py`) | `ingest_labelstudio.py`, first step of `entrypoints/dbt.sh` | `labelstudio_task_aggregate`, `labelstudio_task_completion_aggregate` |
 | Google Sheets (brands, sectors, programmes) | `quotaclimat/data_ingestion/external_sources/download_external_sources.py` then `dbt seed` | `ref_*` seeds (`advertising` schema) |
 | Versioned CSVs (misinformation theme keywords, Belgian references) | `dbt seed` | `mesinfo_theme_mots_cles` and other seeds of `seeds/themes` |

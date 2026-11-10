@@ -7,14 +7,9 @@ from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 
 from quotaclimat.data_ingestion.advertising.s01_detection.tools.program import (
-    Show,
-    get_channel_program,
-)
+    Show, get_channel_program)
 from quotaclimat.data_ingestion.advertising.tools.mediatree.bucket_mediatree import (
-    get_s3_filesystem,
-    list_channels,
-    list_days_parts,
-)
+    get_s3_filesystem, list_channels, list_days_parts)
 from quotaclimat.data_ingestion.advertising.tools.segments import Segment
 
 logger = logging.getLogger(__name__)
@@ -265,6 +260,39 @@ def _week_start_date(start_date: str) -> datetime:
     return week_start_date
 
 
+def _shows_of_week(
+    channel: str, week_start_date: datetime
+) -> list[tuple[Show, datetime, datetime, list[Part]]]:
+    """Shows of program_metadata.json airing that week, with their Paris start and end
+    and the 2-minutes parts mediatree records for them (margins included)."""
+    shows = []
+    for show in get_channel_program(channel, week_start_date):
+        start, end = show.for_week(week_start_date)
+        shows.append(
+            (
+                show,
+                start,
+                end,
+                _parts_between(start - MARGIN_BEFORE, end + MARGIN_AFTER),
+            )
+        )
+    shows.sort(key=lambda s: s[1])
+    return shows
+
+
+def expected_parts_for_week(channel: str, start_date: str) -> set[Part]:
+    """UTC (start, end) of every 2-minutes file the program expects for the week of
+    `start_date` (a Monday, Paris time): the shows of program_metadata.json whose grid is
+    valid that week, with their margins. Files of the bucket outside this set are not
+    analysed."""
+    week_start_date = _week_start_date(start_date)
+    return {
+        part
+        for _, _, _, parts in _shows_of_week(channel, week_start_date)
+        for part in parts
+    }
+
+
 def compute_cover(
     segments: list[Segment],
     start_date: str,  # Start of the analyzed week, format iso 2026-12-31
@@ -278,20 +306,16 @@ def compute_cover(
         for s in segments
     }
 
-    shows = []
-    for show in get_channel_program(channel, week_start_date):
-        start, end = show.for_week(week_start_date)
-        expected = _parts_between(start - MARGIN_BEFORE, end + MARGIN_AFTER)
-        shows.append(
-            ShowCover(
-                show=show,
-                start_date=start,
-                end_date=end,
-                expected_parts=expected,
-                missing_parts=[part for part in expected if part not in actual],
-            )
+    shows = [
+        ShowCover(
+            show=show,
+            start_date=start,
+            end_date=end,
+            expected_parts=expected,
+            missing_parts=[part for part in expected if part not in actual],
         )
-    shows.sort(key=lambda s: s.start_date)
+        for show, start, end, expected in _shows_of_week(channel, week_start_date)
+    ]
 
     expected = {part for show in shows for part in show.expected_parts}
     # Files of the previous or next week downloaded with the same UTC days are not unexpected

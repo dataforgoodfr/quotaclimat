@@ -15,4 +15,6 @@ windmill_cli_image: node:22-alpine
 windmill_workspace_dir: "{{ windmill_service_dir }}/workspace"
 windmill_api_url: "https://{{ windmill_domain }}/api/w/{{ windmill_workspace }}"
 windmill_secrets_folder: secrets
+# true rewrites the SMTP settings even when only the password changed (tasks/smtp.yml)
+windmill_smtp_force: "{{ lookup('env', 'WINDMILL_SMTP_FORCE') | default('false', true) }}"
 windmill_secret_description: Synced from .env.secrets by Ansible (make tags=windmill ansible), do not edit by hand

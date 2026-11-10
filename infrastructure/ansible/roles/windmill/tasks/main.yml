@@ -45,5 +45,13 @@
       delegate_to: localhost
       become: false
 
+- name: Configure the instance SMTP (Brevo)
+  include_tasks:
+    file: smtp.yml
+    apply:
+      delegate_to: localhost
+      become: false
+  when: brevo_smtp_login | length > 0 and brevo_smtp_key | length > 0
+
 - name: Push the flows
   include_tasks: flows.yml

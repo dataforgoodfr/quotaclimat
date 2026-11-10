@@ -43,9 +43,11 @@
     windmill_db_user: "{{ lookup('env', 'WINDMILL_DB_USER') }}"
     windmill_db_password: "{{ lookup('env', 'WINDMILL_DB_PASSWORD') }}"
     windmill_db_name: "{{ lookup('env', 'WINDMILL_DB_NAME') }}"
-    # API token of an admin of the workspace, used to push the secrets and flows
+    # API token of a superadmin, used to push the secrets, the flows and the instance SMTP settings
     windmill_token: "{{ lookup('env', 'WINDMILL_TOKEN') }}"
     windmill_workspace: "{{ lookup('env', 'WINDMILL_WORKSPACE') }}"
+    # Windmill email (instance SMTP, same BREVO_SMTP_* credentials as GlitchTip); skipped when they are empty
+    windmill_from_email: "{{ lookup('env', 'WINDMILL_FROM_EMAIL') | default('windmill@quotaclimat.org', true) }}"
 
     # Managed Postgres
     postgres_host: "{{ lookup('env', 'POSTGRES_HOST') }}"

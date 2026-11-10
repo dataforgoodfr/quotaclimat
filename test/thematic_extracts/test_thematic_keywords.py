@@ -204,7 +204,7 @@ def _scenario():
 
 def test_add_adjacent_plaintexts_day_one_row_per_thematic_chunk_with_neighbours():
     """Verify that only the thematic chunk is kept as a row (S3 chunks are not rows any more),
-    with the S3 chunk 2 min before (t3) as prev and 2 min after (t2) as next.
+    with the S3 chunk 2 min before (t3) as prev and 2 min after (t2) as next, and their starts.
     t4 is 3 min away from core, t5 is on another channel: neither is used."""
     out = _extract(*_scenario())
 
@@ -214,6 +214,8 @@ def test_add_adjacent_plaintexts_day_one_row_per_thematic_chunk_with_neighbours(
     assert row["plaintext_normalized"] == "core"
     assert row["plaintext_normalized_prev"] == "t3"
     assert row["plaintext_normalized_next"] == "t2"
+    assert row["start_prev"] == T0 - 2 * MIN
+    assert row["start_next"] == T0 + 2 * MIN
 
 
 def test_add_adjacent_plaintexts_day_output_columns_and_timezone():
@@ -226,8 +228,9 @@ def test_add_adjacent_plaintexts_day_output_columns_and_timezone():
     assert set(out.columns) == {
         "id", "channel_name", "channel_title", "start", "keywords_found", "themes",
         "plaintext_normalized", "plaintext_normalized_prev", "plaintext_normalized_next",
+        "start_prev", "start_next",
     }
-    assert len(out.columns) == 9
+    assert len(out.columns) == 11
     assert list(out["channel_title"]) == ["TF1 (test)"]
 
     def to_utc(df):
@@ -240,8 +243,10 @@ def test_add_adjacent_plaintexts_day_neighbour_choice():
     - two S3 chunks on the same side within gap: the closest is kept (09:59, not 09:57:30)
     - a neighbour exactly at gap (2 min 30 s) is kept
     - a neighbour that is itself a thematic chunk is filled, with its S3 plaintext
-    - no S3 chunk within gap on a side: None
-    - plaintexts are normalized (accents, apostrophes, uppercase)."""
+    - no S3 chunk within gap on a side: None, with no start
+    - plaintexts are normalized (accents, apostrophes, uppercase)
+    - start_prev / start_next are the starts of the chosen neighbours: the neighbour of b that is
+      the thematic chunk a has the start of a, which is how a chunk is counted once."""
     kw = _kw_df([
         ("a", "tf1", T0, "core a"),
         ("b", "tf1", T0 + 2 * MIN, "core b"),
@@ -259,10 +264,30 @@ def test_add_adjacent_plaintexts_day_neighbour_choice():
     assert out.loc["a", "plaintext_normalized_next"] == "core b"
     assert out.loc["b", "plaintext_normalized_prev"] == "core a"
     assert out.loc["b", "plaintext_normalized_next"] == "l ete after b"
+    assert out.loc["a", "start_prev"] == T0 - MIN
+    assert out.loc["a", "start_next"] == T0 + 2 * MIN
+    assert out.loc["b", "start_prev"] == T0
+    assert out.loc["b", "start_next"] == T0 + timedelta(minutes=4, seconds=30)
 
     out = _extract(_kw_df([("c", "tf1", T0, "core c")]), _s3_df([("tf1", T0, "core c")]))
     assert out.iloc[0]["plaintext_normalized_prev"] is None
     assert out.iloc[0]["plaintext_normalized_next"] is None
+    assert pd.isna(out.iloc[0]["start_prev"])
+    assert pd.isna(out.iloc[0]["start_next"])
+
+
+def test_add_adjacent_plaintexts_day_shared_neighbour_has_one_start():
+    """Verify that a non thematic chunk between two thematic chunks (a at 10:00, n at 10:02, b at 10:04)
+    is the next of a and the previous of b with the same start: counting the distinct
+    (channel, start) of the rows and their neighbours counts n once (3 chunks, not 4)."""
+    kw = _kw_df([("a", "tf1", T0, "core a"), ("b", "tf1", T0 + 4 * MIN, "core b")])
+    s3 = _s3_df([("tf1", T0, "core a"), ("tf1", T0 + 2 * MIN, "n"), ("tf1", T0 + 4 * MIN, "core b")])
+    out = _extract(kw, s3).set_index("id")
+
+    assert out.loc["a", "plaintext_normalized_next"] == out.loc["b", "plaintext_normalized_prev"] == "n"
+    assert out.loc["a", "start_next"] == out.loc["b", "start_prev"] == T0 + 2 * MIN
+    starts = set(out["start"]) | set(out["start_prev"].dropna()) | set(out["start_next"].dropna())
+    assert len(starts) == 3
 
 
 def test_add_adjacent_plaintexts_day_counts_core_missing_from_s3(caplog):
@@ -339,6 +364,11 @@ def test_run_ingests_every_period_into_one_table(env):
         f"FROM {env.table} ORDER BY start"
     ).fetchall() == [("kw_1", "core 1", "l ete", "neighbour 1"),
                      ("kw_3", "core 3", None, "neighbour 3")]
+    # neighbour starts ingested as TIMESTAMPTZ, NULL without neighbour
+    assert env.con.execute(
+        f"SELECT id, strftime(start_prev AT TIME ZONE '{PARIS}', '%H:%M'), "
+        f"strftime(start_next AT TIME ZONE '{PARIS}', '%H:%M') FROM {env.table} ORDER BY start"
+    ).fetchall() == [("kw_1", "09:58", "10:02"), ("kw_3", None, "10:02")]
 
 
 def test_run_counts_core_missing_from_s3_in_check(env, caplog):

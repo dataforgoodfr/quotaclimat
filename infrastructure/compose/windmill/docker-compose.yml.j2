@@ -13,6 +13,20 @@ x-windmill-env: &windmill-env
   DATABASE_URL: "postgres://{{ windmill_db_user }}:{{ windmill_db_password | urlencode }}@{{ postgres_host }}:{{ postgres_port }}/{{ windmill_db_name }}"
   BASE_URL: "https://{{ windmill_domain }}"
   RUST_LOG: info
+  # Maximum duration of a job, in seconds: the pipeline steps run for hours
+  TIMEOUT: "{{ windmill_timeout_secs }}"
+
+# Workers that run f/shared/docker_run: it starts the pipeline containers on the
+# host's Docker, like Kestra's docker.Run (same trust level: a job controls the host's Docker)
+x-windmill-docker-worker: &windmill-docker-worker
+  group_add:
+    - "{{ windmill_docker_gid }}"
+  networks:
+    - windmill-internal
+  volumes:
+    - /var/run/docker.sock:/var/run/docker.sock
+    - windmill-worker-dependency-cache:/tmp/windmill/cache
+    - windmill-worker-logs:/tmp/windmill/logs
 
 services:
   windmill-server:
@@ -39,7 +53,7 @@ services:
       start_period: 60s
 
   windmill-worker:
-    <<: *windmill-common
+    <<: [*windmill-common, *windmill-docker-worker]
     environment:
       <<: *windmill-env
       MODE: worker
@@ -50,11 +64,23 @@ services:
         limits:
           cpus: "1"
           memory: 2048M
-    networks:
-      - windmill-internal
-    volumes:
-      - windmill-worker-dependency-cache:/tmp/windmill/cache
-      - windmill-worker-logs:/tmp/windmill/logs
+
+  # Only worker serving the "dbt" tag (steps of f/quotaclimat/dbt): one worker, so two
+  # dbt runs queue instead of overlapping (Kestra's concurrency limit 1, Enterprise-only in Windmill)
+  windmill-worker-dbt:
+    <<: [*windmill-common, *windmill-docker-worker]
+    container_name: windmill-worker-dbt
+    environment:
+      <<: *windmill-env
+      MODE: worker
+      WORKER_GROUP: dbt
+      WORKER_TAGS: dbt
+      NUM_WORKERS: 1
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 1024M
 
   windmill-worker-native:
     <<: *windmill-common
@@ -83,3 +109,5 @@ networks:
   traefik-public:
     external: true
   windmill-internal:
+    # Fixed name: the CLI container that pushes the flows joins it (ansible/roles/windmill/tasks/flows.yml)
+    name: windmill-internal

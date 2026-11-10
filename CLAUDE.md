@@ -166,6 +166,7 @@ Each README below is the authoritative source for its area — read it instead o
 | `detect_misinformation/labelstudio/README.md` | Label Studio interfaces (XML) of the misinformation review projects (all countries / France), how to deploy them, tag names read by dbt |
 | `docs/data_tiers.md` | Data tiers (raw / syndicated / curated): which schema and table belongs to which tier, sources → raw, dbt lineage, curated tables, how to regenerate the Archify diagrams |
 | `docs/kestra_flows.md` | Every production Kestra flow step by step: what code runs, what it reads/writes, which technologies are involved, plus where Kestra itself is hosted (shared Elastic Metal orchestrator, see `infrastructure/Readme.md`) |
+| `docs/windmill_flows.md` | Windmill copy of the Kestra flows (`infrastructure/windmill/`, not scheduled yet): folders, Ansible deploy (secrets sync, `wmill sync push`), Kestra → Windmill mapping, `f/shared/docker_run` arguments, dbt worker, adding a flow or secret. Keep a Kestra flow change mirrored there |
 
 ## Keeping docs in sync when opening a PR
 

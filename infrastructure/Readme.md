@@ -48,6 +48,9 @@ infrastructure/
 │   └── windmill/
 ├── kestra/
 │   └── flows/                 # Kestra flow definitions (uploaded by Ansible)
+├── windmill/                  # Windmill copy of the Kestra flows (wmill project, pushed by Ansible)
+│   ├── wmill.yaml             # Synced folders (sync push deletes what is missing in them)
+│   └── f/                     # quotaclimat, quotaclimat_dev, rrs, rrs_dev, shared (see docs/windmill_flows.md)
 └── ansible/
     ├── ansible.cfg
     ├── inventory.yml.j2       # Template — fill with VM IP from terraform output
@@ -57,7 +60,7 @@ infrastructure/
         ├── traefik/           # Reverse proxy with auto-TLS
         ├── kestra/            # Orchestrator + secrets/KV provisioning + flow upload
         ├── glitchtip/         # Error tracking + Redis
-        └── windmill/          # Windmill server + workers (Kestra alternative)
+        └── windmill/          # Windmill server + workers (Kestra alternative) + secrets sync + flow push
 ```
 
 The root `live/terragrunt.hcl` generates the S3 backend and Scaleway provider configuration for every environment automatically, so there is no duplicated `backend.tf` or `provider.tf` to maintain. Each environment folder only needs a `terragrunt.hcl` with its specific input values.
@@ -205,10 +208,14 @@ cd .. && make ansible
 ```bash
 make tags=kestra ansible     # Redeploy Kestra + re-upload flows + sync secrets
 make tags=glitchtip ansible  # Redeploy GlitchTip only
-make tags=windmill ansible   # Redeploy Windmill only
+make tags=windmill ansible   # Redeploy Windmill + sync secrets + push flows
 ```
 
-[Windmill](https://www.windmill.dev/docs/advanced/self_host) (Kestra alternative) runs as a server plus default and native workers (`compose/windmill/docker-compose.yml.j2`, role `windmill`), on its own `windmill` database on the managed Postgres. Traefik routes `WINDMILL_DOMAIN` to the server (port 8000) with automatic TLS. Set `WINDMILL_DOMAIN`, `WINDMILL_DB_USER`, `WINDMILL_DB_PASSWORD`, `WINDMILL_DB_NAME` in `.env.secrets` and `TF_VAR_postgres_password_windmill` (same value as `WINDMILL_DB_PASSWORD`) for OpenTofu. First login is `admin@windmill.dev` / `changeme`: change it right away.
+[Windmill](https://www.windmill.dev/docs/advanced/self_host) (Kestra alternative) runs as a server plus default, native and `dbt` workers (`compose/windmill/docker-compose.yml.j2`, role `windmill`), on its own `windmill` database on the managed Postgres. Traefik routes `WINDMILL_DOMAIN` to the server (port 8000) with automatic TLS. Set `WINDMILL_DOMAIN`, `WINDMILL_DB_USER`, `WINDMILL_DB_PASSWORD`, `WINDMILL_DB_NAME` in `.env.secrets` and `TF_VAR_postgres_password_windmill` (same value as `WINDMILL_DB_PASSWORD`) for OpenTofu. First login is `admin@windmill.dev` / `changeme`: change it right away.
+
+The Windmill copy of the Kestra flows (`windmill/`, no schedules yet: Kestra still runs production) is deployed by the same role, after Windmill starts: it writes every entry of `kestra_secrets`/`kestra_secrets_dev` as the secret variable `f/secrets/<NAME>` (API, only what changed), then pushes `windmill/` with `wmill sync push`, which makes the synced Windmill folders match the repository, deletions included: create and change flows in `windmill/`, never in the Windmill UI. Before the first deploy, create the workspace in the UI and an API token of a superadmin (account settings → Tokens), then set in `.env.secrets`: `WINDMILL_WORKSPACE` (the workspace **id**, e.g. `quotaclimat`) and `WINDMILL_TOKEN` (superadmin: it also writes the instance SMTP settings).
+
+Invitation emails go through the same Brevo account as GlitchTip (`BREVO_SMTP_LOGIN`, `BREVO_SMTP_KEY`, `BREVO_SMTP_HOST`): the role writes them as the `smtp_settings` instance setting (`ansible/roles/windmill/tasks/smtp.yml`, same fields as Instance settings → SMTP in the UI, port left to Windmill's default), with `WINDMILL_FROM_EMAIL` as sender (default `windmill@quotaclimat.org`, on the domain verified in Brevo). Skipped when `BREVO_SMTP_LOGIN`/`BREVO_SMTP_KEY` are empty. Windmill masks the stored password, so the setting is rewritten only when another field changes: after changing only `BREVO_SMTP_KEY`, run `WINDMILL_SMTP_FORCE=true make tags=windmill ansible` (or update it in the UI). The workers mount the Docker socket to run the flows' containers, like Kestra. Details (conversion from Kestra, container runner, dbt worker, adding a flow or a secret): [`docs/windmill_flows.md`](../docs/windmill_flows.md).
 
 The `windmill` user creates and owns its own database (`live/orchestrator/template/grants.tf`, `terraform_data.windmill_database`): a database created by Scaleway's API would be owned by `_rdb_superadmin`, and nobody else could grant the Windmill roles `USAGE` on its `public` schema. The managed Postgres has no superuser, so `windmill_admin` is created without `BYPASSRLS` and relies on Windmill's row-level-security migration: keep the image (`windmill_image`, `ansible/roles/windmill/defaults/main.yml`) recent. Creating the database and roles needs `CREATEDB`/`CREATEROLE`, so `windmill` is a Scaleway admin only during the bootstrap:
 

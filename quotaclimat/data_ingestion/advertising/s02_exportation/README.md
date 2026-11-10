@@ -11,6 +11,12 @@ Exports the detected ads (audio/video saved in the advertising bucket, `ads/<ad_
 | `run` (default) | `run.py` | Exports the new ads. |
 | `recompute_saved_chunks` | `recompute_saved_chunks.py` | Recomputes the audio chunks (fingerprints) of the ads already exported with the current fingerprinter parameters, identified by `fingerprinter.params_hash()`. |
 
+## `run` env vars
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `SCREENSHOT_ON_EXPORT` | `true` | Makes the screenshot mosaic of each exported ad from its local video, see `s05_enrichment/e02_screenshots/README.md` (Sources). |
+
 ## `recompute_saved_chunks` env vars
 
 | Variable | Default | Purpose |

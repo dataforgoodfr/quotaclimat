@@ -2,7 +2,8 @@
 # Full reference: https://www.windmill.dev/docs/advanced/cli/wmill-yaml-reference
 #
 # Only the folders below are synced. sync push deletes, in the synced folders, what no longer exists here: never
-# create flows or scripts by hand in them, they would be deleted on the next deploy.
+# create or edit flows or scripts in them from the Windmill UI, the next deploy would overwrite or delete them.
+# Create and change them in this repository, then deploy (make tags=windmill ansible).
 includes:
   - "f/quotaclimat/**"
   - "f/quotaclimat_dev/**"

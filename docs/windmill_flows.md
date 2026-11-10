@@ -31,7 +31,7 @@ They need `WINDMILL_TOKEN` (a token of a **superadmin**, since SMTP is an instan
 
 `wmill sync push` makes the workspace match the repository, **deletions included**, but only in the folders listed in `infrastructure/windmill/wmill.yaml` (`includes`). Variables, resources and schedules are left out of the sync. So:
 
-- never create or edit a flow by hand in these folders: the next deploy overwrites or deletes it. Edit the files, then deploy;
+- never create or edit a flow **in the Windmill UI** in these folders: the next deploy overwrites or deletes it. Flows are created and changed in the repository (`infrastructure/windmill/f/...`), then deployed. The copy on the server (`/opt/services/windmill/workspace/`) is recreated at each deploy: do not edit it either. Outside these folders (e.g. a personal script under `u/<user>/`), the UI can be used freely;
 - a second deploy with nothing changed reports `remote (...) <- local: 0 changes to apply`.
 
 ## From Kestra to Windmill

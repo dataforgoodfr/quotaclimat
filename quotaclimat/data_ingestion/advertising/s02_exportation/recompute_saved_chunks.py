@@ -1,3 +1,17 @@
+"""Recompute the audio chunks (fingerprints) of the ads already exported, with the current
+fingerprinter parameters (identified by their hash, `fingerprinter.params_hash()`).
+
+Ads that already have a chunk entry with the current hash are skipped (unless CLEAN_OTHER_CHUNKS
+asks to remove their other entries). The ads are processed by decreasing number of occurrences,
+so that the most broadcast ones get their chunks first, and MAX_ADS caps the number of ads taken
+in one run.
+
+Env vars:
+- MAX_ADS: optional maximum number of ads to process in this run (e.g. 2000). Unset: all of them.
+- CLEAN_OTHER_CHUNKS: "true" to keep only the chunk entry of the current hash on each ad.
+- CURSOR_BATCH_SIZE: number of ads read and committed per batch (default 500).
+"""
+
 import asyncio
 import logging
 import os
@@ -5,26 +19,91 @@ import tempfile
 
 import s3fs
 from sentry_sdk.crons import monitor
-from sqlalchemy import select, update
+from sqlalchemy import exists, func, select, update
 
 from postgres.database_connection import get_db_session
-from postgres.schemas.advertising.models import Ad
-from quotaclimat.data_ingestion.advertising.s01_detection.processor import chunk_creator
+from postgres.schemas.advertising.models import Ad, Ad_Occurrence
+from quotaclimat.data_ingestion.advertising.s01_detection.processor import \
+    chunk_creator
 from quotaclimat.data_ingestion.advertising.s02_exportation.ad_bucket import (
-    ad_media_s3_key,
-    get_margin_from_detection_date,
-)
-from quotaclimat.data_ingestion.advertising.s02_exportation.run import (
-    get_s3_filesystem,
-)
-from quotaclimat.data_ingestion.advertising.tools.fingerprints import fingerprinter
+    ad_media_s3_key, get_margin_from_detection_date)
+from quotaclimat.data_ingestion.advertising.s02_exportation.run import \
+    get_s3_filesystem
+from quotaclimat.data_ingestion.advertising.tools.fingerprints import \
+    fingerprinter
 from quotaclimat.utils.logger import getLogger
 from quotaclimat.utils.sentry import sentry_init
 
 logger = logging.getLogger(__name__)
 
-CLEAN_OTHER_CHUNKS = os.environ.get("CLEAN_OTHER_CHUNKS", False)
-CURSOR_BATCH_SIZE = os.environ.get("CURSOR_BATCH_SIZE", 500)
+
+def _env_bool(name: str) -> bool:
+    return os.environ.get(name, "false").strip().lower() in ("1", "true", "yes")
+
+
+def _env_int(name: str) -> int | None:
+    value = os.environ.get(name, "").strip()
+    return int(value) if value else None
+
+
+CLEAN_OTHER_CHUNKS = _env_bool("CLEAN_OTHER_CHUNKS")
+CURSOR_BATCH_SIZE = _env_int("CURSOR_BATCH_SIZE") or 500
+MAX_ADS = _env_int("MAX_ADS")
+
+
+def has_chunk_with_hash(fingerprint_hash: str):
+    """SQL condition: the ad has a chunk entry computed with this hash (`chunks` is a JSON list
+    of {"hash": ..., "fingerprints": [...]})."""
+    chunk = func.json_array_elements(Ad.chunks).table_valued("value").alias("chunk")
+    return exists(
+        select(1)
+        .select_from(chunk)
+        .where(chunk.c.value.op("->>")("hash") == fingerprint_hash)
+    )
+
+
+def needs_processing(fingerprint_hash: str, clean_other_chunks: bool):
+    """SQL condition: the ad has no chunk with this hash or, with clean_other_chunks, has other
+    chunk entries to remove."""
+    has_hash = has_chunk_with_hash(fingerprint_hash)
+    if clean_other_chunks:
+        return ~has_hash | (func.json_array_length(Ad.chunks) > 1)
+    return ~has_hash
+
+
+def ads_to_process_query(
+    fingerprint_hash: str, clean_other_chunks: bool, limit: int | None
+):
+    """Ads to process, the most broadcast first (number of occurrences not deleted), then by id
+    for a stable order."""
+    nb_occurrences = (
+        select(func.count())
+        .where(Ad_Occurrence.ad_id == Ad.id, Ad_Occurrence.deleted_at.is_(None))
+        .correlate(Ad)
+        .scalar_subquery()
+    )
+    return (
+        select(Ad)
+        .where(needs_processing(fingerprint_hash, clean_other_chunks))
+        .order_by(nb_occurrences.desc(), Ad.id)
+        .limit(limit)
+    )
+
+
+def count_ads(session, fingerprint_hash: str, clean_other_chunks: bool) -> dict:
+    """Numbers logged at the start of the job."""
+    has_hash = has_chunk_with_hash(fingerprint_hash)
+    return {
+        "total": session.scalar(select(func.count()).select_from(Ad)),
+        "already_had_chunk": session.scalar(
+            select(func.count()).select_from(Ad).where(has_hash)
+        ),
+        "to_process": session.scalar(
+            select(func.count())
+            .select_from(Ad)
+            .where(needs_processing(fingerprint_hash, clean_other_chunks))
+        ),
+    }
 
 
 async def _download_audio_file(
@@ -54,8 +133,30 @@ async def run():
     }
 
     with get_db_session() as read_session, get_db_session() as write_session:
+        counts = count_ads(read_session, fingerprint_hash, CLEAN_OTHER_CHUNKS)
+        taken = (
+            counts["to_process"]
+            if MAX_ADS is None
+            else min(MAX_ADS, counts["to_process"])
+        )
+        logger.info(
+            f"Recompute saved chunks with fingerprint hash {fingerprint_hash}: "
+            f"{counts['total']} ads in total, "
+            f"{counts['already_had_chunk']} already have a chunk with this hash, "
+            f"{counts['to_process']} to process"
+            + (
+                " (including ads to clean, CLEAN_OTHER_CHUNKS)"
+                if CLEAN_OTHER_CHUNKS
+                else ""
+            )
+            + f", {taken} taken in this run "
+            + (f"(MAX_ADS={MAX_ADS})" if MAX_ADS is not None else "(no MAX_ADS)")
+            + ", most occurrences first"
+        )
+
+        query = ads_to_process_query(fingerprint_hash, CLEAN_OTHER_CHUNKS, MAX_ADS)
         for ads in read_session.scalars(
-            select(Ad).execution_options(yield_per=CURSOR_BATCH_SIZE)
+            query.execution_options(yield_per=CURSOR_BATCH_SIZE)
         ).partitions():
             for ad in ads:
                 counters["ads_seen"] += 1
@@ -111,6 +212,7 @@ async def run():
                                 )
 
             write_session.commit()
+            logger.info(f"Recompute saved chunks progress: {counters} / {taken}")
 
     logger.info(f"Recompute saved chunks finished: {counters}")
 

@@ -290,6 +290,12 @@ Les questions Metabase, les tableaux de bord et les analyses des équipes lisent
 - Les bases Metabase mises à jour sont dans `METABASE_CURATED_DATABASES` (tâche Kestra). En local : `poetry run python -m quotaclimat.metabase.sync_curated --database 2` (aperçu, après `dbt parse`), `--apply` pour écrire.
 - Un nouveau modèle demande sa documentation dans `_curated.yml` et un test de ses données dans `my_dbt_project/pytest_tests/test_dbt_model_analytics.py`.
 
+## Analyses thématiques
+
+- **Méthode commune** : lire d'abord le chapeau de `decisions/analyses_thematiques/decisions.md` (démarche, conventions Metabase, modèle pour une nouvelle analyse).
+- **Exemple** : la dernière analyse, `decisions/analyses_thematiques/2026-10-inondations/decisions.md`.
+- Ne modifier aucun `decisions.md` sans consigne explicite dans ce sens.
+
 ## Tests
 
 ```bash

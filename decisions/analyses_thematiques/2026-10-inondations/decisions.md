@@ -161,7 +161,7 @@ Audiovisuel : chunks thématiques, fenêtre de ±2 minutes (colonnes `_sans_fene
 | D6 | Politiques et financements d'adaptation (préventif) | spécifique | ci-dessous | G11 | 2434 (AV), 2466 (PE) | |
 | D7 | Atténuation à la racine (préventif) | banque D1, liste atténuation | ci-dessous | G11 | 2434 (AV), 2466 (PE) | |
 
-Croisements prévus : `A1 x A5` (colonnes `pct_a1_lien_cc` et `pct_a5_causes_rechauffement` de la question 2429) et `A1 x A2` (G13, nuage de points, un point par média) ; curatif ou préventif (banque D3) : curatif = D1 ou D2, préventif = D3 à D7 (colonnes `pct_curatif` et `pct_preventif`, un chunk ou un article peut être les deux ; G11, barres empilées par média). D6 ajouté au préventif le 03/11/2026.
+Croisements prévus, faits dans le Google Sheets des résultats : lien CC (A1) et causes du réchauffement (A5), colonnes `pct_a1_lien_cc` et `pct_a5_causes_rechauffement` de la question 2429 ; lien CC (A1) et mécanismes (A2) (G13, nuage de points, un point par média) ; curatif ou préventif (banque D3) : curatif = D1 ou D2, préventif = D3 à D7 (colonnes `pct_curatif` et `pct_preventif`, un chunk ou un article peut être les deux ; G11, barres empilées par média). D6 ajouté au préventif le 03/11/2026.
 
 **Axes retirés** : climat d'après le dictionnaire OME explicite (redondant avec A1, les mentions explicites) ; adaptation d'après le dictionnaire OME (redondant avec D3) ; absence de solution, fatalité (ancien D7) ; reconstruction, temps long (ancien C5, fusionné dans C2) ; emploi et activité économique (ancien C6, remplacé par l'économie locale) ; agriculture large, sans « inondés » (trop large).
 

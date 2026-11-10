@@ -31,7 +31,7 @@ Pour nourrir l'angle, on regarde aussi ce que QuotaClimat a déjà publié sur l
 | 1. Extraction | Entrée de `thematic_jobs_config.yml` (mots-clés, périodes), tables thématiques générées, contrôles | `decisions.md` de l'analyse, §1 et §2 |
 | 2. Axes | Axes de la banque appliqués ou non exploités, axes spécifiques, termes, graphiques prévus | `decisions.md` de l'analyse, §3 |
 | 3. Requêtes | Questions Metabase sur les tables thématiques | Colonne « Question Metabase » du §3 |
-| 4. Résultats | Takeaways triés (publiable, à creuser, rien à signaler), encadré méthodologique | `decisions.md` de l'analyse §4, après publication |
+| 4. Résultats | Takeaways triés (publiable, à creuser, rien à signaler), encadré méthodologique | Google Sheets séparé avant publication, `decisions.md` de l'analyse §4 après publication |
 
 **Étape 0, cadrage.** Elle précède l'entrée du YAML et se fait donc sur les tables sources (`public.keywords`, `public.factiva_articles`). Ses trois sous-étapes se valident une par une, comme les étapes : on ne propose pas la suivante (événements, courbe, périodes) tant que la précédente n'est pas validée par l'équipe.
 
@@ -46,7 +46,7 @@ Pour nourrir l'angle, on regarde aussi ce que QuotaClimat a déjà publié sur l
 
 La recherche donne les événements marquants, susceptibles d'être cités dans la publication ; les pics servent de tamis pour ce qu'elle a manqué. La liste fixe ensuite les périodes d'analyse et de comparaison (§3.2) déclarées dans le YAML.
 
-**Le repo est public** : aucun chiffre ni takeaway non publié n'y entre. Le statut d'un axe reste « testé » jusqu'à la publication.
+**Le repo est public** : aucun chiffre ni takeaway non publié n'y entre. Avant publication, les résultats des requêtes sont consignés dans un Google Sheets séparé. Le statut d'un axe reste « testé » jusqu'à la publication.
 
 **Conventions Metabase.** Collection `03. Analyses thématiques/NN. <Sujet> <Année>`. Préfixe `AV -` pour l'audiovisuel, `PE -` pour la presse. Après le préfixe, le code de l'axe ([§4.1](#41-catégories-et-codes)) : `AV - V1 - Volume`, `PE - A1 - Lien CC`. Une question qui regroupe tous les axes d'un maillon prend la lettre du maillon : `AV - A - Constat`, `AV - B - Causes`, `AV - C - Conséquences`, `AV - D - Solutions`. Les questions sur les tables thématiques prennent la période en variable Metabase `{{period}}` (texte, libellé « Period ») : `[[WHERE k.period = {{period}}]]`, sans valeur toutes les périodes. Dans Metabase, la variable s'affiche en liste déroulante alimentée par une question de la collection de l'analyse, à créer à chaque analyse : `<thematique> period filters`, qui fait `SELECT DISTINCT period FROM thematic_extracts.<thematique>_keywords_fr` (exemple : question 2435 pour les inondations). La liste suit ainsi les périodes réellement extraites, sans saisie à la main. Le connecteur ne sait pas brancher cette source : elle se choisit dans les réglages de la variable (liste déroulante, depuis une question, colonne `period`). Versions abandonnées préfixées `OLD-`. On ne modifie jamais une question d'une autre analyse : on la duplique. Dans le SQL, `<sujet>` (en-tête) et `<thematique>` (commentaires, noms de CTE et de colonnes) se remplacent par le thème : `Courbe journalière inondations`, `dictionnaire_inondations`, `nb_articles_inondations`. On n'emploie pas « noyau » dans les requêtes. L'extrait audiovisuel de 2 minutes s'y appelle `chunk`, comme la colonne `thematic_chunk`, et non segment (`nb_chunks_inondations`, CTE `chunks`). Une part en pourcentage (de 0 à 100) se nomme `pct_<mesure>` (`pct_a1_lien_cc`, `pct_articles_inondations`), un nombre `nb_<mesure>`. Toutes les questions sont versionnées dans Metabase, et leur SQL commence par un chapeau en commentaire : le média (audiovisuel ou presse écrite), le titre de la question, une description courte de ce qu'elle fait. Les modèles du §7 suivent ce format. Après publication, le SQL des questions utilisées est copié dans `<AAAA-MM>-<sujet>/queries/`.
 
@@ -98,7 +98,6 @@ Classification des titres de presse (nationale, régionale...) : table `source_c
 - En presse, une expression qui en contient une autre (« gestion des inondations » et « inondations ») n'ajoute aucun article au corpus. On la garde si elle est non-HRFP : `keywords_found` l'affiche alors en priorité et indique par quel terme l'article est entré dans `factiva_articles`.
 - La correspondance entre `thematic_jobs_config.yml` et le dictionnaire OME est vérifiée à la main à la création ou à la modification d'une entrée.
 - Le corpus noyau ne contient pas de mot absent du dictionnaire OME. Si le besoin se présente, se demander s'il devrait entrer dans le dictionnaire OME.
-- On ne filtre pas le corpus sur les contenus validés « environnement » par l'OME, pour éviter la circularité : mesurer la recontextualisation environnementale sur des contenus déjà sélectionnés pour leur caractère environnemental.
 
 ### 3.2 Périodes (adoptée)
 
@@ -138,19 +137,19 @@ Les regex des axes s'appliquent aux colonnes `*_normalized`, en mots entiers (`\
 
 ### 3.6 Contrôles (étape 1)
 
-**Frugalité (adoptée).** Un contrôle ne scanne jamais toute une table et ne fait pas relire tout un corpus par un LLM : 30 contenus au plus par contrôle, tirés au hasard avec `TABLESAMPLE SYSTEM (1) ... LIMIT 30` (un `ORDER BY random()` lirait toute la table). Pas de contrôle de complétude : les scripts du job vérifient déjà ce qu'ils ingèrent.
+**Frugalité (adoptée).** Claude ne lit pas le texte du corpus (`plaintext_normalized`) et aucun corpus n'est relu par un LLM. Le contrôle se fait avec la question de contrôle de l'analyse (`AV - Contrôle - Chunks et voisins par axe`, 2488 pour les inondations) : 25 chunks thématiques détectés pour l'axe choisi, tirés au hasard à chaque exécution, avec le texte de leurs voisins à ±2 minutes. Le tirage (`ORDER BY random()`) vient après la fenêtre de ±2 minutes, qui lit déjà toute la table ; un `TABLESAMPLE` retirerait des voisins. Pas de contrôle de complétude : les scripts du job vérifient déjà ce qu'ils ingèrent.
 
 **Lecture humaine (adoptée).** Les contrôles qui demandent de lire des contenus (précision, rappel) sont faits par la personne responsable de l'analyse. Claude ne relit pas les textes du corpus et ne propose pas de le faire.
 
 - **Rappel (adoptée)** : vérifier que quelques contenus connus de l'épisode (JT du jour du pic, Unes) sont dans le corpus.
-- **Apport de la fenêtre (provisoire)** : en audiovisuel, calculer aussi chaque axe sur le segment seul (colonnes `_sans_fenetre` du modèle §7.3) pour mesurer ce que la fenêtre de ±2 minutes apporte.
+- **Apport de la fenêtre (adoptée)** : en audiovisuel, chaque requête d'axe calcule aussi l'axe sur le segment seul (colonnes `_sans_fenetre` du modèle §7.3), à conserver comme contrôle de ce que la fenêtre de ±2 minutes apporte.
 
 ### 3.7 Unités et effectif minimal (adoptée)
 
 - Audiovisuel : unité = segment de 2 minutes ; temps d'antenne en minutes. Presse : unité = article.
 - Ne jamais comparer une part de segments à une part de temps d'antenne.
 - Chaque requête sort numérateurs et dénominateurs bruts en colonnes séparées, en plus des pourcentages.
-- Un média dont le corpus compte moins de **30** segments ou articles reste dans les résultats, mais on n'en tire aucune conclusion individuelle. Il est exploité à l'intérieur de sa famille : presse nationale, presse régionale, audiovisuel public, audiovisuel privé.
+- Un média dont le corpus compte moins de **30** segments ou articles reste dans les résultats, mais on n'en tire aucune conclusion individuelle. L'effectif minimal ne change pas les requêtes (ni filtre ni colonne) : il se garde à l'esprit à la lecture des résultats.
 
 ### 3.8 Takeaway publiable (adoptée)
 
@@ -200,7 +199,7 @@ Les axes se rangent en six catégories, dans l'ordre où un article les présent
 - V : `V` + numéro (`V1`, `V2`).
 - A, B, C, D : la lettre est le maillon (`A` constat, `B` causes, `C` conséquences, `D` solutions), suivie d'un numéro (`C2` santé).
 - X : `X` + numéro.
-- Un croisement s'écrit avec les deux codes (`A1 x B1`). Les questions Metabase reprennent le code : `AV - A1 - Lien CC`.
+- Les questions Metabase reprennent le code : `AV - A1 - Lien CC`.
 - Dans une analyse, les axes sont numérotés dans leur maillon (`A1`, `A2`...) ; un axe repris de la banque indique son code de banque dans la colonne « Origine » (`banque A1`). Un axe propre à l'analyse n'entre pas dans la banque.
 - Les analyses antérieures (incendies, chaleur et surchauffe 2026) gardent leurs anciens codes (Q1, A1, B1...), qui ne correspondent pas aux codes actuels.
 
@@ -228,7 +227,7 @@ Les axes sont des listes de termes explicites (§4.5), comme la mention explicit
 | A1 | Constat | [Lien avec le changement climatique](#lien-avec-le-changement-climatique) | Les médias relient-ils l'événement au changement climatique ? | G7, G3, G4 | Incendies 2026, Chaleur 2026 |
 | A2 | Constat | [Mise en série](#mise-en-série) | L'événement est-il présenté comme une tendance (« de plus en plus fréquent ») ? | G7 | Incendies 2026 |
 | A3 | Constat | Intervenants : qui on appelle pour en parler ([voix scientifiques](#voix-scientifiques) et autres) | Qui est mentionné pour expliquer : scientifiques, élus, secours, sinistrés, associations, monde agricole ? Limite : on détecte la mention d'un type d'intervenant, pas qui parle | G7, G11 | Incendies 2026 (voix scientifiques) ; autres intervenants : idée (Acrimed) |
-| B1 | Causes | [Causes du réchauffement climatique](#causes-climatiques) | Les causes du réchauffement climatique (émissions, énergies fossiles, déforestation...) sont-elles évoquées ? | G4, croisement `A1 x B1` | Incendies 2026, Chaleur 2026 |
+| B1 | Causes | [Causes du réchauffement climatique](#causes-climatiques) | Les causes du réchauffement climatique (émissions, énergies fossiles, déforestation...) sont-elles évoquées ? | G4, croisé avec A1 (§4.3) | Incendies 2026, Chaleur 2026 |
 | B2 | Causes | [Co-aléa chaleur](#co-aléa-chaleur) | L'événement est-il relié à la chaleur ? | G7 | Incendies 2026 |
 | B3 | Causes | [Co-aléa sécheresse](#co-aléa-sécheresse) | L'événement est-il relié à la sécheresse ? | G7 | Incendies 2026 |
 | B4 | Causes | [Co-aléa vent et météo](#co-aléa-vent-et-météo) | L'événement est-il relié aux conditions météo ? | G7 | Incendies 2026 |
@@ -258,17 +257,17 @@ La désinformation n'entre pas dans ces analyses : elle fait l'objet d'analyses 
 
 ### 4.3 Croisements
 
-Un croisement met deux variables face à face, en général sous forme de nuage de points (G13). Exemple : un point = un média, x = part des séquences du corpus qui font le lien avec le changement climatique (A1), y = part qui évoque ses causes (B1). Chaque part est calculée séparément sur le corpus (certains contenus relèvent des deux axes, pas tous) : on ne restreint pas une variable à l'autre. Les médias en haut à droite font le lien et l'expliquent.
+Un croisement met deux variables face à face, en général sous forme de nuage de points (G13). Il n'a pas de requête propre : il se fait dans le Google Sheets des résultats, à partir des sorties des requêtes d'axes. Exemple : un point = un média, x = part des séquences du corpus qui font le lien avec le changement climatique (A1), y = part qui évoque ses causes (B1). Chaque part est calculée séparément sur le corpus (certains contenus relèvent des deux axes, pas tous) : on ne restreint pas une variable à l'autre. Les médias en haut à droite font le lien et l'expliquent.
 
 - **Deux variables**, pas plus, sauf idée qui le justifie clairement : au-delà, le résultat devient illisible.
 - **Les meilleurs croisements découpent le nuage en quatre groupes**, pas seulement en bons et mauvais élèves, et donnent quelque chose à dire sur chaque groupe.
-- **On ne s'interdit aucun croisement** : on produit les données de tous les axes en amont, puis on essaie les croisements et on garde ceux qui parlent.
+- **On ne s'interdit aucun croisement** : on produit les données de tous les axes en amont, puis on essaie les croisements dans le Google Sheets et on garde ceux qui parlent.
 
 | Croisement | Question posée | Graphique | Explorée dans |
 |---|---|---|---|
-| `A1 x B1`, par média | Faire le lien, est-ce expliquer ? | G13 | Incendies 2026, Chaleur 2026 |
-| Volume x recontextualisation, par média | Ceux qui en parlent le plus recontextualisent-ils le plus ? | G13 | idée |
-| Longueur x lien CC | Les articles longs recontextualisent-ils davantage ? | Barres par tranche de longueur | Incendies 2026 |
+| Lien CC (A1) et causes (B1), par média | Faire le lien, est-ce expliquer ? | G13 | Incendies 2026, Chaleur 2026 |
+| Volume et recontextualisation, par média | Ceux qui en parlent le plus recontextualisent-ils le plus ? | G13 | idée |
+| Longueur et lien CC | Les articles longs recontextualisent-ils davantage ? | Barres par tranche de longueur | Incendies 2026 |
 | Évolution du lien CC dans l'épisode | Le climat arrive-t-il au pic ou après ? | G2 | idée |
 | Comparaison entre épisodes | Un aléa est-il mieux recontextualisé qu'un autre ? | G3, G4 | Incendies 2026 vs Chaleur 2026 |
 | Spectacle ou explication | La couverture porte-t-elle sur l'opérationnel (images, dégâts, secours) plutôt que sur les causes, les enjeux et les solutions ? | G11 | idée (Acrimed) |

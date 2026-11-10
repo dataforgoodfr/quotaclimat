@@ -19,9 +19,10 @@ Exports the detected ads (audio/video saved in the advertising bucket, `ads/<ad_
 | `CLEAN_OTHER_CHUNKS` | `false` | `true` keeps only the chunk entry of the current hash on each ad. |
 | `CURSOR_BATCH_SIZE` | `500` | Ads read and committed per batch. |
 
-Ads that already have a chunk entry with the current hash are left out of the query (with
+Ads with `fragment_type = 'no_data'` (no media, set by the classification) are never taken. Ads
+that already have a chunk entry with the current hash are left out of the query (with
 `CLEAN_OTHER_CHUNKS=true`, those that also have other entries are taken, to clean them). The ads
 are taken by decreasing number of occurrences (not deleted), so a run with `MAX_ADS` handles the
 most broadcast ads first, and the next run continues with the following ones. The job logs at
 start the total number of ads, how many already have a chunk with the current hash, how many are
-left to process and how many are taken in this run.
+skipped as `no_data`, how many are left to process and how many are taken in this run.

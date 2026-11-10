@@ -94,6 +94,8 @@ def create_thematic_keywords_table(con: duckdb.DuckDBPyConnection,
                     plaintext_normalized VARCHAR NOT NULL,
                     plaintext_normalized_prev VARCHAR,
                     plaintext_normalized_next VARCHAR,
+                    start_prev TIMESTAMPTZ,
+                    start_next TIMESTAMPTZ,
                     country VARCHAR NOT NULL,
                     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
                     PRIMARY KEY (id)
@@ -188,7 +190,8 @@ def add_adjacent_plaintexts_day(keywords_day_df: pd.DataFrame, s3_day_df: pd.Dat
                                 gap: pd.Timedelta) -> tuple[pd.DataFrame, dict[str, int], dict[str, int]]:
     """One row per thematic chunk (from the keywords table), with the normalized plaintext of the previous
     and the next chunk of the same channel fetched from S3: the closest one within gap, None if there is none.
-    A neighbour is filled even when it is itself a thematic chunk.
+    A neighbour is filled even when it is itself a thematic chunk. start_prev / start_next give the start of
+    that neighbour (NaT if none): they tell which neighbour texts are the same chunk, to count each chunk once.
     Also returns, per channel, the number of thematic chunks whose plaintext differs from S3
     and the number of thematic chunks missing from S3."""
     try:
@@ -205,14 +208,17 @@ def add_adjacent_plaintexts_day(keywords_day_df: pd.DataFrame, s3_day_df: pd.Dat
               .drop_duplicates(subset="id")
               .sort_values("start"))
 
-        # Previous / next S3 chunk of the same channel, strictly before / after, within gap (bounds included)
+        # Previous / next S3 chunk of the same channel, strictly before / after, within gap (bounds included),
+        # with its plaintext and its start (merge_asof keeps only the left start: copied before the merge)
         for side, direction in (("prev", "backward"), ("next", "forward")):
             neighbour = pd.merge_asof(
-                kw[["id"] + keys], s3.rename(columns={"plaintext": f"plaintext_{side}"}),
+                kw[["id"] + keys],
+                s3.rename(columns={"plaintext": f"plaintext_{side}"}).assign(**{f"start_{side}": s3["start"]}),
                 on="start", by="channel_name", tolerance=pd.Timedelta(gap),
                 direction=direction, allow_exact_matches=False,
-            )
-            kw[f"plaintext_{side}"] = kw["id"].map(neighbour.set_index("id")[f"plaintext_{side}"])
+            ).set_index("id")
+            kw[f"plaintext_{side}"] = kw["id"].map(neighbour[f"plaintext_{side}"])
+            kw[f"start_{side}"] = kw["id"].map(neighbour[f"start_{side}"])
 
         # Thematic chunks should be in S3. On old days, the keywords table was filled before S3 was written,
         # with another program window (e.g. fr3-idf JT 12h on 2024-01-07): counted per channel and logged,
@@ -274,7 +280,8 @@ def add_adjacent_plaintexts_day(keywords_day_df: pd.DataFrame, s3_day_df: pd.Dat
             f"{out['plaintext_normalized_next'].isna().sum()} without next chunk in S3 (within {gap})"
         )
         cols = ["id", "channel_name", "channel_title", "start", "keywords_found", "themes",
-                "plaintext_normalized", "plaintext_normalized_prev", "plaintext_normalized_next"]
+                "plaintext_normalized", "plaintext_normalized_prev", "plaintext_normalized_next",
+                "start_prev", "start_next"]
         n_mismatch = mismatch["channel_name"].value_counts().to_dict()
         return out.sort_values(keys)[cols].reset_index(drop=True), n_mismatch, n_missing_s3
 

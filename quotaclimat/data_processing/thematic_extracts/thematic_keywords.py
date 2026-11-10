@@ -2,7 +2,8 @@
 ### for every period of the thematic and country in thematic_jobs_config.yml (column period),
 ### one row per chunk of the keywords table that contains given keywords (primary key: id of the keywords table),
 ### with the normalized plaintext of its previous and next chunks of the same channel fetched in s3
-### (closest within GAP, NULL if none): plaintext_normalized_prev / plaintext_normalized_next.
+### (closest within GAP, NULL if none): plaintext_normalized_prev / plaintext_normalized_next,
+### and their start: start_prev / start_next (to count once a chunk that is the neighbour of two thematic chunks).
 ### Thematic chunk plaintexts are compared with s3 (missing chunks and mismatches counted and logged).
 ### Tables created with the former structure (this_id, thematic_chunk, adjacent rows) must be dropped by hand first.
 

@@ -152,6 +152,14 @@ def test_contained_ad_has_low_score_max():
     assert pairs[0].score_max < pairs[0].score_min
 
 
+def test_output_s3_path():
+    assert (
+        fd.output_s3_path("test-advertising-detection", "/duplicate_ads/", "/tmp/a.csv")
+        == "test-advertising-detection/duplicate_ads/a.csv"
+    )
+    assert fd.output_s3_path("bucket", "", "a.csv") == "bucket/a.csv"
+
+
 def test_connected_groups():
     a, b, c, d = (ad_print(x, []) for x in "abcd")
     pair = lambda x, y: fd.DuplicatePair(x, y, 10, 1.0, 1.0, True)  # noqa: E731

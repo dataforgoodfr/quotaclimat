@@ -40,7 +40,8 @@ import time
 from collections import Counter, defaultdict, deque
 from collections.abc import Iterable, Iterator
 from dataclasses import dataclass, field
-from datetime import date
+import os
+from datetime import date, datetime
 
 from sqlalchemy import cast, func, literal_column, select
 from sqlalchemy.dialects.postgresql import JSONB
@@ -443,7 +444,21 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         default=fingerprinter.params_hash(),
         help="hash of the chunk entry to read (default: the current fingerprinter)",
     )
-    parser.add_argument("--output", default=f"duplicate_ads_{date.today()}.csv")
+    parser.add_argument(
+        "--output",
+        default=f"duplicate_ads_{datetime.now():%Y-%m-%dT%H-%M-%S}.csv",
+        help="local CSV file (default: duplicate_ads_<date and time>.csv)",
+    )
+    parser.add_argument(
+        "--output-bucket",
+        help="also upload the CSV to this bucket (BUCKET/BUCKET_SECRET credentials, "
+        "e.g. test-advertising-detection)",
+    )
+    parser.add_argument(
+        "--output-prefix",
+        default="duplicate_ads",
+        help="folder of the CSV in --output-bucket (default duplicate_ads)",
+    )
     parser.add_argument("--blocking", choices=["brand", "none"], default="brand")
     parser.add_argument(
         "--include-unbranded",
@@ -521,6 +536,24 @@ def main(argv: list[str] | None = None) -> None:
     write_csv(args.output, pairs)
     groups = {group for group, _ in connected_groups(pairs).values()}
     logger.info(f"{len(pairs)} pairs in {len(groups)} groups written to {args.output}")
+    if args.output_bucket:
+        logger.info(f"Uploaded to s3://{upload_csv(args)}")
+
+
+def output_s3_path(bucket: str, prefix: str, local_path: str) -> str:
+    folder = "/".join(part for part in (bucket, prefix.strip("/")) if part)
+    return f"{folder}/{os.path.basename(local_path)}"
+
+
+def upload_csv(args: argparse.Namespace) -> str:
+    """Upload the CSV to --output-bucket/--output-prefix, return its S3 path."""
+    from quotaclimat.data_ingestion.advertising.tools.mediatree.bucket_mediatree import (
+        get_s3_filesystem,
+    )
+
+    s3_path = output_s3_path(args.output_bucket, args.output_prefix, args.output)
+    get_s3_filesystem().put_file(args.output, s3_path)
+    return s3_path
 
 
 if __name__ == "__main__":

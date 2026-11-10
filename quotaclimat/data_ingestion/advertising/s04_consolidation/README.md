@@ -278,3 +278,13 @@ of merged ads and the junk, whose occurrences are deleted), `--include-unbranded
 poetry run python -m quotaclimat.data_ingestion.advertising.s04_consolidation.duplicate_ads.find_duplicates \
     --min-duration 19 --max-duration 21 --output duplicates.csv
 ```
+
+In a Scaleway job (no access to the local file), `--output-bucket` also uploads the CSV to
+`<bucket>/<--output-prefix, default duplicate_ads>/<file name>`, with the `BUCKET`/`BUCKET_SECRET` credentials of the
+advertising jobs. For instance, as the startup command of a run of the `advertising_exportation` job, which has these
+credentials and `POSTGRES_*`:
+
+```bash
+python -m quotaclimat.data_ingestion.advertising.s04_consolidation.duplicate_ads.find_duplicates \
+    --min-duration 19 --max-duration 21 --output-bucket test-advertising-detection
+```

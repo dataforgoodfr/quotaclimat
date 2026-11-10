@@ -230,6 +230,20 @@ COVER_CHECK_ONLY=true START_DATE=2026-10-12 poetry run python quotaclimat/data_i
 
 The same summary is written in the text report of a normal detection run.
 
+### Run the advertising detection
+`entrypoints/advertising_detection.sh` (Scaleway job `advertising_detection`) processes one week (Monday to Sunday, Paris time) of one channel per run. Only the 2-minutes files of the shows of the program grid (see "Program Metadata table") (with the same margins as the cover check) are downloaded and analysed: files of the bucket outside the program are skipped, missing ones are reported in the text report.
+
+| Variable | Purpose |
+|---|---|
+| `CHANNEL` | Channel to process. Empty: taken from `SCHEDULED_ROLLING_CHANNELS`, then `ROLLING_CHANNELS` |
+| `SCHEDULED_ROLLING_CHANNELS` | `CRON:CHANNELS`, e.g. `*/30 1-6 * * *:tf1,france2`: the n-th run of the cron's hours runs the n-th channel. The cron must have this exact shape, its weekday can be a number or `*` (every day) |
+| `ROLLING_CHANNELS` | `tf1,france2`: rotation of the channels over 2 hours (see `run.py`) |
+| `START_DATE` | Monday of the week to process. Empty: the Monday after the last week with occurrences of the channel in `advertising.ad_occurrence` |
+| `MINIMAL_START_DATE` | Monday to start from for a channel without any occurrence |
+| `AUDIO_WORKERS` | Number of processes (default: Scaleway CPUs minus 2) |
+
+There is no default value: without a channel or a start date the job fails. When the week to process is not finished yet (less than 7 days ago), the job stops without doing anything, so a scheduled catch-up stops by itself.
+
 ### Explore postgres data using Metabase - a BI tool
 ```
 docker compose up metabase -d

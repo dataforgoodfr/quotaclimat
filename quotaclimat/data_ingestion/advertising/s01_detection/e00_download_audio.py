@@ -1,12 +1,11 @@
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime
 
-from ..tools.mediatree.bucket_mediatree import (
-    download_days_audio_parts,
-    get_datetime_from_basename,
-    get_s3_filesystem,
-)
+from ..tools.mediatree.bucket_mediatree import (download_days_audio_parts,
+                                                get_datetime_from_basename,
+                                                get_s3_filesystem)
 from ..tools.segments import Segment
+from .e01_check_partition_cover import expected_parts_for_week
 from .e02_split_in_chunks import ChunkCreatorJob
 
 logger = logging.getLogger(__name__)
@@ -15,16 +14,24 @@ logger = logging.getLogger(__name__)
 async def download_all_audio_parts(
     channel, start_date: datetime, end_date: datetime
 ) -> list[ChunkCreatorJob]:
+    # Only the files of the shows of the program grid (with their margins) are
+    # analysed: what mediatree sent outside the program is skipped, what is missing is
+    # reported by check_partition_cover.
+    expected_parts = expected_parts_for_week(channel, start_date.date().isoformat())
+    if not expected_parts:
+        logger.warning(
+            f"No show in the program grid for {channel} the week of {start_date.date()}"
+        )
+        return []
+
     audio_files = await download_days_audio_parts(
         fs=get_s3_filesystem(),
         channel=channel,
-        # list all days between start_date and end_date
-        days=[
-            start_date.date() + timedelta(days=i)
-            for i in range((end_date.date() - start_date.date()).days)
-        ],
+        # Mediatree files are in the folder of the UTC day they start on
+        days=sorted({part_start.date() for part_start, _ in expected_parts}),
         dest_dir="./.cache/mediatree",
         max_concurrent_downloads=10,
+        only_parts=expected_parts,
     )
     logger.info(
         f"Downloaded {len(audio_files)} audio files for channel {channel} between {start_date} and {end_date}"

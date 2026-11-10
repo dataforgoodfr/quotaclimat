@@ -156,6 +156,7 @@ Each README below is the authoritative source for its area — read it instead o
 | `metabase/README.md` | Versioned Metabase SQL questions: folder layout, `questions.yml` manifests, variable substitution rules, Kestra sync flow (`metabase-sync`), how to add/modify a query |
 | `my_dbt_project/README.md` | dbt project layout, model-by-model docs (`homepage/`, `dashboards/`, `analytics/`, `advertising/`, `metadata/`), profiles/targets, external Google Sheets sources, access grants, seeds, tests |
 | `mockwebsite/README.md` | One-liner: folder served via nginx docker image for local sitemap-scraping tests |
+| `quotaclimat/data_ingestion/advertising/s02_exportation/README.md` | Ad exportation job: `EXPORTATION_MODE` (`run` / `recompute_saved_chunks`), env vars of the chunk recomputation (`MAX_ADS`, `CLEAN_OTHER_CHUNKS`) |
 | `quotaclimat/data_ingestion/advertising/s03_classification/README.md` | 5-stage ad classification pipeline (transcribe → classify → dict match → subcat → canonicalise brand): env vars, LLM/ASR endpoint requirements, threaded runner architecture, `prediction_status` reference |
 | `quotaclimat/data_ingestion/advertising/s04_consolidation/README.md` | Consolidation stage: merge of split ads (`ad_merge.py` DB operations, merge/revert semantics), manual corrections from the `Corrections_publicites` Google Sheet (tab kinds and columns, what each correction changes), env vars |
 | `quotaclimat/data_ingestion/advertising/s05_enrichment/README.md` | One-liner pointers to `e01_brand_groups/` and `e02_screenshots/` |

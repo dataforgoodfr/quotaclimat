@@ -70,7 +70,7 @@ def _s3_df(rows):
     return pd.DataFrame([{"channel_name": c, "start": s, "plaintext": p} for c, s, p in rows])
 
 def _extract(kw, s3):
-    out, _, _ = kw_utils.extract_adjacent_chunks_day(kw, s3, tk.GAP)
+    out, _, _ = kw_utils.add_adjacent_plaintexts_day(kw, s3, tk.GAP)
     return out
 
 class RunEnv:
@@ -114,7 +114,8 @@ class RunEnv:
         self.s3_rows.append({"channel_name": channel, "start": start, "plaintext": plaintext})
 
     def add_day(self, day, channel="tf1"):
-        """One thematic chunk at 10:00 + one neighbour at 10:02 → 2 rows ingested for that day."""
+        """One thematic chunk at 10:00 + one S3 neighbour at 10:02 → 1 row ingested for that day,
+        with the neighbour plaintext in plaintext_normalized_next."""
         self._n += 1
         start = pd.Timestamp(day.year, day.month, day.day, 10, tz=PARIS)
 
@@ -135,11 +136,11 @@ class RunEnv:
         kw_utils.create_thematic_keywords_table(
             self.con, False, self.destination_table, DB, DESTINATION_SCHEMA)
 
-    def insert_sentinel(self, this_id="sentinel"):
+    def insert_sentinel(self, id_="sentinel"):
         self.con.execute(
-            f"INSERT INTO {self.table} (this_id, channel_name, channel_title, start, thematic_chunk, plaintext_normalized, country, period) "
-            f"VALUES ('{this_id}', 'tf1', 'TF1', TIMESTAMPTZ '2025-01-01 10:00:00+01', true, 'old', 'france', '{PERIOD}')")
-    
+            f"INSERT INTO {self.table} (id, channel_name, channel_title, start, plaintext_normalized, country, period) "
+            f"VALUES ('{id_}', 'tf1', 'TF1', TIMESTAMPTZ '2025-01-01 10:00:00+01', 'old', 'france', '{PERIOD}')")
+
 
     def count(self):
         return self.con.execute(f"SELECT count(*) FROM {self.table}").fetchone()[0]
@@ -186,7 +187,7 @@ def test_read_barometre_keywords_dedups_keywords_and_themes(con):
     assert out.loc["c", "themes"] == "adaptation_climatique_solutions_indirectes,changement_climatique_constat"
 
 
-# ───────────────────────── extract_adjacent_chunks_day ─────────────────────────
+# ───────────────────────── add_adjacent_plaintexts_day ─────────────────────────
 
 
 def _scenario():
@@ -201,54 +202,73 @@ def _scenario():
     return kw, s3
 
 
-def test_extract_adjacent_chunks_day_number_of_chunks_kept():
-    """Verify that only chunks within 2 min 30 s of a thematic chunk, on the same channel,
-    are kept: core, t2 and t3. t4 is 3 min away from core, t5 is on another channel.
-    thematic_chunk is True for the chunk from the keywords table, False for its S3 neighbours."""
+def test_add_adjacent_plaintexts_day_one_row_per_thematic_chunk_with_neighbours():
+    """Verify that only the thematic chunk is kept as a row (S3 chunks are not rows any more),
+    with the S3 chunk 2 min before (t3) as prev and 2 min after (t2) as next.
+    t4 is 3 min away from core, t5 is on another channel: neither is used."""
     out = _extract(*_scenario())
 
-    assert len(out) == 3
-    assert set(out["plaintext_normalized"]) == {"core", "t2", "t3"}
-    assert set(out["channel_name"]) == {"tf1"}
-
-    out = out.set_index("plaintext_normalized")
-    assert bool(out.loc["core", "thematic_chunk"]) is True
-    assert out.loc["core", "source_keywords_id"] == "kw1"
-    for neighbour in ("t2", "t3"):
-        assert bool(out.loc[neighbour, "thematic_chunk"]) is False
-        assert pd.isna(out.loc[neighbour, "source_keywords_id"])
-        assert pd.isna(out.loc[neighbour, "keywords_found"])
-        assert pd.isna(out.loc[neighbour, "themes"])
+    assert len(out) == 1
+    row = out.iloc[0]
+    assert row["id"] == "kw1"
+    assert row["plaintext_normalized"] == "core"
+    assert row["plaintext_normalized_prev"] == "t3"
+    assert row["plaintext_normalized_next"] == "t2"
 
 
-def test_extract_adjacent_chunks_day_output_columns_id_format_and_title():
+def test_add_adjacent_plaintexts_day_output_columns_and_timezone():
     """Verify all output columns (neither more nor less, regardless of order since insertion
-    is done BY NAME), the this_id format (channel + UTC time, 10:00 Paris = 09:00 UTC in March),
-    that this_id does not depend on the input timezone, and channel title from the keywords
-    table, given to the S3 neighbours of the same channel."""
+    is done BY NAME), that id and channel title come from the keywords table, and that
+    the same instants given in UTC give the same result."""
     kw, s3 = _scenario()
     out = _extract(kw, s3)
 
     assert set(out.columns) == {
-        "this_id", "channel_name", "channel_title", "start", "thematic_chunk",
-        "source_keywords_id", "keywords_found", "themes", "plaintext_normalized",
+        "id", "channel_name", "channel_title", "start", "keywords_found", "themes",
+        "plaintext_normalized", "plaintext_normalized_prev", "plaintext_normalized_next",
     }
     assert len(out.columns) == 9
-    assert set(out["this_id"]) == {
-        "tf1_20250310090000", "tf1_20250310090200", "tf1_20250310085800"
-    }
-    assert set(out["channel_title"]) == {"TF1 (test)"}
+    assert list(out["channel_title"]) == ["TF1 (test)"]
 
-    # same instants given in UTC: same ids
-    to_utc = lambda df: df.assign(start=df["start"].dt.tz_convert("UTC"))
-    out_utc = _extract(to_utc(kw), to_utc(s3))
-    assert set(out_utc["this_id"]) == set(out["this_id"])
+    def to_utc(df):
+        return df.assign(start=df["start"].dt.tz_convert("UTC"))
+    pd.testing.assert_frame_equal(_extract(to_utc(kw), to_utc(s3)), out)
 
 
-def test_extract_adjacent_chunks_day_counts_core_missing_from_s3(caplog):
+def test_add_adjacent_plaintexts_day_neighbour_choice():
+    """Verify how the neighbours are chosen:
+    - two S3 chunks on the same side within gap: the closest is kept (09:59, not 09:57:30)
+    - a neighbour exactly at gap (2 min 30 s) is kept
+    - a neighbour that is itself a thematic chunk is filled, with its S3 plaintext
+    - no S3 chunk within gap on a side: None
+    - plaintexts are normalized (accents, apostrophes, uppercase)."""
+    kw = _kw_df([
+        ("a", "tf1", T0, "core a"),
+        ("b", "tf1", T0 + 2 * MIN, "core b"),
+    ])
+    s3 = _s3_df([
+        ("tf1", T0 - timedelta(minutes=2, seconds=30), "far before a"),
+        ("tf1", T0 - MIN, "close before a"),
+        ("tf1", T0, "core a"),
+        ("tf1", T0 + 2 * MIN, "core b"),
+        ("tf1", T0 + timedelta(minutes=4, seconds=30), "L'Été after b"),
+    ])
+    out = _extract(kw, s3).set_index("id")
+
+    assert out.loc["a", "plaintext_normalized_prev"] == "close before a"
+    assert out.loc["a", "plaintext_normalized_next"] == "core b"
+    assert out.loc["b", "plaintext_normalized_prev"] == "core a"
+    assert out.loc["b", "plaintext_normalized_next"] == "l ete after b"
+
+    out = _extract(_kw_df([("c", "tf1", T0, "core c")]), _s3_df([("tf1", T0, "core c")]))
+    assert out.iloc[0]["plaintext_normalized_prev"] is None
+    assert out.iloc[0]["plaintext_normalized_next"] is None
+
+
+def test_add_adjacent_plaintexts_day_counts_core_missing_from_s3(caplog):
     """Verify that a thematic chunk (here 14h) that does not exist on the S3 side (old days: keywords
     filled before S3) is counted per channel in a warning and kept with the source table plaintext,
-    without raising."""
+    without raising. Its neighbours are filled if S3 has them (here none)."""
     kw = _kw_df([
         ("kw1", "tf1", T0, "core 10h"),
         ("kw2", "tf1", T0 + timedelta(hours=4), "core 14h"),
@@ -257,36 +277,46 @@ def test_extract_adjacent_chunks_day_counts_core_missing_from_s3(caplog):
     s3 = _s3_df([("tf1", T0, "core 10h"), ("tf1", T0 + 2 * MIN, "n"), ("m6", T0, "core m6")])
 
     with caplog.at_level(logging.WARNING):
-        out, n_mismatch, n_missing_s3 = kw_utils.extract_adjacent_chunks_day(kw, s3, tk.GAP)
+        out, n_mismatch, n_missing_s3 = kw_utils.add_adjacent_plaintexts_day(kw, s3, tk.GAP)
 
     assert n_missing_s3 == {"tf1": 1}
     assert n_mismatch == {}
     assert "1 thematic chunks missing from S3" in caplog.text
-    out = out.set_index("plaintext_normalized")
-    assert set(out.index) == {"core 10h", "core 14h", "n", "core m6"}
-    assert bool(out.loc["core 14h", "thematic_chunk"]) is True
-    assert out.loc["core 14h", "source_keywords_id"] == "kw2"
+    out = out.set_index("id")
+    assert set(out.index) == {"kw1", "kw2", "kw3"}
+    assert out.loc["kw2", "plaintext_normalized"] == "core 14h"
+    assert out.loc["kw2", "plaintext_normalized_prev"] is None
+    assert out.loc["kw2", "plaintext_normalized_next"] is None
+    assert out.loc["kw1", "plaintext_normalized_next"] == "n"
 
 
-def test_extract_adjacent_chunks_day_warns_if_core_and_s3_plaintext_differ(caplog):
+def test_add_adjacent_plaintexts_day_warns_if_core_and_s3_plaintext_differ(caplog):
     """Verify that when, for the same channel and start time, the thematic chunk plaintext differs
-    from the S3 chunk (two Mediatree versions of the same chunk), the mismatch is counted in a warning
-    and the source table plaintext is kept, without raising."""
+    from the S3 chunk (two Mediatree versions of the same chunk), the mismatch is counted per channel
+    in a warning and the source table plaintext is kept, without raising."""
     kw = _kw_df([("kw1", "tf1", T0, "plaintext from source")])
     s3 = _s3_df([("tf1", T0, "plaintext from s3")])
 
     with caplog.at_level(logging.WARNING):
-        out = _extract(kw, s3)
+        out, n_mismatch, _ = kw_utils.add_adjacent_plaintexts_day(kw, s3, tk.GAP)
 
     assert "1 plaintext mismatch" in caplog.text
+    assert n_mismatch == {"tf1": 1}
     assert list(out["plaintext_normalized"]) == ["plaintext from source"]
+
+
+def test_add_adjacent_plaintexts_day_raises_if_nothing_found_in_s3():
+    """Verify that the day fails when no thematic chunk and no neighbour is found in S3
+    (missing channel or timezone shift)."""
+    with pytest.raises(ValueError, match="nor any neighbour"):
+        _extract(_kw_df([("kw1", "tf1", T0, "core")]), _s3_df([("m6", T0, "other channel")]))
 
 
 # ───────────────────────── run() ─────────────────────────
 def test_run_ingests_every_period_into_one_table(env):
     """Verify that two non-contiguous periods go into the same table, each row tagged with
     its period id and the country, that days outside the periods (D2, D4) are not read,
-    and that plaintext_normalized is filled with the normalized plaintext."""
+    that only thematic chunks are rows and that the neighbour plaintexts are ingested normalized."""
     for d in (D1, D2, D3, D4):
         env.add_day(d)
     # one more neighbour on D1, at 09:58, with accents, apostrophe and uppercase
@@ -303,15 +333,18 @@ def test_run_ingests_every_period_into_one_table(env):
     assert env.tables() == {env.destination_table}
     assert env.con.execute(
         f"SELECT period, {PARIS_DAY}, country, count(*) FROM {env.table} GROUP BY ALL ORDER BY 2"
-    ).fetchall() == [("p1", D1, "france", 3), ("p2", D3, "france", 2)]
+    ).fetchall() == [("p1", D1, "france", 1), ("p2", D3, "france", 1)]
     assert env.con.execute(
-        f"SELECT count(*) FROM {env.table} WHERE plaintext_normalized = 'l ete'"
-    ).fetchone()[0] == 1
+        f"SELECT id, plaintext_normalized, plaintext_normalized_prev, plaintext_normalized_next "
+        f"FROM {env.table} ORDER BY start"
+    ).fetchall() == [("kw_1", "core 1", "l ete", "neighbour 1"),
+                     ("kw_3", "core 3", None, "neighbour 3")]
 
 
 def test_run_counts_core_missing_from_s3_in_check(env, caplog):
     """Verify that a thematic chunk missing from S3 does not stop the run: it is ingested,
-    the per channel count is logged by the check, and the check report has it in n_missing_s3."""
+    the per channel count is logged by the check, and the check report has it in n_missing_s3.
+    Also verify the report counts of thematic chunks without previous / next neighbour."""
     env.add_day(D1)
     _add_kw(env.con, "kw_missing", "tf1", "2025-03-10 14:00:00", "core missing",
             [("inondation", "changement_climatique_constat")])
@@ -321,12 +354,18 @@ def test_run_counts_core_missing_from_s3_in_check(env, caplog):
     with caplog.at_level(logging.INFO):
         tk.run()
 
-    assert env.count() == 5
+    assert env.count() == 3
     assert "1 thematic chunks of public.keywords missing from S3 during this run" in caplog.text
-    report = kw_utils.check_keywords(env.con, DB, env.destination_table, DESTINATION_SCHEMA, tk.GAP,
+    assert "[CHECK] inondations_keywords_fr: 3 thematic chunks on 2 channels" in caplog.text
+    report = kw_utils.check_keywords(env.con, DB, env.destination_table, DESTINATION_SCHEMA,
                                      False, f"{SCHEMA}.keywords", {"m6": 2}, {"tf1": 1})
-    assert report.set_index("channel_name")["n_missing_s3"].to_dict() == {"tf1": 1, "m6": 0}
-    assert report.set_index("channel_name")["n_plaintext_mismatch"].to_dict() == {"tf1": 0, "m6": 2}
+    report = report.set_index("channel_name")
+    assert report["n_missing_s3"].to_dict() == {"tf1": 1, "m6": 0}
+    assert report["n_plaintext_mismatch"].to_dict() == {"tf1": 0, "m6": 2}
+    # tf1: 10:00 has only a next neighbour, 14:00 has none; m6: 10:00 has only a next neighbour
+    assert report["missing_prev"].to_dict() == {"tf1": 2, "m6": 1}
+    assert report["missing_next"].to_dict() == {"tf1": 1, "m6": 0}
+    assert report["pct_missing_adj"].to_dict() == {"tf1": 75.0, "m6": 50.0}
 
 
 def test_run_stops_at_first_failing_day(env):
@@ -342,7 +381,7 @@ def test_run_stops_at_first_failing_day(env):
 
     assert env.read_days == [D1, D2]
     assert env.days_in_table() == [D1]
-    assert env.count() == 2
+    assert env.count() == 1
 
 
 def test_run_leaves_no_partial_day_when_insert_fails(env):
@@ -350,9 +389,10 @@ def test_run_leaves_no_partial_day_when_insert_fails(env):
     (even valid ones), previous day remains in table, and next day is not processed."""
     env.add_day(D1)
     env.add_day(D2)
-    # NULL plaintext on an adjacent chunk of day 2 → NOT NULL violation (plaintext_normalized) at INSERT time,
-    # while the thematic chunk of that day is valid
-    env.add_s3(pd.Timestamp(2025, 3, 11, 9, 59, tz=PARIS), None)
+    # second thematic chunk of day 2 with a NULL plaintext → NOT NULL violation (plaintext_normalized)
+    # at INSERT time, while the first thematic chunk of that day is valid
+    _add_kw(env.con, "kw_null", "tf1", "2025-03-11 11:00:00", None,
+            [("inondation", "changement_climatique_constat")])
     env.add_day(D3)
     env.configure(start=D1, end=D4)
 
@@ -361,7 +401,7 @@ def test_run_leaves_no_partial_day_when_insert_fails(env):
 
     assert env.read_days == [D1, D2]
     assert env.days_in_table() == [D1]
-    assert env.count() == 2
+    assert env.count() == 1
 
 
 def test_run_new_raises_if_table_exists(env):
@@ -376,7 +416,7 @@ def test_run_new_raises_if_table_exists(env):
         tk.run()
 
     assert env.read_days == []
-    assert env.con.execute(f"SELECT this_id FROM {env.table}").fetchall() == [("sentinel",)]
+    assert env.con.execute(f"SELECT id FROM {env.table}").fetchall() == [("sentinel",)]
 
 
 def test_run_reset_clears_existing_destination(env):
@@ -389,9 +429,9 @@ def test_run_reset_clears_existing_destination(env):
 
     tk.run()
 
-    assert env.count() == 2
+    assert env.count() == 1
     assert env.con.execute(
-        f"SELECT count(*) FROM {env.table} WHERE this_id LIKE 'old_%'").fetchone()[0] == 0
+        f"SELECT count(*) FROM {env.table} WHERE id LIKE 'old_%'").fetchone()[0] == 0
 
 
 def test_run_resume_restarts_from_last_ingested_day(env):
@@ -413,7 +453,7 @@ def test_run_resume_restarts_from_last_ingested_day(env):
 
     assert env.read_days == [D2, D3, D4]
     assert env.days_in_table() == [D1, D2, D3, D4]
-    assert env.count() == 8
+    assert env.count() == 4
 
 
 @pytest.mark.parametrize("name", ["factiva_articles",
@@ -439,13 +479,10 @@ def test_run_dry_run_writes_nothing_and_counts_chunks(env, caplog):
     env.add_day(D2)
     env.configure(start=D1, end=D3, dry_run=True, mode="reset")
     env.create_destination()
-    env.con.execute(
-        f"INSERT INTO {env.table} (this_id, channel_name, channel_title, start, thematic_chunk, plaintext_normalized, country, period) "
-        f"VALUES ('sentinel', 'tf1', 'TF1', TIMESTAMPTZ '2025-01-01 10:00:00+01', true, 'old', 'france', '{PERIOD}')"
-    )
+    env.insert_sentinel()
 
     with caplog.at_level(logging.INFO):
         tk.run()
 
-    assert env.con.execute(f"SELECT this_id FROM {env.table}").fetchall() == [("sentinel",)]
-    assert "DRY_RUN: 4 chunks would have been ingested" in caplog.text
+    assert env.con.execute(f"SELECT id FROM {env.table}").fetchall() == [("sentinel",)]
+    assert "DRY_RUN: 2 chunks would have been ingested" in caplog.text

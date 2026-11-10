@@ -23,14 +23,13 @@ from sqlalchemy import exists, func, select, update
 
 from postgres.database_connection import get_db_session
 from postgres.schemas.advertising.models import Ad, Ad_Occurrence
-from quotaclimat.data_ingestion.advertising.s01_detection.processor import \
-    chunk_creator
+from quotaclimat.data_ingestion.advertising.s01_detection.processor import chunk_creator
 from quotaclimat.data_ingestion.advertising.s02_exportation.ad_bucket import (
-    ad_media_s3_key, get_margin_from_detection_date)
-from quotaclimat.data_ingestion.advertising.s02_exportation.run import \
-    get_s3_filesystem
-from quotaclimat.data_ingestion.advertising.tools.fingerprints import \
-    fingerprinter
+    ad_media_s3_key,
+    get_margin_from_detection_date,
+)
+from quotaclimat.data_ingestion.advertising.s02_exportation.run import get_s3_filesystem
+from quotaclimat.data_ingestion.advertising.tools.fingerprints import fingerprinter
 from quotaclimat.utils.logger import getLogger
 from quotaclimat.utils.sentry import sentry_init
 
@@ -62,13 +61,22 @@ def has_chunk_with_hash(fingerprint_hash: str):
     )
 
 
+# Ads without media (fragment_type set to "no_data" by the classification): nothing to download
+NO_DATA_FRAGMENT_TYPE = "no_data"
+
+
+def has_media():
+    """SQL condition: the ad is not marked as having no media (fragment_type "no_data")."""
+    return Ad.fragment_type.is_distinct_from(NO_DATA_FRAGMENT_TYPE)
+
+
 def needs_processing(fingerprint_hash: str, clean_other_chunks: bool):
-    """SQL condition: the ad has no chunk with this hash or, with clean_other_chunks, has other
-    chunk entries to remove."""
+    """SQL condition: the ad has media and either has no chunk with this hash or, with
+    clean_other_chunks, has other chunk entries to remove."""
     has_hash = has_chunk_with_hash(fingerprint_hash)
     if clean_other_chunks:
-        return ~has_hash | (func.json_array_length(Ad.chunks) > 1)
-    return ~has_hash
+        return has_media() & (~has_hash | (func.json_array_length(Ad.chunks) > 1))
+    return has_media() & ~has_hash
 
 
 def ads_to_process_query(
@@ -97,6 +105,9 @@ def count_ads(session, fingerprint_hash: str, clean_other_chunks: bool) -> dict:
         "total": session.scalar(select(func.count()).select_from(Ad)),
         "already_had_chunk": session.scalar(
             select(func.count()).select_from(Ad).where(has_hash)
+        ),
+        "no_data": session.scalar(
+            select(func.count()).select_from(Ad).where(~has_media())
         ),
         "to_process": session.scalar(
             select(func.count())
@@ -143,6 +154,7 @@ async def run():
             f"Recompute saved chunks with fingerprint hash {fingerprint_hash}: "
             f"{counts['total']} ads in total, "
             f"{counts['already_had_chunk']} already have a chunk with this hash, "
+            f"{counts['no_data']} skipped as fragment_type no_data (no media), "
             f"{counts['to_process']} to process"
             + (
                 " (including ads to clean, CLEAN_OTHER_CHUNKS)"

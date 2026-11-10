@@ -1,0 +1,118 @@
+summary: rrs-dev/pulsar-themes
+description: |-
+  Pull Pulsar TRAC "Themes" into the standalone pulsar_* tables, one search per
+  parallel branch. Each branch runs the whole pipeline in the lean image:
+  download the themes XLS + capture the session token (login → Export → XLS),
+  parse themes + topics, then fetch each theme's top posts via GraphQL and store
+  searches / themes / topics / posts. Fan out over `searches`.
+value:
+  modules:
+  - id: per_search
+    summary: per search
+    value:
+      type: forloopflow
+      iterator:
+        type: javascript
+        expr: flow_input.searches
+      skip_failures: false
+      parallel: true
+      modules:
+      - id: pulsar
+        summary: pulsar
+        value:
+          type: script
+          path: f/shared/docker_run
+          input_transforms:
+            image:
+              type: static
+              value: rg.fr-par.scw.cloud/rrs-dev/rrs-pulsar:latest
+            command:
+              type: static
+              value:
+              - python
+              - -m
+              - rrs.pulsar.fetch_weekly_themes_client
+            env:
+              type: javascript
+              expr: |-
+                ({
+                  "PYTHONPATH": "/app",
+                  "PULSAR_RELEVANCE_MENTION_TAG_IDS": flow_input.relevance_mention_tag_ids,
+                  "PULSAR_FOLDER_ID": flow_input.iter.value.folder_id,
+                  "PULSAR_SEARCH_ID": flow_input.iter.value.search_id,
+                  "SUBJECT": flow_input.iter.value.subject,
+                  "PULSAR_TOP_N": flow_input.n_top_posts,
+                  "PULSAR_DAYS_BACK": flow_input.days_back,
+                  "PULSAR_START_DATE": flow_input.start_date ?? '',
+                  "PULSAR_END_DATE": flow_input.end_date ?? '',
+                  "RRS_PG_PORT": 18047,
+                  "RRS_PG_DATABASE": "rrs"
+                })
+            secret_env:
+              type: static
+              value:
+                MISTRAL_API_KEY: f/secrets/MISTRAL_API_KEY
+                PULSAR_API_KEY: f/secrets/PULSAR_API_KEY
+                PULSAR_BASE_URL: f/secrets/PULSAR_BASE_URL
+                PULSAR_EMAIL: f/secrets/PULSAR_EMAIL
+                PULSAR_PASSWORD: f/secrets/PULSAR_PASSWORD
+                RRS_PG_HOST: f/secrets/RRS_PG_HOST_DEV
+                RRS_PG_USER: f/secrets/RRS_PG_USER_DEV
+                RRS_PG_PASSWORD: f/secrets/RRS_PG_PASSWORD_DEV
+            registry:
+              type: static
+              value: rg.fr-par.scw.cloud/rrs-dev
+            registry_password_secret:
+              type: static
+              value: f/secrets/RRS_SCW_SECRET_DEV
+            shm_size:
+              type: static
+              value: 64m
+            stdout_logs:
+              type: static
+              value: true
+schema:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  order:
+  - searches
+  - relevance_mention_tag_ids
+  - days_back
+  - n_top_posts
+  - start_date
+  - end_date
+  properties:
+    searches:
+      type: array
+      items:
+        type: object
+      description: JSON string defining the details of the searches from which to extract the themes.
+      default:
+      - name: renewables
+        folder_id: '529'
+        search_id: '201823'
+        subject: climate
+    relevance_mention_tag_ids:
+      type: array
+      items:
+        type: string
+      default: []
+    days_back:
+      type: integer
+      description: Look-back window in days
+      default: 1
+    n_top_posts:
+      type: integer
+      description: Top posts to fetch per theme
+      default: 30
+    start_date:
+      type: string
+      description: Start of the analysis window (YYYY-MM-DD). Overrides days_back when set.
+    end_date:
+      type: string
+      description: End of the analysis window (YYYY-MM-DD). Defaults to now when not set.
+  required:
+  - searches
+  - relevance_mention_tag_ids
+  - days_back
+  - n_top_posts

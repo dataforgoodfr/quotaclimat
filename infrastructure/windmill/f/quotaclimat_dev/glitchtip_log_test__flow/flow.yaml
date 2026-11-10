@@ -1,0 +1,69 @@
+summary: quotaclimat-dev/glitchtip-log-test
+description: >-
+  Dev: manual check that logs and errors reach GlitchTip. Runs a small Python
+  script
+
+  that initialises the Sentry SDK with the `f/secrets/SENTRY_DSN` variable,
+  sends a series of logs (debug to error),
+
+  then raises an error that the script handles: the error is caught, reported to
+  GlitchTip
+
+  (with its traceback) and the step still succeeds.
+
+  The messages, tags and attributes carry the `run_id` (the Windmill run id):
+  filter on it in
+
+  GlitchTip (Logs and Issues pages) to find this run.
+
+  It sets the same `country` and `service` tags as
+  `quotaclimat/utils/sentry.py`.
+
+  No schedule: run it by hand.
+value:
+  modules:
+    - id: send_test_logs_and_error
+      summary: send test logs and error
+      value:
+        type: rawscript
+        content: '!inline send_test_logs_and_error.py'
+        input_transforms:
+          country:
+            type: javascript
+            expr: flow_input.country
+          send_logs:
+            type: javascript
+            expr: flow_input.send_logs
+          service:
+            type: javascript
+            expr: flow_input.service
+        lock: '!inline send_test_logs_and_error.lock'
+        language: python3
+      timeout:
+        type: static
+        value: 600
+schema:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  order:
+    - country
+    - service
+    - send_logs
+  properties:
+    country:
+      type: string
+      description: Value of the `country` tag and log attribute.
+      default: test
+    send_logs:
+      type: boolean
+      description: Send the logs as Sentry logs (same as SENTRY_LOGGING=true in the
+        pipeline flows). When false, only the handled error is sent.
+      default: true
+    service:
+      type: string
+      description: Value of the `service` tag and log attribute.
+      default: glitchtip-log-test
+  required:
+    - country
+    - service
+    - send_logs

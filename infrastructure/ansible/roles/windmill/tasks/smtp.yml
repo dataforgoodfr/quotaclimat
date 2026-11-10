@@ -1,0 +1,47 @@
+---
+# Instance SMTP (invitation emails), through the Brevo account used by GlitchTip.
+# Written as the smtp_settings instance setting, the format the Windmill UI saves
+# (Instance settings → SMTP). WINDMILL_TOKEN must be a superadmin's: instance settings are not workspace ones.
+#
+# Windmill masks the password on read (__SENSITIVE_AND_UNCHANGED__): the setting is written when
+# another field differs. After changing only BREVO_SMTP_KEY: WINDMILL_SMTP_FORCE=true make tags=windmill ansible.
+
+- name: Build the SMTP settings
+  set_fact:
+    windmill_smtp_settings:
+      smtp_host: "{{ brevo_smtp_host }}"
+      smtp_username: "{{ brevo_smtp_login }}"
+      smtp_password: "{{ brevo_smtp_key }}"
+      smtp_from: "{{ windmill_from_email }}"
+      smtp_tls_implicit: false
+      smtp_disable_tls: false
+      smtp_clicktracking_off: false
+  no_log: true
+
+- name: Read the current SMTP settings
+  uri:
+    url: "https://{{ windmill_domain }}/api/settings/global/smtp_settings"
+    headers:
+      Authorization: "Bearer {{ windmill_token }}"
+    return_content: true
+  register: windmill_smtp_current
+  no_log: true
+
+- name: Write the SMTP settings
+  uri:
+    url: "https://{{ windmill_domain }}/api/settings/global/smtp_settings"
+    method: POST
+    headers:
+      Authorization: "Bearer {{ windmill_token }}"
+    body_format: json
+    body:
+      value: "{{ windmill_smtp_settings }}"
+    status_code: [200, 201]
+  when: >-
+    windmill_smtp_force | bool
+    or (windmill_smtp_current.json | default({}, true)) is not mapping
+    or (windmill_smtp_current.json | default({}, true) | dict2items | rejectattr('key', 'equalto', 'smtp_password') | items2dict)
+       != (windmill_smtp_settings | dict2items | rejectattr('key', 'equalto', 'smtp_password') | items2dict)
+    or windmill_smtp_current.json.smtp_password | default('') not in [windmill_smtp_settings.smtp_password, '__SENSITIVE_AND_UNCHANGED__']
+  changed_when: true
+  no_log: true

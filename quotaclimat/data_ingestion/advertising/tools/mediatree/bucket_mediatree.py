@@ -189,6 +189,7 @@ async def download_days_audio_parts(
     days: list[date],
     dest_dir: str,
     max_concurrent_downloads: int = 10,
+    only_parts: set[tuple[datetime, datetime]] | None = None,
 ) -> list[str]:
     """Download every 2-minutes tar archive for `channel` on each of `days` (UTC calendar
     dates, matching how mediatree lays out its S3 bucket) and extract each one's mp3 into
@@ -196,15 +197,37 @@ async def download_days_audio_parts(
     discarded once extracted. Parts whose mp3 is already present in `dest_dir` are left
     untouched rather than re-downloaded.
 
+    With `only_parts` (UTC (start, end) of 2-minutes parts), archives of the bucket that
+    are not in this set are skipped. Parts of `only_parts` absent from the bucket are
+    simply missing from the result. A day without any folder is treated as empty.
+
     Returns the mp3 path of every part (both pre-existing and newly downloaded), sorted
     chronologically.
     """
-    keys_per_day = await asyncio.gather(
-        *(fs._ls(_get_s3_folder(channel, day)) for day in days)
-    )
+
+    async def _ls_day(day: date) -> list[str]:
+        try:
+            return await fs._ls(_get_s3_folder(channel, day))
+        except FileNotFoundError:
+            logger.warning(f"No folder in mediatree's bucket for {channel} on {day}")
+            return []
+
+    keys_per_day = await asyncio.gather(*(_ls_day(day) for day in days))
     s3_keys = sorted(
         key for keys in keys_per_day for key in keys if key.endswith(".tar")
     )
+    if only_parts is not None:
+        listed = len(s3_keys)
+        s3_keys = [
+            key
+            for key in s3_keys
+            if get_datetime_from_basename(os.path.splitext(os.path.basename(key))[0])
+            in only_parts
+        ]
+        logger.info(
+            f"{len(s3_keys)} of the {listed} archives listed for {channel} are kept, "
+            f"{listed - len(s3_keys)} are outside the expected parts"
+        )
 
     os.makedirs(dest_dir, exist_ok=True)
     inflight = asyncio.Semaphore(max_concurrent_downloads)

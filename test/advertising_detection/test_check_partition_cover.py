@@ -1,15 +1,15 @@
 from datetime import date, datetime, timedelta, timezone
-from unittest.mock import patch
+from unittest.mock import AsyncMock, MagicMock, patch
 from zoneinfo import ZoneInfo
 
 import pytest
 
 from quotaclimat.data_ingestion.advertising.s01_detection.e01_check_partition_cover import (
-    _format_days,
-    _parts_between,
-    compute_cover,
-)
-from quotaclimat.data_ingestion.advertising.s01_detection.tools.program import Show
+    _format_days, _parts_between, compute_cover, expected_parts_for_week)
+from quotaclimat.data_ingestion.advertising.s01_detection.tools.program import \
+    Show
+from quotaclimat.data_ingestion.advertising.tools.mediatree.bucket_mediatree import \
+    download_days_audio_parts
 from quotaclimat.data_ingestion.advertising.tools.segments import Segment
 
 paris = ZoneInfo("Europe/Paris")
@@ -140,3 +140,57 @@ class TestComputeCover:
     def test_start_date_must_be_a_monday(self):
         with pytest.raises(ValueError):
             compute_cover(segments=[], start_date="2025-10-14", channel="tf1")
+
+
+class TestExpectedPartsForWeek:
+    def test_only_program_parts_with_margins(self):
+        with patch(
+            "quotaclimat.data_ingestion.advertising.s01_detection.tools.program.get_program",
+            return_value=iter(JT_EVERY_DAY),
+        ):
+            parts = expected_parts_for_week("tf1", WEEK)
+        assert len(parts) * 2 == 7 * 70  # 12:46 -> 13:56 every day
+        assert min(parts)[0] == datetime(2025, 10, 13, 12, 46, tzinfo=paris)
+
+    def test_start_date_must_be_a_monday(self):
+        with pytest.raises(ValueError):
+            expected_parts_for_week("tf1", "2025-10-14")
+
+
+@pytest.mark.asyncio
+async def test_download_keeps_only_expected_parts(tmp_path):
+    def key(start):
+        end = start + timedelta(minutes=2)
+        return (
+            f"/bucket/output/tf1/{start:%Y/%m/%d}/tf1_"
+            f"{start:%Y-%m-%dT%H-%M-%SZ}_{end:%Y-%m-%dT%H-%M-%SZ}.tar"
+        )
+
+    utc = timezone.utc
+    kept = datetime(2025, 10, 13, 11, 0, tzinfo=utc)
+    skipped = datetime(2025, 10, 13, 3, 0, tzinfo=utc)
+    fs = MagicMock()
+    fs._ls = AsyncMock(
+        side_effect=lambda folder: [key(kept), key(skipped)]
+        if folder.endswith("2025/10/13")
+        else (_ for _ in ()).throw(FileNotFoundError(folder))
+    )
+    downloaded = []
+
+    async def fake_download(fs, s3_key, archive_dir, audio_dir):
+        downloaded.append(s3_key)
+        return s3_key
+
+    with patch(
+        "quotaclimat.data_ingestion.advertising.tools.mediatree.bucket_mediatree._download_and_extract_audio",
+        side_effect=fake_download,
+    ):
+        result = await download_days_audio_parts(
+            fs=fs,
+            channel="tf1",
+            days=[date(2025, 10, 13), date(2025, 10, 14)],
+            dest_dir=str(tmp_path),
+            only_parts={(kept, kept + timedelta(minutes=2))},
+        )
+    assert downloaded == [key(kept)]
+    assert result == [key(kept)]

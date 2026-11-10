@@ -4,7 +4,7 @@ check by eye (screenshots, videos) before deciding what to do with them (merge, 
 
 How it works:
 1. The ads having a chunk entry with the fingerprint hash (the current fingerprinter by default) are
-   streamed by increasing duration. Only their pairs and acoustic features are read (not the peaks).
+   streamed by increasing duration.
 2. Each ad becomes one fingerprint of the whole ad: the pairs of its chunks one after the other, their
    time offset shifted by the start of their chunk. Two copies of the same audio then match whatever
    the way they were split in chunks.
@@ -42,7 +42,11 @@ from collections.abc import Iterable, Iterator
 from dataclasses import dataclass, field
 from datetime import date
 
-from sqlalchemy import text
+from sqlalchemy import cast, func, literal_column, select
+from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.orm import aliased
+
+from postgres.schemas.advertising.models import Ad, Ad_Occurrence
 
 from quotaclimat.data_ingestion.advertising.tools.ad_merge import brand_key
 from quotaclimat.data_ingestion.advertising.tools.fingerprint_tools.compare import (
@@ -260,89 +264,73 @@ def connected_groups(pairs: list[DuplicatePair]) -> dict[str, tuple[str, int]]:
     return {ad_id: (root, len(ids)) for root, ids in members.items() for ad_id in ids}
 
 
-# The fingerprints of the hash, without the peaks (not used here, as heavy as the pairs)
-ADS_QUERY = """
-SELECT
-  a.id,
-  a.duration_sec,
-  a.fragment_type,
-  a.first_detection_date,
-  a.predicted_sector,
-  a.predicted_product_category,
-  COALESCE(
-    a.predicted_brand,
-    jsonb_path_query_first(a.prediction::jsonb, '$[*] ? (@.stage == "ad_type").raw_response.brand_name') #>> '{{}}'
-  ) AS brand,
-  occ.nb_occurrences,
-  fp.fingerprints
-FROM advertising.ad a
-CROSS JOIN LATERAL (
-  SELECT count(*) AS nb_occurrences
-  FROM advertising.ad_occurrence o
-  WHERE o.ad_id = a.id AND o.deleted_at IS NULL
-) occ
-CROSS JOIN LATERAL (
-  SELECT json_agg(
-    json_build_object(
-      'duration_sec', f.value -> 'duration_sec',
-      'energy_mean', f.value -> 'energy_mean',
-      'spectral_centroid', f.value -> 'spectral_centroid',
-      'zcr_mean', f.value -> 'zcr_mean',
-      'pairs', f.value -> 'pairs'
-    ) ORDER BY f.ordinality
-  ) AS fingerprints
-  FROM (
-    SELECT e.value
-    FROM json_array_elements(a.chunks) WITH ORDINALITY AS e(value, ordinality)
-    WHERE e.value ->> 'hash' = :hash
-    ORDER BY e.ordinality
-    LIMIT 1
-  ) entry
-  CROSS JOIN LATERAL json_array_elements(entry.value -> 'fingerprints') WITH ORDINALITY AS f(value, ordinality)
-) fp
-WHERE fp.fingerprints IS NOT NULL
-  AND a.fragment_type = ANY(:fragment_types)
-  AND occ.nb_occurrences >= :min_occurrences
-  {filters}
-ORDER BY a.duration_sec, a.id
-"""
+def ads_query(args: argparse.Namespace):
+    """Ads having a chunk entry with the hash, by increasing duration, with their live occurrences,
+    their brand (the canonical one, or else the raw brand of the LLM, like the merge of the split
+    ads) and the fingerprints of that chunk entry."""
+    nb_occurrences = (
+        select(func.count())
+        .where(Ad_Occurrence.ad_id == Ad.id, Ad_Occurrence.deleted_at.is_(None))
+        .correlate(Ad)
+        .scalar_subquery()
+    )
+    entry = func.json_array_elements(Ad.chunks).table_valued("value").alias("entry")
+    fingerprints = (
+        select(entry.c.value.op("->")("fingerprints"))
+        .where(entry.c.value.op("->>")("hash") == args.hash)
+        .limit(1)
+        .correlate(Ad)
+        .scalar_subquery()
+    )
+    raw_brand = func.jsonb_path_query_first(
+        cast(Ad.prediction, JSONB),
+        '$[*] ? (@.stage == "ad_type").raw_response.brand_name',
+    ).op("#>>")(literal_column("'{}'"))
 
-
-def ads_query(args: argparse.Namespace) -> tuple[str, dict]:
-    filters = []
-    params = {
-        "hash": args.hash,
-        "fragment_types": list(args.fragment_types),
-        "min_occurrences": args.min_occurrences,
-    }
+    query = (
+        select(
+            Ad.id,
+            Ad.duration_sec,
+            Ad.fragment_type,
+            Ad.first_detection_date,
+            Ad.predicted_sector,
+            Ad.predicted_product_category,
+            func.coalesce(Ad.predicted_brand, raw_brand).label("brand"),
+            nb_occurrences.label("nb_occurrences"),
+            fingerprints.label("fingerprints"),
+        )
+        .where(
+            fingerprints.is_not(None),
+            Ad.fragment_type.in_(list(args.fragment_types)),
+            nb_occurrences >= args.min_occurrences,
+        )
+        .order_by(Ad.duration_sec, Ad.id)
+    )
     if args.min_duration is not None:
-        filters.append("AND a.duration_sec >= :min_duration")
-        params["min_duration"] = args.min_duration
+        query = query.where(Ad.duration_sec >= args.min_duration)
     if args.max_duration is not None:
-        filters.append("AND a.duration_sec <= :max_duration")
-        params["max_duration"] = args.max_duration
+        query = query.where(Ad.duration_sec <= args.max_duration)
     if args.date_from is not None:
-        filters.append("AND a.first_detection_date >= :date_from")
-        params["date_from"] = args.date_from
+        query = query.where(Ad.first_detection_date >= args.date_from)
     if args.date_to is not None:
-        filters.append("AND a.first_detection_date < :date_to")
-        params["date_to"] = args.date_to
+        query = query.where(Ad.first_detection_date < args.date_to)
     if args.max_ads is not None:
         # sample of ads spread over all durations, stable across runs (hash of the id)
-        filters.append(
-            "AND a.id IN (SELECT id FROM advertising.ad ORDER BY md5(id) LIMIT :max_ads)"
+        sampled = aliased(Ad)
+        query = query.where(
+            Ad.id.in_(
+                select(sampled.id).order_by(func.md5(sampled.id)).limit(args.max_ads)
+            )
         )
-        params["max_ads"] = args.max_ads
-    return ADS_QUERY.format(filters="\n  ".join(filters)), params
+    return query
 
 
 def stream_ads(
     connection, args: argparse.Namespace, frames_per_sec: float
 ) -> Iterator[AdPrint]:
-    sql, params = ads_query(args)
     brand_filter = brand_key(args.brand) if args.brand else None
     result = connection.execution_options(stream_results=True, yield_per=1000).execute(
-        text(sql), params
+        ads_query(args)
     )
     for row in result.mappings():
         key = brand_key(row["brand"])

@@ -244,3 +244,37 @@ reprocessing of the detection.
 | `GOOGLE_SHEETS_EDITOR_SERVICE_ACCOUNT_JSON` | none | JSON key of the service account that writes to Google Sheets |
 | `POSTGRES_*` | | database |
 | `BUCKET`, `BUCKET_SECRET`, `ADVERTISING_BUCKET_NAME`, `MEDIATREE_BUCKET_NAME` | | buckets of the videos (new ads) |
+
+## duplicate_ads (exploration)
+
+`duplicate_ads/find_duplicates.py` looks for pairs of ads of the database that are the same audio stored twice,
+from the fingerprints of the chunk entry of a hash (the current fingerprinter by default). It writes nothing to the
+database: the pairs go to a CSV file, to check by eye before merging or correcting anything. Not scheduled.
+
+How the 400k ads are compared without comparing every pair:
+- the ads are streamed by increasing duration, and an ad is only compared with the ads at most `--duration-tol`
+  seconds shorter (sliding window);
+- `--blocking brand` (default) compares only the ads of the same brand (`tools/ad_merge.brand_key`); `none` compares
+  all the ads of the window;
+- an inverted index of quantized pairs (the keys of `FingerprintsIndex`, a sample of `--index-pairs` pairs per ad)
+  keeps the ads sharing at least `--min-shared-keys` keys; the keys shared by more than `--max-posting` ads are
+  ignored;
+- the candidates are scored with `FingerprintsCompare._score` (tolerances of the detection) on the fingerprint of
+  the whole ad: the pairs of its chunks one after the other, shifted by the start of their chunk, so that two copies
+  split differently in chunks still match.
+
+Output columns: `score_min` (share of the pairs of the smaller ad found in the other at a consistent time offset),
+`score_max` (the same relative to the bigger ad: low when a short ad is only contained in a longer one, e.g. a
+shared jingle), `shared_keys`, `features_compatible` (acoustic pre-filter of the detection), `group_id`/`group_size`
+(connected components of the pairs), and for each ad (`_a`, `_b`): id, duration, number of chunks, brand, sector,
+category, fragment type, first detection date, live occurrences.
+
+Thresholds are not calibrated: start on a brand (`--brand`) or a duration range (`--min-duration`, `--max-duration`)
+or a sample (`--max-ads`), check pairs at several score levels, then widen. Other filters: `--date-from`/`--date-to`
+(first detection), `--fragment-types` (default `advertising AD`), `--min-occurrences` (default 1: skips the pieces
+of merged ads and the junk, whose occurrences are deleted), `--include-unbranded`.
+
+```bash
+poetry run python -m quotaclimat.data_ingestion.advertising.s04_consolidation.duplicate_ads.find_duplicates \
+    --min-duration 19 --max-duration 21 --output duplicates.csv
+```

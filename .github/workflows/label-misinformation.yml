@@ -1,0 +1,141 @@
+name: Label misinformation - Test & Build & Deploy to Scaleway
+
+# Job code: detect_misinformation/jobs/label_misinformation
+# Dependencies: `misinformation` Poetry group of the root pyproject.toml (hence the pyproject/poetry.lock paths).
+# Versioning: the job keeps its own version (bump2version, .bumpversion.cfg), independent of quotaclimat's.
+#   - pull request -> tests, then image tagged `dev` (environment `test`)
+#   - push on main -> bump patch version, then image tagged `<version>` and `latest` (environment `production`)
+# Secrets (set in both GitHub environments): LABEL_MISINFORMATION_SCW_SECRET_KEY, LABEL_MISINFORMATION_REGISTRY_ENDPOINT
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+    paths:
+      - 'detect_misinformation/jobs/label_misinformation/**'
+      - 'pyproject.toml'
+      - 'poetry.lock'
+      - '.github/workflows/label-misinformation.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'detect_misinformation/jobs/label_misinformation/**'
+      - 'pyproject.toml'
+      - 'poetry.lock'
+      - '.github/workflows/label-misinformation.yml'
+  workflow_dispatch:
+
+# Read-only GITHUB_TOKEN by default; only the bump job writes (it pushes the version commit to main).
+permissions:
+  contents: read
+
+env:
+  PYTHON_VERSION: '3.12'
+  JOB_DIR: detect_misinformation/jobs/label_misinformation
+
+jobs:
+
+  test:
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'pull_request' }}
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: pytest
+      working-directory: ${{ env.JOB_DIR }}
+      run: |
+        mkdir -p secrets
+        touch secrets/openai_key
+        touch secrets/mistral_key
+        touch secrets/model_name
+        touch secrets/model_name_brazil
+        touch secrets/bucket_access
+        touch secrets/bucket_secret
+        touch secrets/pwd_api.txt
+        touch secrets/username_api.txt
+        touch secrets/labelstudio_api_key
+        docker compose up test --exit-code-from test
+
+  build_and_push_dev:
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'pull_request' }}
+    needs: test
+    environment: test
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Login to Scaleway Container Registry
+      uses: docker/login-action@v3
+      with:
+        username: nologin
+        password: ${{ secrets.SCALEWAY_API_KEY }}
+        registry: ${{ secrets.LABEL_MISINFORMATION_REGISTRY_ENDPOINT }}
+
+    - name: Build label-misinformation dev image
+      run: |
+        docker build --platform linux/amd64 -f ${{ env.JOB_DIR }}/Dockerfile . \
+          -t ${{ secrets.LABEL_MISINFORMATION_REGISTRY_ENDPOINT }}/label-misinformation:dev
+        docker image inspect ${{ secrets.LABEL_MISINFORMATION_REGISTRY_ENDPOINT }}/label-misinformation:dev
+
+    - name: Push label-misinformation dev image
+      run: docker push ${{ secrets.LABEL_MISINFORMATION_REGISTRY_ENDPOINT }}/label-misinformation:dev
+
+  bump:
+    runs-on: ubuntu-latest
+    if: ${{ github.ref == 'refs/heads/main' && github.event_name != 'pull_request' }}
+    permissions:
+      contents: write
+    outputs:
+      version: ${{ steps.bump.outputs.version }}
+      sha: ${{ steps.bump.outputs.sha }}
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+
+    - name: Bump version (patch)
+      id: bump
+      working-directory: ${{ env.JOB_DIR }}
+      run: |
+        pip install bump2version==1.0.1
+        git config user.name "dataforgood-github-actions"
+        git config user.email "dataforgood-github-actions@github.com"
+        bump2version patch --message "[no ci]: label-misinformation {new_version} bumping version"
+        # deploy-main.yml may also bump quotaclimat's version on the same push
+        git pull --rebase origin main
+        git push origin main
+        PROJECT_VERSION=$(grep '^current_version' .bumpversion.cfg | cut -d ' ' -f 3)
+        echo "version=$PROJECT_VERSION" >> $GITHUB_OUTPUT
+        echo "sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
+
+  docker_build_and_push:
+    runs-on: ubuntu-latest
+    needs: bump
+    environment: production
+    env:
+      PROJECT_VERSION: ${{ needs.bump.outputs.version }}
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        ref: ${{ needs.bump.outputs.sha }}
+
+    - name: Login to Scaleway Container Registry
+      uses: docker/login-action@v3
+      with:
+        username: nologin
+        password: ${{ secrets.SCALEWAY_API_KEY }}
+        registry: ${{ secrets.LABEL_MISINFORMATION_REGISTRY_ENDPOINT }}
+
+    - name: Build label-misinformation image
+      run: |
+        docker build --platform linux/amd64 -f ${{ env.JOB_DIR }}/Dockerfile . \
+          -t ${{ secrets.LABEL_MISINFORMATION_REGISTRY_ENDPOINT }}/label-misinformation:${{ env.PROJECT_VERSION }}
+
+    - name: Tag label-misinformation latest image
+      run: |
+        docker tag ${{ secrets.LABEL_MISINFORMATION_REGISTRY_ENDPOINT }}/label-misinformation:${{ env.PROJECT_VERSION }} \
+          ${{ secrets.LABEL_MISINFORMATION_REGISTRY_ENDPOINT }}/label-misinformation:latest
+
+    - name: Push label-misinformation image
+      run: docker push --all-tags ${{ secrets.LABEL_MISINFORMATION_REGISTRY_ENDPOINT }}/label-misinformation

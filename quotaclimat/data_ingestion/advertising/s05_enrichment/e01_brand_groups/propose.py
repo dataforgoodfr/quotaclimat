@@ -1,11 +1,14 @@
 """Row of the tab Marques for a brand: its company, the INPI trademark holder, named like the brand when the
 holder's name contains it (FREE -> Free, SOCIETE FRANCAISE DU RADIOTELEPHONE - SFR -> SFR), else like the
-holder (Dacia -> Renault); and the ultimate parent company of the holder (GLEIF, else Wikidata).
+holder (Dacia -> Renault), with its country and SIREN; and the ultimate parent company of the holder (GLEIF,
+else Wikidata), with its country and SIREN. The departments of the head offices are looked up afterwards
+(run.py, API Recherche d'entreprises).
 
-A company already in the tab (written by the job or corrected by a human) is reused, with its ultimate
-parent company. Statuses: 'vérifié', 'non vérifié' (used anyway) or 'à vérifier' (not used by dbt). The
-job writes the company 'non vérifié' and the ultimate parent company 'à vérifier' (no company, 'à vérifier',
-when no trademark was found): a human checks and corrects them afterwards in the sheet.
+A company already in the tab (written by the job or corrected by a human) is reused, with its identity
+(country, SIREN, department) and ultimate parent company. Statuses: 'vérifié', 'non vérifié' (used anyway)
+or 'à vérifier' (not used by dbt). The job writes the company 'non vérifié' and the ultimate parent company
+it found 'à vérifier', and leaves the status empty when it found nothing: a human checks and corrects them
+afterwards in the sheet.
 """
 
 import re
@@ -125,18 +128,61 @@ def core_key(name: str) -> str:
     return "".join(words) or name_key(name)
 
 
+def clean_siren(value: str | None) -> str:
+    """9-digit SIREN from a cell of the sheet: spaces and dots removed ("552 081 317"), leading zeros put
+    back when the sheet read it as a number ("5520135" -> "005520135"); empty when not a SIREN."""
+    digits = "".join(c for c in str(value or "") if c not in " .  ")
+    return digits.zfill(9) if digits.isdigit() and 7 <= len(digits) <= 9 else ""
+
+
+@dataclass
+class Identity:
+    """Country, SIREN and head office department of a company (all empty when unknown; no SIREN nor
+    department for a company registered abroad)."""
+
+    country: str = ""
+    siren: str = ""
+    department: str = ""
+
+    @classmethod
+    def of_company(cls, company: Company | None) -> "Identity":
+        return cls(company.country, company.siren) if company else cls()
+
+    def or_else(self, other: "Identity") -> "Identity":
+        """This identity, else the other one when this one has no SIREN nor country."""
+        return self if (self.siren or self.country) else other
+
+
+# columns of the tab Marques holding the identity of the company and of its ultimate parent
+COMPANY_COLUMNS = ("pays_siege_social", "siren", "departement_siege_social")
+PARENT_COLUMNS = ("smu_pays", "smu_siren", "smu_departement")
+
+
+def identity_from_row(row: dict[str, str], columns=COMPANY_COLUMNS) -> Identity:
+    country, siren, department = (row.get(c, "").strip() for c in columns)
+    return Identity(country.upper(), clean_siren(siren), department)
+
+
+def identity_cells(identity: Identity, columns=COMPANY_COLUMNS) -> dict[str, str]:
+    return dict(zip(columns, (identity.country, identity.siren, identity.department)))
+
+
 @dataclass
 class KnownCompany:
     name: str
     parent: str
     parent_status: str
     brand: str
+    identity: Identity = field(default_factory=Identity)
+    parent_identity: Identity = field(default_factory=Identity)
 
 
 @dataclass
 class KnownCompanies:
-    """Companies of the tab Marques (and the ones proposed during the run), with their ultimate parent
-    company (the verified one first): by name_key and by name without legal form (core_key)."""
+    """Companies of the tab Marques (and the ones proposed during the run), with their identity and their
+    ultimate parent company (the verified one first): by name_key and by name without legal form (core_key).
+    The identity of a company (or of its ultimate parent) missing on its first row is taken from another
+    row of the same company."""
 
     by_key: dict[str, KnownCompany] = field(default_factory=dict)
     by_core: dict[str, KnownCompany] = field(default_factory=dict)
@@ -151,13 +197,24 @@ class KnownCompanies:
             if row.get("entreprise"):
                 known.add(KnownCompany(
                     row["entreprise"], row.get("societe_mere_ultime", ""), row.get("smu_statut", ""),
-                    row.get("marque", ""),
+                    row.get("marque", ""), identity_from_row(row), identity_from_row(row, PARENT_COLUMNS),
                 ))
         return known
 
     def add(self, company: KnownCompany) -> None:
-        self.by_key.setdefault(name_key(company.name), company)
-        self.by_core.setdefault(core_key(company.name), company)
+        for index, key in ((self.by_key, name_key(company.name)), (self.by_core, core_key(company.name))):
+            first = index.setdefault(key, company)
+            if first is company:
+                continue
+            # the first row wins (its ultimate parent), completed by the identities of the other rows
+            first.identity = first.identity.or_else(company.identity)
+            if not first.identity.department and first.identity.siren == company.identity.siren:
+                first.identity.department = company.identity.department
+            if not first.parent:
+                first.parent, first.parent_status = company.parent, company.parent_status
+                first.parent_identity = company.parent_identity
+            elif name_key(first.parent) == name_key(company.parent):
+                first.parent_identity = first.parent_identity.or_else(company.parent_identity)
 
     def find(self, holder: Holder, brand: str) -> KnownCompany | None:
         """Company of the holder already in the tab, by name (company_name, or the holder's), else by name
@@ -171,11 +228,37 @@ class KnownCompanies:
             or self._contained_in(holder.name)
         )
 
+    def find_by_name(self, name: str) -> KnownCompany | None:
+        return self.by_key.get(name_key(name)) if name else None
+
+    def parent_identity(self, parent: str) -> Identity:
+        """Identity of an ultimate parent company from the tab: the one written for it on another row, else
+        the one of the company of that name (the parent of a brand can be the company of another one)."""
+        key = name_key(parent)
+        for company in self.by_key.values():
+            if company.parent and name_key(company.parent) == key and (
+                company.parent_identity.siren or company.parent_identity.country
+            ):
+                return company.parent_identity
+        same_name = self.find_by_name(parent)
+        return same_name.identity if same_name else Identity()
+
     def _contained_in(self, holder_name: str) -> KnownCompany | None:
         """The company whose name the holder's name contains (as for a brand): "Inter IKEA Systems B.V."
         -> the company IKEA, written for the brand IKEA. The longest name when several."""
         found = [c for c in self.by_key.values() if name_contains_brand(holder_name, c.name)]
         return max(found, key=lambda c: len(name_key(c.name)), default=None)
+
+
+def holder_identity(holder: Holder) -> Identity:
+    return Identity("FR", holder.siren) if holder.siren else Identity(holder.country or "")
+
+
+def company_identity(holder: Holder, existing: KnownCompany | None) -> Identity:
+    """Identity of the company of the row: the one of the company already in the tab, else the holder's
+    (the company is the holder). Never the holder's for a company of the tab without identity: the holder
+    can be another legal entity than the one the tab names (a subsidiary, a holding)."""
+    return existing.identity if existing else holder_identity(holder)
 
 
 def _parent(wikidata_parent: Company | None, gleif_parent: Company | None) -> tuple[Company | None, str]:
@@ -189,51 +272,18 @@ def _parent(wikidata_parent: Company | None, gleif_parent: Company | None) -> tu
     return None, ""
 
 
-def propose_row(
-    brand: str,
-    holder: Holder | None,
+def parent_notes(
+    holder_has_siren: bool,
     wikidata_parent: Company | None,
     gleif_lei: Company | None,
     gleif_parent: Company | None,
-    known: KnownCompanies,
-    today: date,
     unavailable: list[str] | None = None,
-) -> dict[str, str]:
-    """Row of the tab Marques: the company (company_name, or the company already in the tab with its
-    ultimate parent), the ultimate parent company (GLEIF, else Wikidata), and in commentaires all that
-    explains them."""
-    job = f"job {today.isoformat()} : "
-    row = {"marque": brand, "e_statut": UNVERIFIED, "smu_statut": TO_CHECK}
-    if holder is None:
-        # written anyway, so that the brand is not searched again (and its INPI quota spent) on every run;
-        # 'à vérifier': for a human to fill in the company
-        return {
-            **row, "entreprise": "", "e_statut": TO_CHECK, "societe_mere_ultime": "",
-            "commentaires": job + "aucune marque en vigueur à ce nom à l'INPI (bases FR, EU, WO)",
-        }
-
-    identity = f"SIREN {holder.siren}" if holder.siren else f"société étrangère, pays {holder.country or '?'}"
-    notes = [f"entreprise : titulaire INPI {holder.name} ({identity}), marque {holder.trademark}"]
-    if not holder.in_sector_classes:
-        notes.append("aucune marque lue dans les classes de Nice du secteur, titulaire à vérifier")
-    if holder.other_holders:
-        notes.append("autres titulaires : " + ", ".join(holder.other_holders))
-
-    existing = known.find(holder, brand)
-    if existing and existing.parent:
-        notes.append(f"entreprise et société mère ultime reprises de la marque {existing.brand}")
-        return {
-            **row, "entreprise": existing.name, "societe_mere_ultime": existing.parent,
-            # the ultimate parent of this company, with its status on the other brand
-            "smu_statut": existing.parent_status or TO_CHECK,
-            "commentaires": job + " ; ".join(notes),
-        }
-
-    if existing:
-        notes.append(f"entreprise reprise de la marque {existing.brand}")
+) -> tuple[Company | None, list[str]]:
+    """Ultimate parent company found (GLEIF, else Wikidata) and the notes explaining it."""
+    notes = []
     parent, parent_source = _parent(wikidata_parent, gleif_parent)
     if gleif_lei:
-        how = "par son SIREN" if holder.siren else "par son nom et son pays"
+        how = "par son SIREN" if holder_has_siren else "par son nom et son pays"
         notes.append(f"LEI du titulaire trouvé {how} : {gleif_lei.identifier}")
     if gleif_parent:
         notes.append(f"GLEIF : société mère ultime {gleif_parent.name} (LEI {gleif_parent.identifier})")
@@ -246,9 +296,68 @@ def propose_row(
         notes.append(f"{', '.join(sorted(set(unavailable)))} indisponible pendant le job, société mère à rechercher")
     elif not parent:
         notes.append("aucune société mère trouvée")
+    return parent, notes
+
+
+def propose_row(
+    brand: str,
+    holder: Holder | None,
+    wikidata_parent: Company | None,
+    gleif_lei: Company | None,
+    gleif_parent: Company | None,
+    known: KnownCompanies,
+    today: date,
+    unavailable: list[str] | None = None,
+) -> dict[str, str]:
+    """Row of the tab Marques: the company (company_name, or the company already in the tab with its
+    identity and ultimate parent) with its country and SIREN, the ultimate parent company (GLEIF, else
+    Wikidata) with its country and SIREN, and in commentaires all that explains them. The departments of
+    the head offices are only the ones already in the tab: the job looks the others up afterwards.
+    Statuses: e_statut 'non vérifié', smu_statut 'à vérifier' for an ultimate parent found by the job; both
+    left empty when nothing was found."""
+    job = f"job {today.isoformat()} : "
+    row = {"marque": brand, **identity_cells(Identity()), **identity_cells(Identity(), PARENT_COLUMNS)}
+    if holder is None:
+        # written anyway, so that the brand is not searched again (and its INPI quota spent) on every run
+        return {
+            **row, "entreprise": "", "e_statut": "", "societe_mere_ultime": "", "smu_statut": "",
+            "commentaires": job + "aucune marque en vigueur à ce nom à l'INPI (bases FR, EU, WO)",
+        }
+
+    identity = f"SIREN {holder.siren}" if holder.siren else f"société étrangère, pays {holder.country or '?'}"
+    notes = [f"entreprise : titulaire INPI {holder.name} ({identity}), marque {holder.trademark}"]
+    if not holder.in_sector_classes:
+        notes.append("aucune marque lue dans les classes de Nice du secteur, titulaire à vérifier")
+    if holder.other_holders:
+        notes.append("autres titulaires : " + ", ".join(holder.other_holders))
+
+    existing = known.find(holder, brand)
+    row.update(identity_cells(company_identity(holder, existing)))
+    if existing and not existing.identity.siren and holder.siren:
+        notes.append("SIREN de l'entreprise à compléter (celui du titulaire peut être une autre société)")
+    if existing and existing.parent:
+        notes.append(f"entreprise et société mère ultime reprises de la marque {existing.brand}")
+        return {
+            **row, "entreprise": existing.name, "e_statut": UNVERIFIED,
+            "societe_mere_ultime": existing.parent,
+            # the ultimate parent of this company, with its status on the other brand
+            "smu_statut": existing.parent_status,
+            **identity_cells(existing.parent_identity.or_else(known.parent_identity(existing.parent)), PARENT_COLUMNS),
+            "commentaires": job + " ; ".join(notes),
+        }
+
+    if existing:
+        notes.append(f"entreprise reprise de la marque {existing.brand}")
+    parent, more_notes = parent_notes(bool(holder.siren), wikidata_parent, gleif_lei, gleif_parent, unavailable)
     return {
         **row,
         "entreprise": existing.name if existing else company_name(holder, brand),
+        "e_statut": UNVERIFIED,
         "societe_mere_ultime": parent.name if parent else "",
-        "commentaires": job + " ; ".join(notes),
+        "smu_statut": TO_CHECK if parent else "",
+        **identity_cells(
+            Identity.of_company(parent).or_else(known.parent_identity(parent.name)) if parent else Identity(),
+            PARENT_COLUMNS,
+        ),
+        "commentaires": job + " ; ".join(notes + more_notes),
     }

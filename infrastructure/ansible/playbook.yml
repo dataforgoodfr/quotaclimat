@@ -11,6 +11,7 @@
     traefik_domain: "{{ lookup('env', 'TRAEFIK_DOMAIN') }}"
     kestra_domain: "{{ lookup('env', 'KESTRA_DOMAIN') }}"
     glitchtip_domain: "{{ lookup('env', 'GLITCHTIP_DOMAIN') }}"
+    windmill_domain: "{{ lookup('env', 'WINDMILL_DOMAIN') }}"
 
     # Traefik
     traefik_dashboard_auth: "{{ lookup('env', 'TRAEFIK_DASHBOARD_AUTH') }}"
@@ -31,6 +32,22 @@
     glitchtip_s3_bucket: "{{ lookup('env', 'GLITCHTIP_S3_BUCKET') }}"
     glitchtip_s3_endpoint: "{{ lookup('env', 'GLITCHTIP_S3_ENDPOINT') | default('https://s3.fr-par.scw.cloud', true) }}"
     glitchtip_s3_region: "{{ lookup('env', 'GLITCHTIP_S3_REGION') | default('fr-par', true) }}"
+    # GlitchTip email (Brevo SMTP); leave BREVO_SMTP_* empty to keep console emails
+    brevo_smtp_login: "{{ lookup('env', 'BREVO_SMTP_LOGIN') }}"
+    brevo_smtp_key: "{{ lookup('env', 'BREVO_SMTP_KEY') }}"
+    brevo_smtp_host: "{{ lookup('env', 'BREVO_SMTP_HOST') | default('smtp-relay.brevo.com', true) }}"
+    brevo_smtp_port: "{{ lookup('env', 'BREVO_SMTP_PORT') | default('587', true) }}"
+    brevo_from_email: "{{ lookup('env', 'GLITCHTIP_FROM_EMAIL') | default('glitchtip@quotaclimat.org', true) }}"
+
+    # Windmill
+    windmill_db_user: "{{ lookup('env', 'WINDMILL_DB_USER') }}"
+    windmill_db_password: "{{ lookup('env', 'WINDMILL_DB_PASSWORD') }}"
+    windmill_db_name: "{{ lookup('env', 'WINDMILL_DB_NAME') }}"
+    # API token of a superadmin, used to push the secrets, the flows and the instance SMTP settings
+    windmill_token: "{{ lookup('env', 'WINDMILL_TOKEN') }}"
+    windmill_workspace: "{{ lookup('env', 'WINDMILL_WORKSPACE') }}"
+    # Windmill email (instance SMTP, same BREVO_SMTP_* credentials as GlitchTip); skipped when they are empty
+    windmill_from_email: "{{ lookup('env', 'WINDMILL_FROM_EMAIL') | default('windmill@quotaclimat.org', true) }}"
 
     # Managed Postgres
     postgres_host: "{{ lookup('env', 'POSTGRES_HOST') }}"
@@ -105,3 +122,5 @@
       tags: [kestra]
     - role: glitchtip
       tags: [glitchtip]
+    - role: windmill
+      tags: [windmill]

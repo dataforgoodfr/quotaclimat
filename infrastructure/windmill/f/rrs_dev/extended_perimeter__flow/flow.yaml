@@ -1,0 +1,263 @@
+summary: rrs-dev/extended-perimeter
+description: Dev pipeline to ingest the extended perimeter in the Droit à l'Info scope.
+value:
+  modules:
+  - id: ingest_data_to_s3
+    summary: ingest data to s3
+    value:
+      type: script
+      path: f/shared/docker_run
+      input_transforms:
+        image:
+          type: static
+          value: rg.fr-par.scw.cloud/namespace-barometre/quotaclimat_base:latest
+        entrypoint:
+          type: static
+          value:
+          - /bin/sh
+          - -c
+          - cd /app && python /app/quotaclimat/data_processing/mediatree/s3/api_to_s3.py
+        env:
+          type: javascript
+          expr: |-
+            ({
+              "API_TO_S3_CONCURRENCY": 10,
+              "BUCKET_NAME": "mediatree-extended-perimeter-dev",
+              "COUNTRY": "ext-fra",
+              "ENV": "prod",
+              "KEYWORDS_URL": "https://keywords.mediatree.fr/api/subtitle/",
+              "LOGLEVEL": "INFO",
+              "MEDIATREE_AUTH_URL": "https://keywords.mediatree.fr/api/auth/token/",
+              "MEDIATREE_USER": "quotaclimat",
+              "MODIN_CPUS": 2,
+              "MODIN_ENGINE": "python",
+              "MODIN_MEMORY": 2000000000,
+              "NUMBER_OF_PREVIOUS_DAYS": flow_input.days_back,
+              "OMP_NUM_THREADS": 3,
+              "PORT_HS": 5666,
+              "START_DATE": Math.floor((flow_input.start_date ? Date.parse(flow_input.start_date) : Date.now()) / 1000)
+            })
+        secret_env:
+          type: static
+          value:
+            BUCKET: f/secrets/RRS_SCW_ACCESS_DEV
+            BUCKET_SECRET: f/secrets/RRS_SCW_SECRET_DEV
+            MEDIATREE_PASSWORD: f/secrets/MEDIATREE_PASSWORD
+            SENTRY_DSN: f/secrets/SENTRY_DSN
+        registry:
+          type: static
+          value: rg.fr-par.scw.cloud/namespace-barometre
+        registry_password_secret:
+          type: static
+          value: f/secrets/SCW_SECRET
+        shm_size:
+          type: static
+          value: 10g
+        stdout_logs:
+          type: static
+          value: true
+  - id: detect_keywords
+    summary: detect keywords
+    value:
+      type: script
+      path: f/shared/docker_run
+      input_transforms:
+        image:
+          type: static
+          value: rg.fr-par.scw.cloud/namespace-barometre/quotaclimat_base:latest
+        entrypoint:
+          type: static
+          value:
+          - /bin/sh
+          - -c
+          - cd /app && /app/entrypoints/detect_keywords.sh
+        env:
+          type: javascript
+          expr: |-
+            ({
+              "BATCH_SIZE": 5000,
+              "BUCKET_NAME": "mediatree-extended-perimeter-dev",
+              "COMPARE_DURATION": true,
+              "COUNTRY": "ext-fra",
+              "DBT_PROFILES_DIR": "/app/my_dbt_project/dbt",
+              "DBT_PROJECT_DIR": "/app/my_dbt_project",
+              "ENV": "prod",
+              "FILTER_DAYS_STOP_WORD": 3000,
+              "HEALTHCHECK_SERVER": "0.0.0.0",
+              "KEYWORDS_URL": "https://keywords.mediatree.fr/api/v2/subtitle/",
+              "LOGLEVEL": "INFO",
+              "MEDIATREE_AUTH_URL": "https://keywords.mediatree.fr/api/auth/token/",
+              "MEDIATREE_USER": "quotaclimat",
+              "MODIN_CPUS": 2,
+              "MODIN_ENGINE": "ray",
+              "MODIN_MEMORY": 2000000000,
+              "NUMBER_OF_PREVIOUS_DAYS": flow_input.days_back,
+              "POSTGRES_DB": "extended-perimeter",
+              "POSTGRES_PORT": 18047,
+              "RAY_COLOR_PREFIX": 1,
+              "RAY_memory_monitor_refresh_ms": 0,
+              "START_DATE": Math.floor((flow_input.start_date ? Date.parse(flow_input.start_date) : Date.now()) / 1000),
+              "EXTENDED_PERIMETER": true
+            })
+        secret_env:
+          type: static
+          value:
+            BUCKET: f/secrets/RRS_SCW_ACCESS_DEV
+            BUCKET_SECRET: f/secrets/RRS_SCW_SECRET_DEV
+            MEDIATREE_PASSWORD: f/secrets/MEDIATREE_PASSWORD
+            POSTGRES_USER: f/secrets/RRS_PG_ADMIN_USER_DEV
+            POSTGRES_HOST: f/secrets/RRS_PG_HOST_DEV
+            POSTGRES_PASSWORD: f/secrets/RRS_PG_ADMIN_PASSWORD_DEV
+            SENTRY_DSN: f/secrets/SENTRY_DSN
+        registry:
+          type: static
+          value: rg.fr-par.scw.cloud/namespace-barometre
+        registry_password_secret:
+          type: static
+          value: f/secrets/SCW_SECRET
+        shm_size:
+          type: static
+          value: 2g
+        stdout_logs:
+          type: static
+          value: false
+  - id: detect_misinformation
+    summary: detect misinformation
+    value:
+      type: script
+      path: f/shared/docker_run
+      input_transforms:
+        image:
+          type: static
+          value: rg.fr-par.scw.cloud/misinformation/label-misinformation:latest
+        entrypoint:
+          type: static
+          value:
+          - /bin/sh
+          - -c
+          - cd /app && python /app/main.py
+        env:
+          type: javascript
+          expr: |-
+            ({
+              "APP_NAME": "label-misinformation-extended-perimeter",
+              "AWS_DEFAULT_REGION": "fr-par",
+              "BUCKET_INPUT": "misinformation-extended-perimeter-dev",
+              "BUCKET_OUTPUT": "misinformation-extended-perimeter-dev",
+              "BUCKET_OUTPUT_FOLDER": "label-misinformation-input",
+              "COUNTRY": "ext-fra",
+              "ENV": "production",
+              "KEYWORDS_URL": "https://keywords.mediatree.fr/api/v2/subtitle/",
+              "LABEL_STUDIO_PROJECT": 23,
+              "LABEL_STUDIO_PROJECT_ID": 17,
+              "LABEL_STUDIO_URL": "https://barometre7kfudatm-labelstudio.functions.fnc.fr-par.scw.cloud",
+              "LOGLEVEL": "INFO",
+              "MEDIATREE_AUTH_URL": "https://keywords.mediatree.fr/api/auth/token/",
+              "MEDIATREE_USER": "quotaclimat",
+              "LLM_PROVIDER": "openai",
+              "MODEL_NAME": "ft:gpt-4o-mini-2024-07-18:personal::B1xWiJRm",
+              "MIN_MISINFORMATION_SCORE": 8,
+              "MODIN_MEMORY": 2000000000,
+              "NUMBER_OF_PREVIOUS_DAYS": flow_input.days_back,
+              "POSTGRES_DB_LS": "labelstudio",
+              "POSTGRES_PORT_LS": 22737,
+              "POSTGRES_DB": "extended-perimeter",
+              "POSTGRES_PORT": 18047,
+              "RAY_COLOR_PREFIX": 1,
+              "DATE": (flow_input.start_date ? String(flow_input.start_date).slice(0, 10) : new Date().toISOString().slice(0, 10)),
+              "FORCE_WHISPER_TRANSCRIPTION": ""
+            })
+        secret_env:
+          type: static
+          value:
+            POSTGRES_HOST_LS: f/secrets/POSTGRES_HOST
+            POSTGRES_USER_LS: f/secrets/POSTGRES_USER_READ
+            POSTGRES_PASSWORD_LS: f/secrets/POSTGRES_PASSWORD_READ
+            API_LABEL_STUDIO_KEY: f/secrets/API_LABEL_STUDIO_KEY
+            BUCKET_ACCESS: f/secrets/RRS_SCW_ACCESS_DEV
+            BUCKET_SECRET: f/secrets/RRS_SCW_SECRET_DEV
+            MEDIATREE_PASSWORD: f/secrets/MEDIATREE_PASSWORD
+            OPENAI_API_KEY: f/secrets/OPENAI_API_KEY
+            POSTGRES_USER: f/secrets/RRS_PG_ADMIN_USER_DEV
+            POSTGRES_HOST: f/secrets/RRS_PG_HOST_DEV
+            POSTGRES_PASSWORD: f/secrets/RRS_PG_ADMIN_PASSWORD_DEV
+            SENTRY_DSN: f/secrets/SENTRY_DSN
+        registry:
+          type: static
+          value: rg.fr-par.scw.cloud/misinformation
+        registry_password_secret:
+          type: static
+          value: f/secrets/SCW_SECRET
+        shm_size:
+          type: static
+          value: 2g
+        stdout_logs:
+          type: static
+          value: false
+  - id: dbt_run_transformations
+    summary: dbt run transformations
+    value:
+      type: script
+      path: f/shared/docker_run
+      input_transforms:
+        image:
+          type: static
+          value: rg.fr-par.scw.cloud/namespace-barometre/quotaclimat_base:latest
+        entrypoint:
+          type: static
+          value:
+          - /bin/sh
+          - -c
+          - cd /app && /app/entrypoints/dbt.sh
+        env:
+          type: static
+          value:
+            DBT_ENV: dev
+            DBT_PROFILES_DIR: /app/my_dbt_project/dbt
+            DBT_PROJECT_DIR: /app/my_dbt_project
+            EXTENDED_PERIMETER: true
+            LOGLEVEL: INFO
+            MODIN_CPUS: 2
+            MODIN_ENGINE: python
+            MODIN_MEMORY: 3000000000
+            POSTGRES_DB: extended-perimeter
+            POSTGRES_PORT: 18047
+            LABELSTUDIO_POSTGRES_PORT: 22737
+        secret_env:
+          type: static
+          value:
+            LABELSTUDIO_INGESTION_POSTGRES_USER: f/secrets/POSTGRES_USER_READ
+            LABELSTUDIO_INGESTION_POSTGRES_PASSWORD: f/secrets/POSTGRES_PASSWORD_READ
+            LABELSTUDIO_POSTGRES_HOST: f/secrets/POSTGRES_HOST
+            POSTGRES_USER: f/secrets/RRS_PG_ADMIN_USER_DEV
+            POSTGRES_HOST: f/secrets/RRS_PG_HOST_DEV
+            POSTGRES_PASSWORD: f/secrets/RRS_PG_ADMIN_PASSWORD_DEV
+        registry:
+          type: static
+          value: rg.fr-par.scw.cloud/namespace-barometre
+        registry_password_secret:
+          type: static
+          value: f/secrets/SCW_SECRET
+        shm_size:
+          type: static
+          value: 6g
+        stdout_logs:
+          type: static
+          value: true
+schema:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  order:
+  - days_back
+  - start_date
+  properties:
+    days_back:
+      type: integer
+      description: Number of days prior to the start date to process. Defaults to 1.
+      default: 1
+    start_date:
+      type: string
+      format: date
+      description: Reference date (YYYY-MM-DD) from which to count days back. Defaults to now.
+  required:
+  - days_back

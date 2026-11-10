@@ -1,0 +1,129 @@
+<View>
+  <Header value="News Content Review" style="font-size: 20px; margin-bottom: 20px; color: #2c3e50;"/>
+  
+  <!-- Channel and Model Information Section -->
+  <View style="display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap;">
+    <View style="flex: 1; min-width: 300px; padding: 15px; background: #f5f7fa; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+      <Header value="Channel Information" size="small"/>
+      <Text name="channel_info" value="$item.channel_title"/>
+      <Text name="program_info" value="$item.channel_program"/>
+      <Text name="keyword_id" value="$item.id"/>
+	  <Hypertext name="video_link" value="&lt;a href='$item.url_mediatree' target='_blank' style='color: blue; text-decoration: underline;'&gt;See media on MediaTree&lt;/a&gt;"/>
+	  <Audio name="audio" value="$item.media"/>
+    </View>
+    
+    <View style="flex: 1; min-width: 300px; padding: 15px; background: #f5f7fa; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+      <Header name="test" value="Date and Model"/>
+      <Text name="start_time" value="$item.start"/>
+      <Text name="model_info" value="$item.model_name"/>
+      <Text name="model_result" value="$item.model_result"/>
+    </View>
+  </View>
+  
+  <!-- Misinformation Section -->
+  <View style="padding: 20px; background: #f8f9fa; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+    <Header value="Misinformation Assessment" size="small" style="margin-bottom: 15px; color: #2c3e50;"/>
+    
+    
+     <View style="display: flex; gap: 8px; margin-bottom: 15px; flex-wrap: wrap;">
+     	<Labels name="misinformation" toName="text_to_review_misinformation" showInline="true">
+        	<Label value="Factually Incorrect" alias="misinformation" hotkey="1" hint="Global warming is not happing. Climate change is NOT leading to melting ice (such as glaciers, sea ice, and permafrost), increased extreme weather, or rising sea levels. Cold weather also shows that climate change is not happening." background="#ff8000"/>
+    		<Label value="High-Impact Misleading" alias="misleading" hotkey="2" hint="Misleading statement with high stakes for climate information" background="#AE24CA"/>
+       	</Labels>
+     </View>
+    
+    <Text name="text_to_review_misinformation" value="$item.plaintext_whisper" granularity="word"/>
+    
+    <View>
+      <View style="display: flex;font-style: italic; gap: 15px; margin-top: 15px; flex-wrap: wrap;">
+  		  <Text name="text_to_review_contains_misinformation" value="Does the above text contain misinformation (unchallenged)?"/>
+      </View>
+      <View style="display: flex; gap: 15px; margin-bottom: 15px; flex-wrap: wrap;">
+        <Choices name="choice" toName="text_to_review_misinformation" required="true" showInline="false">
+          <Choice value="Correct" html="&lt;span style='color:green'&gt;✓&lt;/span&gt; Contains Misinformation" hotkey="m"/>
+          <Choice value="Incorrect" html="&lt;span style='color:red'&gt;✗&lt;/span&gt; Does Not Contain Misinformation" hotkey="n"/>
+        </Choices>
+      </View>
+    </View>
+    
+    <View visibleWhen="choice-selected" whenTagName="choice" whenChoiceValue="Incorrect">
+       <View style="display: flex;">
+  		<Text name="misinfo_correction_text" value="Did the text not contain  misinformation or was it challenged ?"/>
+       </View>
+       <View style="display: flex;">
+        <Choices name="Was Misinformation Corrected?" toName="text_to_review_misinformation" required="false" showInline="true">>
+          <Choice value="not_corrected" html="No Misinformation"/>
+          <Choice value="corrected" html="Challenged"/>
+        </Choices>
+       </View>
+    </View>
+     
+     <Header name="claim_header" value="Claims" granularity="word"/>
+     <TextArea name="claim" toName="text_to_review_misinformation" placeholder="Write down the misinformation claim(s) that you have identified." style="width: 100%; border-radius: 4px; border: 1px solid #ddd; padding: 8px; margin-bottom: 10px;" rows="3" maxSubmissions="1" editable="true" required="false"/>
+     <View style="margin-bottom: 30px;">
+       <Text name="speaker_title" value="Who made the claim ?" granularity="paragraph"/>
+         <View style="display: flex; gap: 3px; margin-bottom: 3px; flex-wrap: wrap;">
+           <Choices name="speaker_choice" toName="text_to_review_misinformation" required="false" showInline="true" choice="multiple">
+             <Choice value="Journalist" html="Journalist" hotkey="j"/>
+             <Choice value="Commentator" html="Commentator" hotkey="c"/>
+             <Choice value="Guest" html="Guest (Non Politician)" hotkey="g"/>
+             <Choice value="Politician" html="Politician" hotkey="p"/>
+             <Choice value="Audience" html="Listener/Viewer" hotkey="l"/>
+             <Choice value="Unknown" html="Non Identifiable" hotkey="u"/>
+           </Choices>
+         </View>
+
+        <Collapse bordered="true">
+        <Panel value="Definitions">
+          <HyperText name="html_text" >
+              <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif; font-size: 14px; line-height: 1.5; color: #333;">
+                <ul style="padding-left: 16px;">
+                  <li><strong>Journalist [j]</strong>: Media professional involved in creating and presenting media content.</li>
+                  <li><strong>Commentator [c]</strong>: Regularly offers personal opinions and analysis on current events.</li>
+                  <li><strong>Guest [g]</strong>: Invited to present external perspectives or expertise relevant to the topic.</li>
+                  <li><strong>Politician [p]</strong>: Officially represents or promotes a political group, including elected officials and party staff.</li>
+                  <li><strong>Listener/Viewer [l]</strong>: Invited on broadcast to share personal experiences, opinions, or eyewitness accounts.</li>
+                  <li><strong>Unknown [u]</strong>: Cannot identify speaker.</li>
+                </ul>
+              </div>
+          </HyperText>
+        </Panel>
+      </Collapse>
+     </View>
+	
+     <Header name="explain_header" value="Debunk" granularity="word"/>
+     <TextArea name="explanation" toName="text_to_review_misinformation" placeholder="Explain your assessment (why is this misinformation)" style="width: 100%; border-radius: 4px; border: 1px solid #ddd; padding: 8px; margin-bottom: 10px;" rows="3" maxSubmissions="1" editable="true" required="false"/>
+
+     <Header value="Add references for your debunk:"/>
+     <TextArea name="references" toName="text_to_review_misinformation" placeholder="Add reference URL..." style="width: 100%; border-radius: 4px; border: 1px solid #ddd; padding: 8px; margin-bottom: 10px;" rows="2" maxSubmissions="3" editable="true" required="false"/>
+
+    <View style="display: flex;">
+      <!-- Left side -->
+      <View style="flex: 70%">
+        <Header value="Add extra comments:"/>
+        <TextArea name="comments" toName="text_to_review_misinformation" placeholder="Other comments (gravity of the case, comments on the annotation system...)" style="width: 100%; border-radius: 4px; border: 1px solid #ddd; padding: 8px;" rows="2" maxSubmissions="1" editable="true" required="false"/>
+      </View>
+      <!-- Right side -->
+      <View style="flex: 30%; margin-left: 1em">
+        <Choices name="Salient choice" toName="text_to_review_misinformation" required="false" showInline="true">>
+          <Choice value="Salient" html="&lt;span style='color:orange'&gt;⚠️&lt;/span&gt; (optional) This is an important misinformation case" hotkey="s"/>
+        </Choices>
+      </View>
+    </View>
+    <!-- <View style="display: flex;"> -->
+    </View> 
+
+   
+  <!-- legacy 1870 and 1 868 Added Case Relevancy -->
+  <View style="display: none;">  
+    <Choices name="Case relevancy (optional)" toName="text_to_review_misinformation" required="false" showInline="true">
+      <Choice value="Corrected" html="DO NOT USE &lt;span style='color:orange'&gt;⚠️&lt;/span&gt; (optional) This case is considered salient for review" hotkey="r"/>
+    </Choices>
+  </View>
+  <View>
+     <Header value="Legacy plaintext (mediatree)"/> 
+     <Text name="legacy_plaintext" value="$item.plaintext" granularity="word"/>
+ 
+  </View>
+   
+</View>

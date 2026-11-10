@@ -1,11 +1,19 @@
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "100m"
+    max-file: "3"
+
 services:
   glitchtip-web:
     image: glitchtip/glitchtip:latest
     container_name: glitchtip-web
     restart: unless-stopped
+    logging: *default-logging
     env_file:
       - .env
       - .env.s3
+      - .env.email
     networks:
       - traefik-public
       - glitchtip-internal
@@ -32,10 +40,12 @@ services:
     image: glitchtip/glitchtip:latest
     container_name: glitchtip-worker
     restart: unless-stopped
+    logging: *default-logging
     command: ./bin/run-celery-with-beat.sh
     env_file:
       - .env
       - .env.s3
+      - .env.email
     networks:
       - glitchtip-internal
     depends_on:
@@ -48,6 +58,7 @@ services:
     image: redis:7-alpine
     container_name: glitchtip-redis
     restart: unless-stopped
+    logging: *default-logging
     command: redis-server --maxmemory 64mb --maxmemory-policy allkeys-lru
     networks:
       - glitchtip-internal

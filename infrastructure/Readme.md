@@ -17,12 +17,14 @@ infrastructure/
 ├── .env.secrets.dist          # Template listing all required secrets
 ├── bin/
 │   ├── setup.sh               # Installs all dependencies
+│   ├── migrate_climateguard_state.sh  # One-off: climateguard states → live/misinformation
 │   └── lib/
 │       └── common.sh          # Vaultwarden secret fetch functions
 ├── live/
 │   ├── terragrunt.hcl         # Root config: backend, provider, terraform_binary
 │   ├── advertising/           # Label Studio + advertising detection infra
 │   ├── barometre/              # Barometre database infra
+│   ├── misinformation/        # Label Studio + label-misinformation job per country (climate-safeguards-<env>)
 │   ├── rrs/                   # RRS database + serverless jobs + extended perimeter (Droit à l'info)
 │   │   └── template/
 │   │       ├── database.tf    # rrs + extended-perimeter databases, users/privileges, ACL
@@ -42,9 +44,13 @@ infrastructure/
 ├── compose/                   # Docker Compose stacks deployed by Ansible
 │   ├── traefik/
 │   ├── kestra/
-│   └── glitchtip/
+│   ├── glitchtip/
+│   └── windmill/
 ├── kestra/
 │   └── flows/                 # Kestra flow definitions (uploaded by Ansible)
+├── windmill/                  # Windmill copy of the Kestra flows (wmill project, pushed by Ansible)
+│   ├── wmill.yaml             # Synced folders (sync push deletes what is missing in them)
+│   └── f/                     # quotaclimat, quotaclimat_dev, rrs, rrs_dev, shared (see docs/windmill_flows.md)
 └── ansible/
     ├── ansible.cfg
     ├── inventory.yml.j2       # Template — fill with VM IP from terraform output
@@ -53,7 +59,8 @@ infrastructure/
         ├── common/            # Docker, fail2ban, unattended-upgrades
         ├── traefik/           # Reverse proxy with auto-TLS
         ├── kestra/            # Orchestrator + secrets/KV provisioning + flow upload
-        └── glitchtip/         # Error tracking + Redis
+        ├── glitchtip/         # Error tracking + Redis
+        └── windmill/          # Windmill server + workers (Kestra alternative) + secrets sync + flow push
 ```
 
 The root `live/terragrunt.hcl` generates the S3 backend and Scaleway provider configuration for every environment automatically, so there is no duplicated `backend.tf` or `provider.tf` to maintain. Each environment folder only needs a `terragrunt.hcl` with its specific input values.
@@ -145,7 +152,7 @@ make env=prod target=orchestrator tg-apply
 | `make tags=kestra ansible` | Run only the kestra role |
 | `make tags=traefik,kestra ansible` | Run specific roles |
 
-Available tags: `common`, `traefik`, `kestra`, `glitchtip`.
+Available tags: `common`, `traefik`, `kestra`, `glitchtip`, `windmill`.
 
 Before running Ansible for the first time, create the inventory file from the template:
 ```bash
@@ -190,7 +197,7 @@ cd ansible && cp inventory.yml.j2 inventory.yml
 #     (rdb-poc's ACL is managed outside this repo). On migration, remove the old IP.
 
 # 5b. Point DNS records to the server IP
-#     traefik.<domain>, kestra.<domain>, glitchtip.<domain>
+#     traefik.<domain>, kestra.<domain>, glitchtip.<domain>, windmill.<domain>
 
 # 6. Deploy services
 cd .. && make ansible
@@ -201,9 +208,26 @@ cd .. && make ansible
 ```bash
 make tags=kestra ansible     # Redeploy Kestra + re-upload flows + sync secrets
 make tags=glitchtip ansible  # Redeploy GlitchTip only
+make tags=windmill ansible   # Redeploy Windmill + sync secrets + push flows
 ```
 
-GlitchTip stores files and archived events/logs (DuckDB cold storage) in S3. After `make env=prod target=orchestrator tg-apply`, copy the `glitchtip_s3_*` outputs into `GLITCHTIP_S3_ACCESS_KEY`, `GLITCHTIP_S3_SECRET_KEY` and `GLITCHTIP_S3_BUCKET` in `.env.secrets` (rendered by `compose/glitchtip/.env.s3.j2`). The managed Postgres sets `max_locks_per_transaction = 512` for GlitchTip (`live/barometre/template/database.tf`).
+[Windmill](https://www.windmill.dev/docs/advanced/self_host) (Kestra alternative) runs as a server plus default, native and `dbt` workers (`compose/windmill/docker-compose.yml.j2`, role `windmill`), on its own `windmill` database on the managed Postgres. Traefik routes `WINDMILL_DOMAIN` to the server (port 8000) with automatic TLS. Set `WINDMILL_DOMAIN`, `WINDMILL_DB_USER`, `WINDMILL_DB_PASSWORD`, `WINDMILL_DB_NAME` in `.env.secrets` and `TF_VAR_postgres_password_windmill` (same value as `WINDMILL_DB_PASSWORD`) for OpenTofu. First login is `admin@windmill.dev` / `changeme`: change it right away.
+
+The Windmill copy of the Kestra flows (`windmill/`, no schedules yet: Kestra still runs production) is deployed by the same role, after Windmill starts: it writes every entry of `kestra_secrets`/`kestra_secrets_dev` as the secret variable `f/secrets/<NAME>` (API, only what changed), then pushes `windmill/` with `wmill sync push`, which makes the synced Windmill folders match the repository, deletions included: create and change flows in `windmill/`, never in the Windmill UI. Before the first deploy, create the workspace in the UI and an API token of a superadmin (account settings → Tokens), then set in `.env.secrets`: `WINDMILL_WORKSPACE` (the workspace **id**, e.g. `quotaclimat`) and `WINDMILL_TOKEN` (superadmin: it also writes the instance SMTP settings).
+
+Invitation emails go through the same Brevo account as GlitchTip (`BREVO_SMTP_LOGIN`, `BREVO_SMTP_KEY`, `BREVO_SMTP_HOST`): the role writes them as the `smtp_settings` instance setting (`ansible/roles/windmill/tasks/smtp.yml`, same fields as Instance settings → SMTP in the UI, port left to Windmill's default), with `WINDMILL_FROM_EMAIL` as sender (default `windmill@quotaclimat.org`, on the domain verified in Brevo). Skipped when `BREVO_SMTP_LOGIN`/`BREVO_SMTP_KEY` are empty. Windmill masks the stored password, so the setting is rewritten only when another field changes: after changing only `BREVO_SMTP_KEY`, run `WINDMILL_SMTP_FORCE=true make tags=windmill ansible` (or update it in the UI). The workers mount the Docker socket to run the flows' containers, like Kestra. Details (conversion from Kestra, container runner, dbt worker, adding a flow or a secret): [`docs/windmill_flows.md`](../docs/windmill_flows.md).
+
+The `windmill` user creates and owns its own database (`live/orchestrator/template/grants.tf`, `terraform_data.windmill_database`): a database created by Scaleway's API would be owned by `_rdb_superadmin`, and nobody else could grant the Windmill roles `USAGE` on its `public` schema. The managed Postgres has no superuser, so `windmill_admin` is created without `BYPASSRLS` and relies on Windmill's row-level-security migration: keep the image (`windmill_image`, `ansible/roles/windmill/defaults/main.yml`) recent. Creating the database and roles needs `CREATEDB`/`CREATEROLE`, so `windmill` is a Scaleway admin only during the bootstrap:
+
+```bash
+TF_VAR_windmill_bootstrap=true make env=prod target=orchestrator tg-apply   # windmill is admin, creates its database and roles
+make env=prod target=orchestrator tg-apply                                  # removes admin; windmill stays owner of its database
+```
+
+Before removing Windmill, apply once with `TF_VAR_windmill_bootstrap=true`: the destroy step (`DROP DATABASE windmill`, `DROP ROLE windmill_admin, windmill_user`) needs `CREATEROLE` to drop the roles.
+
+GlitchTip stores files and archived events/logs (DuckDB cold storage) in S3. After `make env=prod target=orchestrator tg-apply`, copy the `glitchtip_s3_*` outputs into `GLITCHTIP_S3_ACCESS_KEY`, `GLITCHTIP_S3_SECRET_KEY` and `GLITCHTIP_S3_BUCKET` in `.env.secrets` (rendered by `compose/glitchtip/.env.s3.j2`). Invitation emails go through [Brevo](https://www.brevo.com) SMTP (`compose/glitchtip/.env.email.j2`, loaded after `.env`). Verify the `quotaclimat.org` domain in Brevo (DKIM/DMARC), create an SMTP key (SMTP & API), then set in `.env.secrets`: `BREVO_SMTP_LOGIN` (Brevo login email), `BREVO_SMTP_KEY`, and optionally `GLITCHTIP_FROM_EMAIL` (default `glitchtip@quotaclimat.org`), `BREVO_SMTP_HOST` (default `smtp-relay.brevo.com`), `BREVO_SMTP_PORT` (default `587`). Without `BREVO_SMTP_LOGIN`/`BREVO_SMTP_KEY`, emails are only printed in the container logs (`consolemail://`). Redeploy with `make tags=glitchtip ansible`. If sending fails, check the Brevo logs and try port 465 with `smtp+ssl` in the template.
+The managed Postgres sets `max_locks_per_transaction = 512` for GlitchTip (`live/barometre/template/database.tf`).
 
 ### Kestra flows
 
@@ -224,6 +248,8 @@ The `main-pipeline` flow posts a message in a Mattermost channel when a step fai
 
 `metabase_sync` has `allowFailure: true`: its failure marks the run as WARNING and sends no alert.
 
+To test the alert, run the dev `main-pipeline` (namespace `quotaclimat-dev`) by hand with `test_alert=true` (see `docs/kestra_flows.md`).
+
 ### Per-country secret (`I18N_COUNTRY_SECRETS`)
 
 The `barometre-i18n` flow runs the misinformation job for every country on the VM. Instead of one Kestra secret per country, the per-country credentials are in a single secret, `I18N_COUNTRY_SECRETS`: a **single-line JSON object** keyed by the flow's country codes (`bel`, `bel-fla`, `deu`, `esp`, `pol`), each value holding four strings:
@@ -232,12 +258,12 @@ The `barometre-i18n` flow runs the misinformation job for every country on the V
 {"bel":{"bucket_access":"...","bucket_secret":"...","label_studio_token":"...","label_studio_url":"https://..."},"bel-fla":{...},"deu":{...},"esp":{...},"pol":{...}}
 ```
 
-| Key | Source (climateguard, project `climate-safeguards-prod`) |
+| Key | Source (`misinformation` target, project `climate-safeguards-prod`) |
 |---|---|
 | `bucket_access` | Secret Manager `access-key-<country>` (path `/<country>`, e.g. `belgium-flanders` for `bel-fla`) |
 | `bucket_secret` | Secret Manager `secret-key-<country>` |
-| `label_studio_url` | `https://<namespace>-labelstudio-<country>-<env>.functions.fnc.fr-par.scw.cloud` (the Label Studio serverless container domain, Scaleway console) |
-| `label_studio_token` | Secret Manager `labelstudio-<country>-token` (`TF_VAR_labelstudio_user_token` in the country file on Vaultwarden) |
+| `label_studio_url` | `make env=prod target=misinformation tg-output name=labelstudio_urls` (`https://<namespace>-labelstudio-<country>-<env>.functions.fnc.fr-par.scw.cloud`) |
+| `label_studio_token` | Secret Manager `labelstudio-<country>-token` (`TF_VAR_labelstudio_user_token_<country>` in `live/misinformation/prod/.env.secrets`) |
 
 Build it once with `jq -n -c --arg ...` (so values are escaped), store it as one entry in the `Quotaclimat - Orchestrator/` collection, then `make sync-secrets` and `make tags=kestra ansible`. Check each code with `echo "$I18N_COUNTRY_SECRETS" | jq -e '.bel.bucket_access'` before deploying. Adding a country adds one key here, no playbook change. The key is already declared in `kestra_secrets` (`ansible/playbook.yml`); add `export I18N_COUNTRY_SECRETS=` to `.env.secrets.dist`.
 
@@ -253,6 +279,29 @@ To deploy/update just this target:
 make env=dev target=rrs tg-plan
 make env=dev target=rrs tg-apply
 ```
+
+## Misinformation (climate safeguards)
+
+The `misinformation` target deploys the infrastructure of the misinformation labelling jobs (code in `detect_misinformation/jobs/label_misinformation`, formerly the `climateguard` repository), in the Scaleway project `climate-safeguards-<env>`. For **every country** of the `countries` map of `live/misinformation/<env>/terragrunt.hcl` it creates:
+* a Label Studio serverless container `labelstudio-<country>-<env>`, whose database `labelstudio-climate-<country>-<env>-db` is on the barometre RDB instance (`rdb-poc`);
+* an output bucket `safeguards-climate-<country>-<env>`, an IAM application `app-climate-<country>-<env>` with its API key;
+* Secret Manager entries `access-key-<country>`, `secret-key-<country>`, `labelstudio-<country>-token` (path `/<country>`), read by Kestra's `barometre-i18n` flow (see `I18N_COUNTRY_SECRETS` above);
+* the Scaleway job `label-misinformation-<country>-<env>` (image `rg.fr-par.scw.cloud/misinformation/label-misinformation:<image_tag>`). Dev jobs only run on Jan 1st: they are launched by hand.
+
+Shared by all countries of an environment: the container namespace `climate-safeguards-containers-<env>` and the `/common` secrets (Mediatree password, OpenAI/Mistral keys, barometre password).
+
+Countries (dev and prod): `belgium`, `belgium-flanders`, `germany`, `poland`, `spain`. France is not part of this target: its labelling runs from the barometre pipeline.
+
+**Adding a country**: add an entry to `countries` (model, Label Studio project ids, cron) and its three secrets `TF_VAR_postgres_password_labelstudio_<country>`, `TF_VAR_labelstudio_admin_password_<country>`, `TF_VAR_labelstudio_user_token_<country>` (with `-` replaced by `_`) to `live/misinformation/<env>/.env.secrets`, its `.env.secrets.dist` and the `live/misinformation/<env>` Vaultwarden item, then `make env=<env> target=misinformation tg-plan`. Country names end up in resource names: never rename an existing one, it would recreate its resources.
+
+```bash
+make env=dev target=misinformation tg-plan
+make env=dev target=misinformation tg-apply
+```
+
+### Migration from climateguard
+
+Until this target, these resources were managed from the `climateguard` repository (plain OpenTofu, one state per country in the `climate-safeguards-terraform` bucket). Their states were merged into `quotaclimat-terraform-states/misinformation/<env>/terraform.tfstate` by `bin/migrate_climateguard_state.sh` (dry run by default, `--push` to write), without changing any resource: the resulting plan is empty. Dev's `france` resources, migrated with the rest, were then removed from the `countries` map and destroyed. The climateguard states are left in place as a backup; do not apply from climateguard any more. The `climate-safeguards-<env>-tofu` IAM applications that climateguard deployed with are no longer used (this target uses the shared key of `.env`) and can be deleted.
 
 ## A note on passwords
 When deploying for the first time you may need to create passwords and tokens. Use the following to generate a secure password:
@@ -287,6 +336,26 @@ Every target below is deployed once per environment (`dev`/`prod`) from its `tem
 | IAM Application | `scaleway_iam_application.project_application` | App identity for advertising detection jobs |
 | IAM Policy | `scaleway_iam_policy.project_policy` | Permissions for `project_application` |
 | IAM API key | `scaleway_iam_api_key.project_api_key` | Credentials for `project_application` |
+
+### `misinformation` (`live/misinformation/template/`)
+Resources marked *per country* are `for_each` over the `countries` input (address `<resource>["<country>"]`).
+
+| Resource | Address | Purpose |
+|---|---|---|
+| Scaleway Project | `scaleway_account_project.project` | `climate-safeguards-<env>` project |
+| Container Namespace | `scaleway_container_namespace.container_namespace` | Namespace for the Label Studio containers |
+| Container | `scaleway_container.labelstudio_container` | Label Studio serverless container, per country |
+| RDB user | `scaleway_rdb_user.labelstudio_user` | Label Studio DB user on the barometre instance, per country |
+| RDB database | `scaleway_rdb_database.labelstudio_db` | Label Studio database, per country |
+| RDB privilege | `scaleway_rdb_privilege.labelstudio_policy` | Grants for `labelstudio_user`, per country |
+| IAM Application | `scaleway_iam_application.project_application` | App identity of the container and the job, per country |
+| IAM Policy | `scaleway_iam_policy.project_application` | Permissions for `project_application` (this project and barometre), per country |
+| IAM API key | `scaleway_iam_api_key.project_api_key` | Credentials for `project_application`, per country |
+| Object Storage bucket | `scaleway_object_bucket.bucket` | `safeguards-climate-<country>-<env>` output bucket, per country |
+| Bucket policy | `scaleway_object_bucket_policy.bucket_policy` | Access for `project_application` (and one user, TEMP), per country |
+| Secret | `scaleway_secret.{mediatree_password,openai_api_key,mistral_api_key,postgres_password_barometre}` (+ `_version`) | Shared job secrets, path `/common` |
+| Secret | `scaleway_secret.{access_key_id,secret_key_id,secret_label_studio_token}` (+ `_version`) | Bucket keys and Label Studio token, path `/<country>`, per country |
+| Serverless job | `scaleway_job_definition.main` | `label-misinformation-<country>-<env>`, per country |
 
 ### `barometre` (`live/barometre/template/`)
 | Resource | Address | Purpose |
@@ -355,6 +424,8 @@ Every target below is deployed once per environment (`dev`/`prod`) from its `tem
 | RDB user | `scaleway_rdb_user.glitchtip` | GlitchTip app DB user |
 | RDB database | `scaleway_rdb_database.glitchtip` | GlitchTip database |
 | RDB privilege | `scaleway_rdb_privilege.glitchtip` | Grants for `glitchtip` user |
+| RDB user | `scaleway_rdb_user.windmill` | Windmill app DB user, Scaleway admin only while `TF_VAR_windmill_bootstrap=true` |
+| Terraform data | `terraform_data.windmill_database` | Creates the `windmill` database (owned by the `windmill` user) and the `windmill_admin`/`windmill_user` roles with `psql`; drops them on destroy |
 | IAM SSH key | `scaleway_iam_ssh_key.paul_gabriel` | SSH access to the baremetal server |
 | IAM SSH key | `scaleway_iam_ssh_key.gmguarino` | SSH access to the baremetal server |
 | Object bucket | `scaleway_object_bucket.glitchtip` | GlitchTip file storage and cold storage (`cold_storage/` prefix) |

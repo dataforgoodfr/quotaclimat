@@ -550,6 +550,23 @@ UPDATE stop_word set validated=false WHERE id = 'MY_ID';
 poetry version minor
 ```
 
+## Misinformation detection - `detect_misinformation/`
+Code migrated from the `climateguard` repository:
+- `detect_misinformation/jobs/`: the `label_misinformation` job (LLM misinformation labelling → Label Studio) and the `get_audio_video` job (Germany audio/video collector). See [detect_misinformation/jobs/README.md](detect_misinformation/jobs/README.md).
+- `detect_misinformation/experiments/`: fine-tuning and research experiments, not deployed. See [detect_misinformation/experiments/README.md](detect_misinformation/experiments/README.md).
+- `detect_misinformation/labelstudio/`: Label Studio labelling interfaces (XML) of the misinformation review projects. See [detect_misinformation/labelstudio/README.md](detect_misinformation/labelstudio/README.md).
+
+Their dependencies are optional Poetry groups of the root `pyproject.toml`, so they are not installed by a plain `poetry install`:
+
+| Group | Used by |
+|---|---|
+| `misinformation` | `label_misinformation` image |
+| `germany-audio-video-collector` | `get_audio_video` image |
+| `misinformation-dev` | experiments (`poetry install --with misinformation-dev`) |
+| `misinformation-dev-cuda` | experiments on GPU (unsloth, bitsandbytes) |
+
+The `label_misinformation` job keeps its own version (bump2version) and is built and pushed by `.github/workflows/label-misinformation.yml` (`dev` tag on pull requests, `<version>` and `latest` on main). `deploy-main.yml` ignores `detect_misinformation/**`.
+
 ## Materialized view - dbt
 We can define some slow queries to make them efficient with materialized views using [DBT](https://www.getdbt.com/), used via docker :
 ```

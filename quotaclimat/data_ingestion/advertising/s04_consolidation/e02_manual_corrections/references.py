@@ -1,5 +1,5 @@
 """Reference data to check the corrections of the ads, read from the database: the dbt seeds downloaded from the
-Dictionnaire_marques_secteurs and Inventaires_des_marques Google Sheets (advertising.ref_*, see
+Dictionnaire_marques_secteurs and Inventaire_des_marques Google Sheets (advertising.ref_*, see
 my_dbt_project/external_sources.yml) and the brands already predicted.
 
 A missing table (extended perimeter, tests) gives an empty reference: the matching check is skipped.

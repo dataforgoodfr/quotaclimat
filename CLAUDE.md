@@ -93,6 +93,9 @@ Ads detected around TV/radio programs go through a separate 5-stage LLM pipeline
 ### 7. RRS — Risk Response System (`rrs/`)
 A separate module/database that detects, clusters and tracks **disinformation narratives** (not just environmental keyword coverage) per topic ("subject": climate, insecurity, environmental_health). Reuses climate keyword segments already detected by the main pipeline (imported via DuckDB `ATTACH`), re-scans S3 transcripts for other subjects, classifies misinformation risk with an LLM (Mistral), and clusters recurring narrative claims with a 3-step LLM pipeline (Mistral/Claude Haiku). Own PostgreSQL database and Alembic project (`rrs/alembic.ini`, run from repo root). See `rrs/README.md`.
 
+### 8. Misinformation detection jobs (`detect_misinformation/`)
+Migrated from the `climateguard` repository. `jobs/label_misinformation` labels misinformation in transcripts with an LLM (Mistral/OpenAI) and pushes extracts to Label Studio; `jobs/get_audio_video` collects German audio/video for annotation; `experiments/` holds non-deployed fine-tuning/research code. Dependencies are optional Poetry groups of the root `pyproject.toml`: `misinformation`, `germany-audio-video-collector`, `misinformation-dev`, `misinformation-dev-cuda` (torch is the CPU build for every group: one `poetry.lock`). Job images are built from the repo root (`docker build -f detect_misinformation/jobs/<job>/Dockerfile .`, `poetry install --only <group>`). `label_misinformation` keeps its own bump2version version and CI (`.github/workflows/label-misinformation.yml`: `dev` image on PR, `<version>`/`latest` on main); `deploy-main.yml` ignores `detect_misinformation/**`. See `detect_misinformation/jobs/README.md`. Its Scaleway infrastructure (Label Studio, bucket, secrets and `label-misinformation-<country>-<env>` job per country, project `climate-safeguards-<env>`) is the Terragrunt target `infrastructure/live/misinformation`, with countries as a `for_each` map in one state per environment; never rename a country key (it recreates its resources). See `infrastructure/Readme.md`, "Misinformation (climate safeguards)".
+
 ### Extended perimeter ("Droit à l'info")
 On top of the regular France TV perimeter, a wider set of French channels (`tf1`, `france2`, `fr3-idf`, `rtl`, `france5`, `tmc`, `lcp`) is tracked under country code `ext-fra` in its own isolated `extended-perimeter` database, S3 buckets and Label Studio project — toggled by the `EXTENDED_PERIMETER` env var and threading through `transform_program.py`, dbt grants, and the RRS `source=extended` flows. It shares all the regular French-language detection/subtitle logic. See the root README's "Extended perimeter" section, `infrastructure/Readme.md`'s RRS section, and `rrs/README.md`'s "Extended perimeter" section for the full picture across app/infra/RRS.
 
@@ -149,17 +152,20 @@ Each README below is the authoritative source for its area — read it instead o
 | File | Covers |
 |---|---|
 | `README.md` (root) | Full dev setup (pyenv/poetry/docker), Mediatree import/replay/update workflows, stop words, Alembic migrations, channel/program metadata, extended perimeter ("Droit à l'info"), SRT-to-Mediatree conversion, dbt materialized views, Label Studio ingestion, analytics layer |
-| `infrastructure/Readme.md` | Infra stack (OpenTofu/Terragrunt/Ansible/mise), project layout, Vaultwarden secrets, `make` targets, orchestrator (Kestra/GlitchTip) deployment, RRS extended-perimeter infra, full per-target resource inventory (advertising/barometre/rrs/orchestrator) |
+| `infrastructure/Readme.md` | Infra stack (OpenTofu/Terragrunt/Ansible/mise), project layout, Vaultwarden secrets, `make` targets, orchestrator (Kestra/GlitchTip) deployment, RRS extended-perimeter infra, misinformation target (climateguard migration), full per-target resource inventory (advertising/barometre/misinformation/rrs/orchestrator) |
 | `metabase/README.md` | Versioned Metabase SQL questions: folder layout, `questions.yml` manifests, variable substitution rules, Kestra sync flow (`metabase-sync`), how to add/modify a query |
 | `my_dbt_project/README.md` | dbt project layout, model-by-model docs (`homepage/`, `dashboards/`, `analytics/`, `advertising/`, `metadata/`), profiles/targets, external Google Sheets sources, access grants, seeds, tests |
 | `mockwebsite/README.md` | One-liner: folder served via nginx docker image for local sitemap-scraping tests |
 | `quotaclimat/data_ingestion/advertising/s03_classification/README.md` | 5-stage ad classification pipeline (transcribe → classify → dict match → subcat → canonicalise brand): env vars, LLM/ASR endpoint requirements, threaded runner architecture, `prediction_status` reference |
 | `quotaclimat/data_ingestion/advertising/s04_consolidation/README.md` | Consolidation stage: merge of split ads (`ad_merge.py` DB operations, merge/revert semantics), manual corrections from the `Corrections_publicites` Google Sheet (tab kinds and columns, what each correction changes), env vars |
 | `quotaclimat/data_ingestion/advertising/s05_enrichment/README.md` | One-liner pointers to `e01_brand_groups/` and `e02_screenshots/` |
-| `quotaclimat/data_ingestion/advertising/s05_enrichment/e01_brand_groups/README.md` | Brand company/ultimate-parent enrichment job: `Inventaires_des_marques` Google Sheet tab format, INPI/GLEIF/Wikidata lookup steps, env vars |
+| `quotaclimat/data_ingestion/advertising/s05_enrichment/e01_brand_groups/README.md` | Brand company/ultimate-parent enrichment job: `Inventaire_des_marques` Google Sheet tab format, INPI/GLEIF/Wikidata lookup steps, env vars |
 | `quotaclimat/data_ingestion/advertising/s05_enrichment/e02_screenshots/README.md` | Screenshot mosaics of ads and occurrences for visual checks: sources (ad export with its margin history, mediatree archives), `advertising.ad_screenshot`, public-read storage, env vars |
 | `rrs/README.md` | RRS (Risk Response System) disinformation clustering: architecture, directory structure, dictionaries/subjects, keyword detection, misinformation classification, clustering pipeline, DB schema, extended perimeter, env vars, local Docker dev, CI/CD |
 | `rrs/clustering/README.md` | LLM clustering internals (`cluster_llm.py`, `cluster_llm_timeseries.py`): label generation/merge/classification steps, timeseries incremental mode, usage/flags, env vars |
+| `detect_misinformation/jobs/README.md` | Misinformation jobs (`label_misinformation`, `get_audio_video`): Poetry groups, building images from the repo root, docker compose services, env vars, CI/versioning |
+| `detect_misinformation/experiments/README.md` | Misinformation experiments: `misinformation-dev`/`misinformation-dev-cuda` groups, installing CUDA torch by hand |
+| `detect_misinformation/labelstudio/README.md` | Label Studio interfaces (XML) of the misinformation review projects (all countries / France), how to deploy them, tag names read by dbt |
 | `docs/data_tiers.md` | Data tiers (raw / syndicated / curated): which schema and table belongs to which tier, sources → raw, dbt lineage, curated tables, how to regenerate the Archify diagrams |
 | `docs/kestra_flows.md` | Every production Kestra flow step by step: what code runs, what it reads/writes, which technologies are involved, plus where Kestra itself is hosted (shared Elastic Metal orchestrator, see `infrastructure/Readme.md`) |
 
@@ -283,6 +289,12 @@ Les questions Metabase, les tableaux de bord et les analyses des équipes lisent
 - `quotaclimat/metabase/sync_curated.py` écrit dans Metabase, pour chaque table et colonne : le libellé, la description (avec l'unité et l'agrégation), le type sémantique et la clé étrangère. dbt fait référence : une modification faite dans Metabase est écrasée. Les mêmes descriptions sont écrites dans Postgres (`persist_docs`).
 - Les bases Metabase mises à jour sont dans `METABASE_CURATED_DATABASES` (tâche Kestra). En local : `poetry run python -m quotaclimat.metabase.sync_curated --database 2` (aperçu, après `dbt parse`), `--apply` pour écrire.
 - Un nouveau modèle demande sa documentation dans `_curated.yml` et un test de ses données dans `my_dbt_project/pytest_tests/test_dbt_model_analytics.py`.
+
+## Analyses thématiques
+
+- **Méthode commune** : lire d'abord le chapeau de `decisions/analyses_thematiques/decisions.md` (démarche, conventions Metabase, modèle pour une nouvelle analyse).
+- **Exemple** : la dernière analyse, `decisions/analyses_thematiques/2026-10-inondations/decisions.md`.
+- Ne modifier aucun `decisions.md` sans consigne explicite dans ce sens.
 
 ## Tests
 

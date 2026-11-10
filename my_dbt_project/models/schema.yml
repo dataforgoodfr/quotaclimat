@@ -522,7 +522,7 @@ models:
 
   - name: ad_brands
     description: >
-      Brand reference, built from the tab Marques of the Inventaires_des_marques Google Sheet only (no ad
+      Brand reference, built from the tab Marques of the Inventaire_des_marques Google Sheet only (no ad
       table): one row per brand, with the company that sells under the brand and its ultimate parent
       company, each used unless its status is 'à vérifier'. Used by analytics.publicites.
     columns:
@@ -539,10 +539,34 @@ models:
         description: Company of the brand as written in the tab (column entreprise), NULL when empty.
       - name: company_status
         description: vérifié, non vérifié or à vérifier (column e_statut).
+      - name: company_country
+        description: >
+          Country of the head office of the company (column pays_siege_social), ISO 3166-1 alpha-2 code
+          (FR, NL), NULL when empty. Passed through, whatever company_status.
+      - name: company_siren
+        description: >
+          SIREN of the company (column siren), 9 digits: spaces and dots removed, leading zeros put back when
+          the sheet read it as a number. NULL when empty or not a SIREN; a company registered abroad can have
+          one when it is also registered in France (Stellantis N.V.).
+          Passed through, whatever company_status.
+      - name: company_head_office_department
+        description: >
+          Department of the head office of the company (column departement_siege_social), like 75, 01, 2A
+          or 971. NULL when empty or for a company whose head office is abroad.
       - name: ultimate_parent
         description: Ultimate parent company as written in the tab (column societe_mere_ultime), NULL when empty.
       - name: ultimate_parent_status
         description: vérifié, non vérifié or à vérifier (column smu_statut).
+      - name: ultimate_parent_country
+        description: >
+          Country of the head office of the ultimate parent company (column smu_pays), like company_country.
+          Passed through, whatever ultimate_parent_status.
+      - name: ultimate_parent_siren
+        description: SIREN of the ultimate parent company (column smu_siren), cleaned like company_siren.
+      - name: ultimate_parent_head_office_department
+        description: >
+          Department of the head office of the ultimate parent company (column smu_departement), like
+          company_head_office_department.
       - name: ultimate_majority_shareholder
         description: >
           Ultimate majority shareholder as written in the tab (column actionnaire_maj_ultime), NULL when empty.
@@ -553,6 +577,48 @@ models:
         description: company unless its status is 'à vérifier', else the brand itself.
       - name: brand_ultimate_parent
         description: ultimate_parent unless its status is 'à vérifier', else brand_company.
+
+  - name: ad_brand_agencies
+    description: >
+      Media agency of each advertised brand, from the tab agence_entreprise of the Inventaire_des_annonceurs Google
+      Sheet (one row per company): one row per brand of analytics.publicites (brand_name, brand_company) whose company
+      is in the tab, with the agency of its company. Companies are compared with name_key. Read by
+      pub_annonceur_emission_jour.
+    tests:
+      - unique_name_keys:
+          arguments:
+            columns: ['brand_company', 'brand_name']
+    columns:
+      - name: brand_name
+        description: Brand, as in publicites.brand_name.
+        tests:
+          - not_null
+      - name: brand_company
+        description: Company of the brand, as in publicites.brand_company.
+        tests:
+          - not_null
+      - name: agency
+        description: Agency buying the TV space in France (column agence_media), NULL when unknown.
+      - name: agency_group
+        description: Group of the agency (groupe_agence) - Havas, Publicis, WPP, Omnicom, Dentsu, Indépendant, Interne.
+      - name: reliability
+        description: confirmee, probable, indice or inconnue (column fiabilite, defined in the tab _readme).
+      - name: geographic_scope
+        description: France, Europe or Monde (perimetre_geo).
+      - name: media_scope
+        description: tout or partiel (perimetre_media), NULL when not given.
+      - name: other_agencies
+        description: Other agencies of the advertiser and their scope (autres_agences).
+      - name: previous_agency
+        description: Previous agency and end date (agence_precedente).
+      - name: info_date
+        description: Date of the latest source, AAAA-MM or AAAA (date_info).
+      - name: checked_on
+        description: Date the source was opened and read (verifie_le), NULL when not checked.
+      - name: note
+        description: What the source says, with its caveats.
+      - name: source_1
+        description: Link to the main source.
 
   - name: ad_occurrence_tunnels
     description: >
@@ -847,6 +913,20 @@ models:
         description: Seconds of ads attributed to the emission (whole or half durations).
       - name: nb_occurrences
         description: Occurrences attributed to the emission, wholly or by half.
+      - name: agence_media
+        description: >
+          Media agency of the brand, else of its company (ad_brand_agencies, from the Inventaire_des_annonceurs
+          Google Sheet), NULL when unknown.
+      - name: groupe_agence
+        description: Group of the agency (Havas, Publicis, WPP, Omnicom, Dentsu, Indépendant, Interne), NULL when unknown.
+      - name: fiabilite_agence
+        description: >
+          Reliability of the agency information - confirmee, probable, indice or inconnue - NULL when the advertiser is
+          not in the sheet.
+      - name: perimetre_media_agence
+        description: >
+          Media scope of the agency (perimetre_media of the sheet) - 'partiel' when it buys only part of the media of the
+          advertiser (e.g. programmatic and social only), 'tout', or NULL when not given.
   - name: cas_theme
     description: >
       In the analytics schema. Themes of the validated misinformation cases of the French channels, found by

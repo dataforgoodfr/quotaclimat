@@ -44,7 +44,8 @@ Everything dbt builds from raw, ready to be read by dashboards. dbt runs in `ent
 | `cas_theme` | `analytics` | `cas_de_mesinformation`, `mesinfo_theme_mots_cles` seed |
 | `ad_brands`, `ad_occurrence_mesinfo`, `ad_occurrence_tunnels`, `ad_tunnels`, `ad_tunnel_programs` | `advertising` | `ad`, `ad_occurrence`, brand/sector seeds, `task_global_completion`, `program` |
 | `publicites` | `analytics` | `ad_occurrence`, `program_metadata`, the advertising models above |
-| `pub_annonceur_emission_jour` | `advertising` | `publicites`, `program` |
+| `ad_brand_agencies` | `advertising` | `publicites`, Inventaire_des_annonceurs sheet seed |
+| `pub_annonceur_emission_jour` | `advertising` | `publicites`, `program`, `ad_brand_agencies` |
 | `emission_jour` | `public` | `keywords`, `time_monitored`, `program`, `cas_de_mesinformation` |
 | `environmental_shares_with_desinfo_counts`, `core_query_*`, `thematic_query_ocean`, `homepage_*` | `public` | `keywords`, `program_metadata` |
 | `dbt_objects` | `metadata` | the dbt graph |

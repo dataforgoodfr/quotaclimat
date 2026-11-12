@@ -61,7 +61,9 @@ async def run_chunk_identification(
 
     with get_db_session() as session:
         for ads in session.scalars(
-            select(Ad).execution_options(yield_per=CURSOR_BATCH_SIZE)
+            select(Ad)
+            .where(Ad.deleted_at.is_(None))
+            .execution_options(yield_per=CURSOR_BATCH_SIZE)
         ).partitions():
             for ad in ads:
                 for entry_idx, chunk_entry in enumerate(ad.chunks or []):

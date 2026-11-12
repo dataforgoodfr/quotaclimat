@@ -22,12 +22,13 @@ Exports the detected ads (audio/video saved in the advertising bucket, `ads/<ad_
 | Variable | Default | Purpose |
 |---|---|---|
 | `MAX_ADS` | unset (all) | Maximum number of ads processed in the run, e.g. `2000`. |
-| `CLEAN_OTHER_CHUNKS` | `false` | `true` keeps only the chunk entry of the current hash on each ad. |
+| `CLEAN_OTHER_CHUNKS` | `false` | `true` keeps only the chunk entries of the current hash on each ad (several when fingerprints were copied by a manual fusion, see `s04_consolidation/README.md`). |
 | `CURSOR_BATCH_SIZE` | `500` | Ads read and committed per batch. |
 
-Ads with `fragment_type = 'no_data'` (no media, set by the classification) are never taken. Ads
-that already have a chunk entry with the current hash are left out of the query (with
-`CLEAN_OTHER_CHUNKS=true`, those that also have other entries are taken, to clean them). The ads
+Ads with `fragment_type = 'no_data'` (no media, set by the classification) and soft deleted ads
+(`deleted_at`, merged by hand into another) are never taken. Ads that already have a chunk entry with
+the current hash are left out of the query (with `CLEAN_OTHER_CHUNKS=true`, those that also have
+entries of another hash are taken, to clean them). The ads
 are taken by decreasing number of occurrences (not deleted), so a run with `MAX_ADS` handles the
 most broadcast ads first, and the next run continues with the following ones. The job logs at
 start the total number of ads, how many already have a chunk with the current hash, how many are

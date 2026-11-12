@@ -7,7 +7,8 @@ the name of a tab gives its kind (TAB_KINDS), all the tabs of a kind have the sa
   and per value of the optional ad_indicator column;
 - dechets...: occurrences that are not ads (occurrence_id), soft deleted;
 - reattribution...: occurrences attributed to the wrong ad (occurrence_id), moved to an existing ad (ad_id);
-- fusion...: ads stored twice (ad_id), all their occurrences moved to another existing ad (target_ad_id).
+- fusion...: ads stored twice (ad_id), all their occurrences moved to another existing ad (target_ad_id), the
+  ad being soft deleted (deleted_at: kept for its history, left out of every step).
 
 Each row is processed once: the job fills traite_le, resultat (appliqué, avertissement or erreur) and
 message, and the rows with a traite_le are skipped (to process a row again, empty its traite_le). A warning
@@ -41,6 +42,7 @@ from quotaclimat.data_ingestion.advertising.s04_consolidation.e02_manual_correct
     create_ad_from_occurrences,
     live_occurrences,
     merge_ad_into,
+    deleted_error,
     new_ad_id,
     reattribute_occurrence,
     trash_occurrence,
@@ -185,32 +187,24 @@ def process_reattribution_rows(
 
 
 def process_merge_rows(
-    session: Session, rows: list[SheetRow]
+    session: Session, rows: list[SheetRow], spreadsheet: str, tab: str
 ) -> list[tuple[SheetRow, dict[str, str]]]:
-    """Rows processed in order: an ad merged into another higher in the tab is no longer a target."""
+    """Rows processed in order: an ad merged higher in the tab is deleted, it can no longer be merged nor be a
+    target (A -> B then B -> C works, B -> C then A -> B is an error)."""
     updates = []
-    merged_into: dict[str, str] = {}
     for row in rows:
         ad_id = row.values["ad_id"]
         target_ad_id = row.values.get(COLUMN_TARGET_AD, "").strip()
+        source = {"spreadsheet": spreadsheet, "tab": tab, "row": row.number}
         extra = {}
-        if ad_id in merged_into and ad_id != target_ad_id:
-            outcome = Outcome.error("ad en double dans l'onglet")
-        else:
-            try:
-                with session.begin_nested():
-                    outcome, moved = merge_ad_into(session, ad_id, target_ad_id)
-                if outcome.result != RESULT_ERROR and ad_id != target_ad_id:
-                    merged_into[ad_id] = target_ad_id
-                    extra = {COLUMN_MOVED: str(moved)}
-                    if target_ad_id in merged_into:
-                        outcome.warn(
-                            f"l'ad cible a été fusionnée plus haut dans {merged_into[target_ad_id]} :"
-                            " l'ordre des lignes compte"
-                        )
-            except Exception as e:
-                logging.exception("Merge of the ad %s failed", ad_id)
-                outcome = Outcome.error(f"échec : {e}")
+        try:
+            with session.begin_nested():
+                outcome, moved = merge_ad_into(session, ad_id, target_ad_id, source)
+            if outcome.result != RESULT_ERROR and ad_id != target_ad_id:
+                extra = {COLUMN_MOVED: str(moved)}
+        except Exception as e:
+            logging.exception("Merge of the ad %s failed", ad_id)
+            outcome = Outcome.error(f"échec : {e}")
         updates.append((row, _cells(outcome, **extra)))
     return updates
 
@@ -233,6 +227,10 @@ def _new_ad_group(
             occurrence_ids.append(occurrence_id)
     occurrences, errors = live_occurrences(session, occurrence_ids)
     existing_ad = session.get(Ad, ad_id)
+    if existing_ad is not None and deleted_error(existing_ad):
+        for occurrence_id in occurrences:
+            errors[occurrence_id] = Outcome.error(deleted_error(existing_ad))
+        occurrences = {}
     for occurrence_id, occurrence in list(occurrences.items()):
         if occurrence.ad_id == ad_id:
             errors[occurrence_id] = Outcome.error("occurrence déjà dans cette ad")
@@ -357,7 +355,7 @@ def process_tab(
     elif kind == KIND_REATTRIBUTION:
         updates = process_reattribution_rows(session, pending)
     elif kind == KIND_MERGE:
-        updates = process_merge_rows(session, pending)
+        updates = process_merge_rows(session, pending, spreadsheet, tab)
     else:
         updates = process_new_ad_rows(
             session, pending, spreadsheet, tab, export_video, dry_run

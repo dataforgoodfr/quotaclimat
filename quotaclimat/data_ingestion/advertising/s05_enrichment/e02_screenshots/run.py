@@ -106,7 +106,8 @@ def _not_already_done(target_type: str, target_id_column, retry_missing: bool):
 
 
 def _ad_filters(filters: Filters) -> list:
-    conditions = []
+    # a soft deleted ad (manual fusion) has no live occurrence and is left out of the visual checks
+    conditions = [Ad.deleted_at.is_(None)]
     if filters.ad_ids:
         conditions.append(Ad.id.in_(filters.ad_ids))
     if filters.prediction_statuses is not None:

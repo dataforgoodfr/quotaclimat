@@ -61,6 +61,16 @@ def has_chunk_with_hash(fingerprint_hash: str):
     )
 
 
+def has_chunk_with_other_hash(fingerprint_hash: str):
+    """SQL condition: the ad has a chunk entry computed with another hash."""
+    chunk = func.json_array_elements(Ad.chunks).table_valued("value").alias("chunk")
+    return exists(
+        select(1)
+        .select_from(chunk)
+        .where(chunk.c.value.op("->>")("hash").is_distinct_from(fingerprint_hash))
+    )
+
+
 # Ads without media (fragment_type set to "no_data" by the classification): nothing to download
 NO_DATA_FRAGMENT_TYPE = "no_data"
 
@@ -74,9 +84,16 @@ def needs_processing(fingerprint_hash: str, clean_other_chunks: bool):
     """SQL condition: the ad has media and either has no chunk with this hash or, with
     clean_other_chunks, has other chunk entries to remove."""
     has_hash = has_chunk_with_hash(fingerprint_hash)
+    # a soft deleted ad is no longer matched by the detection: no fingerprints to compute
+    live = Ad.deleted_at.is_(None)
     if clean_other_chunks:
-        return has_media() & (~has_hash | (func.json_array_length(Ad.chunks) > 1))
-    return has_media() & ~has_hash
+        # several entries of the current hash stay (fingerprints copied from an ad merged by hand)
+        return (
+            live
+            & has_media()
+            & (~has_hash | has_chunk_with_other_hash(fingerprint_hash))
+        )
+    return live & has_media() & ~has_hash
 
 
 def ads_to_process_query(
@@ -172,20 +189,21 @@ async def run():
         ).partitions():
             for ad in ads:
                 counters["ads_seen"] += 1
-                existing_chunk_entry = next(
-                    filter(
-                        lambda chunk: chunk.get("hash") == fingerprint_hash, ad.chunks
-                    ),
-                    None,
-                )
-                if existing_chunk_entry:
+                # every entry of the current hash: the one of the ad, and the ones copied from the ads
+                # merged into it by hand (s04_consolidation/e02_manual_corrections, fusion)
+                current_entries = [
+                    chunk
+                    for chunk in ad.chunks
+                    if chunk.get("hash") == fingerprint_hash
+                ]
+                if current_entries:
                     counters["already_had_chunk"] += 1
-                    if CLEAN_OTHER_CHUNKS and len(ad.chunks) > 1:
+                    if CLEAN_OTHER_CHUNKS and len(current_entries) < len(ad.chunks):
                         counters["cleaned_other_chunks"] += 1
                         write_session.execute(
                             update(Ad)
                             .where(Ad.id == ad.id)
-                            .values(chunks=[existing_chunk_entry])
+                            .values(chunks=current_entries)
                         )
                 else:
                     with tempfile.TemporaryDirectory() as dest_dir:

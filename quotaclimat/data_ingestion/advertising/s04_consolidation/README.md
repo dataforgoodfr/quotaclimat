@@ -316,13 +316,14 @@ How the 400k ads are compared without comparing every pair:
 Output: the pairs with `score_min` >= `--min-score` are grouped (connected components of the pairs), and every ad
 of a group gets its own row (a group of 2 ads has 2 rows), never two ads mixed on one row:
 
-- the CSV (`--output`): `group_id` (smallest ad id of the group), `group_size`, `ad_id`, `nb_matches` (ads of the
-  group it matches directly), its best match in the group (`best_match_ad_id`, which has its own row, with
-  `best_score_min`, `best_score_max`, `best_shared_keys`), `matches` (every direct match, `ad_id:score_min`), then the
-  data of the ad: duration, number of chunks, brand, sector, category, fragment type, first detection date, live
-  occurrences. `score_min` is the share of the pairs of the smaller ad found in the other at a consistent time
-  offset; `score_max` the same relative to the bigger ad (low when a short ad is only contained in a longer one,
-  e.g. a shared jingle);
+- the CSV (`--output`), to check the groups by hand: `group_id` (smallest ad id of the group), `group_size`,
+  `mosaique` (URL of the mosaic of the ad, `advertising.ad_screenshot`), `mosaique_image` (left empty, for an image
+  formula in a spreadsheet), `ad_id`, `target_ad_id`, `brand`, `sector`, `category`, `nb_occurrences` (live
+  occurrences). A row of `-` separates two groups. `target_ad_id` is the ad proposed as the target of a merge of the
+  group, on every row of the group, whose first row it is: among the ads of the most frequent brand of the group
+  (`brand_key`; several brands when tied; ads without brand only when no ad has one), the ones that are not a merged
+  ad (`advertising.ad_merge`) when there are some, then the most broadcast one. The other rows follow by number of
+  occurrences;
 - `<csv name>_metabase.txt`: a SQL query to paste in Metabase (database holding the `advertising` schema). The ids
   and matching columns of the rows are written in the query (`VALUES`); it loads the data of each ad: mosaic
   (`advertising.ad_screenshot`, column to display as an image), brand, sector, category, classification status,
@@ -334,8 +335,7 @@ of a group gets its own row (a group of 2 ads has 2 rows), never two ads mixed o
   ad. The `match_*` columns only describe the best match of the ad with an ad of another brand: scores, shared keys,
   acoustic pre-filter, duration difference, and the mosaic, transcript and saved video of that match, next to the
   ones of the ad. They are empty when the ad has no brand, or is linked to the other brands only through ads of its
-  own brand. The header of the query lists how to read the scores. The CSV has the same columns (`group_brands`,
-  `is_multibrand_group`, `other_brand_*`). With `--blocking brand` (default), the ads of different brands are never
+  own brand. The header of the query lists how to read the scores. With `--blocking brand` (default), the ads of different brands are never
   compared: these groups only come from `--blocking none`.
 
 Thresholds are not calibrated: start on a brand (`--brand`) or a duration range (`--min-duration`, `--max-duration`)

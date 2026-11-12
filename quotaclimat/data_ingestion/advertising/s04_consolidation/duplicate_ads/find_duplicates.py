@@ -20,7 +20,8 @@ How it works:
    offset (score_min), also given relative to the bigger ad (score_max).
 7. The pairs with score_min >= --min-score are grouped (connected components): a group_id gathers
    the ads linked by these pairs. Output, one row per ad of a group (an ad of a group of 2 has its
-   own row, as the other one): the CSV with the data of the ad and its best match in the group, and
+   own row, as the other one): the CSV with the mosaic and data of the ad, the target proposed for
+   a merge of its group (choose_target, first row of the group) and a row of "-" between groups, and
    a .txt file next to it (<csv name>_metabase.txt) holding a SQL query to run in Metabase, which
    shows the same rows with the mosaic of each ad and links to its video. A second query
    (<csv name>_metabase_multimarques.txt) shows only the groups with several brands, with, for
@@ -49,11 +50,16 @@ from dataclasses import dataclass, field
 import os
 from datetime import date, datetime
 
-from sqlalchemy import cast, func, literal_column, select
+from sqlalchemy import cast, exists, func, literal_column, select
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import aliased
 
-from postgres.schemas.advertising.models import Ad, Ad_Occurrence
+from postgres.schemas.advertising.models import (
+    Ad,
+    Ad_Merge,
+    Ad_Occurrence,
+    Ad_Screenshot,
+)
 
 from quotaclimat.data_ingestion.advertising.tools.ad_merge import brand_key
 from quotaclimat.data_ingestion.advertising.tools.fingerprint_tools.compare import (
@@ -289,6 +295,18 @@ def ads_query(args: argparse.Namespace):
         .correlate(Ad)
         .scalar_subquery()
     )
+    mosaic = (
+        select(Ad_Screenshot.image_url)
+        .where(
+            Ad_Screenshot.target_type == "ad",
+            Ad_Screenshot.target_id == Ad.id,
+            Ad_Screenshot.status == "done",
+        )
+        .correlate(Ad)
+        .scalar_subquery()
+    )
+    # an ad built by merging pieces (tools/ad_merge.py), whatever the status of the merge
+    is_merged = exists(select(1).where(Ad_Merge.merged_ad_id == Ad.id)).correlate(Ad)
     raw_brand = func.jsonb_path_query_first(
         cast(Ad.prediction, JSONB),
         '$[*] ? (@.stage == "ad_type").raw_response.brand_name',
@@ -305,6 +323,8 @@ def ads_query(args: argparse.Namespace):
             func.coalesce(Ad.predicted_brand, raw_brand).label("brand"),
             nb_occurrences.label("nb_occurrences"),
             fingerprints.label("fingerprints"),
+            mosaic.label("mosaic"),
+            is_merged.label("is_merged"),
         )
         .where(
             fingerprints.is_not(None),
@@ -373,6 +393,8 @@ def stream_ads(
                 "fragment_type": row["fragment_type"],
                 "first_detection_date": row["first_detection_date"],
                 "nb_occurrences": row["nb_occurrences"],
+                "mosaic": row["mosaic"],
+                "is_merged": row["is_merged"],
             },
         )
 
@@ -386,19 +408,6 @@ AD_COLUMNS = [
     "fragment_type",
     "first_detection_date",
     "nb_occurrences",
-]
-# One row per ad of a group: the group, the ad, and its best match (another ad of the group, which
-# has its own row)
-GROUP_COLUMNS = [
-    "group_id",
-    "group_size",
-    "ad_id",
-    "nb_matches",
-    "best_match_ad_id",
-    "best_score_min",
-    "best_score_max",
-    "best_shared_keys",
-    "matches",
 ]
 # Groups with several brands: the brands of the group, and the matches of the ad with ads of
 # another brand only (empty when the ad has no brand, or is linked to the other brands only
@@ -418,8 +427,31 @@ MULTIBRAND_COLUMNS = [
 ]
 
 
+def choose_target(ads: list[AdPrint]) -> AdPrint:
+    """Ad of a group proposed as the target of a merge of the group:
+    1. among the ads of the most frequent brand (brand_key; several brands when tied; the ads
+       without brand only when no ad of the group has one);
+    2. the ads that are not a merged ad (tools/ad_merge.py) when there are some: more likely to
+       have their video and their data;
+    3. the most broadcast one (live occurrences), then the smallest id."""
+    by_brand: dict[str, list[AdPrint]] = defaultdict(list)
+    for ad in ads:
+        by_brand[brand_key(ad.meta.get("brand"))].append(ad)
+    branded = {key: group for key, group in by_brand.items() if key} or by_brand
+    biggest = max(len(group) for group in branded.values())
+    candidates = [
+        ad for group in branded.values() if len(group) == biggest for ad in group
+    ]
+    not_merged = [ad for ad in candidates if not ad.meta.get("is_merged")]
+    candidates = not_merged or candidates
+    return min(
+        candidates, key=lambda ad: (-(ad.meta.get("nb_occurrences") or 0), ad.id)
+    )
+
+
 def group_rows(pairs: list[DuplicatePair]) -> list[dict]:
-    """One row per ad of a group, sorted by group (biggest first) then ad id. Matching columns: the
+    """One row per ad of a group, sorted by group (biggest first), the target of the group first
+    (choose_target, in target_ad_id on every row of the group), then by occurrences. Matching columns: the
     number of ads of the group it matches directly, its best match (highest score_min) with its
     scores, and every direct match as "ad_id:score_min" separated by spaces. Plus the
     MULTIBRAND_COLUMNS: a group is multi-brand when its ads have at least two different brands
@@ -437,6 +469,13 @@ def group_rows(pairs: list[DuplicatePair]) -> list[dict]:
         key = brand_key(ad.meta.get("brand"))
         if key:
             group_brands[groups[ad_id][0]].setdefault(key, ad.meta["brand"])
+
+    group_ads: dict[str, list[AdPrint]] = defaultdict(list)
+    for ad_id, ad in ads.items():
+        group_ads[groups[ad_id][0]].append(ad)
+    targets = {
+        group_id: choose_target(members).id for group_id, members in group_ads.items()
+    }
 
     rows = []
     for ad_id, ad in ads.items():
@@ -458,6 +497,9 @@ def group_rows(pairs: list[DuplicatePair]) -> list[dict]:
                 "group_id": group_id,
                 "group_size": group_size,
                 "ad_id": ad_id,
+                "target_ad_id": targets[group_id],
+                "mosaic": ad.meta.get("mosaic"),
+                "is_merged": ad.meta.get("is_merged"),
                 "nb_matches": len(ad_matches),
                 "best_match_ad_id": best_ad.id,
                 "best_score_min": best_pair.score_min,
@@ -474,7 +516,16 @@ def group_rows(pairs: list[DuplicatePair]) -> list[dict]:
                 **other_brand_columns(ad, other_brand),
             }
         )
-    return sorted(rows, key=lambda r: (-r["group_size"], r["group_id"], r["ad_id"]))
+    return sorted(
+        rows,
+        key=lambda r: (
+            -r["group_size"],
+            r["group_id"],
+            r["ad_id"] != r["target_ad_id"],
+            -(r["nb_occurrences"] or 0),
+            r["ad_id"],
+        ),
+    )
 
 
 def other_brand_columns(
@@ -504,13 +555,38 @@ def other_brand_columns(
     }
 
 
+# CSV column -> key of the row (None: left empty, mosaique_image is for an image formula)
+CSV_COLUMNS = {
+    "group_id": "group_id",
+    "group_size": "group_size",
+    "mosaique": "mosaic",
+    "mosaique_image": None,
+    "ad_id": "ad_id",
+    "target_ad_id": "target_ad_id",
+    "brand": "brand",
+    "sector": "sector",
+    "category": "category",
+    "nb_occurrences": "nb_occurrences",
+}
+SEPARATOR_ROW = {column: "-" for column in CSV_COLUMNS}
+
+
 def write_csv(path: str, rows: list[dict]) -> None:
-    with open(path, "w", newline="") as f:
-        writer = csv.DictWriter(
-            f, fieldnames=GROUP_COLUMNS + AD_COLUMNS + MULTIBRAND_COLUMNS
-        )
+    """The rows of group_rows, with a row of "-" between two groups."""
+    with open(path, "w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=list(CSV_COLUMNS))
         writer.writeheader()
-        writer.writerows(rows)
+        previous_group = None
+        for row in rows:
+            if previous_group is not None and row["group_id"] != previous_group:
+                writer.writerow(SEPARATOR_ROW)
+            previous_group = row["group_id"]
+            writer.writerow(
+                {
+                    column: row[key] if key else None
+                    for column, key in CSV_COLUMNS.items()
+                }
+            )
 
 
 def _sql_literal(value) -> str:

@@ -263,11 +263,22 @@ How the 400k ads are compared without comparing every pair:
   the whole ad: the pairs of its chunks one after the other, shifted by the start of their chunk, so that two copies
   split differently in chunks still match.
 
-Output columns: `score_min` (share of the pairs of the smaller ad found in the other at a consistent time offset),
-`score_max` (the same relative to the bigger ad: low when a short ad is only contained in a longer one, e.g. a
-shared jingle), `shared_keys`, `features_compatible` (acoustic pre-filter of the detection), `group_id`/`group_size`
-(connected components of the pairs), and for each ad (`_a`, `_b`): id, duration, number of chunks, brand, sector,
-category, fragment type, first detection date, live occurrences.
+Output: the pairs with `score_min` >= `--min-score` are grouped (connected components of the pairs), and every ad
+of a group gets its own row (a group of 2 ads has 2 rows), never two ads mixed on one row:
+
+- the CSV (`--output`): `group_id` (smallest ad id of the group), `group_size`, `ad_id`, `nb_matches` (ads of the
+  group it matches directly), its best match in the group (`best_match_ad_id`, which has its own row, with
+  `best_score_min`, `best_score_max`, `best_shared_keys`), `matches` (every direct match, `ad_id:score_min`), then the
+  data of the ad: duration, number of chunks, brand, sector, category, fragment type, first detection date, live
+  occurrences. `score_min` is the share of the pairs of the smaller ad found in the other at a consistent time
+  offset; `score_max` the same relative to the bigger ad (low when a short ad is only contained in a longer one,
+  e.g. a shared jingle);
+- `<csv name>_metabase.txt`: a SQL query to paste in Metabase (database holding the `advertising` schema). The ids
+  and matching columns of the rows are written in the query (`VALUES`); it loads the data of each ad: mosaic
+  (`advertising.ad_screenshot`, column to display as an image), brand, sector, category, classification status,
+  transcript, broadcasts, link to the saved video in the advertising bucket (`lien_sauvegarde`, bucket
+  `--advertising-bucket`, default `ADVERTISING_BUCKET_NAME` or `advertising-detection`) and Mediatree link of the
+  last broadcast (`lien_mediatree`, valid for recent broadcasts only).
 
 Thresholds are not calibrated: start on a brand (`--brand`) or a duration range (`--min-duration`, `--max-duration`)
 or a sample (`--max-ads`), check pairs at several score levels, then widen. Other filters: `--date-from`/`--date-to`
@@ -279,7 +290,7 @@ poetry run python -m quotaclimat.data_ingestion.advertising.s04_consolidation.du
     --min-duration 19 --max-duration 21 --output duplicates.csv
 ```
 
-In a Scaleway job (no access to the local file), `--output-bucket` also uploads the CSV to
+In a Scaleway job (no access to the local files), `--output-bucket` also uploads the CSV and the Metabase query to
 `<bucket>/<--output-prefix, default duplicate_ads>/<file name>`, with the `BUCKET`/`BUCKET_SECRET` credentials of the
 advertising jobs. For instance, as the startup command of a run of the `advertising_exportation` job, which has these
 credentials and `POSTGRES_*`:

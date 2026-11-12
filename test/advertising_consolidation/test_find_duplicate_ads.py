@@ -6,10 +6,16 @@ from datetime import datetime, timedelta
 from types import SimpleNamespace
 
 import pytest
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from postgres.database_connection import connect_to_db
-from postgres.schemas.advertising.models import Ad, Ad_Occurrence, AdvertisingBase
+from postgres.schemas.advertising.models import (
+    Ad,
+    Ad_Occurrence,
+    Ad_Screenshot,
+    AdvertisingBase,
+)
 from quotaclimat.data_ingestion.advertising.s04_consolidation.duplicate_ads import (
     find_duplicates as fd,
 )
@@ -160,6 +166,25 @@ def test_output_s3_path():
     assert fd.output_s3_path("bucket", "", "a.csv") == "bucket/a.csv"
 
 
+def test_group_rows_one_row_per_ad():
+    a, b, c = (ad_print(x, []) for x in "abc")
+    pairs = [
+        fd.DuplicatePair(a, b, 10, 0.9, 0.8, True),
+        fd.DuplicatePair(b, c, 12, 0.5, 0.5, True),
+    ]
+    rows = {row["ad_id"]: row for row in fd.group_rows(pairs)}
+    assert set(rows) == {"a", "b", "c"}
+    assert {row["group_id"] for row in rows.values()} == {"a"}
+    assert rows["b"]["nb_matches"] == 2
+    assert rows["b"]["best_match_ad_id"] == "a" and rows["b"]["best_score_min"] == 0.9
+    assert rows["b"]["matches"] == "a:0.9 c:0.5"
+    assert rows["c"]["best_match_ad_id"] == "b" and rows["c"]["best_shared_keys"] == 12
+
+
+def test_metabase_query_path():
+    assert fd.metabase_query_path("out/dups.csv") == "out/dups_metabase.txt"
+
+
 def test_connected_groups():
     a, b, c, d = (ad_print(x, []) for x in "abcd")
     pair = lambda x, y: fd.DuplicatePair(x, y, 10, 1.0, 1.0, True)  # noqa: E731
@@ -221,6 +246,15 @@ def connection():
                         ad_id=ad_id,
                     )
                 )
+        session.add(
+            Ad_Screenshot(
+                target_type="ad",
+                target_id="dup-1",
+                ad_id="dup-1",
+                status="done",
+                image_url="https://bucket/screenshots/ads/dup-1.jpg",
+            )
+        )
         session.commit()
     with engine.connect() as connection:
         yield connection
@@ -266,8 +300,34 @@ def test_run_on_database(connection, tmp_path):
     assert fd.run(connection, args(min_duration=21)) == []
     assert [ad.id for ad in fd.stream_ads(connection, args(brand="peugeot"), FPS)] == []
 
+    rows = fd.group_rows(pairs)
     output = tmp_path / "duplicates.csv"
-    fd.write_csv(str(output), pairs)
+    fd.write_csv(str(output), rows)
     lines = output.read_text().splitlines()
-    assert len(lines) == 2
-    assert lines[1].startswith("dup-1,2,")
+    # one line per ad of the group, each with its own data
+    assert len(lines) == 3
+    assert lines[1].startswith("dup-1,2,dup-1,1,dup-2,")
+    assert lines[2].startswith("dup-1,2,dup-2,1,dup-1,")
+
+    # the Metabase query runs on the database and loads the data of the ads
+    result = (
+        connection.execute(text(fd.metabase_query(rows, "advertising-detection")))
+        .mappings()
+        .all()
+    )
+    assert [(r["groupe_id"], r["ad_id"], r["meilleur_match_id"]) for r in result] == [
+        ("dup-1", "dup-1", "dup-2"),
+        ("dup-1", "dup-2", "dup-1"),
+    ]
+    assert result[0]["mosaique"] == "https://bucket/screenshots/ads/dup-1.jpg"
+    assert result[1]["mosaique"] is None
+    assert result[0]["nb_diffusions"] == 2 and result[0]["marque"] == "Renault"
+    assert result[0]["lien_sauvegarde"] == (
+        "https://console.scaleway.com/object-storage/buckets/fr-par/advertising-detection"
+        "/files/ads/dup-1/"
+    )
+    assert result[0]["lien_mediatree"].startswith(
+        "https://keywords.mediatree.fr/player/?fifo=tf1&start_cts="
+    )
+    # without any duplicate, the query still runs
+    assert connection.execute(text(fd.metabase_query([], "b"))).all() == []

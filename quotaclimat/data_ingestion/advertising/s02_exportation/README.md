@@ -24,7 +24,8 @@ Exports the detected ads (audio/video saved in the advertising bucket, `ads/<ad_
 | `MAX_ADS` | unset (all) | Maximum number of ads processed in the run, e.g. `2000`. |
 | `CLEAN_OTHER_CHUNKS` | `false` | `true` keeps only the chunk entry of the current hash on each ad. |
 | `CURSOR_BATCH_SIZE` | `500` | Ads read and committed per batch. |
-| `AUDIO_WORKERS` | CPUs of the job (`SCW_SLS_CPU`) minus one, at least 1 | Processes computing the fingerprints. Each batch downloads its audio files concurrently (4 per worker) and computes them in these processes. |
+| `AUDIO_WORKERS` | CPUs of the job (`SCW_SLS_CPU`) minus one, at least 1 | Processes computing the fingerprints of each batch. |
+| `DOWNLOAD_CONCURRENCY` | `16` | Audio files downloaded at once. The run waits on S3 far more than on the CPU (~25 ms of computation for a 5 s ad). |
 
 Ads with `fragment_type = 'no_data'` (no media, set by the classification) are never taken. Ads
 that already have a chunk entry with the current hash are left out of the query (with

@@ -11,8 +11,9 @@ Env vars:
 - CLEAN_OTHER_CHUNKS: "true" to keep only the chunk entry of the current hash on each ad.
 - CURSOR_BATCH_SIZE: number of ads read and committed per batch (default 500).
 - AUDIO_WORKERS: number of processes computing the fingerprints (default: CPUs of the
-  Scaleway job, from SCW_SLS_CPU, minus one, at least 1). Each batch downloads its audio files
-  concurrently (DOWNLOADS_PER_WORKER per worker) and computes them in these processes.
+  Scaleway job, from SCW_SLS_CPU, minus one, at least 1).
+- DOWNLOAD_CONCURRENCY: number of audio files downloaded at once (default 16). Each batch
+  downloads its audio files concurrently and computes them in the worker processes.
 """
 
 import asyncio
@@ -54,7 +55,9 @@ def _env_int(name: str) -> int | None:
 CLEAN_OTHER_CHUNKS = _env_bool("CLEAN_OTHER_CHUNKS")
 CURSOR_BATCH_SIZE = _env_int("CURSOR_BATCH_SIZE") or 500
 MAX_ADS = _env_int("MAX_ADS")
-DOWNLOADS_PER_WORKER = 4
+# Downloads wait on S3 far more than on the CPU (the fingerprints of a 5s ad take ~25ms):
+# many of them run at once whatever the number of workers
+DOWNLOAD_CONCURRENCY = _env_int("DOWNLOAD_CONCURRENCY") or 16
 
 
 def has_chunk_with_hash(fingerprint_hash: str):
@@ -200,8 +203,7 @@ async def run():
     fingerprint_hash = fingerprinter.params_hash()
     fs = get_s3_filesystem()
     workers = number_of_workers()
-    # Downloads wait on S3 more than on the CPU: keep a few in advance of each worker
-    downloads = asyncio.Semaphore(DOWNLOADS_PER_WORKER * workers)
+    downloads = asyncio.Semaphore(DOWNLOAD_CONCURRENCY)
 
     counters = {
         "ads_seen": 0,
@@ -239,7 +241,8 @@ async def run():
             )
             + f", {taken} taken in this run "
             + (f"(MAX_ADS={MAX_ADS})" if MAX_ADS is not None else "(no MAX_ADS)")
-            + f", most occurrences first, {workers} workers"
+            + f", most occurrences first, {workers} workers, "
+            f"{DOWNLOAD_CONCURRENCY} concurrent downloads"
         )
 
         query = ads_to_process_query(fingerprint_hash, CLEAN_OTHER_CHUNKS, MAX_ADS)

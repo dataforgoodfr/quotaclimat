@@ -150,6 +150,7 @@ logs).
 | `nouvelle_ad` | `occurrence_id`, `ad_indicator` (optional), free columns | `traite_le`, `resultat`, `message`, `nouvelle_ad_id`, `nouvelle_occurrence_id` |
 | `dechets` | `occurrence_id`, free columns | `traite_le`, `resultat`, `message` |
 | `reattribution` | `occurrence_id`, `ad_id`, free columns | `traite_le`, `resultat`, `message`, `nouvelle_occurrence_id` |
+| `fusion` | `ad_id`, `target_ad_id`, free columns | `traite_le`, `resultat`, `message`, `nb_occurrences_deplacees` |
 
 The columns of the job are added after the last column when missing. Each row is processed once: the rows with
 a `traite_le` are skipped. To process a row again (after fixing it), empty its `traite_le`. `resultat`:
@@ -233,6 +234,23 @@ Errors: unknown or deleted occurrence, unknown or empty `ad_id`, occurrence alre
 in the tab. Warnings: an ad of another duration than the ad of the occurrence (by more than 1 s), an ad that is
 not a classified advertising (the occurrence is then left out of `analytics.publicites`). Same limit with a
 reprocessing of the detection.
+
+### Merge of two ads (`fusion`)
+
+For the same spot stored as two ads (e.g. a pair found by `duplicate_ads`): one row per ad to empty (`ad_id`), with
+the ad that keeps the occurrences (`target_ad_id`). Every live occurrence of `ad_id` is moved to `target_ad_id` like
+a reattribution: replaced by an occurrence of the target ad (id of the detection formula; when the target already
+has an occurrence at the same date on the same channel, the two make one), the old one soft deleted. The number of
+occurrences moved is written in `nb_occurrences_deplacees`. The ad `ad_id` itself is unchanged (fingerprints,
+classification).
+The same id in both columns changes nothing and the row is marked as processed (`appliqué`). The rows of a tab are
+processed in order. Errors: empty `target_ad_id`, unknown ad, `ad_id` already merged higher in the tab. Warnings:
+no live occurrence to move, a target of another duration (by more than 1 s) or that is not a classified
+advertising, a target merged into another ad higher in the tab (its occurrences then stay in the target, not in the
+last ad of the chain: put the rows in the right order).
+Limits: the fingerprints of `ad_id` stay, so the detection still attributes the next broadcasts of the spot to
+`ad_id`, and a reprocessing of the detection gives the moved occurrences back to it; the row is not processed
+again (empty its `traite_le` to move the new occurrences).
 
 ### Environment variables
 

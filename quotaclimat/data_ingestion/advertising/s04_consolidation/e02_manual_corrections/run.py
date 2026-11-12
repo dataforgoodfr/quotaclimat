@@ -6,7 +6,8 @@ the name of a tab gives its kind (TAB_KINDS), all the tabs of a kind have the sa
 - nouvelle_ad...: occurrences attributed to the wrong ad (occurrence_id), moved to a new ad, one per tab
   and per value of the optional ad_indicator column;
 - dechets...: occurrences that are not ads (occurrence_id), soft deleted;
-- reattribution...: occurrences attributed to the wrong ad (occurrence_id), moved to an existing ad (ad_id).
+- reattribution...: occurrences attributed to the wrong ad (occurrence_id), moved to an existing ad (ad_id);
+- fusion...: ads stored twice (ad_id), all their occurrences moved to another existing ad (target_ad_id).
 
 Each row is processed once: the job fills traite_le, resultat (appliqué, avertissement or erreur) and
 message, and the rows with a traite_le are skipped (to process a row again, empty its traite_le). A warning
@@ -39,6 +40,7 @@ from quotaclimat.data_ingestion.advertising.s04_consolidation.e02_manual_correct
     correct_ad,
     create_ad_from_occurrences,
     live_occurrences,
+    merge_ad_into,
     new_ad_id,
     reattribute_occurrence,
     trash_occurrence,
@@ -57,14 +59,16 @@ KIND_AD = "correction_ads"
 KIND_NEW_AD = "nouvelle_ad"
 KIND_TRASH = "dechets"
 KIND_REATTRIBUTION = "reattribution"
+KIND_MERGE = "fusion"
 # beginning of the name of a tab -> its kind
-TAB_KINDS = (KIND_AD, KIND_NEW_AD, KIND_TRASH, KIND_REATTRIBUTION)
+TAB_KINDS = (KIND_AD, KIND_NEW_AD, KIND_TRASH, KIND_REATTRIBUTION, KIND_MERGE)
 # column identifying the rows of a kind of tab
 KEY_COLUMNS = {
     KIND_AD: "ad_id",
     KIND_NEW_AD: "occurrence_id",
     KIND_TRASH: "occurrence_id",
     KIND_REATTRIBUTION: "occurrence_id",
+    KIND_MERGE: "ad_id",
 }
 
 # columns filled by the job (added after the last column when missing)
@@ -75,6 +79,8 @@ COLUMN_PREVIOUS = "valeurs_precedentes"
 COLUMN_NEW_AD = "nouvelle_ad_id"
 COLUMN_NEW_OCCURRENCE = "nouvelle_occurrence_id"
 COLUMN_AD_INDICATOR = "ad_indicator"
+COLUMN_TARGET_AD = "target_ad_id"
+COLUMN_MOVED = "nb_occurrences_deplacees"
 
 VideoExporter = Callable[..., object]
 
@@ -173,6 +179,37 @@ def process_reattribution_rows(
                 logging.exception(
                     "Reattribution of the occurrence %s failed", occurrence_id
                 )
+                outcome = Outcome.error(f"échec : {e}")
+        updates.append((row, _cells(outcome, **extra)))
+    return updates
+
+
+def process_merge_rows(
+    session: Session, rows: list[SheetRow]
+) -> list[tuple[SheetRow, dict[str, str]]]:
+    """Rows processed in order: an ad merged into another higher in the tab is no longer a target."""
+    updates = []
+    merged_into: dict[str, str] = {}
+    for row in rows:
+        ad_id = row.values["ad_id"]
+        target_ad_id = row.values.get(COLUMN_TARGET_AD, "").strip()
+        extra = {}
+        if ad_id in merged_into and ad_id != target_ad_id:
+            outcome = Outcome.error("ad en double dans l'onglet")
+        else:
+            try:
+                with session.begin_nested():
+                    outcome, moved = merge_ad_into(session, ad_id, target_ad_id)
+                if outcome.result != RESULT_ERROR and ad_id != target_ad_id:
+                    merged_into[ad_id] = target_ad_id
+                    extra = {COLUMN_MOVED: str(moved)}
+                    if target_ad_id in merged_into:
+                        outcome.warn(
+                            f"l'ad cible a été fusionnée plus haut dans {merged_into[target_ad_id]} :"
+                            " l'ordre des lignes compte"
+                        )
+            except Exception as e:
+                logging.exception("Merge of the ad %s failed", ad_id)
                 outcome = Outcome.error(f"échec : {e}")
         updates.append((row, _cells(outcome, **extra)))
     return updates
@@ -319,6 +356,8 @@ def process_tab(
         updates = process_trash_rows(session, pending)
     elif kind == KIND_REATTRIBUTION:
         updates = process_reattribution_rows(session, pending)
+    elif kind == KIND_MERGE:
+        updates = process_merge_rows(session, pending)
     else:
         updates = process_new_ad_rows(
             session, pending, spreadsheet, tab, export_video, dry_run

@@ -9,6 +9,12 @@ description: |
   With only_analytics, the models of models/dashboards and models/homepage (the
   long part, computed from the whole keywords table) are left out and keep their
   last build.
+  The daily layer (models/daily, built next to the models of models/dashboards and
+  models/homepage during the double run) is incremental by day: a run only recomputes
+  the recent days (14 days, or from the day before the period given by start_date and
+  days_back if older). With full_refresh, its whole history is rebuilt: needed after a
+  change of its code, of the program grid or of the dictionary, or of keywords older
+  than the window. A full rebuild also runs every Sunday (trigger weekly_full_refresh).
 
 labels:
   pipeline: ome
@@ -19,11 +25,33 @@ concurrency:
   limit: 1
   behavior: QUEUE
 
+triggers:
+  # safety net: rebuilds the whole history of the daily layer once a week, in case a change of the
+  # program grid, of the dictionary or of old keywords was not followed by a full refresh
+  - id: weekly_full_refresh
+    type: io.kestra.plugin.core.trigger.Schedule
+    cron: "17 9 * * 0"
+    timezone: Europe/Paris
+    inputs:
+      full_refresh: true
+
 inputs:
   - id: only_analytics
     type: BOOLEAN
     defaults: false
     description: "When true, leaves out the models of models/dashboards and models/homepage (dbt.sh analytics)."
+  - id: full_refresh
+    type: BOOLEAN
+    defaults: false
+    description: "When true, rebuilds the whole history of the daily layer (models/daily) instead of its recent days (DBT_FULL_REFRESH)."
+  - id: start_date
+    type: DATE
+    required: false
+    description: "Reference date of the period imported by the calling flow (YYYY-MM-DD, default today). With days_back, the daily layer is recomputed from the day before that period at the latest."
+  - id: days_back
+    type: INT
+    required: false
+    description: "Days of the period imported by the calling flow, before start_date. Empty: the default window (14 days)."
 
 tasks:
   - id: dbt_run_transformations
@@ -41,6 +69,9 @@ tasks:
       - >-
         cd /app && /app/entrypoints/dbt.sh {{ inputs.only_analytics ? 'analytics' : '' }}
     env:
+      DBT_FULL_REFRESH: "{{ inputs.full_refresh }}"
+      DBT_IMPORT_START_DATE: "{{ inputs.start_date ?? '' }}"
+      DBT_IMPORT_DAYS_BACK: "{{ inputs.days_back ?? '' }}"
       EXTERNAL_SOURCES_DRIVE_FOLDER: "{{ secret('EXTERNAL_SOURCES_DRIVE_FOLDER') }}"
       GOOGLE_SHEETS_SERVICE_ACCOUNT_JSON: "{{ secret('GOOGLE_SHEETS_SERVICE_ACCOUNT_JSON') }}"
       DBT_ENV: prod

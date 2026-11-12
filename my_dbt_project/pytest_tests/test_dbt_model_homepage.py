@@ -406,3 +406,38 @@ def test_core_query_environmental_shares_values_i8n(db_connection):
         expected = (datetime.datetime(2025, 1, 27, 0, 0), 'TF1', 258, Decimal('0.0233'), Decimal('0.0194'), Decimal('0.0013'), Decimal('0.0000'), Decimal('0.0013'), Decimal('0.0000'), Decimal('0.0168'), Decimal('0.0116'), Decimal('0.0116'), Decimal('0.0000'), Decimal('0.0000'), Decimal('0.0000'), Decimal('0.0142'), Decimal('0.0103'), Decimal('0.0039'), 'france')
         # expected = (datetime.datetime(2025, 1, 27, 0, 0), 'TF1', Decimal('0.1333'),Decimal('0.1111'),Decimal('0.0074'),Decimal('0.0000'),Decimal('0.0074'),Decimal('0.0000'),Decimal('0.0963'),Decimal('0.0667'),Decimal('0.0667'),Decimal('0.0000'),Decimal('0.0000'),Decimal('0.0000'),Decimal('0.0593'),Decimal('0.0593'),Decimal('0.0222'), "france")
         assert row == expected, f"Unexpected values: {row}"
+
+
+def double_run_differences(cur):
+    cur.execute(
+        """
+        SELECT old_table, old_rows, new_rows, only_in_old, only_in_new
+        FROM public.double_run_comparison
+        WHERE only_in_old > 0 OR only_in_new > 0 OR old_rows <> new_rows
+        """
+    )
+    return cur.fetchall()
+
+
+def test_daily_layer_matches_dashboards(db_connection):
+    """models/daily (one row per day, incremental by day, macros/daily_window.sql) rebuilds the tables of
+    models/dashboards and models/homepage from its days. double_run_comparison compares each pair: on the fixtures,
+    after a full build of both, then after an incremental run of the daily layer over a window that covers the
+    fixtures (2025-02-01), the tables are identical. The incremental run also runs on tables that already carry their
+    select grants (dbt compares them with the configured ones in an incremental run only,
+    macros/show_grants_quoted.sql)."""
+    # ends the read transaction of the previous tests: its locks would block dbt replacing the tables
+    db_connection.commit()
+    run_dbt_command(["run", "--select", "path:models/dashboards", "--select", "path:models/homepage", "--full-refresh"])
+    run_dbt_command(["run", "--select", "path:models/daily", "--full-refresh"])
+    with db_connection.cursor() as cur:
+        cur.execute("SELECT count(*), sum(old_rows) FROM public.double_run_comparison")
+        nb_tables, nb_rows = cur.fetchone()
+        assert nb_tables == 8 and nb_rows > 0
+        assert double_run_differences(cur) == [], "full build of the daily layer"
+    db_connection.commit()
+
+    run_dbt_command(["run", "--select", "path:models/daily", "--vars", "{recompute_since: '2025-01-21'}"])
+    with db_connection.cursor() as cur:
+        assert double_run_differences(cur) == [], "incremental run of the daily layer"
+    db_connection.commit()

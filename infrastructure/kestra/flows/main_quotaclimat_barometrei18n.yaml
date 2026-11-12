@@ -232,3 +232,7 @@ tasks:
     flowId: dbt
     wait: true
     transmitFailed: true
+    inputs:
+      # the daily layer of dbt recomputes at least the imported period
+      start_date: "{{ (inputs.start_date ?? now()) | date('yyyy-MM-dd') }}"
+      days_back: "{{ inputs.days_back }}"

@@ -129,7 +129,7 @@ The RRS subflows receive no dates: `rrs-climate` resumes from what is already in
 
 Interactive version: [`diagrams/flows/barometre.html`](diagrams/flows/barometre.html).
 
-The main OME pipeline for France (`COUNTRY=fra`): it fetches yesterday's TV/radio transcripts, finds environmental keywords, screens the matching chunks for misinformation and rebuilds the dbt models used by Metabase. Inputs: `days_back` (default 1) and `start_date` (default now).
+The main OME pipeline for France (`COUNTRY=fra`): it fetches yesterday's TV/radio transcripts, finds environmental keywords, screens the matching chunks for misinformation and rebuilds the dbt models used by Metabase. Inputs: `days_back` (default 1), `start_date` (default now) and `full_refresh` (default `false`, passed to the [`dbt`](#dbt) subflow: `true` rebuilds the whole history of the daily layer `models/daily`, to do after a change of its code, of the program grid or of the dictionary).
 
 ### 1. `ingest_data_to_s3`: Mediatree API to S3
 
@@ -154,13 +154,14 @@ The main OME pipeline for France (`COUNTRY=fra`): it fetches yesterday's TV/radi
 
 ### 4. `dbt_run_transformations`: models
 
-- **Runs:** the [`dbt`](#dbt) subflow, so that two dbt runs never overlap. Its first task (`dbt_run_transformations`) runs `entrypoints/dbt.sh` in `quotaclimat_base`, its second one `curated_and_metabase_docs` (below).
+- **Runs:** the [`dbt`](#dbt) subflow, so that two dbt runs never overlap, with the imported period (`start_date`, `days_back`) and `full_refresh`. Its first task (`dbt_run_transformations`) runs `entrypoints/dbt.sh` in `quotaclimat_base`, its second one `curated_and_metabase_docs` (below).
 - **What happens**, in order:
   1. `quotaclimat.data_ingestion.labelstudio.ingest_labelstudio` copies Label Studio tasks and annotations from the `labelstudio` DB into `barometre` (`labelstudio_task_aggregate`, `labelstudio_task_completion_aggregate`).
   2. `quotaclimat.data_ingestion.external_sources.download_external_sources` downloads the reference spreadsheets listed in `my_dbt_project/external_sources.yml` from the Drive folder in `EXTERNAL_SOURCES_DRIVE_FOLDER`, using the service account in `GOOGLE_SHEETS_SERVICE_ACCOUNT_JSON`. Spreadsheets readable without credentials are refused. Then `dbt seed` and `dbt test` load and check them.
-  3. `dbt run --full-refresh` builds the core models. The analytics tables and the advertising models are excluded here.
-  4. `dbt run --target analytics` builds `task_global_completion` and `environmental_shares_with_desinfo_counts`.
-  5. A last `dbt run` builds the advertising models, `cas_de_mesinformation` and `publicites`, which read the analytics tables.
+  3. `dbt run --full-refresh` builds the core models. The analytics tables, the advertising models and the daily layer are excluded here.
+  4. `dbt run --select path:models/daily` builds the daily layer, incremental by day (only the recent days; the whole history with `full_refresh`), the same dashboards and homepage tables computed from it, and `double_run_comparison`, which compares them with those of step 3; `dbt test --select double_run_identical` warns when they differ. See [`my_dbt_project/README.md`](../my_dbt_project/README.md#daily-daily-layer-of-dashboards-and-homepage-double-run).
+  5. `dbt run --target analytics` builds `task_global_completion` and `environmental_shares_with_desinfo_counts`.
+  6. A last `dbt run` builds the advertising models, `cas_de_mesinformation` and `publicites`, which read the analytics tables.
 - **Technologies:** dbt (Postgres adapter), Google Drive and Sheets APIs, SQLAlchemy.
 - **Reads:** `labelstudio` DB, Google Sheets, `barometre`. **Writes:** `barometre` schemas `public`, `analytics`, `dashboards`, `advertising`.
 
@@ -189,6 +190,12 @@ Runs the dbt models of the `barometre` database, then the `curated` schema: [`ba
 | Input | Default | Effect |
 |---|---|---|
 | `only_analytics` | `false` | `true` runs `dbt.sh analytics`: the models of `models/dashboards` and `models/homepage` (the long part, computed from the whole `keywords` table) are left out and keep their last build |
+| `full_refresh` | `false` | `true` (`DBT_FULL_REFRESH`) rebuilds the whole history of the daily layer `models/daily` instead of its recent days. Needed after a change of its code, of the program grid (`program_metadata`), of the dictionary, or of keywords older than the window |
+| `start_date`, `days_back` | empty | Period imported by the calling flow (`DBT_IMPORT_START_DATE`, `DBT_IMPORT_DAYS_BACK`): the daily layer is recomputed from the day before it at the latest. `barometre`, `barometre-catchup` and `barometre-i18n` pass theirs. Empty: the default window, the last 14 days |
+
+Trigger `weekly_full_refresh`: every Sunday at 09:17 (Europe/Paris), a run with `full_refresh=true`, a safety net in case a change of the program grid, of the dictionary or of old keywords was not followed by a full refresh. It queues behind a running dbt run like the others.
+
+To apply a change of a model of `models/daily` without waiting for Sunday: run this flow by hand with `full_refresh=true` (no import, unlike `barometre`). The tables of `dbt-analytics` (analytics, advertising, `curated`) are rebuilt entirely on every run, so a change of their code is applied by the next run without any option. `dbt-analytics` does not run the daily layer.
 
 ## dbt-analytics
 
@@ -212,7 +219,7 @@ The same four steps and the same code as [`barometre`](#barometre), run for the 
 | `ingest_data_to_s3` | Bucket `mediatree-extended-perimeter-prod`, written with `RRS_SCW_ACCESS`/`RRS_SCW_SECRET`. No `API_DATA_OVERWRITE`, so channel/days already on S3 are skipped. Since `ext-fra` is not the legacy France code, objects get a `country=france/` prefix. |
 | `detect_keywords` | Writes to the `extended-perimeter` DB on the RRS Postgres instance (port 18492) with the admin user `RRS_PG_ADMIN_USER`, because `alembic upgrade head` needs DDL rights. Rows keep `country=france`, so the DB has the same content shape as `barometre`. |
 | `detect_misinformation` | `misinformation-extended-perimeter-prod` bucket, Label Studio project 24 (S3 storage id 18), looks back `days_back` days (not `+1`). |
-| `dbt_run_transformations` | `EXTENDED_PERIMETER=true`: Label Studio ingestion only keeps project 24 (`configs.py`), and dbt grants `select` only to `rrs-read-prod`. No `EXTERNAL_SOURCES_DRIVE_FOLDER`, so the Google Sheets download is skipped. |
+| `dbt_run_transformations` | `EXTENDED_PERIMETER=true`: Label Studio ingestion only keeps project 24 (`configs.py`), and dbt grants `select` only to `rrs-read-prod`. No `EXTERNAL_SOURCES_DRIVE_FOLDER`, so the Google Sheets download is skipped. `DBT_FULL_REFRESH=true`: the daily layer is rebuilt entirely on every run, this database has no weekly full rebuild. |
 | `curated_and_metabase_docs` | Not run: the `curated` schema is only built on `barometre`. |
 
 ## rrs-climate
@@ -326,7 +333,7 @@ A safety net that runs [`barometre`](#barometre)'s four steps every night at 03:
 - Step 1 has no `API_DATA_OVERWRITE`: only channel/days that are missing from S3 are fetched again.
 - Step 2 re-reads the whole window from S3 and upserts, so it is idempotent.
 - Step 3 looks back `days_back` days and runs without `LABEL_MISINFORMATION_OVERWRITE`.
-- Step 4 is identical: the [`dbt`](#dbt) subflow, `curated` schema included.
+- Step 4 is identical: the [`dbt`](#dbt) subflow, `curated` schema included, given the imported period, so that the daily layer recomputes it even when `start_date` is far in the past.
 
 ## barometre-i18n
 
@@ -340,7 +347,7 @@ The OME pipeline for the other countries, every day at 04:07. Inputs: `days_back
    - `ingest_data_to_s3`: same as `barometre` step 1 with `COUNTRY` set to the loop value. `API_DATA_OVERWRITE=1` only when the `api_data_overwrite` input is on (otherwise the variable is empty, because the job tests its truthiness). Objects go to the `mediatree` bucket under `country=<name>/year=/...`, and channels and program grids come from that country's config.
    - `detect_keywords`: same as `barometre` step 2, writing to `barometre.keywords` with the country's name. Keywords are filtered on the country's language. Non-French languages are matched on spaCy lemmas plus exact forms, instead of the French regex.
    - `detect_misinformation`: same as `barometre` step 3, run on the Kestra VM (`label-misinformation:latest` image). `COUNTRY` is the country's full name (`belgium`, `belgium-flanders`, `germany`, `spain`, `poland`), taken from `variables.countries`, which also holds the country bucket (`safeguards-climate-<country>-prod`) and the Label Studio project and project id (the Label Studio URL is in the secret). `LABEL_MISINFORMATION_OVERWRITE=1` only when the `label_misinformation_overwrite` input is on.
-2. **`dbt_run_transformations`**: once, after all countries, the [`dbt`](#dbt) subflow (`wait: true`, `transmitFailed: true`).
+2. **`dbt_run_transformations`**: once, after all countries, the [`dbt`](#dbt) subflow (`wait: true`, `transmitFailed: true`), with the imported period (`start_date`, `days_back`).
 
 **Per-country secrets.** The country bucket keys and Label Studio token and URL live in one Kestra secret, `I18N_COUNTRY_SECRETS`: a single-line JSON object keyed by country code, `{"bel": {"bucket_access": "...", "bucket_secret": "...", "label_studio_token": "...", "label_studio_url": "https://..."}, "bel-fla": {...}, ...}`. The task reads a key with `secret('I18N_COUNTRY_SECRETS') | jq('.["' ~ taskrun.value ~ '"].bucket_access') | first`. The other secrets (`MISTRAL_API_KEY`, `OPENAI_API_KEY`, `POSTGRES_*_READ`...) are shared with the France flows. To add a country: add its code to the `ForEach` values, an entry to `variables.countries` and a key to the JSON secret. See [`infrastructure/Readme.md`](../infrastructure/Readme.md#per-country-secret-i18n_country_secrets) for how to build and deploy the secret.
 

@@ -1,0 +1,185 @@
+version: 2
+
+# Daily layer of the dashboards and homepage tables (incremental by day, macros/daily_window.sql) and the same
+# tables computed from it, built next to them during the double run, see my_dbt_project/README.md.
+models:
+  - name: core_query_environmental_shares_daily
+    description: >
+      One row per day and channel (France): the additive measures of core_query_environmental_shares, by day. Incremental by day (unique_key day).
+    columns:
+      - name: day
+        description: Day of the segments (date in the time zone of the database session, Europe/Paris in production).
+        data_tests:
+          - not_null
+      - name: channel_title
+        description: Channel title (program grid).
+      - name: public
+        description: Public channel (program grid).
+      - name: infocontinue
+        description: 24h news channel (program grid).
+      - name: radio
+        description: Radio (program grid).
+      - name: sum_duration_minutes
+        description: Duration of reference of the day in minutes, the denominator of the shares of the week.
+      - name: crise_env_minutes
+        description: Minutes with environment keywords (number_of_keywords * 20 s).
+      - name: climat_total_minutes
+        description: Minutes with climate keywords.
+      - name: biodiversite_total_minutes
+        description: Minutes with biodiversity keywords.
+      - name: ressource_total_minutes
+        description: Minutes with resources keywords.
+      - name: climat_adaptation_minutes
+        description: Minutes of climate adaptation solutions.
+      - name: climat_attenuation_minutes
+        description: Minutes of climate mitigation solutions.
+      - name: climat_consequence_minutes
+        description: Minutes of climate consequences.
+      - name: climat_cause_minutes
+        description: Minutes of climate causes.
+      - name: climat_constat_minutes
+        description: Minutes of climate observations (constat).
+      - name: biodiversite_solution_minutes
+        description: Minutes of biodiversity solutions.
+      - name: biodiversite_consequence_minutes
+        description: Minutes of biodiversity consequences.
+      - name: biodiversite_cause_minutes
+        description: Minutes of biodiversity causes.
+      - name: biodiversite_concept_minutes
+        description: Minutes of biodiversity general concepts.
+      - name: ressource_solution_minutes
+        description: Minutes of resources solutions.
+      - name: ressource_minutes
+        description: Minutes of resources observations.
+  - name: core_query_environmental_shares_be_daily
+    description: >
+      One row per day and Belgian channel: the daily measures of core_query_environmental_shares_be (its CTE daily: monitored time, in-perimeter time, theoretical time, denominator, minutes by theme). Also the daily denominators of core_query_thematics_keywords_be_from_daily. Incremental by day.
+    columns:
+      - name: day
+        description: Day of the segments.
+        data_tests:
+          - not_null
+      - name: denominator_min
+        description: Denominator of the day (theoretical time for the channels with a grid, monitored time otherwise).
+  - name: core_query_environmental_shares_i8n_daily
+    description: >
+      One row per day, channel and country (other countries): the additive measures of core_query_environmental_shares_i8n, by day (denominator from time_monitored). Incremental by day.
+    columns:
+      - name: day
+        description: Day of the segments (date in the time zone of the database session, Europe/Paris in production).
+        data_tests:
+          - not_null
+      - name: channel_name
+        description: Channel name.
+      - name: channel_title
+        description: Channel title.
+      - name: country
+        description: Country.
+      - name: sum_duration_minutes
+        description: Duration of reference of the day in minutes, the denominator of the shares of the week.
+      - name: crise_env_minutes
+        description: Minutes with environment keywords (number_of_keywords * 20 s).
+      - name: climat_total_minutes
+        description: Minutes with climate keywords.
+      - name: biodiversite_total_minutes
+        description: Minutes with biodiversity keywords.
+      - name: ressource_total_minutes
+        description: Minutes with resources keywords.
+      - name: climat_adaptation_minutes
+        description: Minutes of climate adaptation solutions.
+      - name: climat_attenuation_minutes
+        description: Minutes of climate mitigation solutions.
+      - name: climat_consequence_minutes
+        description: Minutes of climate consequences.
+      - name: climat_cause_minutes
+        description: Minutes of climate causes.
+      - name: climat_constat_minutes
+        description: Minutes of climate observations (constat).
+      - name: biodiversite_solution_minutes
+        description: Minutes of biodiversity solutions.
+      - name: biodiversite_consequence_minutes
+        description: Minutes of biodiversity consequences.
+      - name: biodiversite_cause_minutes
+        description: Minutes of biodiversity causes.
+      - name: biodiversite_concept_minutes
+        description: Minutes of biodiversity general concepts.
+      - name: ressource_solution_minutes
+        description: Minutes of resources solutions.
+      - name: ressource_minutes
+        description: Minutes of resources observations.
+  - name: core_query_thematics_keywords_daily
+    description: >
+      One row per day, channel and keyword (France): the occurrences counted by core_query_thematics_keywords, by day, with the dictionary and macro category columns. Incremental by day.
+    columns:
+      - name: day
+        description: Day of the segments (date in the time zone of the database session, Europe/Paris in production).
+        data_tests:
+          - not_null
+      - name: count
+        description: Number of distinct occurrences of the keyword that day (same count as the source table, by day).
+  - name: core_query_thematics_keywords_be_daily
+    description: >
+      One row per day, Belgian channel and keyword: the occurrences counted by core_query_thematics_keywords_be, by day. Incremental by day.
+    columns:
+      - name: day
+        description: Day of the segments (date in the time zone of the database session, Europe/Paris in production).
+        data_tests:
+          - not_null
+      - name: count
+        description: Number of distinct occurrences of the keyword that day (same count as the source table, by day).
+  - name: core_query_thematics_keywords_i8n_daily
+    description: >
+      One row per day, channel, country and keyword (other countries): the occurrences counted by core_query_thematics_keywords_i8n, by day. Incremental by day.
+    columns:
+      - name: day
+        description: Day of the segments (date in the time zone of the database session, Europe/Paris in production).
+        data_tests:
+          - not_null
+      - name: count
+        description: Number of distinct occurrences of the keyword that day (same count as the source table, by day).
+  - name: core_query_environmental_shares_from_daily
+    description: >
+      Same columns, in the same order, as core_query_environmental_shares, computed from core_query_environmental_shares_daily. Built next to core_query_environmental_shares during the double run and compared with it in double_run_comparison; meant to replace it once the double run is validated.
+  - name: core_query_environmental_shares_be_from_daily
+    description: >
+      Same columns, in the same order, as core_query_environmental_shares_be, computed from core_query_environmental_shares_be_daily. Built next to core_query_environmental_shares_be during the double run and compared with it in double_run_comparison; meant to replace it once the double run is validated.
+  - name: core_query_environmental_shares_i8n_from_daily
+    description: >
+      Same columns, in the same order, as core_query_environmental_shares_i8n, computed from core_query_environmental_shares_i8n_daily. Built next to core_query_environmental_shares_i8n during the double run and compared with it in double_run_comparison; meant to replace it once the double run is validated.
+  - name: core_query_thematics_keywords_from_daily
+    description: >
+      Same columns, in the same order, as core_query_thematics_keywords, computed from core_query_thematics_keywords_daily and the program grid. Built next to core_query_thematics_keywords during the double run and compared with it in double_run_comparison; meant to replace it once the double run is validated.
+  - name: core_query_thematics_keywords_be_from_daily
+    description: >
+      Same columns, in the same order, as core_query_thematics_keywords_be, computed from core_query_thematics_keywords_be_daily and core_query_environmental_shares_be_daily. Built next to core_query_thematics_keywords_be during the double run and compared with it in double_run_comparison; meant to replace it once the double run is validated.
+  - name: core_query_thematics_keywords_i8n_from_daily
+    description: >
+      Same columns, in the same order, as core_query_thematics_keywords_i8n, computed from core_query_thematics_keywords_i8n_daily and the program grid. Built next to core_query_thematics_keywords_i8n during the double run and compared with it in double_run_comparison; meant to replace it once the double run is validated.
+  - name: homepage_environment_by_media_by_month_from_daily
+    description: >
+      Same columns, in the same order, as homepage_environment_by_media_by_month, computed from core_query_environmental_shares_daily. Built next to homepage_environment_by_media_by_month during the double run and compared with it in double_run_comparison; meant to replace it once the double run is validated.
+  - name: thematic_query_ocean_incremental
+    description: >
+      Same columns as thematic_query_ocean (one row per keywords segment with an ocean keyword) plus day, incremental by day (unique_key day). Compared with thematic_query_ocean in double_run_comparison.
+    columns:
+      - name: day
+        description: Day of the segment.
+        data_tests:
+          - not_null
+  - name: double_run_comparison
+    description: >
+      One row per table of models/dashboards and models/homepage, compared with the same table computed from the daily layer: numbers of rows and rows found only in one of them (numbers rounded to 6 decimals). only_in_old = only_in_new = 0 means identical. Checked by the test double_run_identical (warning).
+    columns:
+      - name: old_table
+        description: Current table (models/dashboards, models/homepage).
+        data_tests:
+          - not_null
+          - unique
+      - name: new_table
+        description: Same table computed from the daily layer.
+      - name: only_in_old
+        description: Rows of old_table missing from new_table.
+      - name: only_in_new
+        description: Rows of new_table missing from old_table.
+      - name: compared_at
+        description: Time of the comparison.

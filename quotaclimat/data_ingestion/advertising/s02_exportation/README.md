@@ -31,7 +31,26 @@ Ads with `fragment_type = 'no_data'` (no media, set by the classification) are n
 that already have a chunk entry with the current hash are left out of the query (with
 `CLEAN_OTHER_CHUNKS=true`, those that also have other entries are taken, to clean them). The ads
 are taken by decreasing number of occurrences (not deleted), so a run with `MAX_ADS` handles the
-most broadcast ads first, and the next run continues with the following ones. The job logs at
-start the total number of ads, how many already have a chunk with the current hash, how many are
-skipped as `no_data`, how many are left to process and how many are taken in this run. An audio file that cannot be decoded is
-logged and counted as `decode_failed`, and the run goes on.
+most broadcast ads first, and the next run continues with the following ones. An audio file that
+cannot be decoded is logged and counted as `decode_failed`, and the run goes on.
+
+### Merged ads (`advertising.ad_merge`)
+
+A merged ad (see `s04_consolidation`) is never downloaded nor cut in chunks:
+
+- an active merge gets, at the end of each run, the fingerprints of its source ads one after the
+  other (as `tools/ad_merge.concatenate_chunks`), once all of them have a chunk entry with the
+  current hash. This entry replaces the merged ad's own entry with this hash and is marked
+  `"from_sources": true`, so that it is not rebuilt at the next runs. Database only: it is done
+  for every merge ready, whatever `MAX_ADS`. A merge whose sources are not all done yet waits for
+  the next run (`merges_waiting_for_sources`);
+- a reverted merge keeps the empty chunks set by `revert_merge`, so that the detection no longer
+  matches it.
+
+The occurrences of a source ad are moved to the merged ad, so a source ad is ranked by its own
+occurrences plus those of the active merged ads it is a source of: the sources of the most
+broadcast merges come first.
+
+The job logs at start the total number of ads, how many already have a chunk with the current
+hash, how many are skipped as `no_data`, how many are merged ads (and how many active merges are
+left to concatenate), how many are left to process and how many are taken in this run.

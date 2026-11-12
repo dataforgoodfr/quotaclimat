@@ -4,7 +4,8 @@ fingerprinter parameters (identified by their hash, `fingerprinter.params_hash()
 Ads that already have a chunk entry with the current hash are skipped (unless CLEAN_OTHER_CHUNKS
 asks to remove their other entries). The ads are processed by decreasing number of occurrences,
 so that the most broadcast ones get their chunks first, and MAX_ADS caps the number of ads taken
-in one run.
+in one run. Merged ads are not downloaded: at the end of the run, an active merge gets the
+concatenation of the chunks of its source ads (see concatenate_merges and the README).
 
 Env vars:
 - MAX_ADS: optional maximum number of ads to process in this run (e.g. 2000). Unset: all of them.
@@ -29,13 +30,14 @@ from sentry_sdk.crons import monitor
 from sqlalchemy import exists, func, select, update
 
 from postgres.database_connection import get_db_session
-from postgres.schemas.advertising.models import Ad, Ad_Occurrence
+from postgres.schemas.advertising.models import Ad, Ad_Merge, Ad_Occurrence
 from quotaclimat.data_ingestion.advertising.s01_detection.processor import chunk_creator
 from quotaclimat.data_ingestion.advertising.s02_exportation.ad_bucket import (
     ad_media_s3_key,
     get_margin_from_detection_date,
 )
 from quotaclimat.data_ingestion.advertising.s02_exportation.run import get_s3_filesystem
+from quotaclimat.data_ingestion.advertising.tools.ad_merge import MERGE_STATUS_ACTIVE
 from quotaclimat.data_ingestion.advertising.tools.fingerprints import fingerprinter
 from quotaclimat.utils.logger import getLogger
 from quotaclimat.utils.sentry import sentry_init
@@ -58,6 +60,9 @@ MAX_ADS = _env_int("MAX_ADS")
 # Downloads wait on S3 far more than on the CPU (the fingerprints of a 5s ad take ~25ms):
 # many of them run at once whatever the number of workers
 DOWNLOAD_CONCURRENCY = _env_int("DOWNLOAD_CONCURRENCY") or 16
+MERGES_BATCH_SIZE = 500
+# Marks the chunk entry of a merged ad built by concatenating the entries of its source ads
+FROM_SOURCES_KEY = "from_sources"
 
 
 def has_chunk_with_hash(fingerprint_hash: str):
@@ -80,32 +85,171 @@ def has_media():
     return Ad.fragment_type.is_distinct_from(NO_DATA_FRAGMENT_TYPE)
 
 
+def is_merged_ad():
+    """SQL condition: the ad was built by merging other ads (advertising.ad_merge), whatever the
+    status of the merge. Its audio is never cut in chunks: an active merge gets the
+    concatenation of the chunks of its source ads (concatenate_merges), a reverted one keeps
+    the empty chunks set by revert_merge, so that the detection no longer matches it."""
+    return exists(select(1).where(Ad_Merge.merged_ad_id == Ad.id))
+
+
 def needs_processing(fingerprint_hash: str, clean_other_chunks: bool):
-    """SQL condition: the ad has media and either has no chunk with this hash or, with
-    clean_other_chunks, has other chunk entries to remove."""
+    """SQL condition: the ad has media, is not a merged ad, and either has no chunk with this
+    hash or, with clean_other_chunks, has other chunk entries to remove."""
     has_hash = has_chunk_with_hash(fingerprint_hash)
     if clean_other_chunks:
-        return has_media() & (~has_hash | (func.json_array_length(Ad.chunks) > 1))
-    return has_media() & ~has_hash
+        to_do = ~has_hash | (func.json_array_length(Ad.chunks) > 1)
+    else:
+        to_do = ~has_hash
+    return has_media() & ~is_merged_ad() & to_do
+
+
+def _live_occurrences():
+    """Number of occurrences not deleted of each ad."""
+    return (
+        select(Ad_Occurrence.ad_id, func.count().label("nb"))
+        .where(Ad_Occurrence.deleted_at.is_(None))
+        .group_by(Ad_Occurrence.ad_id)
+        .subquery()
+    )
+
+
+def _occurrences_through_merges(own):
+    """Number of occurrences not deleted of the active merged ads each ad is a source of. The
+    occurrences of a source ad are moved to the merged ad when it is merged: without them, the
+    sources of the most broadcast merges would come last."""
+    sources = (
+        select(
+            func.unnest(Ad_Merge.source_ad_ids).label("ad_id"),
+            Ad_Merge.merged_ad_id,
+        )
+        .where(Ad_Merge.status == MERGE_STATUS_ACTIVE)
+        .subquery()
+    )
+    return (
+        select(sources.c.ad_id, func.sum(own.c.nb).label("nb"))
+        .join(own, own.c.ad_id == sources.c.merged_ad_id)
+        .group_by(sources.c.ad_id)
+        .subquery()
+    )
 
 
 def ads_to_process_query(
     fingerprint_hash: str, clean_other_chunks: bool, limit: int | None
 ):
-    """Ads to process, the most broadcast first (number of occurrences not deleted), then by id
-    for a stable order."""
-    nb_occurrences = (
-        select(func.count())
-        .where(Ad_Occurrence.ad_id == Ad.id, Ad_Occurrence.deleted_at.is_(None))
-        .correlate(Ad)
-        .scalar_subquery()
-    )
+    """Ads to process, the most broadcast first, then by id for a stable order. An ad counts its
+    own occurrences (not deleted) plus those of the active merged ads it is a source of."""
+    own = _live_occurrences()
+    through_merges = _occurrences_through_merges(own)
+    priority = func.coalesce(own.c.nb, 0) + func.coalesce(through_merges.c.nb, 0)
     return (
         select(Ad)
+        .outerjoin(own, own.c.ad_id == Ad.id)
+        .outerjoin(through_merges, through_merges.c.ad_id == Ad.id)
         .where(needs_processing(fingerprint_hash, clean_other_chunks))
-        .order_by(nb_occurrences.desc(), Ad.id)
+        .order_by(priority.desc(), Ad.id)
         .limit(limit)
     )
+
+
+def _has_concatenated_chunk(fingerprint_hash: str):
+    """SQL condition: the ad has a chunk entry with this hash built by concatenate_merges."""
+    chunk = func.json_array_elements(Ad.chunks).table_valued("value").alias("chunk")
+    return exists(
+        select(1)
+        .select_from(chunk)
+        .where(
+            chunk.c.value.op("->>")("hash") == fingerprint_hash,
+            chunk.c.value.op("->>")(FROM_SOURCES_KEY) == "true",
+        )
+    )
+
+
+def merges_to_concatenate_query(fingerprint_hash: str):
+    """Active merges whose merged ad has no concatenated chunk entry with this hash yet."""
+    return (
+        select(Ad_Merge.merged_ad_id, Ad_Merge.source_ad_ids)
+        .join(Ad, Ad.id == Ad_Merge.merged_ad_id)
+        .where(
+            Ad_Merge.status == MERGE_STATUS_ACTIVE,
+            ~_has_concatenated_chunk(fingerprint_hash),
+        )
+        .order_by(Ad_Merge.merged_ad_id)
+    )
+
+
+def _entry_with_hash(chunks: list | None, fingerprint_hash: str) -> dict | None:
+    return next(
+        (entry for entry in (chunks or []) if entry.get("hash") == fingerprint_hash),
+        None,
+    )
+
+
+def concatenated_chunks(
+    merged_chunks: list | None,
+    source_chunks: list[list | None],
+    fingerprint_hash: str,
+    clean_other_chunks: bool,
+) -> list | None:
+    """New chunks of a merged ad: its entry with this hash replaced by the fingerprints of its
+    source ads one after the other (in broadcast order, as tools/ad_merge.concatenate_chunks).
+    None while a source ad has no entry with this hash yet."""
+    source_entries = [_entry_with_hash(c, fingerprint_hash) for c in source_chunks]
+    if any(entry is None for entry in source_entries):
+        return None
+    new_entry = {
+        "hash": fingerprint_hash,
+        "fingerprints": [
+            fingerprint
+            for entry in source_entries
+            for fingerprint in entry.get("fingerprints", [])
+        ],
+        FROM_SOURCES_KEY: True,
+    }
+    if clean_other_chunks:
+        return [new_entry]
+    others = [
+        entry
+        for entry in (merged_chunks or [])
+        if entry.get("hash") != fingerprint_hash
+    ]
+    return [*others, new_entry]
+
+
+def concatenate_merges(
+    read_session, write_session, fingerprint_hash: str, clean_other_chunks: bool
+) -> dict:
+    """Give every active merged ad the concatenation of the chunks of its source ads, once all
+    of them have a chunk entry with this hash. Database only (no download), so it is done for
+    every merge ready, whatever MAX_ADS."""
+    counters = {"merges_concatenated": 0, "merges_waiting_for_sources": 0}
+    merges = read_session.execute(merges_to_concatenate_query(fingerprint_hash)).all()
+    for start in range(0, len(merges), MERGES_BATCH_SIZE):
+        batch = merges[start : start + MERGES_BATCH_SIZE]
+        ad_ids = {m.merged_ad_id for m in batch} | {
+            ad_id for m in batch for ad_id in m.source_ad_ids
+        }
+        chunks_by_id = dict(
+            read_session.execute(
+                select(Ad.id, Ad.chunks).where(Ad.id.in_(ad_ids))
+            ).all()
+        )
+        for merge in batch:
+            new_chunks = concatenated_chunks(
+                chunks_by_id.get(merge.merged_ad_id),
+                [chunks_by_id.get(ad_id) for ad_id in merge.source_ad_ids],
+                fingerprint_hash,
+                clean_other_chunks,
+            )
+            if new_chunks is None:
+                counters["merges_waiting_for_sources"] += 1
+                continue
+            counters["merges_concatenated"] += 1
+            write_session.execute(
+                update(Ad).where(Ad.id == merge.merged_ad_id).values(chunks=new_chunks)
+            )
+        write_session.commit()
+    return counters
 
 
 def count_ads(session, fingerprint_hash: str, clean_other_chunks: bool) -> dict:
@@ -118,6 +262,14 @@ def count_ads(session, fingerprint_hash: str, clean_other_chunks: bool) -> dict:
         ),
         "no_data": session.scalar(
             select(func.count()).select_from(Ad).where(~has_media())
+        ),
+        "merged": session.scalar(
+            select(func.count()).select_from(Ad).where(is_merged_ad())
+        ),
+        "merges_to_concatenate": session.scalar(
+            select(func.count()).select_from(
+                merges_to_concatenate_query(fingerprint_hash).subquery()
+            )
         ),
         "to_process": session.scalar(
             select(func.count())
@@ -233,6 +385,8 @@ async def run():
             f"{counts['total']} ads in total, "
             f"{counts['already_had_chunk']} already have a chunk with this hash, "
             f"{counts['no_data']} skipped as fragment_type no_data (no media), "
+            f"{counts['merged']} merged ads not downloaded "
+            f"({counts['merges_to_concatenate']} active merges to concatenate at the end), "
             f"{counts['to_process']} to process"
             + (
                 " (including ads to clean, CLEAN_OTHER_CHUNKS)"
@@ -241,7 +395,7 @@ async def run():
             )
             + f", {taken} taken in this run "
             + (f"(MAX_ADS={MAX_ADS})" if MAX_ADS is not None else "(no MAX_ADS)")
-            + f", most occurrences first, {workers} workers, "
+            + f", most occurrences first (with those of their merges), {workers} workers, "
             f"{DOWNLOAD_CONCURRENCY} concurrent downloads"
         )
 
@@ -301,6 +455,12 @@ async def run():
 
             write_session.commit()
             logger.info(f"Recompute saved chunks progress: {counters} / {taken}")
+
+        counters.update(
+            concatenate_merges(
+                read_session, write_session, fingerprint_hash, CLEAN_OTHER_CHUNKS
+            )
+        )
 
     logger.info(f"Recompute saved chunks finished: {counters}")
 

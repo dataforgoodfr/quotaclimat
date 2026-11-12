@@ -16,6 +16,7 @@ from postgres.database_connection import connect_to_db
 from postgres.schemas.advertising.models import (
     Ad,
     Ad_Merge,
+    Ad_Merge_Occurrence,
     Ad_Occurrence,
     Ad_Screenshot,
     AdvertisingBase,
@@ -644,19 +645,8 @@ def test_merge_errors_and_warnings(engine):
         make_ad("b"),
         make_ad("c", duration_sec=5.0),
         make_ad("empty"),
-        make_ad("piece"),
-        make_ad("merged"),
         make_occ("o1", "a", 0),
         make_occ("o2", "b", 600),
-    )
-    insert(
-        engine,
-        Ad_Merge(
-            merged_ad_id="merged",
-            source_ad_ids=["piece", "other"],
-            method="auto_split_pieces",
-            status="active",
-        ),
     )
     sheet = MemorySheet(
         {
@@ -670,12 +660,10 @@ def test_merge_errors_and_warnings(engine):
                 ["a", "b"],
                 ["a", "c"],
                 ["a", "c"],
-                ["piece", "c"],
-                ["merged", "c"],
             ]
         }
     )
-    assert run(engine, sheet) == {"erreur": 7, "appliqué": 1, "avertissement": 2}
+    assert run(engine, sheet) == {"erreur": 5, "appliqué": 1, "avertissement": 2}
     messages = sheet.column("fusion_mai", "message")
     assert messages[:4] == [
         "target_ad_id vide",
@@ -694,18 +682,101 @@ def test_merge_errors_and_warnings(engine):
         "1 occurrences déplacées, 0 empreintes copiées, ad supprimée (deleted_at)"
     )
     assert messages[7] == f"ad supprimée le {today()}, fusionnée dans c"
-    assert (
-        messages[8]
-        == messages[9]
-        == (
-            "ad liée à la fusion de morceaux merged (advertising.ad_merge) : à traiter à la main"
-        )
-    )
     assert set(live_occurrences_by_ad(engine).values()) == {"c"}
     with Session(engine) as session:
         assert sorted(
             session.scalars(select(Ad.id).where(Ad.deleted_at.is_not(None)))
         ) == ["a", "b", "empty"]
+
+
+def insert_split_merge(engine):
+    """Two pieces glued by the merge of the split pieces: "castorama" (a Castorama spot classified Elanco by
+    mistake) then "elanco", broadcast together once (merged occurrence "om"), and alone once each."""
+    insert(
+        engine,
+        make_ad("castorama", brand="Elanco"),
+        make_ad("elanco", brand="Elanco", duration_sec=15.0),
+        make_ad("merged", brand="Elanco", duration_sec=35.0),
+        make_ad("right", brand="Castorama"),
+        make_occ("p1", "castorama", 0),
+        make_occ("p2", "elanco", 20),
+        make_occ("om", "merged", 0),
+        make_occ("alone1", "castorama", 600),
+        make_occ("alone2", "elanco", 1200),
+    )
+    with Session(engine) as session:
+        for occurrence_id in ("p1", "p2"):
+            session.get(Ad_Occurrence, occurrence_id).deleted_at = T0
+        session.add(
+            Ad_Merge(
+                merged_ad_id="merged",
+                source_ad_ids=["castorama", "elanco"],
+                method="auto_split_pieces",
+                status="active",
+            )
+        )
+        session.add_all(
+            Ad_Merge_Occurrence(
+                merged_occurrence_id="om",
+                source_occurrence_id=source,
+                merged_ad_id="merged",
+                source_ad_id=ad_id,
+                role="piece",
+                position=position,
+            )
+            for position, (source, ad_id) in enumerate(
+                [("p1", "castorama"), ("p2", "elanco")]
+            )
+        )
+        session.commit()
+
+
+def test_merge_of_a_piece_reverts_its_merge_of_split_pieces(engine):
+    insert_split_merge(engine)
+    sheet = MemorySheet({"fusion": [["ad_id", "target_ad_id"], ["castorama", "right"]]})
+    assert run(engine, sheet) == {"appliqué": 1}
+    assert sheet.column("fusion", "message") == [
+        "fusion de morceaux merged annulée (2 occurrences des morceaux restaurées) ;"
+        " 2 occurrences déplacées, 0 empreintes copiées, ad supprimée (deleted_at)"
+    ]
+    assert sheet.column("fusion", "nb_occurrences_deplacees") == ["2"]
+
+    live = live_occurrences_by_ad(engine)
+    # the broadcasts of the Castorama piece (alone, and the one glued to Elanco) go to the right ad, the Elanco
+    # piece gets its broadcast back, the merged ad has none left
+    assert sorted(live.values()) == ["elanco", "elanco", "right", "right"]
+    assert "p2" in live and "alone2" in live
+    with Session(engine) as session:
+        merge = session.get(Ad_Merge, "merged")
+        assert merge.status == "reverted"
+        assert session.get(Ad, "merged").chunks == []
+        assert session.get(Ad, "merged").deleted_at is None
+        assert session.get(Ad, "castorama").deleted_at is not None
+    assert get_ad(engine, "castorama").prediction[-1]["reverted_merges"] == ["merged"]
+
+
+def test_merge_of_a_merged_ad_gives_its_occurrences_back_to_its_pieces(engine):
+    insert_split_merge(engine)
+    sheet = MemorySheet({"fusion": [["ad_id", "target_ad_id"], ["merged", "right"]]})
+    # durations 35s and 20s: the fingerprints (emptied by the revert anyway) are not copied
+    assert run(engine, sheet) == {"avertissement": 1}
+    assert sheet.column("fusion", "message")[0].startswith(
+        "fusion de morceaux merged annulée (2 occurrences des morceaux restaurées)"
+    )
+    live = live_occurrences_by_ad(engine)
+    assert sorted(live.values()) == ["castorama", "castorama", "elanco", "elanco"]
+    assert get_ad(engine, "merged").deleted_at is not None
+
+
+def test_reverted_merge_of_split_pieces_does_not_block_a_merge(engine):
+    insert_split_merge(engine)
+    with Session(engine) as session:
+        session.get(Ad_Merge, "merged").status = "reverted"
+        session.commit()
+    sheet = MemorySheet({"fusion": [["ad_id", "target_ad_id"], ["elanco", "right"]]})
+    run(engine, sheet)
+    assert "fusion de morceaux" not in sheet.column("fusion", "message")[0]
+    assert get_ad(engine, "elanco").deleted_at is not None
 
 
 def test_deleted_ad_cannot_be_corrected_nor_receive_occurrences(engine):

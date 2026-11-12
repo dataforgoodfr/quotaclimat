@@ -37,7 +37,11 @@ from quotaclimat.data_ingestion.advertising.s04_consolidation.e02_manual_correct
     References,
     brand_key,
 )
-from quotaclimat.data_ingestion.advertising.tools.ad_merge import merged_occurrence_id
+from quotaclimat.data_ingestion.advertising.tools.ad_merge import (
+    MERGE_STATUS_ACTIVE,
+    merged_occurrence_id,
+    revert_merge,
+)
 
 RESULT_APPLIED = "appliqué"
 RESULT_WARNING = "avertissement"
@@ -507,8 +511,12 @@ def merge_ad_into(
        {"stage": "manual_fusion", ...} is added to its prediction. It stays in the database with its old
        occurrences (history), but every step leaves it out: the detection no longer matches its fingerprints.
 
-    The same id in both columns changes nothing (applied). Errors: empty target, unknown or deleted ad, an ad of
-    a merge of split pieces (advertising.ad_merge, redone on its pieces after a reprocessing of the detection).
+    0. The active merges of split pieces (advertising.ad_merge) whose merged ad or a piece is ad_id are reverted
+       first (tools/ad_merge.revert_merge): the occurrences of the pieces come back, the merged ad loses its
+       occurrences and fingerprints, and the merge is no longer redone. A piece then gives its restored
+       occurrences to the target; a merged ad gives them back to its pieces, and has none left to move.
+
+    The same id in both columns changes nothing (applied). Errors: empty target, unknown or deleted ad.
     Warnings: the warnings of a reattribution. Returns the outcome and the number of occurrences moved.
     """
     if not target_ad_id:
@@ -526,30 +534,35 @@ def merge_ad_into(
     error = deleted_error(source_ad) or deleted_error(target_ad, "ad cible")
     if error:
         return Outcome.error(error), 0
-    in_merge = session.scalar(
-        select(Ad_Merge.merged_ad_id)
-        .where(
+    outcome = Outcome()
+    # the active merges of split pieces involving the ad are reverted first: a piece of another spot was glued
+    # to it (the merge only joins pieces of the same brand, so a wrong brand makes wrong merges), and the merge
+    # would otherwise be redone on its pieces after a reprocessing of the detection
+    reverted = {}
+    for merge_id in session.scalars(
+        select(Ad_Merge.merged_ad_id).where(
+            Ad_Merge.status == MERGE_STATUS_ACTIVE,
             or_(
                 Ad_Merge.merged_ad_id == ad_id,
                 Ad_Merge.source_ad_ids.any(ad_id),
-            )
-        )
-        .limit(1)
-    )
-    if in_merge is not None:
-        return (
-            Outcome.error(
-                f"ad liée à la fusion de morceaux {in_merge} (advertising.ad_merge) : à traiter à la main"
             ),
-            0,
         )
+    ).all():
+        reverted[merge_id] = revert_merge(session, merge_id)
+        outcome.messages.append(
+            f"fusion de morceaux {merge_id} annulée ({reverted[merge_id]} occurrences des morceaux restaurées)"
+        )
+    if reverted:
+        # the occurrences restored by the revert, read again below
+        session.expire_all()
+        source_ad = session.get(Ad, ad_id)
+        target_ad = session.get(Ad, target_ad_id)
 
     occurrences = session.scalars(
         select(Ad_Occurrence).where(
             Ad_Occurrence.ad_id == ad_id, Ad_Occurrence.deleted_at.is_(None)
         )
     ).all()
-    outcome = Outcome()
     if occurrences:
         _target_warnings(outcome, source_ad, target_ad)
         move_occurrences(session, target_ad_id, occurrences)
@@ -565,6 +578,7 @@ def merge_ad_into(
             "replaced_by": target_ad_id,
             "nb_occurrences": len(occurrences),
             "nb_fingerprint_entries_copied": nb_copied,
+            "reverted_merges": sorted(reverted),
         }
     ]
     session.flush()

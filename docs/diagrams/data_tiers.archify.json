@@ -100,7 +100,7 @@
       ],
       "sources": [
         {
-          "path": "entrypoints/advertising_detection.sh",
+          "path": "entrypoints/ad_s01_run_detection.sh",
           "label": "detection job"
         }
       ]

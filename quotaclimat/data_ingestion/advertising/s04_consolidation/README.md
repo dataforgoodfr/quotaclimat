@@ -4,9 +4,9 @@ Corrections of the detection, made after the classification (they use its brands
 step, each with its own entry point:
 
 - `e01_merge_split_ads`: unsupervised merge of the ads split in several pieces by the detection
-  (`entrypoints/advertising_merge_split_ads.sh`).
+  (`entrypoints/ad_s04e01_merge_split_ads.sh`).
 - `e02_manual_corrections`: corrections listed by humans in a Google Sheet, for instance after a check of the
-  screenshots (`entrypoints/advertising_manual_corrections.sh`).
+  screenshots (`entrypoints/ad_s04e02_manual_corrections.sh`).
 
 ## Merging ads
 
@@ -87,10 +87,15 @@ Example, manual merge of two pieces:
 ```python
 from sqlalchemy.orm import Session
 from postgres.database_connection import connect_to_db
-from quotaclimat.data_ingestion.advertising.tools.ad_merge import create_merged_ad, merge_occurrences
+from quotaclimat.data_ingestion.advertising.tools.ad_merge import (
+    create_merged_ad,
+    merge_occurrences,
+)
 
 with Session(connect_to_db(use_custom_json_serializer=True)) as session:
-    ad_id = create_merged_ad(session, ["<ad A>", "<ad B>"], method="manual", details={"by": "..."})
+    ad_id = create_merged_ad(
+        session, ["<ad A>", "<ad B>"], method="manual", details={"by": "..."}
+    )
     merge_occurrences(session, ad_id, ["<occurrence of A>", "<occurrence of B>"])
     session.commit()
 ```
@@ -350,7 +355,7 @@ poetry run python -m quotaclimat.data_ingestion.advertising.s04_consolidation.du
 
 In a Scaleway job (no access to the local files), `--output-bucket` also uploads the CSV and the Metabase queries to
 `<bucket>/<--output-prefix, default duplicate_ads>/<file name>`, with the `BUCKET`/`BUCKET_SECRET` credentials of the
-advertising jobs. For instance, as the startup command of a run of the `advertising_exportation` job, which has these
+advertising jobs. For instance, as the startup command of a run of the `ad_s02_run_exportation` job, which has these
 credentials and `POSTGRES_*`:
 
 ```bash

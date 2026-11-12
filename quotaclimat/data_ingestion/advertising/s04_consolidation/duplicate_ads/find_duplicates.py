@@ -18,8 +18,11 @@ How it works:
 6. Score: FingerprintsCompare._score of the detection (s01_detection/processor.py tolerances) on the two
    whole-ad fingerprints: share of the pairs of the smaller ad found in the other at a consistent time
    offset (score_min), also given relative to the bigger ad (score_max).
-7. The pairs with score_min >= --min-score are written, grouped (connected components): a group_id
-   gathers the ads linked by these pairs.
+7. The pairs with score_min >= --min-score are grouped (connected components): a group_id gathers
+   the ads linked by these pairs. Output, one row per ad of a group (an ad of a group of 2 has its
+   own row, as the other one): the CSV with the data of the ad and its best match in the group, and
+   a .txt file next to it (<csv name>_metabase.txt) holding a SQL query to run in Metabase, which
+   shows the same rows with the mosaic of each ad and links to its video.
 
 Thresholds are not calibrated: start on one brand or a duration range, check pairs by eye at several
 score levels, then widen. A high score_min with a low score_max means that a short ad is contained in
@@ -370,18 +373,7 @@ def stream_ads(
         )
 
 
-OUTPUT_COLUMNS = [
-    "group_id",
-    "group_size",
-    "score_min",
-    "score_max",
-    "shared_keys",
-    "features_compatible",
-    "same_brand",
-    "duration_diff_sec",
-]
 AD_COLUMNS = [
-    "id",
     "duration_sec",
     "nb_chunks",
     "brand",
@@ -391,43 +383,163 @@ AD_COLUMNS = [
     "first_detection_date",
     "nb_occurrences",
 ]
+# One row per ad of a group: the group, the ad, and its best match (another ad of the group, which
+# has its own row)
+GROUP_COLUMNS = [
+    "group_id",
+    "group_size",
+    "ad_id",
+    "nb_matches",
+    "best_match_ad_id",
+    "best_score_min",
+    "best_score_max",
+    "best_shared_keys",
+    "matches",
+]
 
 
-def write_csv(path: str, pairs: list[DuplicatePair]) -> None:
+def group_rows(pairs: list[DuplicatePair]) -> list[dict]:
+    """One row per ad of a group, sorted by group (biggest first) then ad id. Matching columns: the
+    number of ads of the group it matches directly, its best match (highest score_min) with its
+    scores, and every direct match as "ad_id:score_min" separated by spaces."""
     groups = connected_groups(pairs)
-    columns = OUTPUT_COLUMNS + [
-        f"{column}_{side}" for side in ("a", "b") for column in AD_COLUMNS
-    ]
-    with open(path, "w", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=columns)
-        writer.writeheader()
-        for pair in sorted(
-            pairs, key=lambda p: (groups[p.ad_a.id][0], -p.score_min, p.ad_a.id)
-        ):
-            group_id, group_size = groups[pair.ad_a.id]
-            row = {
+    ads: dict[str, AdPrint] = {}
+    matches: dict[str, list[tuple[DuplicatePair, AdPrint]]] = defaultdict(list)
+    for pair in pairs:
+        ads[pair.ad_a.id], ads[pair.ad_b.id] = pair.ad_a, pair.ad_b
+        matches[pair.ad_a.id].append((pair, pair.ad_b))
+        matches[pair.ad_b.id].append((pair, pair.ad_a))
+
+    rows = []
+    for ad_id, ad in ads.items():
+        group_id, group_size = groups[ad_id]
+        ad_matches = sorted(matches[ad_id], key=lambda m: (-m[0].score_min, m[1].id))
+        best_pair, best_ad = ad_matches[0]
+        rows.append(
+            {
                 "group_id": group_id,
                 "group_size": group_size,
-                "score_min": pair.score_min,
-                "score_max": pair.score_max,
-                "shared_keys": pair.shared_keys,
-                "features_compatible": pair.features_compatible,
-                "same_brand": brand_key(pair.ad_a.meta.get("brand"))
-                == brand_key(pair.ad_b.meta.get("brand")),
-                "duration_diff_sec": round(
-                    pair.ad_b.duration_sec - pair.ad_a.duration_sec, 2
+                "ad_id": ad_id,
+                "nb_matches": len(ad_matches),
+                "best_match_ad_id": best_ad.id,
+                "best_score_min": best_pair.score_min,
+                "best_score_max": best_pair.score_max,
+                "best_shared_keys": best_pair.shared_keys,
+                "matches": " ".join(
+                    f"{other.id}:{p.score_min}" for p, other in ad_matches
                 ),
+                "duration_sec": ad.duration_sec,
+                "nb_chunks": ad.nb_chunks,
+                **{column: ad.meta.get(column) for column in AD_COLUMNS[2:]},
             }
-            for side, ad in (("a", pair.ad_a), ("b", pair.ad_b)):
-                values = {
-                    "id": ad.id,
-                    "duration_sec": ad.duration_sec,
-                    "nb_chunks": ad.nb_chunks,
-                    **ad.meta,
-                }
-                for column in AD_COLUMNS:
-                    row[f"{column}_{side}"] = values.get(column)
-            writer.writerow(row)
+        )
+    return sorted(rows, key=lambda r: (-r["group_size"], r["group_id"], r["ad_id"]))
+
+
+def write_csv(path: str, rows: list[dict]) -> None:
+    with open(path, "w", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=GROUP_COLUMNS + AD_COLUMNS)
+        writer.writeheader()
+        writer.writerows(rows)
+
+
+def _sql_literal(value) -> str:
+    if value is None:
+        return "NULL"
+    if isinstance(value, (int, float)):
+        return repr(value)
+    return "'" + str(value).replace("'", "''") + "'"
+
+
+METABASE_QUERY = """-- Doublons de pubs (s04_consolidation/duplicate_ads/find_duplicates.py), {nb_rows} lignes.
+-- Une ligne par pub d'un groupe : les pubs d'un groupe sont reliées par des paires dont l'audio se
+-- ressemble. meilleur_match_id est la pub du groupe la plus proche (elle a sa propre ligne).
+-- Colonnes à afficher en image (réglage de colonne « Afficher comme : Image ») : mosaique.
+-- Colonnes à afficher en lien : lien_sauvegarde, lien_mediatree (dernière diffusion, le lien
+-- Mediatree n'est valable que pour les diffusions récentes).
+WITH resultat (groupe_id, taille_groupe, ad_id, nb_matches, meilleur_match_id, meilleur_score_min,
+               meilleur_score_max, matches) AS (
+  VALUES
+{values}
+)
+SELECT
+  r.groupe_id,
+  r.taille_groupe,
+  r.ad_id,
+  s.image_url AS mosaique,
+  a.duration_sec AS duree_sec,
+  COALESCE(a.predicted_brand,
+    jsonb_path_query_first(a.prediction::jsonb, '$[*] ? (@.stage == "ad_type").raw_response.brand_name') #>> '{{}}'
+  ) AS marque,
+  a.predicted_sector AS secteur,
+  a.predicted_product_category AS categorie,
+  a.fragment_type AS type,
+  a.prediction_status AS statut_classification,
+  a.transcript AS transcription,
+  a.first_detection_date AS premiere_detection,
+  occ.nb_diffusions,
+  occ.derniere_diffusion,
+  occ.derniere_chaine,
+  r.nb_matches,
+  r.meilleur_match_id,
+  r.meilleur_score_min,
+  r.meilleur_score_max,
+  r.matches,
+  'https://console.scaleway.com/object-storage/buckets/fr-par/{bucket}/files/ads/' || r.ad_id || '/'
+    AS lien_sauvegarde,
+  'https://keywords.mediatree.fr/player/?fifo=' || occ.derniere_chaine
+    || '&start_cts=' || FLOOR(EXTRACT(EPOCH FROM occ.derniere_diffusion))::bigint
+    || '&end_cts=' || CEIL(EXTRACT(EPOCH FROM occ.derniere_diffusion) + a.duration_sec)::bigint
+    || '&position_cts=' || FLOOR(EXTRACT(EPOCH FROM occ.derniere_diffusion))::bigint
+    AS lien_mediatree
+FROM resultat r
+JOIN advertising.ad a ON a.id = r.ad_id
+LEFT JOIN advertising.ad_screenshot s
+  ON s.target_type = 'ad' AND s.target_id = r.ad_id AND s.status = 'done'
+LEFT JOIN LATERAL (
+  SELECT
+    count(*) OVER () AS nb_diffusions,
+    o.occurrence_date AS derniere_diffusion,
+    o.channel_name AS derniere_chaine
+  FROM advertising.ad_occurrence o
+  WHERE o.ad_id = r.ad_id AND o.deleted_at IS NULL
+  ORDER BY o.occurrence_date DESC
+  LIMIT 1
+) occ ON true
+WHERE r.ad_id IS NOT NULL
+ORDER BY r.taille_groupe DESC, r.groupe_id, r.ad_id
+"""
+
+
+def metabase_query(rows: list[dict], advertising_bucket: str) -> str:
+    """Metabase SQL query showing the rows with the data of the ads (mosaic, metadata, links): the
+    ids and matching columns of the rows are written in the query."""
+    columns = [
+        "group_id",
+        "group_size",
+        "ad_id",
+        "nb_matches",
+        "best_match_ad_id",
+        "best_score_min",
+        "best_score_max",
+        "matches",
+    ]
+    if rows:
+        values = ",\n".join(
+            "    (" + ", ".join(_sql_literal(row[c]) for c in columns) + ")"
+            for row in rows
+        )
+    else:
+        # no duplicate: one empty typed row, filtered out by the query, so that it still runs
+        values = "    (NULL::text, 0, NULL::text, 0, NULL::text, 0.0, 0.0, NULL::text)"
+    return METABASE_QUERY.format(
+        nb_rows=len(rows), values=values, bucket=advertising_bucket
+    )
+
+
+def metabase_query_path(csv_path: str) -> str:
+    root, _ = os.path.splitext(csv_path)
+    return f"{root}_metabase.txt"
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
@@ -453,6 +565,12 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         "--output-bucket",
         help="also upload the CSV to this bucket (BUCKET/BUCKET_SECRET credentials, "
         "e.g. test-advertising-detection)",
+    )
+    parser.add_argument(
+        "--advertising-bucket",
+        default=os.environ.get("ADVERTISING_BUCKET_NAME") or "advertising-detection",
+        help="bucket of the ads videos, for the links of the Metabase query "
+        "(default: ADVERTISING_BUCKET_NAME, else advertising-detection)",
     )
     parser.add_argument(
         "--output-prefix",
@@ -533,11 +651,19 @@ def main(argv: list[str] | None = None) -> None:
     engine = connect_to_db()
     with engine.connect() as connection:
         pairs = run(connection, args)
-    write_csv(args.output, pairs)
-    groups = {group for group, _ in connected_groups(pairs).values()}
-    logger.info(f"{len(pairs)} pairs in {len(groups)} groups written to {args.output}")
+    rows = group_rows(pairs)
+    write_csv(args.output, rows)
+    query_path = metabase_query_path(args.output)
+    with open(query_path, "w") as f:
+        f.write(metabase_query(rows, args.advertising_bucket))
+    nb_groups = len({row["group_id"] for row in rows})
+    logger.info(
+        f"{len(pairs)} pairs, {len(rows)} ads in {nb_groups} groups written to "
+        f"{args.output} and {query_path} (Metabase query)"
+    )
     if args.output_bucket:
-        logger.info(f"Uploaded to s3://{upload_csv(args)}")
+        for path in (args.output, query_path):
+            logger.info(f"Uploaded to s3://{upload_file(args, path)}")
 
 
 def output_s3_path(bucket: str, prefix: str, local_path: str) -> str:
@@ -545,14 +671,14 @@ def output_s3_path(bucket: str, prefix: str, local_path: str) -> str:
     return f"{folder}/{os.path.basename(local_path)}"
 
 
-def upload_csv(args: argparse.Namespace) -> str:
-    """Upload the CSV to --output-bucket/--output-prefix, return its S3 path."""
+def upload_file(args: argparse.Namespace, path: str) -> str:
+    """Upload a file to --output-bucket/--output-prefix, return its S3 path."""
     from quotaclimat.data_ingestion.advertising.tools.mediatree.bucket_mediatree import (
         get_s3_filesystem,
     )
 
-    s3_path = output_s3_path(args.output_bucket, args.output_prefix, args.output)
-    get_s3_filesystem().put_file(args.output, s3_path)
+    s3_path = output_s3_path(args.output_bucket, args.output_prefix, path)
+    get_s3_filesystem().put_file(path, s3_path)
     return s3_path
 
 

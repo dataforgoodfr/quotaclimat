@@ -279,6 +279,14 @@ of a group gets its own row (a group of 2 ads has 2 rows), never two ads mixed o
   transcript, broadcasts, link to the saved video in the advertising bucket (`lien_sauvegarde`, bucket
   `--advertising-bucket`, default `ADVERTISING_BUCKET_NAME` or `advertising-detection`) and Mediatree link of the
   last broadcast (`lien_mediatree`, valid for recent broadcasts only).
+- `<csv name>_metabase_multimarques.txt`: a second Metabase query, to inspect the matches between brands. Only the
+  groups whose ads have at least two different brands (`brand_key`, ads without brand not counted), still one row per
+  ad. The `match_*` columns only describe the best match of the ad with an ad of another brand: scores, shared keys,
+  acoustic pre-filter, duration difference, and the mosaic, transcript and saved video of that match, next to the
+  ones of the ad. They are empty when the ad has no brand, or is linked to the other brands only through ads of its
+  own brand. The header of the query lists how to read the scores. The CSV has the same columns (`group_brands`,
+  `is_multibrand_group`, `other_brand_*`). With `--blocking brand` (default), the ads of different brands are never
+  compared: these groups only come from `--blocking none`.
 
 Thresholds are not calibrated: start on a brand (`--brand`) or a duration range (`--min-duration`, `--max-duration`)
 or a sample (`--max-ads`), check pairs at several score levels, then widen. Other filters: `--date-from`/`--date-to`
@@ -290,7 +298,7 @@ poetry run python -m quotaclimat.data_ingestion.advertising.s04_consolidation.du
     --min-duration 19 --max-duration 21 --output duplicates.csv
 ```
 
-In a Scaleway job (no access to the local files), `--output-bucket` also uploads the CSV and the Metabase query to
+In a Scaleway job (no access to the local files), `--output-bucket` also uploads the CSV and the Metabase queries to
 `<bucket>/<--output-prefix, default duplicate_ads>/<file name>`, with the `BUCKET`/`BUCKET_SECRET` credentials of the
 advertising jobs. For instance, as the startup command of a run of the `advertising_exportation` job, which has these
 credentials and `POSTGRES_*`:

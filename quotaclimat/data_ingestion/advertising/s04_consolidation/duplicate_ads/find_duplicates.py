@@ -22,7 +22,10 @@ How it works:
    the ads linked by these pairs. Output, one row per ad of a group (an ad of a group of 2 has its
    own row, as the other one): the CSV with the data of the ad and its best match in the group, and
    a .txt file next to it (<csv name>_metabase.txt) holding a SQL query to run in Metabase, which
-   shows the same rows with the mosaic of each ad and links to its video.
+   shows the same rows with the mosaic of each ad and links to its video. A second query
+   (<csv name>_metabase_multimarques.txt) shows only the groups with several brands, with, for
+   each ad, its best match with an ad of another brand (scores, mosaic and transcript of the
+   match), to inspect these matches. Groups with several brands need --blocking none.
 
 Thresholds are not calibrated: start on one brand or a duration range, check pairs by eye at several
 score levels, then widen. A high score_min with a low score_max means that a short ad is contained in
@@ -396,12 +399,30 @@ GROUP_COLUMNS = [
     "best_shared_keys",
     "matches",
 ]
+# Groups with several brands: the brands of the group, and the matches of the ad with ads of
+# another brand only (empty when the ad has no brand, or is linked to the other brands only
+# through ads of its own brand)
+MULTIBRAND_COLUMNS = [
+    "group_brands",
+    "is_multibrand_group",
+    "nb_matches_other_brand",
+    "other_brand_match_ad_id",
+    "other_brand_match_brand",
+    "other_brand_score_min",
+    "other_brand_score_max",
+    "other_brand_shared_keys",
+    "other_brand_features_compatible",
+    "other_brand_duration_diff_sec",
+    "other_brand_matches",
+]
 
 
 def group_rows(pairs: list[DuplicatePair]) -> list[dict]:
     """One row per ad of a group, sorted by group (biggest first) then ad id. Matching columns: the
     number of ads of the group it matches directly, its best match (highest score_min) with its
-    scores, and every direct match as "ad_id:score_min" separated by spaces."""
+    scores, and every direct match as "ad_id:score_min" separated by spaces. Plus the
+    MULTIBRAND_COLUMNS: a group is multi-brand when its ads have at least two different brands
+    (brand_key, the ads without brand not counted)."""
     groups = connected_groups(pairs)
     ads: dict[str, AdPrint] = {}
     matches: dict[str, list[tuple[DuplicatePair, AdPrint]]] = defaultdict(list)
@@ -410,9 +431,25 @@ def group_rows(pairs: list[DuplicatePair]) -> list[dict]:
         matches[pair.ad_a.id].append((pair, pair.ad_b))
         matches[pair.ad_b.id].append((pair, pair.ad_a))
 
+    group_brands: dict[str, dict[str, str]] = defaultdict(dict)  # group -> key -> brand
+    for ad_id, ad in ads.items():
+        key = brand_key(ad.meta.get("brand"))
+        if key:
+            group_brands[groups[ad_id][0]].setdefault(key, ad.meta["brand"])
+
     rows = []
     for ad_id, ad in ads.items():
         group_id, group_size = groups[ad_id]
+        own_key = brand_key(ad.meta.get("brand"))
+        other_brand = [
+            (p, other)
+            for p, other in sorted(
+                matches[ad_id], key=lambda m: (-m[0].score_min, m[1].id)
+            )
+            if own_key
+            and brand_key(other.meta.get("brand"))
+            and brand_key(other.meta.get("brand")) != own_key
+        ]
         ad_matches = sorted(matches[ad_id], key=lambda m: (-m[0].score_min, m[1].id))
         best_pair, best_ad = ad_matches[0]
         rows.append(
@@ -431,14 +468,46 @@ def group_rows(pairs: list[DuplicatePair]) -> list[dict]:
                 "duration_sec": ad.duration_sec,
                 "nb_chunks": ad.nb_chunks,
                 **{column: ad.meta.get(column) for column in AD_COLUMNS[2:]},
+                "group_brands": " | ".join(sorted(group_brands[group_id].values())),
+                "is_multibrand_group": len(group_brands[group_id]) >= 2,
+                **other_brand_columns(ad, other_brand),
             }
         )
     return sorted(rows, key=lambda r: (-r["group_size"], r["group_id"], r["ad_id"]))
 
 
+def other_brand_columns(
+    ad: AdPrint, other_brand: list[tuple[DuplicatePair, AdPrint]]
+) -> dict:
+    """MULTIBRAND_COLUMNS of the matches of the ad with ads of another brand (best first)."""
+    if not other_brand:
+        return {"nb_matches_other_brand": 0} | {
+            column: None for column in MULTIBRAND_COLUMNS[3:]
+        }
+    best_pair, best_ad = other_brand[0]
+    return {
+        "nb_matches_other_brand": len(other_brand),
+        "other_brand_match_ad_id": best_ad.id,
+        "other_brand_match_brand": best_ad.meta.get("brand"),
+        "other_brand_score_min": best_pair.score_min,
+        "other_brand_score_max": best_pair.score_max,
+        "other_brand_shared_keys": best_pair.shared_keys,
+        "other_brand_features_compatible": best_pair.features_compatible,
+        "other_brand_duration_diff_sec": round(
+            best_ad.duration_sec - ad.duration_sec, 2
+        ),
+        "other_brand_matches": " ".join(
+            f"{other.id}({other.meta.get('brand')}):{p.score_min}"
+            for p, other in other_brand
+        ),
+    }
+
+
 def write_csv(path: str, rows: list[dict]) -> None:
     with open(path, "w", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=GROUP_COLUMNS + AD_COLUMNS)
+        writer = csv.DictWriter(
+            f, fieldnames=GROUP_COLUMNS + AD_COLUMNS + MULTIBRAND_COLUMNS
+        )
         writer.writeheader()
         writer.writerows(rows)
 
@@ -446,6 +515,8 @@ def write_csv(path: str, rows: list[dict]) -> None:
 def _sql_literal(value) -> str:
     if value is None:
         return "NULL"
+    if isinstance(value, bool):
+        return "true" if value else "false"
     if isinstance(value, (int, float)):
         return repr(value)
     return "'" + str(value).replace("'", "''") + "'"
@@ -537,9 +608,116 @@ def metabase_query(rows: list[dict], advertising_bucket: str) -> str:
     )
 
 
-def metabase_query_path(csv_path: str) -> str:
+def metabase_query_path(csv_path: str, suffix: str = "metabase") -> str:
     root, _ = os.path.splitext(csv_path)
-    return f"{root}_metabase.txt"
+    return f"{root}_{suffix}.txt"
+
+
+MULTIBRAND_QUERY = """-- Doublons de pubs entre marques différentes (s04_consolidation/duplicate_ads/find_duplicates.py),
+-- {nb_groups} groupes, {nb_rows} lignes.
+-- Seulement les groupes dont les pubs ont au moins deux marques différentes (marques normalisées,
+-- pubs sans marque non comptées). Une ligne par pub du groupe, chaque pub a sa propre ligne.
+-- Les colonnes match_* ne décrivent que le match de la pub avec une pub d'une AUTRE marque (la plus
+-- proche). Elles sont vides quand la pub n'a pas de marque, ou n'est reliée aux autres marques
+-- que par des pubs de sa propre marque (lien indirect, voir les autres lignes du groupe).
+-- Indices pour juger un match (raisonnement, seuils non calibrés) :
+--   - match_score_min : part de l'audio de la plus courte des deux pubs retrouvée dans l'autre ;
+--     match_score_max : la même part rapportée à la plus longue ;
+--   - deux scores proches et élevés : même audio sur presque toute la durée, donc probablement la
+--     même pub, dont la marque est fausse d'un côté (comparer transcription et transcription_match) ;
+--   - score_min élevé et score_max bas : la plus courte est contenue dans la plus longue (jingle,
+--     musique ou fin de pub commune, par exemple d'un même groupe d'annonceurs) ;
+--   - scores proches du seuil : ressemblance partielle (musique de fond, voix off), souvent un faux
+--     positif ;
+--   - match_ecart_duree_sec : durée du match moins durée de la pub ;
+--   - match_acoustique_compatible : le pré-filtre acoustique de la détection (énergie, centroïde
+--     spectral, passages par zéro, durée) accepte les deux pubs entières.
+-- Colonnes à afficher en image (réglage de colonne « Afficher comme : Image ») : mosaique,
+-- mosaique_match. Colonnes à afficher en lien : lien_sauvegarde, lien_sauvegarde_match.
+WITH resultat (groupe_id, taille_groupe, marques_groupe, ad_id, nb_matches_autre_marque,
+               match_id, marque_match, match_score_min, match_score_max, match_cles_communes,
+               match_acoustique_compatible, match_ecart_duree_sec, matches_autre_marque) AS (
+  VALUES
+{values}
+)
+SELECT
+  r.groupe_id,
+  r.taille_groupe,
+  r.marques_groupe,
+  r.ad_id,
+  s.image_url AS mosaique,
+  COALESCE(a.predicted_brand,
+    jsonb_path_query_first(a.prediction::jsonb, '$[*] ? (@.stage == "ad_type").raw_response.brand_name') #>> '{{}}'
+  ) AS marque,
+  a.predicted_sector AS secteur,
+  a.predicted_product_category AS categorie,
+  a.fragment_type AS type,
+  a.prediction_status AS statut_classification,
+  a.duration_sec AS duree_sec,
+  a.transcript AS transcription,
+  (SELECT count(*) FROM advertising.ad_occurrence o
+    WHERE o.ad_id = r.ad_id AND o.deleted_at IS NULL) AS nb_diffusions,
+  r.nb_matches_autre_marque,
+  r.match_id,
+  r.marque_match,
+  r.match_score_min,
+  r.match_score_max,
+  r.match_cles_communes,
+  r.match_acoustique_compatible,
+  r.match_ecart_duree_sec,
+  sm.image_url AS mosaique_match,
+  m.transcript AS transcription_match,
+  r.matches_autre_marque,
+  'https://console.scaleway.com/object-storage/buckets/fr-par/{bucket}/files/ads/' || r.ad_id || '/'
+    AS lien_sauvegarde,
+  'https://console.scaleway.com/object-storage/buckets/fr-par/{bucket}/files/ads/' || r.match_id || '/'
+    AS lien_sauvegarde_match
+FROM resultat r
+JOIN advertising.ad a ON a.id = r.ad_id
+LEFT JOIN advertising.ad_screenshot s
+  ON s.target_type = 'ad' AND s.target_id = r.ad_id AND s.status = 'done'
+LEFT JOIN advertising.ad m ON m.id = r.match_id
+LEFT JOIN advertising.ad_screenshot sm
+  ON sm.target_type = 'ad' AND sm.target_id = r.match_id AND sm.status = 'done'
+WHERE r.ad_id IS NOT NULL
+ORDER BY r.taille_groupe DESC, r.groupe_id, r.ad_id
+"""
+
+
+def metabase_multibrand_query(rows: list[dict], advertising_bucket: str) -> str:
+    """Metabase SQL query showing the rows of the groups with several brands, with the matches of
+    each ad with the other brands, the mosaics and the links of the ad and of its match."""
+    columns = [
+        "group_id",
+        "group_size",
+        "group_brands",
+        "ad_id",
+        "nb_matches_other_brand",
+        "other_brand_match_ad_id",
+        "other_brand_match_brand",
+        "other_brand_score_min",
+        "other_brand_score_max",
+        "other_brand_shared_keys",
+        "other_brand_features_compatible",
+        "other_brand_duration_diff_sec",
+        "other_brand_matches",
+    ]
+    multibrand = [row for row in rows if row["is_multibrand_group"]]
+    # typed first row (NULL columns would be text otherwise), filtered out by the query
+    values = [
+        "    (NULL::text, 0, NULL::text, NULL::text, 0, NULL::text, NULL::text, "
+        "0.0::double precision, 0.0::double precision, 0, NULL::boolean, "
+        "0.0::double precision, NULL::text)"
+    ] + [
+        "    (" + ", ".join(_sql_literal(row[c]) for c in columns) + ")"
+        for row in multibrand
+    ]
+    return MULTIBRAND_QUERY.format(
+        nb_groups=len({row["group_id"] for row in multibrand}),
+        nb_rows=len(multibrand),
+        values=",\n".join(values),
+        bucket=advertising_bucket,
+    )
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
@@ -656,13 +834,18 @@ def main(argv: list[str] | None = None) -> None:
     query_path = metabase_query_path(args.output)
     with open(query_path, "w") as f:
         f.write(metabase_query(rows, args.advertising_bucket))
+    multibrand_query_path = metabase_query_path(args.output, "metabase_multimarques")
+    with open(multibrand_query_path, "w") as f:
+        f.write(metabase_multibrand_query(rows, args.advertising_bucket))
     nb_groups = len({row["group_id"] for row in rows})
+    nb_multibrand = len({row["group_id"] for row in rows if row["is_multibrand_group"]})
     logger.info(
-        f"{len(pairs)} pairs, {len(rows)} ads in {nb_groups} groups written to "
-        f"{args.output} and {query_path} (Metabase query)"
+        f"{len(pairs)} pairs, {len(rows)} ads in {nb_groups} groups "
+        f"({nb_multibrand} with several brands) written to {args.output}, "
+        f"{query_path} and {multibrand_query_path} (Metabase queries)"
     )
     if args.output_bucket:
-        for path in (args.output, query_path):
+        for path in (args.output, query_path, multibrand_query_path):
             logger.info(f"Uploaded to s3://{upload_file(args, path)}")
 
 

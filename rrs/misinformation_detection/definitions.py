@@ -96,8 +96,32 @@ Y figurent les chiffres comme les récits qui les accompagnent, la contestation
 des chiffres officiels et des institutions, les exemples étrangers invoqués
 comme argument, et les contre-récits autant que les récits dominants.
 
+Y figurent aussi la fiscalité du capital et du patrimoine et le débat sur la
+contribution des plus fortunés (taxe Zucman, ISF/IFI, flat tax, exil fiscal,
+optimisation fiscale, justice fiscale), les propositions économiques désignées
+par le nom de leur auteur ou de leur parti, et les négociations budgétaires
+(PLF, 49.3, censure) lorsqu’un choix fiscal ou budgétaire est en jeu. Les
+exemples étrangers cités pour appuyer ou contester une mesure française
+restent dans le thème.
+
 Hors thème : le vocabulaire économique au figuré, l'économie d'un autre pays
 traitée pour elle-même, la vie d'une entreprise sans enjeu collectif.
+
+Hors thème, car traités ailleurs :
+- Le coût de l'immigration : ce que coûteraient les personnes étrangères ou
+  immigrées aux finances publiques ou aux services publics (AME, prestations
+  sociales, hébergement des demandeurs d'asile, "immigration coûte X milliards"),
+  y compris quand le propos est présenté comme un enjeu de budget de l'État.
+- Le coût de la transition énergétique : ce que coûteraient les politiques
+  climatiques et les énergies (éolien, solaire, nucléaire, EPR, subventions aux
+  renouvelables, ZFE, interdiction des moteurs thermiques, rénovation énergétique
+  imposée), y compris les chiffres de coût, de subvention ou de dette liés à ces
+  politiques.
+Restent dans le thème : les prix payés par les ménages et les entreprises
+(facture d'électricité, de gaz, carburant, TICPE), le pouvoir d'achat, et le
+budget général de l'État, même lorsque la cause avancée est l'immigration ou la
+transition énergétique, tant que le propos porte sur l'effet sur le budget d'un
+ménage ou sur les finances publiques dans leur ensemble.
 """.strip(),
 }
 

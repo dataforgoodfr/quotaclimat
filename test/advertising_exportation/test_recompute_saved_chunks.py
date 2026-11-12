@@ -4,7 +4,12 @@ import pytest
 from sqlalchemy.orm import Session
 
 from postgres.database_connection import connect_to_db
-from postgres.schemas.advertising.models import Ad, Ad_Occurrence, AdvertisingBase
+from postgres.schemas.advertising.models import (
+    Ad,
+    Ad_Merge,
+    Ad_Occurrence,
+    AdvertisingBase,
+)
 from quotaclimat.data_ingestion.advertising.s02_exportation import (
     recompute_saved_chunks as recompute,
 )
@@ -80,6 +85,8 @@ def test_skip_ads_with_current_hash_most_occurrences_first(session):
         "total": 8,
         "already_had_chunk": 2,
         "no_data": 1,
+        "merged": 0,
+        "merges_to_concatenate": 0,
         "to_process": 4,
     }
 
@@ -104,5 +111,141 @@ def test_clean_other_chunks_also_takes_ads_with_several_entries(session):
         "total": 5,
         "already_had_chunk": 4,
         "no_data": 1,
+        "merged": 0,
+        "merges_to_concatenate": 0,
         "to_process": 2,
     }
+
+
+def test_undecodable_audio_does_not_stop_the_run(tmp_path):
+    # One-frame / truncated mp3: libsndfile refuses to open it
+    bad = tmp_path / "raw.mp3"
+    bad.write_bytes(b"\xff\xfb\x90\x64" + b"\x00" * 10)
+    fingerprints, error = recompute.compute_fingerprints(str(bad), T0, 5.0)
+    assert fingerprints is None
+    assert "LibsndfileError" in error
+
+
+def _add_merge(session, merged_id, source_ids, nb_occurrences, status="active"):
+    _add_ad(session, merged_id, nb_occurrences)
+    session.add(
+        Ad_Merge(
+            merged_ad_id=merged_id,
+            source_ad_ids=source_ids,
+            method="auto_split_pieces",
+            status=status,
+        )
+    )
+    session.commit()
+
+
+def test_merged_ads_not_downloaded_and_sources_ranked_with_their_merges(session):
+    # The occurrences of the sources were moved to the merged ad when it was merged
+    _add_ad(session, "src-1", 0)
+    _add_ad(session, "src-2", 1)
+    _add_ad(session, "alone", 5)
+    _add_merge(session, "merged", ["src-1", "src-2"], 10)
+    _add_ad(session, "reverted-src", 0)
+    _add_merge(session, "reverted", ["reverted-src"], 0, status="reverted")
+
+    # merged ads (active or reverted) are never downloaded; src-2: 1 + 10, src-1: 0 + 10
+    assert _ids(session) == ["src-2", "src-1", "alone", "reverted-src"]
+    counts = recompute.count_ads(session, HASH, False)
+    assert counts["merged"] == 2
+    assert counts["merges_to_concatenate"] == 1
+    assert counts["to_process"] == 4
+
+
+def _chunks(session, ad_id):
+    session.expire_all()
+    return session.get(Ad, ad_id).chunks
+
+
+def test_concatenate_merges_once_all_sources_have_the_hash(session):
+    _add_ad(session, "src-1", 0)
+    _add_ad(session, "src-2", 0)
+    _add_merge(session, "merged", ["src-1", "src-2"], 10)
+    # chunks cut from the merged ad's own audio by a previous run, and an old hash
+    session.get(Ad, "merged").chunks = [
+        {"hash": "old-hash", "fingerprints": [{"f": "old"}]},
+        {"hash": HASH, "fingerprints": [{"f": "own-audio"}]},
+    ]
+    session.get(Ad, "src-1").chunks = [{"hash": HASH, "fingerprints": [{"f": 1}]}]
+    session.commit()
+
+    # src-2 has no chunk with the hash yet: the merge waits
+    assert recompute.concatenate_merges(session, session, HASH, False) == {
+        "merges_concatenated": 0,
+        "merges_waiting_for_sources": 1,
+    }
+
+    session.get(Ad, "src-2").chunks = [
+        {"hash": HASH, "fingerprints": [{"f": 2}, {"f": 3}]}
+    ]
+    session.commit()
+    assert recompute.concatenate_merges(session, session, HASH, False) == {
+        "merges_concatenated": 1,
+        "merges_waiting_for_sources": 0,
+    }
+    assert _chunks(session, "merged") == [
+        {"hash": "old-hash", "fingerprints": [{"f": "old"}]},
+        {
+            "hash": HASH,
+            "fingerprints": [{"f": 1}, {"f": 2}, {"f": 3}],
+            "from_sources": True,
+        },
+    ]
+    # done: not taken again
+    assert recompute.count_ads(session, HASH, False)["merges_to_concatenate"] == 0
+    assert recompute.concatenate_merges(session, session, HASH, False) == {
+        "merges_concatenated": 0,
+        "merges_waiting_for_sources": 0,
+    }
+
+
+def test_concatenate_merges_clean_other_chunks(session):
+    _add_ad(session, "src-1", 0, chunk_hashes=[HASH])
+    _add_merge(session, "merged", ["src-1"], 3)
+    session.get(Ad, "merged").chunks = [{"hash": "old-hash", "fingerprints": []}]
+    session.commit()
+
+    recompute.concatenate_merges(session, session, HASH, True)
+    assert _chunks(session, "merged") == [
+        {"hash": HASH, "fingerprints": [], "from_sources": True}
+    ]
+
+
+def test_concatenate_merges_with_fingerprints_copied_by_a_manual_fusion(session):
+    _add_ad(session, "src-1", 0)
+    _add_merge(session, "merged", ["src-1"], 3)
+    copied = {"hash": HASH, "fingerprints": [{"f": "other"}], "from_ad_id": "other"}
+    # src-1 got the fingerprints of an ad merged into it by hand, after its own ones
+    session.get(Ad, "src-1").chunks = [
+        {"hash": HASH, "fingerprints": [{"f": 1}]},
+        copied,
+    ]
+    # merged ad: an old hash, its own entry and an entry copied by a manual fusion
+    session.get(Ad, "merged").chunks = [
+        {"hash": "old-hash", "fingerprints": []},
+        {"hash": HASH, "fingerprints": [{"f": "own-audio"}]},
+        copied,
+    ]
+    session.commit()
+
+    recompute.concatenate_merges(session, session, HASH, True)
+    assert _chunks(session, "merged") == [
+        copied,
+        {"hash": HASH, "fingerprints": [{"f": 1}], "from_sources": True},
+    ]
+
+
+def test_soft_deleted_source_of_an_active_merge_is_taken(session):
+    # merged by hand into another ad, but still a piece of an automatic merge
+    _add_ad(session, "src-deleted", 0, deleted=True)
+    _add_ad(session, "src", 0)
+    _add_merge(session, "merged", ["src", "src-deleted"], 10)
+    _add_ad(session, "reverted-src-deleted", 0, deleted=True)
+    _add_merge(session, "reverted", ["reverted-src-deleted"], 0, status="reverted")
+    _add_ad(session, "deleted", 4, deleted=True)
+
+    assert _ids(session) == ["src", "src-deleted"]

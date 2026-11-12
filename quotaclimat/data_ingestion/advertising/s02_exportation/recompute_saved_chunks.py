@@ -131,6 +131,23 @@ async def _download_audio_file(
         return None
 
 
+def compute_fingerprints(audio_file_path: str, ad: Ad) -> list | None:
+    """Fingerprints of the ad's audio, or None when the file cannot be decoded (e.g. an
+    mp3 of a single frame, which libsndfile refuses to open): one bad file must not stop
+    the whole run."""
+    try:
+        return chunk_creator.run_on_audio_file(
+            audio_file_path=audio_file_path,
+            offset=get_margin_from_detection_date(
+                ad.first_detection_date
+            ).total_seconds(),
+            duration=ad.duration_sec,
+        )
+    except Exception as e:
+        logger.error(f"Error computing the fingerprints of ad {ad.id}: {e!r}")
+        return None
+
+
 async def run():
     fingerprint_hash = fingerprinter.params_hash()
     fs = get_s3_filesystem()
@@ -140,6 +157,7 @@ async def run():
         "already_had_chunk": 0,
         "cleaned_other_chunks": 0,
         "download_failed": 0,
+        "decode_failed": 0,
         "chunk_computed": 0,
     }
 
@@ -193,18 +211,16 @@ async def run():
                             fs, ad.id, dest_dir
                         )
 
+                        fingerprints = (
+                            None
+                            if audio_file_path is None
+                            else compute_fingerprints(audio_file_path, ad)
+                        )
                         if audio_file_path is None:
                             counters["download_failed"] += 1
+                        elif fingerprints is None:
+                            counters["decode_failed"] += 1
                         else:
-                            fingerprints = chunk_creator.run_on_audio_file(
-                                audio_file_path=audio_file_path,
-                                offset=(
-                                    get_margin_from_detection_date(
-                                        ad.first_detection_date
-                                    ).total_seconds()
-                                ),
-                                duration=ad.duration_sec,
-                            )
                             new_chunk_entry = Ad.generate_chunk_dict(
                                 fingerprint_hash, fingerprints
                             )

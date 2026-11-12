@@ -27,6 +27,7 @@ def select_pending(engine, limit: int | None) -> list[str]:
         stmt = (
             select(Ad.id)
             .where(Ad.transcript.is_(None))
+            .where(Ad.obsolete_at.is_(None))
             .where(Ad.fragment_type != "no_data")
             .order_by(Ad.first_detection_date.desc())
         )

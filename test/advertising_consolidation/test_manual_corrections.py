@@ -4,7 +4,7 @@ in-memory spreadsheet."""
 import asyncio
 import json
 import threading
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from types import SimpleNamespace
 
@@ -544,7 +544,11 @@ def live_occurrences_by_ad(engine) -> dict[str, str]:
         }
 
 
-def test_merge_moves_every_occurrence_of_the_ad_to_the_target_and_deletes_the_ad(
+def today() -> str:
+    return datetime.now(UTC).strftime("%Y-%m-%d")
+
+
+def test_merge_moves_every_occurrence_of_the_ad_to_the_target_and_makes_it_obsolete(
     engine,
 ):
     insert(
@@ -559,10 +563,6 @@ def test_merge_moves_every_occurrence_of_the_ad_to_the_target_and_deletes_the_ad
     insert(
         engine,
         Ad_Screenshot(target_type="ad", target_id="twin", ad_id="twin", status="done"),
-        Ad_Screenshot(
-            target_type="occurrence", target_id="o1", ad_id="twin", status="done"
-        ),
-        Ad_Screenshot(target_type="ad", target_id="main", ad_id="main", status="done"),
     )
     with Session(engine) as session:
         session.get(Ad_Occurrence, "junk").deleted_at = T0
@@ -581,19 +581,29 @@ def test_merge_moves_every_occurrence_of_the_ad_to_the_target_and_deletes_the_ad
     live = live_occurrences_by_ad(engine)
     assert set(live.values()) == {"main"}
     assert len(live) == 3 and "o3" in live
+    # the obsolete ad, its old occurrences and its screenshot stay, for the history
+    twin = get_ad(engine, "twin")
+    assert twin.obsolete_at is not None
+    assert twin.replaced_by_ad_id == "main"
+    assert twin.prediction[-1]["stage"] == "manual_fusion"
+    assert twin.prediction[-1]["replaced_by"] == "main"
+    assert twin.prediction[-1]["nb_occurrences"] == 2
+    assert twin.prediction[-1]["source"] == {
+        "spreadsheet": SPREADSHEET,
+        "tab": "fusion",
+        "row": 2,
+    }
+    assert get_ad(engine, "main").obsolete_at is None
     with Session(engine) as session:
-        assert session.get(Ad, "twin") is None
-        assert session.get(Ad, "main") is not None
-        assert (
-            session.scalars(
-                select(Ad_Occurrence).where(Ad_Occurrence.ad_id == "twin")
-            ).all()
-            == []
-        )
-        assert [s.target_id for s in session.scalars(select(Ad_Screenshot))] == ["main"]
+        old = session.scalars(
+            select(Ad_Occurrence).where(Ad_Occurrence.ad_id == "twin")
+        ).all()
+        assert sorted(o.id for o in old) == ["junk", "o1", "o2"]
+        assert all(o.deleted_at is not None for o in old)
+        assert session.get(Ad_Screenshot, ("ad", "twin")) is not None
     assert sheet.column("fusion", "nb_occurrences_deplacees") == ["2", ""]
     assert sheet.column("fusion", "message") == [
-        "2 occurrences déplacées, ad supprimée",
+        "2 occurrences déplacées, ad devenue obsolète",
         "ad_id et target_ad_id identiques : rien à faire",
     ]
     assert all(sheet.column("fusion", "traite_le"))
@@ -645,16 +655,14 @@ def test_merge_errors_and_warnings(engine):
         "target_ad_id vide",
         "ad inconnue inconnue",
         "ad cible inconnue inconnue",
-        "0 occurrences déplacées, ad supprimée",
+        "0 occurrences déplacées, ad devenue obsolète",
     ]
     assert (
         "durée de l'ad (5s) différente de celle de l'ad d'origine (20s)" in messages[4]
     )
-    assert messages[5] == (
-        "ad cible supprimée plus haut, fusionnée dans c : indiquer celle-ci en target_ad_id"
-    )
-    assert messages[6].endswith("1 occurrences déplacées, ad supprimée")
-    assert messages[7] == "ad déjà fusionnée plus haut dans c"
+    assert messages[5] == f"ad cible obsolète depuis le {today()}, fusionnée dans c"
+    assert messages[6].endswith("1 occurrences déplacées, ad devenue obsolète")
+    assert messages[7] == f"ad obsolète depuis le {today()}, fusionnée dans c"
     assert (
         messages[8]
         == messages[9]
@@ -664,7 +672,29 @@ def test_merge_errors_and_warnings(engine):
     )
     assert set(live_occurrences_by_ad(engine).values()) == {"c"}
     with Session(engine) as session:
-        assert sorted(session.scalars(select(Ad.id))) == ["c", "merged", "piece"]
+        assert sorted(
+            session.scalars(select(Ad.id).where(Ad.obsolete_at.is_not(None)))
+        ) == ["a", "b", "empty"]
+
+
+def test_obsolete_ad_cannot_be_corrected_nor_receive_occurrences(engine):
+    insert(
+        engine,
+        make_ad("old", obsolete_at=T0, replaced_by_ad_id="main"),
+        make_ad("main"),
+        make_occ("o1", "main", 0),
+    )
+    sheet = MemorySheet(
+        {
+            "correction_ads": [AD_HEADER, ["old", "Renault", "", "", "", ""]],
+            "reattribution": [["occurrence_id", "ad_id"], ["o1", "old"]],
+        }
+    )
+    assert run(engine, sheet) == {"erreur": 2}
+    message = f"ad obsolète depuis le {T0:%Y-%m-%d}, fusionnée dans main"
+    assert sheet.column("correction_ads", "message") == [message]
+    assert sheet.column("reattribution", "message") == [message]
+    assert get_ad(engine, "old").predicted_brand == "Pytest"
 
 
 def test_merge_dry_run_writes_nothing(engine):
@@ -672,7 +702,7 @@ def test_merge_dry_run_writes_nothing(engine):
     sheet = MemorySheet({"fusion": [["ad_id", "target_ad_id"], ["twin", "main"]]})
     assert run(engine, sheet, dry_run=True) == {"appliqué": 1}
     assert live_occurrences_by_ad(engine) == {"o1": "twin"}
-    assert get_ad(engine, "twin") is not None
+    assert get_ad(engine, "twin").obsolete_at is None
     assert sheet.grid["fusion"][1] == ["twin", "main"]
 
 

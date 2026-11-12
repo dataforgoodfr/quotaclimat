@@ -308,6 +308,7 @@ def ads_query(args: argparse.Namespace):
         )
         .where(
             fingerprints.is_not(None),
+            Ad.obsolete_at.is_(None),
             Ad.fragment_type.in_(list(args.fragment_types)),
             nb_occurrences >= args.min_occurrences,
         )

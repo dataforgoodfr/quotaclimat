@@ -74,9 +74,13 @@ def needs_processing(fingerprint_hash: str, clean_other_chunks: bool):
     """SQL condition: the ad has media and either has no chunk with this hash or, with
     clean_other_chunks, has other chunk entries to remove."""
     has_hash = has_chunk_with_hash(fingerprint_hash)
+    # an obsolete ad is no longer matched by the detection: no fingerprints to compute
+    live = Ad.obsolete_at.is_(None)
     if clean_other_chunks:
-        return has_media() & (~has_hash | (func.json_array_length(Ad.chunks) > 1))
-    return has_media() & ~has_hash
+        return (
+            live & has_media() & (~has_hash | (func.json_array_length(Ad.chunks) > 1))
+        )
+    return live & has_media() & ~has_hash
 
 
 def ads_to_process_query(

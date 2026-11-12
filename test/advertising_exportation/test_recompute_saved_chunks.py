@@ -30,6 +30,7 @@ def _add_ad(
     chunk_hashes=(),
     nb_deleted=0,
     fragment_type="AD",
+    obsolete=False,
 ):
     session.add(
         Ad(
@@ -38,6 +39,7 @@ def _add_ad(
             duration_sec=12.0,
             chunks=[{"hash": h, "fingerprints": []} for h in chunk_hashes],
             fragment_type=fragment_type,
+            obsolete_at=T0 if obsolete else None,
         )
     )
     session.flush()
@@ -69,11 +71,13 @@ def test_skip_ads_with_current_hash_most_occurrences_first(session):
     _add_ad(session, "ad-deleted", 2, nb_deleted=10)
     # no media to download: never taken
     _add_ad(session, "ad-no-data", 20, fragment_type="no_data")
+    # obsolete (merged by hand into another): no longer matched by the detection, never taken
+    _add_ad(session, "ad-obsolete", 0, nb_deleted=30, obsolete=True)
 
     assert _ids(session) == ["ad-many", "ad-deleted", "ad-few", "ad-none"]
     assert _ids(session, limit=2) == ["ad-many", "ad-deleted"]
     assert recompute.count_ads(session, HASH, False) == {
-        "total": 7,
+        "total": 8,
         "already_had_chunk": 2,
         "no_data": 1,
         "to_process": 4,

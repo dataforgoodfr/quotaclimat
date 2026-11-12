@@ -4,8 +4,8 @@
 - trash_occurrence: an occurrence that is not an ad, soft deleted (deleted_at);
 - create_ad_from_occurrences: a new ad for occurrences attributed to the wrong ad;
 - reattribute_occurrence: an occurrence attributed to the wrong ad, moved to an existing ad;
-- merge_ad_into: every occurrence of an ad moved to another existing ad (the same spot stored twice), then
-  the ad deleted.
+- merge_ad_into: every occurrence of an ad moved to another existing ad (the same spot stored twice), the
+  ad becoming obsolete (kept, but left out of every step).
 
 Each one returns an Outcome: the result and the messages written in the row of the spreadsheet. An error
 changes nothing, a warning (inconsistency with the reference data) does not stop the correction.
@@ -17,7 +17,7 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import get_args
 
-from sqlalchemy import delete, or_, select, update
+from sqlalchemy import or_, select, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
 
@@ -25,7 +25,6 @@ from postgres.schemas.advertising.models import (
     Ad,
     Ad_Merge,
     Ad_Occurrence,
-    Ad_Screenshot,
 )
 from quotaclimat.data_ingestion.advertising.s03_classification.ad_classification_schema import (
     ContentType,
@@ -47,6 +46,8 @@ RESULT_ERROR = "erreur"
 MANUAL_METHOD = "manual"
 # entry of advertising.ad.prediction keeping the values before the correction
 MANUAL_STAGE = "manual_correction"
+# entry of advertising.ad.prediction of an ad merged by hand into another (obsolete)
+MANUAL_FUSION_STAGE = "manual_fusion"
 CONTENT_TYPES = get_args(ContentType)
 # input status of the dictionary stage (s03_classification/pipeline/e03_dict_match.py)
 DICT_MATCH_INPUT_STATUS = "ad_type_done"
@@ -196,6 +197,8 @@ def correct_ad(
     ad = session.get(Ad, ad_id)
     if ad is None:
         return Outcome.error(f"ad {ad_id} inconnue"), None
+    if obsolete_error(ad):
+        return Outcome.error(obsolete_error(ad)), None
     if not correction.content_type and ad.fragment_type not in CONTENT_TYPES:
         # not classified yet (fragment_type of the detection: advertising, jingle, no_data)
         return (
@@ -433,6 +436,8 @@ def reattribute_occurrence(
     ad = session.get(Ad, ad_id)
     if ad is None:
         return Outcome.error(f"ad {ad_id} inconnue"), None
+    if obsolete_error(ad):
+        return Outcome.error(obsolete_error(ad)), None
     occurrence = session.get(Ad_Occurrence, occurrence_id)
     if occurrence is None:
         return Outcome.error(f"occurrence {occurrence_id} inconnue"), None
@@ -451,21 +456,28 @@ def reattribute_occurrence(
     return outcome, new_id
 
 
+def obsolete_error(ad: Ad, role: str = "ad") -> str | None:
+    """Error message for an obsolete ad (merged by hand into another), None for a live ad."""
+    if ad.obsolete_at is None:
+        return None
+    return f"{role} obsolète depuis le {ad.obsolete_at:%Y-%m-%d}, fusionnée dans {ad.replaced_by_ad_id}"
+
+
 def merge_ad_into(
-    session: Session, ad_id: str, target_ad_id: str
+    session: Session, ad_id: str, target_ad_id: str, source: dict
 ) -> tuple[Outcome, int]:
-    """Merge the ad ad_id into the existing ad target_ad_id (the same spot stored as two ads), then delete the
-    ad ad_id, whose data is wrong.
+    """Merge the ad ad_id into the existing ad target_ad_id (the same spot stored as two ads, the data of ad_id
+    being wrong).
 
     1. Every live occurrence of ad_id is moved to target_ad_id like a reattribution: replaced by an occurrence
-       of the target ad (id of the detection formula).
-    2. The ad ad_id is deleted with its old occurrences (soft deleted ones included) and its screenshots
-       (advertising.ad_screenshot rows; the images and the videos of the bucket stay). Its fingerprints go with
-       it: the detection no longer attributes broadcasts to it.
+       of the target ad (id of the detection formula), the old one soft deleted.
+    2. The ad ad_id becomes obsolete: obsolete_at and replaced_by_ad_id are set, and an entry
+       {"stage": "manual_fusion", ...} is added to its prediction. It stays in the database with its old
+       occurrences (history), but every step leaves it out: the detection no longer matches its fingerprints.
 
-    The same id in both columns changes nothing (applied). Errors: empty target, unknown ad, an ad of a merge of
-    split pieces (advertising.ad_merge, its journal would lose its occurrences). Warnings: the warnings of a
-    reattribution. Returns the outcome and the number of occurrences moved.
+    The same id in both columns changes nothing (applied). Errors: empty target, unknown or obsolete ad, an ad of
+    a merge of split pieces (advertising.ad_merge, redone on its pieces after a reprocessing of the detection).
+    Warnings: the warnings of a reattribution. Returns the outcome and the number of occurrences moved.
     """
     if not target_ad_id:
         return Outcome.error("target_ad_id vide"), 0
@@ -479,6 +491,9 @@ def merge_ad_into(
     target_ad = session.get(Ad, target_ad_id)
     if target_ad is None:
         return Outcome.error(f"ad cible {target_ad_id} inconnue"), 0
+    error = obsolete_error(source_ad) or obsolete_error(target_ad, "ad cible")
+    if error:
+        return Outcome.error(error), 0
     in_merge = session.scalar(
         select(Ad_Merge.merged_ad_id)
         .where(
@@ -506,9 +521,20 @@ def merge_ad_into(
     if occurrences:
         _target_warnings(outcome, source_ad, target_ad)
         move_occurrences(session, target_ad_id, occurrences)
-    outcome.messages.append(f"{len(occurrences)} occurrences déplacées, ad supprimée")
-    session.execute(delete(Ad_Screenshot).where(Ad_Screenshot.ad_id == ad_id))
-    session.execute(delete(Ad_Occurrence).where(Ad_Occurrence.ad_id == ad_id))
-    session.execute(delete(Ad).where(Ad.id == ad_id))
+    now = _utcnow()
+    source_ad.obsolete_at = now
+    source_ad.replaced_by_ad_id = target_ad_id
+    source_ad.prediction = list(source_ad.prediction or []) + [
+        {
+            "stage": MANUAL_FUSION_STAGE,
+            "at": now.isoformat(timespec="seconds"),
+            "source": source,
+            "replaced_by": target_ad_id,
+            "nb_occurrences": len(occurrences),
+        }
+    ]
     session.flush()
+    outcome.messages.append(
+        f"{len(occurrences)} occurrences déplacées, ad devenue obsolète"
+    )
     return outcome, len(occurrences)

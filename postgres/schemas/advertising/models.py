@@ -47,6 +47,12 @@ class Ad(AdvertisingBase):
     predicted_brand = Column(String, nullable=True)
     prediction_method = Column(String, nullable=True)
 
+    # An obsolete ad is kept for its history but left out of every step: the detection no longer matches its
+    # fingerprints, the exportation, classification, screenshots and duplicate search skip it. Set by a manual
+    # fusion (s04_consolidation/e02_manual_corrections), with the ad that took its occurrences.
+    obsolete_at = Column(DateTime(), nullable=True)
+    replaced_by_ad_id = Column(Text, nullable=True)
+
     def attributes(self):
         return {
             "id": self.id,

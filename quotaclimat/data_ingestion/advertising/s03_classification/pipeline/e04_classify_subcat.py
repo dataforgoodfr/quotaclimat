@@ -57,6 +57,7 @@ def select_pending(engine, limit: int | None) -> list[dict]:
                     ["dict_tier2_no_kw", "dict_tier3_no_kw", "dict_miss"]
                 )
             )
+            .where(Ad.obsolete_at.is_(None))
             .order_by(Ad.first_detection_date.desc())
         )
         if limit:

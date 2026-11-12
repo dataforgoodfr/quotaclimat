@@ -4,9 +4,9 @@ Corrections of the detection, made after the classification (they use its brands
 step, each with its own entry point:
 
 - `e01_merge_split_ads`: unsupervised merge of the ads split in several pieces by the detection
-  (`entrypoints/advertising_merge_split_ads.sh`).
+  (`entrypoints/ad_s04e01_merge_split_ads.sh`).
 - `e02_manual_corrections`: corrections listed by humans in a Google Sheet, for instance after a check of the
-  screenshots (`entrypoints/advertising_manual_corrections.sh`).
+  screenshots (`entrypoints/ad_s04e02_manual_corrections.sh`).
 
 ## Merging ads
 

@@ -1,6 +1,6 @@
 # Screenshots (visual checks)
 
-Scaleway job (`entrypoints/advertising_screenshots.sh`, image `quotaclimat_with_media_tools` for ffmpeg).
+Scaleway job (`entrypoints/ad_s05e02_screenshots_enrichment.sh`, image `quotaclimat_with_media_tools` for ffmpeg).
 Screenshots of every ad and every occurrence, to check by eye in Metabase that:
 
 - the metadata of an ad (brand, sector, category) match what is shown;

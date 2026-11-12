@@ -1,8 +1,8 @@
 # s02_exportation
 
 Exports the detected ads (audio/video saved in the advertising bucket, `ads/<ad_id>/...`, see
-`ad_bucket.py`). Entrypoint: `entrypoints/advertising_exportation.sh` (Scaleway job
-`advertising_exportation`).
+`ad_bucket.py`). Entrypoint: `entrypoints/ad_s02_run_exportation.sh` (Scaleway job
+`ad_s02_run_exportation`).
 
 ## Modes (`EXPORTATION_MODE`)
 

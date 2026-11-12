@@ -217,7 +217,7 @@ docker compose build test # or ingest_to_db, mediatree etc
 docker build -f Dockerfile -t quotaclimat_base:latest .
 docker build -f Dockerfile.ffmpeg -t quotaclimat_base_ffmpeg:latest .
 ```
-In CI, it's built `FROM` the freshly pushed `quotaclimat_base:${PROJECT_VERSION}` image and pushed as `quotaclimat_base_ffmpeg`, which is what the `advertising_detection` Scaleway job runs.
+In CI, it's built `FROM` the freshly pushed `quotaclimat_base:${PROJECT_VERSION}` image and pushed as `quotaclimat_base_ffmpeg`, which is what the `ad_s01_run_detection` Scaleway job runs.
 
 ### Check what is missing in Mediatree's bucket (advertising detection)
 Before running the detection, you can check which 2-minutes files of a week are missing in Mediatree's bucket, for every channel of the bucket. It only lists the bucket (nothing is downloaded), so it takes a few seconds:
@@ -231,7 +231,7 @@ COVER_CHECK_ONLY=true START_DATE=2026-10-12 poetry run python quotaclimat/data_i
 The same summary is written in the text report of a normal detection run.
 
 ### Run the advertising detection
-`entrypoints/advertising_detection.sh` (Scaleway job `advertising_detection`) processes one week (Monday to Sunday, Paris time) of one channel per run. Only the 2-minutes files of the shows of the program grid (see "Program Metadata table") (with the same margins as the cover check) are downloaded and analysed: files of the bucket outside the program are skipped, missing ones are reported in the text report.
+`entrypoints/ad_s01_run_detection.sh` (Scaleway job `ad_s01_run_detection`) processes one week (Monday to Sunday, Paris time) of one channel per run. Only the 2-minutes files of the shows of the program grid (see "Program Metadata table") (with the same margins as the cover check) are downloaded and analysed: files of the bucket outside the program are skipped, missing ones are reported in the text report.
 
 | Variable | Purpose |
 |---|---|
@@ -638,14 +638,14 @@ The models for the two tables can be found in `quotaclimat/data_ingestion/labels
 The sources for the Labelstudio ingestion can be found in `quotaclimat/data_ingestion/labelstudio/configs.py`. The `db_config` variable consists of a list of record (python dictionaries) with the source database name and a mapping of the project ids to countries:
 ```python
 db_config = [
-  {
-    "database": "<labelstudio_db>", 
-    "countries": {
-      1: "<country_1>", 
-      2: "<country_2>", 
-      3: "<country_3>",
-    }
-  },
+    {
+        "database": "<labelstudio_db>",
+        "countries": {
+            1: "<country_1>",
+            2: "<country_2>",
+            3: "<country_3>",
+        },
+    },
 ]
 ```
 When a new source is added (if a new Labelstudio instance is deployed) it suffices to add the source to the record list. (This assumes that all sources are on the same DB instace, as is the case at the time of writing).

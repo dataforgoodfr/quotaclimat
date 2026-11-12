@@ -4,7 +4,8 @@
 - trash_occurrence: an occurrence that is not an ad, soft deleted (deleted_at);
 - create_ad_from_occurrences: a new ad for occurrences attributed to the wrong ad;
 - reattribute_occurrence: an occurrence attributed to the wrong ad, moved to an existing ad;
-- merge_ad_into: every occurrence of an ad moved to another existing ad (the same spot stored twice).
+- merge_ad_into: every occurrence of an ad moved to another existing ad (the same spot stored twice), then
+  the ad deleted.
 
 Each one returns an Outcome: the result and the messages written in the row of the spreadsheet. An error
 changes nothing, a warning (inconsistency with the reference data) does not stop the correction.
@@ -16,11 +17,16 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import get_args
 
-from sqlalchemy import select, update
+from sqlalchemy import delete, or_, select, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
 
-from postgres.schemas.advertising.models import Ad, Ad_Occurrence
+from postgres.schemas.advertising.models import (
+    Ad,
+    Ad_Merge,
+    Ad_Occurrence,
+    Ad_Screenshot,
+)
 from quotaclimat.data_ingestion.advertising.s03_classification.ad_classification_schema import (
     ContentType,
 )
@@ -448,12 +454,18 @@ def reattribute_occurrence(
 def merge_ad_into(
     session: Session, ad_id: str, target_ad_id: str
 ) -> tuple[Outcome, int]:
-    """Move every live occurrence of the ad ad_id to the existing ad target_ad_id (the same spot stored as two
-    ads). Each occurrence is replaced by an occurrence of the target ad, the old one is soft deleted, like a
-    reattribution. The ad ad_id itself is left unchanged.
+    """Merge the ad ad_id into the existing ad target_ad_id (the same spot stored as two ads), then delete the
+    ad ad_id, whose data is wrong.
 
-    The same id in both columns changes nothing (applied). Errors: empty target, unknown ad. Warnings: no
-    occurrence to move, the warnings of a reattribution. Returns the outcome and the number of occurrences moved.
+    1. Every live occurrence of ad_id is moved to target_ad_id like a reattribution: replaced by an occurrence
+       of the target ad (id of the detection formula).
+    2. The ad ad_id is deleted with its old occurrences (soft deleted ones included) and its screenshots
+       (advertising.ad_screenshot rows; the images and the videos of the bucket stay). Its fingerprints go with
+       it: the detection no longer attributes broadcasts to it.
+
+    The same id in both columns changes nothing (applied). Errors: empty target, unknown ad, an ad of a merge of
+    split pieces (advertising.ad_merge, its journal would lose its occurrences). Warnings: the warnings of a
+    reattribution. Returns the outcome and the number of occurrences moved.
     """
     if not target_ad_id:
         return Outcome.error("target_ad_id vide"), 0
@@ -467,6 +479,23 @@ def merge_ad_into(
     target_ad = session.get(Ad, target_ad_id)
     if target_ad is None:
         return Outcome.error(f"ad cible {target_ad_id} inconnue"), 0
+    in_merge = session.scalar(
+        select(Ad_Merge.merged_ad_id)
+        .where(
+            or_(
+                Ad_Merge.merged_ad_id == ad_id,
+                Ad_Merge.source_ad_ids.any(ad_id),
+            )
+        )
+        .limit(1)
+    )
+    if in_merge is not None:
+        return (
+            Outcome.error(
+                f"ad liée à la fusion de morceaux {in_merge} (advertising.ad_merge) : à traiter à la main"
+            ),
+            0,
+        )
 
     occurrences = session.scalars(
         select(Ad_Occurrence).where(
@@ -474,10 +503,12 @@ def merge_ad_into(
         )
     ).all()
     outcome = Outcome()
-    if not occurrences:
-        outcome.warn("aucune occurrence à déplacer")
-        return outcome, 0
-    _target_warnings(outcome, source_ad, target_ad)
-    move_occurrences(session, target_ad_id, occurrences)
-    outcome.messages.append(f"{len(occurrences)} occurrences déplacées")
+    if occurrences:
+        _target_warnings(outcome, source_ad, target_ad)
+        move_occurrences(session, target_ad_id, occurrences)
+    outcome.messages.append(f"{len(occurrences)} occurrences déplacées, ad supprimée")
+    session.execute(delete(Ad_Screenshot).where(Ad_Screenshot.ad_id == ad_id))
+    session.execute(delete(Ad_Occurrence).where(Ad_Occurrence.ad_id == ad_id))
+    session.execute(delete(Ad).where(Ad.id == ad_id))
+    session.flush()
     return outcome, len(occurrences)

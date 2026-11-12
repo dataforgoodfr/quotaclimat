@@ -7,7 +7,8 @@ the name of a tab gives its kind (TAB_KINDS), all the tabs of a kind have the sa
   and per value of the optional ad_indicator column;
 - dechets...: occurrences that are not ads (occurrence_id), soft deleted;
 - reattribution...: occurrences attributed to the wrong ad (occurrence_id), moved to an existing ad (ad_id);
-- fusion...: ads stored twice (ad_id), all their occurrences moved to another existing ad (target_ad_id).
+- fusion...: ads stored twice (ad_id), all their occurrences moved to another existing ad (target_ad_id), then
+  deleted.
 
 Each row is processed once: the job fills traite_le, resultat (appliqué, avertissement or erreur) and
 message, and the rows with a traite_le are skipped (to process a row again, empty its traite_le). A warning
@@ -187,7 +188,8 @@ def process_reattribution_rows(
 def process_merge_rows(
     session: Session, rows: list[SheetRow]
 ) -> list[tuple[SheetRow, dict[str, str]]]:
-    """Rows processed in order: an ad merged into another higher in the tab is no longer a target."""
+    """Rows processed in order: an ad merged higher in the tab is deleted, it can no longer be merged nor be a
+    target (A -> B then B -> C works, B -> C then A -> B is an error)."""
     updates = []
     merged_into: dict[str, str] = {}
     for row in rows:
@@ -195,7 +197,14 @@ def process_merge_rows(
         target_ad_id = row.values.get(COLUMN_TARGET_AD, "").strip()
         extra = {}
         if ad_id in merged_into and ad_id != target_ad_id:
-            outcome = Outcome.error("ad en double dans l'onglet")
+            outcome = Outcome.error(
+                f"ad déjà fusionnée plus haut dans {merged_into[ad_id]}"
+            )
+        elif target_ad_id in merged_into:
+            outcome = Outcome.error(
+                f"ad cible supprimée plus haut, fusionnée dans {merged_into[target_ad_id]} :"
+                " indiquer celle-ci en target_ad_id"
+            )
         else:
             try:
                 with session.begin_nested():
@@ -203,11 +212,6 @@ def process_merge_rows(
                 if outcome.result != RESULT_ERROR and ad_id != target_ad_id:
                     merged_into[ad_id] = target_ad_id
                     extra = {COLUMN_MOVED: str(moved)}
-                    if target_ad_id in merged_into:
-                        outcome.warn(
-                            f"l'ad cible a été fusionnée plus haut dans {merged_into[target_ad_id]} :"
-                            " l'ordre des lignes compte"
-                        )
             except Exception as e:
                 logging.exception("Merge of the ad %s failed", ad_id)
                 outcome = Outcome.error(f"échec : {e}")

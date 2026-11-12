@@ -13,7 +13,13 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from postgres.database_connection import connect_to_db
-from postgres.schemas.advertising.models import Ad, Ad_Occurrence, AdvertisingBase
+from postgres.schemas.advertising.models import (
+    Ad,
+    Ad_Merge,
+    Ad_Occurrence,
+    Ad_Screenshot,
+    AdvertisingBase,
+)
 from quotaclimat.data_ingestion.advertising.s04_consolidation.e02_manual_corrections import (
     run as corrections_run,
 )
@@ -538,7 +544,9 @@ def live_occurrences_by_ad(engine) -> dict[str, str]:
         }
 
 
-def test_merge_moves_every_occurrence_of_the_ad_to_the_target(engine):
+def test_merge_moves_every_occurrence_of_the_ad_to_the_target_and_deletes_the_ad(
+    engine,
+):
     insert(
         engine,
         make_ad("twin"),
@@ -546,7 +554,19 @@ def test_merge_moves_every_occurrence_of_the_ad_to_the_target(engine):
         make_occ("o1", "twin", 0),
         make_occ("o2", "twin", 600, channel="france2"),
         make_occ("o3", "main", 1200),
+        make_occ("junk", "twin", 1800),
     )
+    insert(
+        engine,
+        Ad_Screenshot(target_type="ad", target_id="twin", ad_id="twin", status="done"),
+        Ad_Screenshot(
+            target_type="occurrence", target_id="o1", ad_id="twin", status="done"
+        ),
+        Ad_Screenshot(target_type="ad", target_id="main", ad_id="main", status="done"),
+    )
+    with Session(engine) as session:
+        session.get(Ad_Occurrence, "junk").deleted_at = T0
+        session.commit()
     sheet = MemorySheet(
         {
             "fusion": [
@@ -562,12 +582,18 @@ def test_merge_moves_every_occurrence_of_the_ad_to_the_target(engine):
     assert set(live.values()) == {"main"}
     assert len(live) == 3 and "o3" in live
     with Session(engine) as session:
-        assert session.get(Ad_Occurrence, "o1").deleted_at is not None
-        assert session.get(Ad_Occurrence, "o1").ad_id == "twin"
-        assert session.get(Ad, "twin") is not None
+        assert session.get(Ad, "twin") is None
+        assert session.get(Ad, "main") is not None
+        assert (
+            session.scalars(
+                select(Ad_Occurrence).where(Ad_Occurrence.ad_id == "twin")
+            ).all()
+            == []
+        )
+        assert [s.target_id for s in session.scalars(select(Ad_Screenshot))] == ["main"]
     assert sheet.column("fusion", "nb_occurrences_deplacees") == ["2", ""]
     assert sheet.column("fusion", "message") == [
-        "2 occurrences déplacées",
+        "2 occurrences déplacées, ad supprimée",
         "ad_id et target_ad_id identiques : rien à faire",
     ]
     assert all(sheet.column("fusion", "traite_le"))
@@ -582,8 +608,19 @@ def test_merge_errors_and_warnings(engine):
         make_ad("b"),
         make_ad("c", duration_sec=5.0),
         make_ad("empty"),
+        make_ad("piece"),
+        make_ad("merged"),
         make_occ("o1", "a", 0),
         make_occ("o2", "b", 600),
+    )
+    insert(
+        engine,
+        Ad_Merge(
+            merged_ad_id="merged",
+            source_ad_ids=["piece", "other"],
+            method="auto_split_pieces",
+            status="active",
+        ),
     )
     sheet = MemorySheet(
         {
@@ -595,24 +632,39 @@ def test_merge_errors_and_warnings(engine):
                 ["empty", "b"],
                 ["b", "c"],
                 ["a", "b"],
-                ["b", "a"],
+                ["a", "c"],
+                ["a", "c"],
+                ["piece", "c"],
+                ["merged", "c"],
             ]
         }
     )
-    assert run(engine, sheet) == {"erreur": 4, "avertissement": 3}
+    assert run(engine, sheet) == {"erreur": 7, "appliqué": 1, "avertissement": 2}
     messages = sheet.column("fusion_mai", "message")
     assert messages[:4] == [
         "target_ad_id vide",
         "ad inconnue inconnue",
         "ad cible inconnue inconnue",
-        "aucune occurrence à déplacer",
+        "0 occurrences déplacées, ad supprimée",
     ]
     assert (
         "durée de l'ad (5s) différente de celle de l'ad d'origine (20s)" in messages[4]
     )
-    assert "l'ad cible a été fusionnée plus haut dans c" in messages[5]
-    assert messages[6] == "ad en double dans l'onglet"
-    assert set(live_occurrences_by_ad(engine).values()) == {"b", "c"}
+    assert messages[5] == (
+        "ad cible supprimée plus haut, fusionnée dans c : indiquer celle-ci en target_ad_id"
+    )
+    assert messages[6].endswith("1 occurrences déplacées, ad supprimée")
+    assert messages[7] == "ad déjà fusionnée plus haut dans c"
+    assert (
+        messages[8]
+        == messages[9]
+        == (
+            "ad liée à la fusion de morceaux merged (advertising.ad_merge) : à traiter à la main"
+        )
+    )
+    assert set(live_occurrences_by_ad(engine).values()) == {"c"}
+    with Session(engine) as session:
+        assert sorted(session.scalars(select(Ad.id))) == ["c", "merged", "piece"]
 
 
 def test_merge_dry_run_writes_nothing(engine):
@@ -620,6 +672,7 @@ def test_merge_dry_run_writes_nothing(engine):
     sheet = MemorySheet({"fusion": [["ad_id", "target_ad_id"], ["twin", "main"]]})
     assert run(engine, sheet, dry_run=True) == {"appliqué": 1}
     assert live_occurrences_by_ad(engine) == {"o1": "twin"}
+    assert get_ad(engine, "twin") is not None
     assert sheet.grid["fusion"][1] == ["twin", "main"]
 
 

@@ -240,6 +240,13 @@ reprocessing of the detection.
 For the same spot stored as two ads (e.g. a pair found by `duplicate_ads`), when the data of one of them is wrong:
 one row per ad to retire (`ad_id`), with the ad that keeps the occurrences (`target_ad_id`).
 
+0. The active merges of split pieces (`advertising.ad_merge`) whose merged ad or one of the pieces is `ad_id` are
+   reverted first (`tools/ad_merge.revert_merge`): the occurrences of the pieces come back, the merged ad loses its
+   occurrences and its fingerprints, and the merge is marked `reverted` (never redone). A wrong brand makes wrong
+   merges: the merge only joins pieces of the same brand, so a spot classified with the brand of another one is
+   glued to it when they are broadcast one after the other. A piece then gives its restored occurrences to the
+   target; a merged ad gives them back to its pieces and has none left to move. The `message` names each merge
+   reverted, `prediction` keeps them in `reverted_merges`. A merge already reverted changes nothing.
 1. Every live occurrence of `ad_id` is moved to `target_ad_id` like a reattribution: replaced by an occurrence of
    the target ad (id of the detection formula; when the target already has an occurrence at the same date on the
    same channel, the two make one), the old one soft deleted. The number of occurrences moved is written in
@@ -254,7 +261,7 @@ one row per ad to retire (`ad_id`), with the ad that keeps the occurrences (`tar
    of entries copied.
 3. The ad `ad_id` is **soft deleted**: `advertising.ad.deleted_at` (date of the fusion) and `replaced_by_ad_id`
    (the target) are set, and an entry `{"stage": "manual_fusion", "replaced_by": ..., "nb_occurrences": ...,
-   "nb_fingerprint_entries_copied": ..., "source": {spreadsheet, tab, row}, "at": ...}` is added to its `prediction`. Nothing is deleted: the ad, its old
+   "nb_fingerprint_entries_copied": ..., "reverted_merges": [...], "source": {spreadsheet, tab, row}, "at": ...}` is added to its `prediction`. Nothing is deleted: the ad, its old
    occurrences (with a `deleted_at`) and its screenshots stay, for the history, like the merges of split pieces.
 
 A soft deleted ad is left out of every step:
@@ -271,9 +278,7 @@ A soft deleted ad is left out of every step:
 
 The same id in both columns changes nothing and the row is marked as processed (`appliqué`). The rows of a tab are
 processed in order: `A -> B` then `B -> C` works, `B -> C` then `A -> B` is an error (B is deleted, put C as target).
-Errors: empty `target_ad_id`, unknown ad, deleted ad or target, an ad of a merge of split pieces
-(`advertising.ad_merge`, merged ad or piece: the merge is redone on its pieces after a reprocessing of the detection,
-to handle by hand). Warnings: a target of another duration (by more than 1 s) or that is not a classified
+Errors: empty `target_ad_id`, unknown ad, deleted ad or target. Warnings: a target of another duration (by more than 1 s) or that is not a classified
 advertising. To undo a fusion, by hand: empty `deleted_at` and `replaced_by_ad_id`, remove from the target the
 `chunks` entries whose `from_ad_id` is the ad, and move the occurrences back with a `reattribution` tab.
 Limit: a merge of split pieces (`e01_merge_split_ads`, `tools/ad_merge.concatenate_chunks`) takes one entry per hash

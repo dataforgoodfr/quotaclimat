@@ -25,7 +25,11 @@ Exports the detected ads (audio/video saved in the advertising bucket, `ads/<ad_
 | `CLEAN_OTHER_CHUNKS` | `false` | `true` keeps only the chunk entries of the current hash on each ad (several when fingerprints were copied by a manual fusion, see `s04_consolidation/README.md`). |
 | `CURSOR_BATCH_SIZE` | `500` | Ads read and committed per batch. |
 | `AUDIO_WORKERS` | CPUs of the job (`SCW_SLS_CPU`) minus one, at least 1 | Processes computing the fingerprints of each batch. |
-| `DOWNLOAD_CONCURRENCY` | `16` | Audio files downloaded at once. The run waits on S3 far more than on the CPU (~25 ms of computation for a 5 s ad). |
+| `DOWNLOAD_CONCURRENCY` | `16` | Ads downloaded or being computed at once. The run waits on S3 far more than on the CPU (~25 ms of computation for a 5 s ad). It also caps the audio files waiting on disk for a worker: the disk of a Scaleway job counts in its memory. |
+| `WORKER_MAX_TASKS` | `1000` | Ads a worker process computes before being replaced by a new one, so that the memory it keeps does not grow during the whole run. |
+
+Memory: each worker process loads librosa and its dependencies. With 3 GB, 5 workers (6 vCPU)
+exceeded the memory of the job; lower `AUDIO_WORKERS` or raise the memory of the job.
 
 Ads with `fragment_type = 'no_data'` (no media, set by the classification) and soft deleted ads
 (`deleted_at`, merged by hand into another) are never taken, except a soft deleted ad that is a
@@ -35,6 +39,14 @@ entries of another hash are taken, to clean them). The ads
 are taken by decreasing number of occurrences (not deleted), so a run with `MAX_ADS` handles the
 most broadcast ads first, and the next run continues with the following ones. An audio file that
 cannot be decoded is logged and counted as `decode_failed`, and the run goes on.
+
+One ad never stops the run. When a worker process dies (killed by the kernel when the job
+exceeds its memory), the whole pool of processes is broken: it is restarted (`pool_restarts`),
+and the ads that were computing in it are retried one at a time; an ad that kills its worker
+again on its own is skipped and counted as `worker_crashed`. Any other unexpected error on an ad
+is counted as `error`. At the end of the run (even when it stops on another error), the job logs
+the summary of the failed ads by status (`download_failed`, `decode_failed`, `worker_crashed`,
+`error`), with their ids and errors (200 at most per status).
 
 ### Merged ads (`advertising.ad_merge`)
 

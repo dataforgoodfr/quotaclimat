@@ -1,4 +1,7 @@
+import asyncio
+import os
 from datetime import datetime, timedelta
+from types import SimpleNamespace
 
 import pytest
 from sqlalchemy.orm import Session
@@ -124,6 +127,70 @@ def test_undecodable_audio_does_not_stop_the_run(tmp_path):
     fingerprints, error = recompute.compute_fingerprints(str(bad), T0, 5.0)
     assert fingerprints is None
     assert "LibsndfileError" in error
+
+
+def _compute_or_die(audio_file_path, first_detection_date, duration_sec):
+    """Fake computation: kills its worker process on the "crash" ad, fails on the "bad" one."""
+    name = os.path.basename(audio_file_path)
+    if name.startswith("crash"):
+        os._exit(1)
+    if name.startswith("bad"):
+        return None, "LibsndfileError(7)"
+    return [{"ad": name}], None
+
+
+def test_one_ad_killing_its_worker_does_not_stop_the_batch(tmp_path, monkeypatch):
+    async def fake_download(fs, ad_id, dest_dir):
+        if ad_id == "missing":
+            return None
+        path = os.path.join(dest_dir, ad_id + ".mp3")
+        open(path, "wb").close()
+        return path
+
+    monkeypatch.setattr(recompute, "_download_audio_file", fake_download)
+    ids = ["ok1", "crash", "ok2", "bad", "missing", "ok3"]
+    ads = [
+        SimpleNamespace(id=i, first_detection_date=T0, duration_sec=5.0) for i in ids
+    ]
+    # fork: the fake computation, defined in this test module, is known by the children
+    pool = recompute.WorkerPool(
+        2, compute=_compute_or_die, mp_context="fork", max_tasks_per_child=None
+    )
+
+    async def go():
+        return await recompute.compute_batch(
+            ads, None, str(tmp_path), pool, asyncio.Semaphore(4)
+        )
+
+    try:
+        results = asyncio.run(go())
+    finally:
+        pool.shutdown()
+
+    statuses = dict(zip(ids, (r[0] for r in results)))
+    assert statuses == {
+        "ok1": "ok",
+        "crash": "worker_crashed",
+        "ok2": "ok",
+        "bad": "decode_failed",
+        "missing": "download_failed",
+        "ok3": "ok",
+    }
+    assert results[0][1] == [{"ad": "ok1.mp3"}]
+    assert pool.restarts >= 2  # once in the batch, once when the ad is retried alone
+    assert os.listdir(tmp_path) == []  # every downloaded file removed
+
+
+def test_log_failures_lists_the_ads_by_status(caplog):
+    with caplog.at_level("INFO"):
+        recompute.log_failures({"decode_failed": [], "worker_crashed": []})
+        recompute.log_failures(
+            {"decode_failed": [("a1", "LibsndfileError(7)")], "worker_crashed": []}
+        )
+    assert "no ad failed" in caplog.text
+    assert "decode_failed: 1 ads" in caplog.text
+    assert "a1: LibsndfileError(7)" in caplog.text
+    assert "worker_crashed" not in caplog.text.split("failures:")[1]
 
 
 def _add_merge(session, merged_id, source_ids, nb_occurrences, status="active"):

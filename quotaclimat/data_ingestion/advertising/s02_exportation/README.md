@@ -22,14 +22,15 @@ Exports the detected ads (audio/video saved in the advertising bucket, `ads/<ad_
 | Variable | Default | Purpose |
 |---|---|---|
 | `MAX_ADS` | unset (all) | Maximum number of ads processed in the run, e.g. `2000`. |
-| `CLEAN_OTHER_CHUNKS` | `false` | `true` keeps only the chunk entry of the current hash on each ad. |
+| `CLEAN_OTHER_CHUNKS` | `false` | `true` keeps only the chunk entries of the current hash on each ad (several when fingerprints were copied by a manual fusion, see `s04_consolidation/README.md`). |
 | `CURSOR_BATCH_SIZE` | `500` | Ads read and committed per batch. |
 | `AUDIO_WORKERS` | CPUs of the job (`SCW_SLS_CPU`) minus one, at least 1 | Processes computing the fingerprints of each batch. |
 | `DOWNLOAD_CONCURRENCY` | `16` | Audio files downloaded at once. The run waits on S3 far more than on the CPU (~25 ms of computation for a 5 s ad). |
 
-Ads with `fragment_type = 'no_data'` (no media, set by the classification) are never taken. Ads
-that already have a chunk entry with the current hash are left out of the query (with
-`CLEAN_OTHER_CHUNKS=true`, those that also have other entries are taken, to clean them). The ads
+Ads with `fragment_type = 'no_data'` (no media, set by the classification) and soft deleted ads
+(`deleted_at`, merged by hand into another) are never taken. Ads that already have a chunk entry with
+the current hash are left out of the query (with `CLEAN_OTHER_CHUNKS=true`, those that also have
+entries of another hash are taken, to clean them). The ads
 are taken by decreasing number of occurrences (not deleted), so a run with `MAX_ADS` handles the
 most broadcast ads first, and the next run continues with the following ones. An audio file that
 cannot be decoded is logged and counted as `decode_failed`, and the run goes on.
@@ -43,7 +44,9 @@ A merged ad (see `s04_consolidation`) is never downloaded nor cut in chunks:
   current hash. This entry replaces the merged ad's own entry with this hash and is marked
   `"from_sources": true`, so that it is not rebuilt at the next runs. Database only: it is done
   for every merge ready, whatever `MAX_ADS`. A merge whose sources are not all done yet waits for
-  the next run (`merges_waiting_for_sources`);
+  the next run (`merges_waiting_for_sources`). Fingerprints copied by a manual fusion
+  (`"from_ad_id"`) are handled apart: a source ad gives its own entry, and the copied entries of
+  the merged ad are kept. A merged ad soft deleted by a manual fusion is skipped;
 - a reverted merge keeps the empty chunks set by `revert_merge`, so that the detection no longer
   matches it.
 

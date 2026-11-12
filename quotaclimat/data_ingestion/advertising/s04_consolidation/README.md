@@ -237,20 +237,47 @@ reprocessing of the detection.
 
 ### Merge of two ads (`fusion`)
 
-For the same spot stored as two ads (e.g. a pair found by `duplicate_ads`): one row per ad to empty (`ad_id`), with
-the ad that keeps the occurrences (`target_ad_id`). Every live occurrence of `ad_id` is moved to `target_ad_id` like
-a reattribution: replaced by an occurrence of the target ad (id of the detection formula; when the target already
-has an occurrence at the same date on the same channel, the two make one), the old one soft deleted. The number of
-occurrences moved is written in `nb_occurrences_deplacees`. The ad `ad_id` itself is unchanged (fingerprints,
-classification).
+For the same spot stored as two ads (e.g. a pair found by `duplicate_ads`), when the data of one of them is wrong:
+one row per ad to retire (`ad_id`), with the ad that keeps the occurrences (`target_ad_id`).
+
+1. Every live occurrence of `ad_id` is moved to `target_ad_id` like a reattribution: replaced by an occurrence of
+   the target ad (id of the detection formula; when the target already has an occurrence at the same date on the
+   same channel, the two make one), the old one soft deleted. The number of occurrences moved is written in
+   `nb_occurrences_deplacees`.
+2. The fingerprints of `ad_id` (its `chunks` entries) are copied to `target_ad_id`, with `"from_ad_id": <ad_id>`:
+   the detection then matches the spot with both, which helps when they were computed with another fingerprinter
+   configuration (another `hash`) or on a slightly different recording. The detection already loops over every
+   entry of the current hash of an ad, and `recompute_saved_chunks.py` keeps them all (`CLEAN_OTHER_CHUNKS` only
+   removes the entries of the other hashes). Not copied: an entry already in the target, an entry without
+   fingerprints, and every entry when the two ads differ by more than 1 s (warning): a matched broadcast takes the
+   duration of the target, fingerprints of another duration would cut it wrong. The `message` gives the number
+   of entries copied.
+3. The ad `ad_id` is **soft deleted**: `advertising.ad.deleted_at` (date of the fusion) and `replaced_by_ad_id`
+   (the target) are set, and an entry `{"stage": "manual_fusion", "replaced_by": ..., "nb_occurrences": ...,
+   "nb_fingerprint_entries_copied": ..., "source": {spreadsheet, tab, row}, "at": ...}` is added to its `prediction`. Nothing is deleted: the ad, its old
+   occurrences (with a `deleted_at`) and its screenshots stay, for the history, like the merges of split pieces.
+
+A soft deleted ad is left out of every step:
+
+| Step | What it does with a soft deleted ad |
+|---|---|
+| detection (`s01_detection/e03_already_identified_advertising.py`) | its fingerprints are no longer matched: the next broadcasts of the spot go to the target (or to a new ad if the target does not match them), also when the detection reprocesses a window |
+| exportation (`s02_exportation/run.py`, `recompute_saved_chunks.py`) | not exported, no fingerprints recomputed |
+| classification (`s03_classification`, every stage) | not classified |
+| manual corrections | an error in every tab: not corrected, no occurrence moved to it (`reattribution`, `nouvelle_ad`), not merged again nor a target of a `fusion`; its brand is not a known brand of the warnings |
+| screenshots (`s05_enrichment/e02_screenshots`) | no new screenshot |
+| duplicates (`duplicate_ads`) | not compared |
+| dbt (`analytics.publicites`, `curated.publicite`, tunnels) | out, like any ad without live occurrence (they read the live occurrences) |
+
 The same id in both columns changes nothing and the row is marked as processed (`appliqué`). The rows of a tab are
-processed in order. Errors: empty `target_ad_id`, unknown ad, `ad_id` already merged higher in the tab. Warnings:
-no live occurrence to move, a target of another duration (by more than 1 s) or that is not a classified
-advertising, a target merged into another ad higher in the tab (its occurrences then stay in the target, not in the
-last ad of the chain: put the rows in the right order).
-Limits: the fingerprints of `ad_id` stay, so the detection still attributes the next broadcasts of the spot to
-`ad_id`, and a reprocessing of the detection gives the moved occurrences back to it; the row is not processed
-again (empty its `traite_le` to move the new occurrences).
+processed in order: `A -> B` then `B -> C` works, `B -> C` then `A -> B` is an error (B is deleted, put C as target).
+Errors: empty `target_ad_id`, unknown ad, deleted ad or target, an ad of a merge of split pieces
+(`advertising.ad_merge`, merged ad or piece: the merge is redone on its pieces after a reprocessing of the detection,
+to handle by hand). Warnings: a target of another duration (by more than 1 s) or that is not a classified
+advertising. To undo a fusion, by hand: empty `deleted_at` and `replaced_by_ad_id`, remove from the target the
+`chunks` entries whose `from_ad_id` is the ad, and move the occurrences back with a `reattribution` tab.
+Limit: a merge of split pieces (`e01_merge_split_ads`, `tools/ad_merge.concatenate_chunks`) takes one entry per hash
+of each piece, so a piece holding fingerprints copied by a fusion gives only one of its entries to the merged ad.
 
 ### Environment variables
 

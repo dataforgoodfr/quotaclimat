@@ -76,6 +76,16 @@ def has_chunk_with_hash(fingerprint_hash: str):
     )
 
 
+def has_chunk_with_other_hash(fingerprint_hash: str):
+    """SQL condition: the ad has a chunk entry computed with another hash."""
+    chunk = func.json_array_elements(Ad.chunks).table_valued("value").alias("chunk")
+    return exists(
+        select(1)
+        .select_from(chunk)
+        .where(chunk.c.value.op("->>")("hash").is_distinct_from(fingerprint_hash))
+    )
+
+
 # Ads without media (fragment_type set to "no_data" by the classification): nothing to download
 NO_DATA_FRAGMENT_TYPE = "no_data"
 
@@ -97,11 +107,14 @@ def needs_processing(fingerprint_hash: str, clean_other_chunks: bool):
     """SQL condition: the ad has media, is not a merged ad, and either has no chunk with this
     hash or, with clean_other_chunks, has other chunk entries to remove."""
     has_hash = has_chunk_with_hash(fingerprint_hash)
+    # a soft deleted ad is no longer matched by the detection: no fingerprints to compute
+    live = Ad.deleted_at.is_(None)
     if clean_other_chunks:
-        to_do = ~has_hash | (func.json_array_length(Ad.chunks) > 1)
+        # several entries of the current hash stay (fingerprints copied from an ad merged by hand)
+        to_do = ~has_hash | has_chunk_with_other_hash(fingerprint_hash)
     else:
         to_do = ~has_hash
-    return has_media() & ~is_merged_ad() & to_do
+    return live & has_media() & ~is_merged_ad() & to_do
 
 
 def _live_occurrences():
@@ -172,17 +185,25 @@ def merges_to_concatenate_query(fingerprint_hash: str):
         .join(Ad, Ad.id == Ad_Merge.merged_ad_id)
         .where(
             Ad_Merge.status == MERGE_STATUS_ACTIVE,
+            # a merged ad merged by hand into another one is no longer matched by the detection
+            Ad.deleted_at.is_(None),
             ~_has_concatenated_chunk(fingerprint_hash),
         )
         .order_by(Ad_Merge.merged_ad_id)
     )
 
 
-def _entry_with_hash(chunks: list | None, fingerprint_hash: str) -> dict | None:
-    return next(
-        (entry for entry in (chunks or []) if entry.get("hash") == fingerprint_hash),
-        None,
-    )
+# Marks the chunk entries copied from an ad merged by hand into this one
+# (s04_consolidation/e02_manual_corrections, fusion)
+COPIED_FROM_KEY = "from_ad_id"
+
+
+def _own_entry_with_hash(chunks: list | None, fingerprint_hash: str) -> dict | None:
+    """The ad's own entry with this hash: the ones copied by a manual fusion hold the audio of
+    another ad. Falls back to a copied entry when the ad has no own one."""
+    entries = [e for e in (chunks or []) if e.get("hash") == fingerprint_hash]
+    own = [e for e in entries if not e.get(COPIED_FROM_KEY)]
+    return (own or entries or [None])[0]
 
 
 def concatenated_chunks(
@@ -191,10 +212,11 @@ def concatenated_chunks(
     fingerprint_hash: str,
     clean_other_chunks: bool,
 ) -> list | None:
-    """New chunks of a merged ad: its entry with this hash replaced by the fingerprints of its
+    """New chunks of a merged ad: its own entry with this hash replaced by the fingerprints of its
     source ads one after the other (in broadcast order, as tools/ad_merge.concatenate_chunks).
-    None while a source ad has no entry with this hash yet."""
-    source_entries = [_entry_with_hash(c, fingerprint_hash) for c in source_chunks]
+    The entries copied from ads merged into it by hand are kept. None while a source ad has no
+    entry with this hash yet."""
+    source_entries = [_own_entry_with_hash(c, fingerprint_hash) for c in source_chunks]
     if any(entry is None for entry in source_entries):
         return None
     new_entry = {
@@ -206,14 +228,16 @@ def concatenated_chunks(
         ],
         FROM_SOURCES_KEY: True,
     }
-    if clean_other_chunks:
-        return [new_entry]
-    others = [
+    kept = [
         entry
         for entry in (merged_chunks or [])
-        if entry.get("hash") != fingerprint_hash
+        if (
+            entry.get(COPIED_FROM_KEY)
+            if entry.get("hash") == fingerprint_hash
+            else not clean_other_chunks
+        )
     ]
-    return [*others, new_entry]
+    return [*kept, new_entry]
 
 
 def concatenate_merges(
@@ -406,22 +430,21 @@ async def run():
             to_compute = []
             for ad in ads:
                 counters["ads_seen"] += 1
-                existing_chunk_entry = next(
-                    filter(
-                        lambda chunk: chunk.get("hash") == fingerprint_hash, ad.chunks
-                    ),
-                    None,
-                )
-                if existing_chunk_entry is None:
+                # every entry of the current hash: the one of the ad, and the ones copied from the ads
+                # merged into it by hand (s04_consolidation/e02_manual_corrections, fusion)
+                current_entries = [
+                    chunk
+                    for chunk in ad.chunks
+                    if chunk.get("hash") == fingerprint_hash
+                ]
+                if not current_entries:
                     to_compute.append(ad)
                     continue
                 counters["already_had_chunk"] += 1
-                if CLEAN_OTHER_CHUNKS and len(ad.chunks) > 1:
+                if CLEAN_OTHER_CHUNKS and len(current_entries) < len(ad.chunks):
                     counters["cleaned_other_chunks"] += 1
                     write_session.execute(
-                        update(Ad)
-                        .where(Ad.id == ad.id)
-                        .values(chunks=[existing_chunk_entry])
+                        update(Ad).where(Ad.id == ad.id).values(chunks=current_entries)
                     )
 
             with tempfile.TemporaryDirectory() as dest_dir:

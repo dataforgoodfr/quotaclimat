@@ -107,7 +107,7 @@ def load_references(session: Session) -> References:
         session.execute(
             text(
                 "SELECT DISTINCT predicted_brand FROM advertising.ad"
-                " WHERE predicted_brand IS NOT NULL"
+                " WHERE predicted_brand IS NOT NULL AND deleted_at IS NULL"
             )
         ).scalars()
     )

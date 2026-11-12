@@ -212,6 +212,53 @@ def test_sql_literal():
     assert fd._sql_literal(0.5) == "0.5"
 
 
+def _ad(ad_id, brand, nb_occurrences, is_merged=False):
+    ad = ad_print(ad_id, [], brand=brand)
+    ad.meta.update(nb_occurrences=nb_occurrences, is_merged=is_merged)
+    return ad
+
+
+def test_choose_target():
+    # the most frequent brand (normalised) wins, even with fewer occurrences
+    ads = [
+        _ad("a", "Peugeot", 100),
+        _ad("b", "Renault", 5),
+        _ad("c", "RENAULT", 3),
+    ]
+    assert fd.choose_target(ads).id == "b"
+    # brands tied: the most broadcast of both, but not a merged ad
+    ads = [
+        _ad("a", "Peugeot", 100, is_merged=True),
+        _ad("b", "Renault", 5),
+        _ad("c", "Peugeot", 1),
+    ]
+    assert fd.choose_target(ads[:2]).id == "b"
+    # merged ads only in the biggest brand: the most broadcast of them
+    ads = [
+        _ad("a", "Peugeot", 1, is_merged=True),
+        _ad("b", "Peugeot", 9, is_merged=True),
+        _ad("c", "Renault", 50),
+    ]
+    assert fd.choose_target(ads).id == "b"
+    # ads without brand are candidates only when no ad has a brand
+    assert fd.choose_target([_ad("a", None, 9), _ad("b", "Renault", 1)]).id == "b"
+    assert fd.choose_target([_ad("a", None, 9), _ad("b", None, 1)]).id == "a"
+
+
+def test_csv_separator_between_groups(tmp_path):
+    a, b, c, d = (_ad(x, "Renault", 1) for x in "abcd")
+    pairs = [
+        fd.DuplicatePair(a, b, 10, 0.9, 0.8, True),
+        fd.DuplicatePair(c, d, 10, 0.9, 0.8, True),
+    ]
+    output = tmp_path / "out.csv"
+    fd.write_csv(str(output), fd.group_rows(pairs))
+    lines = output.read_text().splitlines()
+    assert len(lines) == 6
+    assert lines[3] == ",".join(["-"] * 10)
+    assert [line.split(",")[4] for line in lines[1:3] + lines[4:]] == list("abcd")
+
+
 def test_metabase_query_path():
     assert fd.metabase_query_path("out/dups.csv") == "out/dups_metabase.txt"
     assert (
@@ -339,10 +386,13 @@ def test_run_on_database(connection, tmp_path):
     output = tmp_path / "duplicates.csv"
     fd.write_csv(str(output), rows)
     lines = output.read_text().splitlines()
-    # one line per ad of the group, each with its own data
-    assert len(lines) == 3
-    assert lines[1].startswith("dup-1,2,dup-1,1,dup-2,")
-    assert lines[2].startswith("dup-1,2,dup-2,1,dup-1,")
+    # one line per ad of the group, the target (most broadcast) first
+    assert lines == [
+        "group_id,group_size,mosaique,mosaique_image,ad_id,target_ad_id,brand,sector,"
+        "category,nb_occurrences",
+        "dup-1,2,https://bucket/screenshots/ads/dup-1.jpg,,dup-1,dup-1,Renault,,,2",
+        "dup-1,2,,,dup-2,dup-1,RENAULT,,,1",
+    ]
 
     # the Metabase query runs on the database and loads the data of the ads
     result = (

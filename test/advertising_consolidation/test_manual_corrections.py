@@ -160,6 +160,7 @@ def test_tab_kind():
     assert corrections_run.tab_kind("nouvelle_ad_renault") == "nouvelle_ad"
     assert corrections_run.tab_kind("dechets") == "dechets"
     assert corrections_run.tab_kind("reattribution_mai") == "reattribution"
+    assert corrections_run.tab_kind("fusion_doublons") == "fusion"
     assert corrections_run.tab_kind("autre") is None
 
 
@@ -521,7 +522,105 @@ def test_reattribution_to_an_ad_of_another_duration_or_not_classified_gives_warn
     assert run(engine, sheet) == {"avertissement": 1}
     message = sheet.column("reattribution", "message")[0]
     assert "durée de l'ad (5s) différente de celle de l'ad d'origine (20s)" in message
-    assert "l'occurrence n'apparaît pas dans les analyses" in message
+    assert "ses occurrences n'apparaissent pas dans les analyses" in message
+
+
+# ---------- merge of two ads ----------
+
+
+def live_occurrences_by_ad(engine) -> dict[str, str]:
+    with Session(engine) as session:
+        return {
+            o.id: o.ad_id
+            for o in session.scalars(
+                select(Ad_Occurrence).where(Ad_Occurrence.deleted_at.is_(None))
+            )
+        }
+
+
+def test_merge_moves_every_occurrence_of_the_ad_to_the_target(engine):
+    insert(
+        engine,
+        make_ad("twin"),
+        make_ad("main"),
+        make_occ("o1", "twin", 0),
+        make_occ("o2", "twin", 600, channel="france2"),
+        make_occ("o3", "main", 1200),
+    )
+    sheet = MemorySheet(
+        {
+            "fusion": [
+                ["ad_id", "target_ad_id", "commentaire"],
+                ["twin", "main", "même spot"],
+                ["main", "main", ""],
+            ]
+        }
+    )
+    assert run(engine, sheet) == {"appliqué": 2}
+
+    live = live_occurrences_by_ad(engine)
+    assert set(live.values()) == {"main"}
+    assert len(live) == 3 and "o3" in live
+    with Session(engine) as session:
+        assert session.get(Ad_Occurrence, "o1").deleted_at is not None
+        assert session.get(Ad_Occurrence, "o1").ad_id == "twin"
+        assert session.get(Ad, "twin") is not None
+    assert sheet.column("fusion", "nb_occurrences_deplacees") == ["2", ""]
+    assert sheet.column("fusion", "message") == [
+        "2 occurrences déplacées",
+        "ad_id et target_ad_id identiques : rien à faire",
+    ]
+    assert all(sheet.column("fusion", "traite_le"))
+    # processed once
+    assert run(engine, sheet) == {}
+
+
+def test_merge_errors_and_warnings(engine):
+    insert(
+        engine,
+        make_ad("a"),
+        make_ad("b"),
+        make_ad("c", duration_sec=5.0),
+        make_ad("empty"),
+        make_occ("o1", "a", 0),
+        make_occ("o2", "b", 600),
+    )
+    sheet = MemorySheet(
+        {
+            "fusion_mai": [
+                ["ad_id", "target_ad_id"],
+                ["a", ""],
+                ["inconnue", "b"],
+                ["a", "inconnue"],
+                ["empty", "b"],
+                ["b", "c"],
+                ["a", "b"],
+                ["b", "a"],
+            ]
+        }
+    )
+    assert run(engine, sheet) == {"erreur": 4, "avertissement": 3}
+    messages = sheet.column("fusion_mai", "message")
+    assert messages[:4] == [
+        "target_ad_id vide",
+        "ad inconnue inconnue",
+        "ad cible inconnue inconnue",
+        "aucune occurrence à déplacer",
+    ]
+    assert (
+        "durée de l'ad (5s) différente de celle de l'ad d'origine (20s)" in messages[4]
+    )
+    assert "l'ad cible a été fusionnée plus haut dans c" in messages[5]
+    assert messages[6] == "ad en double dans l'onglet"
+    assert set(live_occurrences_by_ad(engine).values()) == {"b", "c"}
+
+
+def test_merge_dry_run_writes_nothing(engine):
+    insert(engine, make_ad("twin"), make_ad("main"), make_occ("o1", "twin", 0))
+    sheet = MemorySheet({"fusion": [["ad_id", "target_ad_id"], ["twin", "main"]]})
+    assert run(engine, sheet, dry_run=True) == {"appliqué": 1}
+    assert live_occurrences_by_ad(engine) == {"o1": "twin"}
+    assert sheet.grid["fusion"][1] == ["twin", "main"]
 
 
 # ---------- new ads ----------

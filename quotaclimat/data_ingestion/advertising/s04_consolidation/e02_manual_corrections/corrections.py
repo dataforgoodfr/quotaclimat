@@ -2,7 +2,9 @@
 
 - correct_ad: brand, sector, category or content type of an ad;
 - trash_occurrence: an occurrence that is not an ad, soft deleted (deleted_at);
-- create_ad_from_occurrences: a new ad for occurrences attributed to the wrong ad.
+- create_ad_from_occurrences: a new ad for occurrences attributed to the wrong ad;
+- reattribute_occurrence: an occurrence attributed to the wrong ad, moved to an existing ad;
+- merge_ad_into: every occurrence of an ad moved to another existing ad (the same spot stored twice).
 
 Each one returns an Outcome: the result and the messages written in the row of the spreadsheet. An error
 changes nothing, a warning (inconsistency with the reference data) does not stop the correction.
@@ -392,6 +394,25 @@ def move_occurrences(
     return new_ids
 
 
+def _target_warnings(outcome: Outcome, source_ad: Ad | None, ad: Ad) -> None:
+    """Warnings when occurrences of source_ad move to the ad: another duration, not a classified advertising."""
+    if (
+        source_ad is not None
+        and abs(source_ad.duration_sec - ad.duration_sec) > MAX_DURATION_SPREAD_SEC
+    ):
+        outcome.warn(
+            f"durée de l'ad ({ad.duration_sec:g}s) différente de celle de l'ad d'origine"
+            f" ({source_ad.duration_sec:g}s)"
+        )
+    if (
+        ad.fragment_type != AD_CONTENT_TYPE
+        or ad.prediction_status not in FINAL_PREDICTION_STATUSES
+    ):
+        outcome.warn(
+            "l'ad n'est pas une publicité classée : ses occurrences n'apparaissent pas dans les analyses"
+        )
+
+
 def reattribute_occurrence(
     session: Session, occurrence_id: str, ad_id: str
 ) -> tuple[Outcome, str | None]:
@@ -419,20 +440,44 @@ def reattribute_occurrence(
 
     outcome = Outcome()
     source_ad = session.get(Ad, occurrence.ad_id) if occurrence.ad_id else None
-    if (
-        source_ad is not None
-        and abs(source_ad.duration_sec - ad.duration_sec) > MAX_DURATION_SPREAD_SEC
-    ):
-        outcome.warn(
-            f"durée de l'ad ({ad.duration_sec:g}s) différente de celle de l'ad d'origine"
-            f" ({source_ad.duration_sec:g}s)"
-        )
-    if (
-        ad.fragment_type != AD_CONTENT_TYPE
-        or ad.prediction_status not in FINAL_PREDICTION_STATUSES
-    ):
-        outcome.warn(
-            "l'ad n'est pas une publicité classée : l'occurrence n'apparaît pas dans les analyses"
-        )
+    _target_warnings(outcome, source_ad, ad)
     new_id = move_occurrences(session, ad_id, [occurrence])[occurrence_id]
     return outcome, new_id
+
+
+def merge_ad_into(
+    session: Session, ad_id: str, target_ad_id: str
+) -> tuple[Outcome, int]:
+    """Move every live occurrence of the ad ad_id to the existing ad target_ad_id (the same spot stored as two
+    ads). Each occurrence is replaced by an occurrence of the target ad, the old one is soft deleted, like a
+    reattribution. The ad ad_id itself is left unchanged.
+
+    The same id in both columns changes nothing (applied). Errors: empty target, unknown ad. Warnings: no
+    occurrence to move, the warnings of a reattribution. Returns the outcome and the number of occurrences moved.
+    """
+    if not target_ad_id:
+        return Outcome.error("target_ad_id vide"), 0
+    if ad_id == target_ad_id:
+        outcome = Outcome()
+        outcome.messages.append("ad_id et target_ad_id identiques : rien à faire")
+        return outcome, 0
+    source_ad = session.get(Ad, ad_id)
+    if source_ad is None:
+        return Outcome.error(f"ad {ad_id} inconnue"), 0
+    target_ad = session.get(Ad, target_ad_id)
+    if target_ad is None:
+        return Outcome.error(f"ad cible {target_ad_id} inconnue"), 0
+
+    occurrences = session.scalars(
+        select(Ad_Occurrence).where(
+            Ad_Occurrence.ad_id == ad_id, Ad_Occurrence.deleted_at.is_(None)
+        )
+    ).all()
+    outcome = Outcome()
+    if not occurrences:
+        outcome.warn("aucune occurrence à déplacer")
+        return outcome, 0
+    _target_warnings(outcome, source_ad, target_ad)
+    move_occurrences(session, target_ad_id, occurrences)
+    outcome.messages.append(f"{len(occurrences)} occurrences déplacées")
+    return outcome, len(occurrences)

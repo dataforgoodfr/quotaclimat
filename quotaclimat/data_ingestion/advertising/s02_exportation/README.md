@@ -24,6 +24,7 @@ Exports the detected ads (audio/video saved in the advertising bucket, `ads/<ad_
 | `MAX_ADS` | unset (all) | Maximum number of ads processed in the run, e.g. `2000`. |
 | `CLEAN_OTHER_CHUNKS` | `false` | `true` keeps only the chunk entry of the current hash on each ad. |
 | `CURSOR_BATCH_SIZE` | `500` | Ads read and committed per batch. |
+| `AUDIO_WORKERS` | CPUs of the job (`SCW_SLS_CPU`) minus one, at least 1 | Processes computing the fingerprints. Each batch downloads its audio files concurrently (4 per worker) and computes them in these processes. |
 
 Ads with `fragment_type = 'no_data'` (no media, set by the classification) are never taken. Ads
 that already have a chunk entry with the current hash are left out of the query (with
@@ -31,4 +32,5 @@ that already have a chunk entry with the current hash are left out of the query 
 are taken by decreasing number of occurrences (not deleted), so a run with `MAX_ADS` handles the
 most broadcast ads first, and the next run continues with the following ones. The job logs at
 start the total number of ads, how many already have a chunk with the current hash, how many are
-skipped as `no_data`, how many are left to process and how many are taken in this run.
+skipped as `no_data`, how many are left to process and how many are taken in this run. An audio file that cannot be decoded is
+logged and counted as `decode_failed`, and the run goes on.

@@ -105,5 +105,6 @@ def test_undecodable_audio_does_not_stop_the_run(tmp_path):
     # One-frame / truncated mp3: libsndfile refuses to open it
     bad = tmp_path / "raw.mp3"
     bad.write_bytes(b"\xff\xfb\x90\x64" + b"\x00" * 10)
-    ad = Ad(id="ad-bad", first_detection_date=T0, duration_sec=5.0, chunks=[])
-    assert recompute.compute_fingerprints(str(bad), ad) is None
+    fingerprints, error = recompute.compute_fingerprints(str(bad), T0, 5.0)
+    assert fingerprints is None
+    assert "LibsndfileError" in error

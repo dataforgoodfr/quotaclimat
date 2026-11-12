@@ -10,12 +10,18 @@ Env vars:
 - MAX_ADS: optional maximum number of ads to process in this run (e.g. 2000). Unset: all of them.
 - CLEAN_OTHER_CHUNKS: "true" to keep only the chunk entry of the current hash on each ad.
 - CURSOR_BATCH_SIZE: number of ads read and committed per batch (default 500).
+- AUDIO_WORKERS: number of processes computing the fingerprints (default: CPUs of the
+  Scaleway job, from SCW_SLS_CPU, minus one, at least 1). Each batch downloads its audio files
+  concurrently (DOWNLOADS_PER_WORKER per worker) and computes them in these processes.
 """
 
 import asyncio
 import logging
+import multiprocessing
 import os
 import tempfile
+from concurrent.futures import ProcessPoolExecutor
+from datetime import datetime
 
 import s3fs
 from sentry_sdk.crons import monitor
@@ -48,6 +54,7 @@ def _env_int(name: str) -> int | None:
 CLEAN_OTHER_CHUNKS = _env_bool("CLEAN_OTHER_CHUNKS")
 CURSOR_BATCH_SIZE = _env_int("CURSOR_BATCH_SIZE") or 500
 MAX_ADS = _env_int("MAX_ADS")
+DOWNLOADS_PER_WORKER = 4
 
 
 def has_chunk_with_hash(fingerprint_hash: str):
@@ -131,26 +138,70 @@ async def _download_audio_file(
         return None
 
 
-def compute_fingerprints(audio_file_path: str, ad: Ad) -> list | None:
-    """Fingerprints of the ad's audio, or None when the file cannot be decoded (e.g. an
-    mp3 of a single frame, which libsndfile refuses to open): one bad file must not stop
-    the whole run."""
+def compute_fingerprints(
+    audio_file_path: str,
+    first_detection_date: datetime,
+    duration_sec: float,
+) -> tuple[list[dict] | None, str | None]:
+    """(fingerprints as dicts, None), or (None, error) when the file cannot be decoded
+    (e.g. an mp3 of a single frame, which libsndfile refuses to open): one bad file must not
+    stop the whole run. Runs in a worker process, whose logging is not configured: takes and
+    returns plain values only, the caller logs the error."""
     try:
-        return chunk_creator.run_on_audio_file(
+        fingerprints = chunk_creator.run_on_audio_file(
             audio_file_path=audio_file_path,
-            offset=get_margin_from_detection_date(
-                ad.first_detection_date
-            ).total_seconds(),
-            duration=ad.duration_sec,
+            offset=get_margin_from_detection_date(first_detection_date).total_seconds(),
+            duration=duration_sec,
         )
+        return [f.to_dict() for f in fingerprints], None
     except Exception as e:
-        logger.error(f"Error computing the fingerprints of ad {ad.id}: {e!r}")
-        return None
+        return None, repr(e)
+
+
+def number_of_workers() -> int:
+    """AUDIO_WORKERS, or the CPUs of the Scaleway job (SCW_SLS_CPU, in mVCPU) minus one for
+    the main process, at least 1."""
+    workers = _env_int("AUDIO_WORKERS")
+    if workers:
+        return workers
+    mvcpu = _env_int("SCW_SLS_CPU")
+    return max(1, (mvcpu or 0) // 1000 - 1)
+
+
+async def _download_and_compute(
+    ad: Ad,
+    fs: s3fs.S3FileSystem,
+    dest_dir: str,
+    executor: ProcessPoolExecutor,
+    downloads: asyncio.Semaphore,
+) -> tuple[str, list[dict] | None]:
+    """("download_failed", None), ("decode_failed", None) or ("ok", fingerprints)."""
+    async with downloads:
+        audio_file_path = await _download_audio_file(fs, ad.id, dest_dir)
+    if audio_file_path is None:
+        return "download_failed", None
+    try:
+        fingerprints, error = await asyncio.get_running_loop().run_in_executor(
+            executor,
+            compute_fingerprints,
+            audio_file_path,
+            ad.first_detection_date,
+            ad.duration_sec,
+        )
+    finally:
+        os.remove(audio_file_path)
+    if error is not None:
+        logger.error(f"Error computing the fingerprints of ad {ad.id}: {error}")
+        return "decode_failed", None
+    return "ok", fingerprints
 
 
 async def run():
     fingerprint_hash = fingerprinter.params_hash()
     fs = get_s3_filesystem()
+    workers = number_of_workers()
+    # Downloads wait on S3 more than on the CPU: keep a few in advance of each worker
+    downloads = asyncio.Semaphore(DOWNLOADS_PER_WORKER * workers)
 
     counters = {
         "ads_seen": 0,
@@ -161,7 +212,14 @@ async def run():
         "chunk_computed": 0,
     }
 
-    with get_db_session() as read_session, get_db_session() as write_session:
+    with (
+        get_db_session() as read_session,
+        get_db_session() as write_session,
+        # spawn rather than fork: s3fs runs its own event loop thread in this process
+        ProcessPoolExecutor(
+            max_workers=workers, mp_context=multiprocessing.get_context("spawn")
+        ) as executor,
+    ):
         counts = count_ads(read_session, fingerprint_hash, CLEAN_OTHER_CHUNKS)
         taken = (
             counts["to_process"]
@@ -181,13 +239,14 @@ async def run():
             )
             + f", {taken} taken in this run "
             + (f"(MAX_ADS={MAX_ADS})" if MAX_ADS is not None else "(no MAX_ADS)")
-            + ", most occurrences first"
+            + f", most occurrences first, {workers} workers"
         )
 
         query = ads_to_process_query(fingerprint_hash, CLEAN_OTHER_CHUNKS, MAX_ADS)
         for ads in read_session.scalars(
             query.execution_options(yield_per=CURSOR_BATCH_SIZE)
         ).partitions():
+            to_compute = []
             for ad in ads:
                 counters["ads_seen"] += 1
                 existing_chunk_entry = next(
@@ -196,48 +255,46 @@ async def run():
                     ),
                     None,
                 )
-                if existing_chunk_entry:
-                    counters["already_had_chunk"] += 1
-                    if CLEAN_OTHER_CHUNKS and len(ad.chunks) > 1:
-                        counters["cleaned_other_chunks"] += 1
-                        write_session.execute(
-                            update(Ad)
-                            .where(Ad.id == ad.id)
-                            .values(chunks=[existing_chunk_entry])
-                        )
-                else:
-                    with tempfile.TemporaryDirectory() as dest_dir:
-                        audio_file_path = await _download_audio_file(
-                            fs, ad.id, dest_dir
-                        )
+                if existing_chunk_entry is None:
+                    to_compute.append(ad)
+                    continue
+                counters["already_had_chunk"] += 1
+                if CLEAN_OTHER_CHUNKS and len(ad.chunks) > 1:
+                    counters["cleaned_other_chunks"] += 1
+                    write_session.execute(
+                        update(Ad)
+                        .where(Ad.id == ad.id)
+                        .values(chunks=[existing_chunk_entry])
+                    )
 
-                        fingerprints = (
-                            None
-                            if audio_file_path is None
-                            else compute_fingerprints(audio_file_path, ad)
-                        )
-                        if audio_file_path is None:
-                            counters["download_failed"] += 1
-                        elif fingerprints is None:
-                            counters["decode_failed"] += 1
-                        else:
-                            new_chunk_entry = Ad.generate_chunk_dict(
-                                fingerprint_hash, fingerprints
-                            )
-                            counters["chunk_computed"] += 1
+            with tempfile.TemporaryDirectory() as dest_dir:
+                results = await asyncio.gather(
+                    *(
+                        _download_and_compute(ad, fs, dest_dir, executor, downloads)
+                        for ad in to_compute
+                    )
+                )
 
-                            if CLEAN_OTHER_CHUNKS or len(ad.chunks) == 0:
-                                write_session.execute(
-                                    update(Ad)
-                                    .where(Ad.id == ad.id)
-                                    .values(chunks=[new_chunk_entry])
-                                )
-                            else:
-                                write_session.execute(
-                                    update(Ad)
-                                    .where(Ad.id == ad.id)
-                                    .values(chunks=[*ad.chunks, new_chunk_entry])
-                                )
+            for ad, (status, fingerprints) in zip(to_compute, results):
+                if status != "ok":
+                    counters[status] += 1
+                    continue
+                counters["chunk_computed"] += 1
+                new_chunk_entry = {
+                    "hash": fingerprint_hash,
+                    "fingerprints": fingerprints,
+                }
+                write_session.execute(
+                    update(Ad)
+                    .where(Ad.id == ad.id)
+                    .values(
+                        chunks=(
+                            [new_chunk_entry]
+                            if CLEAN_OTHER_CHUNKS or len(ad.chunks) == 0
+                            else [*ad.chunks, new_chunk_entry]
+                        )
+                    )
+                )
 
             write_session.commit()
             logger.info(f"Recompute saved chunks progress: {counters} / {taken}")

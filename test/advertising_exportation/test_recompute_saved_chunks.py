@@ -237,3 +237,15 @@ def test_concatenate_merges_with_fingerprints_copied_by_a_manual_fusion(session)
         copied,
         {"hash": HASH, "fingerprints": [{"f": 1}], "from_sources": True},
     ]
+
+
+def test_soft_deleted_source_of_an_active_merge_is_taken(session):
+    # merged by hand into another ad, but still a piece of an automatic merge
+    _add_ad(session, "src-deleted", 0, deleted=True)
+    _add_ad(session, "src", 0)
+    _add_merge(session, "merged", ["src", "src-deleted"], 10)
+    _add_ad(session, "reverted-src-deleted", 0, deleted=True)
+    _add_merge(session, "reverted", ["reverted-src-deleted"], 0, status="reverted")
+    _add_ad(session, "deleted", 4, deleted=True)
+
+    assert _ids(session) == ["src", "src-deleted"]

@@ -28,7 +28,8 @@ Exports the detected ads (audio/video saved in the advertising bucket, `ads/<ad_
 | `DOWNLOAD_CONCURRENCY` | `16` | Audio files downloaded at once. The run waits on S3 far more than on the CPU (~25 ms of computation for a 5 s ad). |
 
 Ads with `fragment_type = 'no_data'` (no media, set by the classification) and soft deleted ads
-(`deleted_at`, merged by hand into another) are never taken. Ads that already have a chunk entry with
+(`deleted_at`, merged by hand into another) are never taken, except a soft deleted ad that is a
+source of an active merge: the concatenation of the merge needs its fingerprints. Ads that already have a chunk entry with
 the current hash are left out of the query (with `CLEAN_OTHER_CHUNKS=true`, those that also have
 entries of another hash are taken, to clean them). The ads
 are taken by decreasing number of occurrences (not deleted), so a run with `MAX_ADS` handles the

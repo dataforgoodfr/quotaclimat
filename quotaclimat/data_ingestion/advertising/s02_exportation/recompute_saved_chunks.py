@@ -103,12 +103,24 @@ def is_merged_ad():
     return exists(select(1).where(Ad_Merge.merged_ad_id == Ad.id))
 
 
+def is_source_of_active_merge():
+    """SQL condition: the ad is one of the source ads of an active merge (advertising.ad_merge)."""
+    return exists(
+        select(1).where(
+            Ad_Merge.status == MERGE_STATUS_ACTIVE,
+            Ad_Merge.source_ad_ids.any(Ad.id),
+        )
+    )
+
+
 def needs_processing(fingerprint_hash: str, clean_other_chunks: bool):
     """SQL condition: the ad has media, is not a merged ad, and either has no chunk with this
     hash or, with clean_other_chunks, has other chunk entries to remove."""
     has_hash = has_chunk_with_hash(fingerprint_hash)
-    # a soft deleted ad is no longer matched by the detection: no fingerprints to compute
-    live = Ad.deleted_at.is_(None)
+    # a soft deleted ad (merged by hand into another) is no longer matched by the detection: no
+    # fingerprints to compute, unless it is a source of an active merge, whose concatenated
+    # fingerprints need its own ones (the merge rule wins over the soft deletion)
+    live = Ad.deleted_at.is_(None) | is_source_of_active_merge()
     if clean_other_chunks:
         # several entries of the current hash stay (fingerprints copied from an ad merged by hand)
         to_do = ~has_hash | has_chunk_with_other_hash(fingerprint_hash)

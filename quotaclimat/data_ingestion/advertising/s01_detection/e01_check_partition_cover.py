@@ -219,7 +219,7 @@ class CoverReport:
             f"-{_minutes_of(MARGIN_BEFORE)}/+{_minutes_of(MARGIN_AFTER)} min)"
         )
         if not self.shows:
-            return f"{header}\n  No show in program_metadata.json for this channel and week"
+            return f"{header}\n  No show in the program grid for this channel and week"
 
         lines = [
             header,
@@ -263,7 +263,7 @@ def _week_start_date(start_date: str) -> datetime:
 def _shows_of_week(
     channel: str, week_start_date: datetime
 ) -> list[tuple[Show, datetime, datetime, list[Part]]]:
-    """Shows of program_metadata.json airing that week, with their Paris start and end
+    """Shows of the program grid airing that week, with their Paris start and end
     and the 2-minutes parts mediatree records for them (margins included)."""
     shows = []
     for show in get_channel_program(channel, week_start_date):
@@ -282,7 +282,7 @@ def _shows_of_week(
 
 def expected_parts_for_week(channel: str, start_date: str) -> set[Part]:
     """UTC (start, end) of every 2-minutes file the program expects for the week of
-    `start_date` (a Monday, Paris time): the shows of program_metadata.json whose grid is
+    `start_date` (a Monday, Paris time): the shows of the program grid whose grid is
     valid that week, with their margins. Files of the bucket outside this set are not
     analysed."""
     week_start_date = _week_start_date(start_date)

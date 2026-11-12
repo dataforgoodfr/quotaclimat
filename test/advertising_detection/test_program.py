@@ -1,6 +1,5 @@
-import json
 from datetime import date, datetime, timedelta
-from unittest.mock import mock_open, patch
+from unittest.mock import patch
 
 from quotaclimat.data_ingestion.advertising.s01_detection.tools.program import (
     Show,
@@ -219,7 +218,10 @@ class TestGetProgram:
                 "program_grid_end": "2100-01-01",
             }
         ]
-        with patch("builtins.open", mock_open(read_data=json.dumps(metadata))):
+        with patch(
+            "quotaclimat.data_ingestion.advertising.s01_detection.tools.program.build_program_metadata",
+            return_value=metadata,
+        ):
             [show] = list(get_program())
         assert show.program_name == "Jornal da Noite"
         assert show.grid_start == date(2023, 4, 1)

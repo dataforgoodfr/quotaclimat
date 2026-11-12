@@ -78,7 +78,6 @@ services:
       - ./alembic:/app/alembic
       - ./alembic.ini:/app/alembic.ini
       - ./my_dbt_project:/app/my_dbt_project
-      - ./transform_program.py:/app/transform_program.py
       - ./parse_dictionary.py:/app/parse_dictionary.py
       - ./i8n:/app/i8n
     depends_on:

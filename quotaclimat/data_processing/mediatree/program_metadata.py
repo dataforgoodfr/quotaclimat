@@ -1,22 +1,36 @@
-# generate program metadata for postgres database "program metadata" content
+"""Program grid of every country (table program_metadata), built from the
+`i8n/<country>/channel_program.py` files."""
 
-import json
+import hashlib
+import logging
 import os
 from datetime import datetime
-import sys
-import logging
-from quotaclimat.data_processing.mediatree.channel_program import generate_program_id
-from quotaclimat.data_processing.mediatree.i8n.france.channel_program import (
-    channels_programs_france,
+
+from quotaclimat.data_processing.mediatree.i8n.belgium.channel_program import (
+    channels_programs_belgium,
+)
+from quotaclimat.data_processing.mediatree.i8n.belgium_flanders.channel_program import (
+    channels_programs_belgium_flanders,
+)
+from quotaclimat.data_processing.mediatree.i8n.brazil.channel_program import (
+    channels_programs_brazil,
+)
+from quotaclimat.data_processing.mediatree.i8n.country import (
+    BELGIUM,
+    BRAZIL,
+    FRANCE,
+    GERMANY,
+    POLAND,
+    SPAIN,
 )
 from quotaclimat.data_processing.mediatree.i8n.extended_france.channel_program import (
     channels_programs_extended_france,
 )
+from quotaclimat.data_processing.mediatree.i8n.france.channel_program import (
+    channels_programs_france,
+)
 from quotaclimat.data_processing.mediatree.i8n.germany.channel_program import (
     channels_programs_germany,
-)
-from quotaclimat.data_processing.mediatree.i8n.brazil.channel_program import (
-    channels_programs_brazil,
 )
 from quotaclimat.data_processing.mediatree.i8n.poland.channel_program import (
     channels_programs_poland,
@@ -24,26 +38,13 @@ from quotaclimat.data_processing.mediatree.i8n.poland.channel_program import (
 from quotaclimat.data_processing.mediatree.i8n.spain.channel_program import (
     channels_programs_spain,
 )
-from quotaclimat.data_processing.mediatree.i8n.belgium.channel_program import (
-    channels_programs_belgium,
-)
-from quotaclimat.data_processing.mediatree.i8n.belgium_flanders.channel_program import (
-    channels_programs_belgium_flanders,
-)
+
+GRID_END_WITHOUT_LIMIT = "2100-01-01"
 
 
-from quotaclimat.data_processing.mediatree.i8n.country import (
-    FRANCE,
-    BRAZIL,
-    GERMANY,
-    POLAND,
-    SPAIN,
-    BELGIUM,
-)
-
-EXTENDED_PERIMETER = os.getenv("EXTENDED_PERIMETER", "false").lower() == "true"
-
-logging.basicConfig(level=logging.INFO)
+def generate_program_id(channel_name, weekday, program_name, program_grid_start) -> str:
+    data_str = f"{channel_name}-{weekday}-{program_name}-{program_grid_start}"
+    return hashlib.sha256(data_str.encode("utf-8")).hexdigest()
 
 
 # Function to calculate duration in minutes between two time strings
@@ -53,9 +54,6 @@ def calculate_duration(start_time, end_time):
     end_dt = datetime.strptime(end_time, fmt)
     duration_minutes = (end_dt - start_dt).seconds // 60
     return duration_minutes
-
-
-output_file_path = "postgres/program_metadata.json"
 
 
 channel_mapping = {
@@ -553,93 +551,75 @@ channel_mapping = {
 }
 
 
-programs = []
-
-channels_programs = (
-    channels_programs_france
-    + channels_programs_brazil
-    + channels_programs_germany
-    + channels_programs_poland
-    + channels_programs_spain
-    + channels_programs_belgium
-    + channels_programs_belgium_flanders
-)
-
-if EXTENDED_PERIMETER:
-    logging.info("EXTENDED_PERIMETER is true - importing extended perimeter programs for France")
-    channels_programs = channels_programs + channels_programs_extended_france
-for program_data in channels_programs:
-    start_time = program_data["start"]
-    end_time = program_data["end"]
-    duration_minutes = calculate_duration(start_time, end_time)
-
-    if program_data["program_grid_end"] == "":
-        program_data["program_grid_end"] = "2100-01-01"
-
-    # Add duration to the program data
-    program_data["duration"] = duration_minutes
-
-    # Map channel_name to channel_title
-    channel_name = program_data["channel_name"]
-    print(
-        f"program channel_name {program_data['channel_name']} - {channel_mapping[channel_name]['title']}"
-    )
-    if channel_name in channel_mapping:
-        program_data["channel_title"] = channel_mapping[channel_name]["title"]
-        program_data["public"] = channel_mapping[channel_name]["public"]
-        program_data["infocontinue"] = channel_mapping[channel_name]["infocontinue"]
-        program_data["radio"] = channel_mapping[channel_name]["radio"]
-        program_data["country"] = channel_mapping[channel_name]["country"]
-    else:
-        logging.error(f"Unknown channel_name {channel_name}")
-        program_data["channel_title"] = (
-            channel_name  # Default to channel_name if mapping not found
-        )
-        program_data["public"] = False  # Default public to False
-        program_data["infocontinue"] = False  # Default infocontinue to False
-        program_data["radio"] = False  # Default infocontinue to False
-    # Handle special cases for weekdays
+def _expand_weekdays(program_data: dict) -> list[dict]:
+    # One entry per weekday, from 1 (Monday) to 7 (Sunday) to simplify SQL queries
     weekday = program_data["weekday"]
     if weekday == "*":
-        # Create separate entries for each weekday (1 to 7)
-        for day in range(1, 8):
-            new_program_data = program_data.copy()
-            new_program_data["weekday"] = day
-            programs.append(new_program_data)
+        days = range(1, 8)
     elif weekday == "weekend":
-        # Create separate entries for weekend days (Saturday and Sunday)
-        for day in [6, 7]:
-            new_program_data = program_data.copy()
-            new_program_data["weekday"] = day
-            programs.append(new_program_data)
+        days = [6, 7]
     elif weekday == "weekday":
-        # Create separate entries for weekdays (Monday to Friday)
-        for day in [1, 2, 3, 4, 5]:
-            new_program_data = program_data.copy()
-            new_program_data["weekday"] = day
-            programs.append(new_program_data)
+        days = [1, 2, 3, 4, 5]
     else:
-        # from 1 to 7 to simplify SQL queries
-        new_program_data = program_data.copy()
-        new_program_data["weekday"] = int(new_program_data["weekday"]) + 1
-        programs.append(new_program_data)
+        # channel_program.py weekdays go from 0 to 6
+        days = [int(weekday) + 1]
+    return [{**program_data, "weekday": day} for day in days]
 
-for program in programs:
-    # Generate program ID based on channel_name, weekday, and program_name
-    program_id = generate_program_id(
-        program["channel_name"],
-        program["weekday"],
-        program["program_name"],
-        program["program_grid_start"],
+
+def build_program_metadata(extended_perimeter: bool | None = None) -> list[dict]:
+    """Every program of the grid, one entry per weekday, sorted by weekday and channel.
+    With the extended perimeter (default: EXTENDED_PERIMETER env var), its programs are added.
+    """
+    if extended_perimeter is None:
+        extended_perimeter = os.getenv("EXTENDED_PERIMETER", "false").lower() == "true"
+
+    channels_programs = (
+        channels_programs_france
+        + channels_programs_brazil
+        + channels_programs_germany
+        + channels_programs_poland
+        + channels_programs_spain
+        + channels_programs_belgium
+        + channels_programs_belgium_flanders
     )
-    program["id"] = program_id
+    if extended_perimeter:
+        logging.info(
+            "EXTENDED_PERIMETER is true - importing extended perimeter programs for France"
+        )
+        channels_programs = channels_programs + channels_programs_extended_france
 
-sorted_programs = sorted(programs, key=lambda x: (x["weekday"], x["channel_name"]))
+    programs = []
+    for source in channels_programs:
+        # Copy: the source lists are also read as they are by the import
+        program_data = dict(source)
+        program_data["duration"] = calculate_duration(
+            program_data["start"], program_data["end"]
+        )
+        if program_data["program_grid_end"] == "":
+            program_data["program_grid_end"] = GRID_END_WITHOUT_LIMIT
 
-with open(output_file_path, "w", encoding="utf-8") as output_file:
-    json.dump(sorted_programs, output_file, ensure_ascii=False, indent=4)
+        channel_name = program_data["channel_name"]
+        if channel_name in channel_mapping:
+            program_data["channel_title"] = channel_mapping[channel_name]["title"]
+            program_data["public"] = channel_mapping[channel_name]["public"]
+            program_data["infocontinue"] = channel_mapping[channel_name]["infocontinue"]
+            program_data["radio"] = channel_mapping[channel_name]["radio"]
+            program_data["country"] = channel_mapping[channel_name]["country"]
+        else:
+            logging.error(f"Unknown channel_name {channel_name}")
+            program_data["channel_title"] = channel_name
+            program_data["public"] = False
+            program_data["infocontinue"] = False
+            program_data["radio"] = False
 
-logging.info(
-    f"Output file {output_file_path} has been created and sorted by weekday and channel_name."
-)
-sys.exit(0)
+        programs += _expand_weekdays(program_data)
+
+    for program in programs:
+        program["id"] = generate_program_id(
+            program["channel_name"],
+            program["weekday"],
+            program["program_name"],
+            program["program_grid_start"],
+        )
+
+    return sorted(programs, key=lambda x: (x["weekday"], x["channel_name"]))

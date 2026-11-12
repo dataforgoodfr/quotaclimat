@@ -47,9 +47,7 @@ poetry run python3 transform_excel_to_json.py
 ```
 
 ### Program/Channel Metadata Update
-```bash
-poetry run python3 transform_program.py
-```
+Edit `quotaclimat/data_processing/mediatree/i8n/<country>/channel_program.py` (never delete a line: close it with `program_grid_end` and add a new one). `quotaclimat/data_processing/mediatree/program_metadata.py` builds the grid from these files; `create_tables()` loads it into `program_metadata` at each import, there is no file to regenerate.
 
 ## Architecture
 
@@ -74,7 +72,7 @@ After detection, keywords are classified into macro categories and stored with c
 ### 3. Database Layer (`postgres/`)
 PostgreSQL via SQLAlchemy ORM. Key tables:
 - `keywords`: Detected keyword occurrences with counts and theme classification
-- `program_metadata`: TV/radio program schedule grid (~1.2MB JSON source)
+- `program_metadata`: TV/radio program schedule grid (built from `i8n/<country>/channel_program.py`)
 - `channel_metadata`: Channel configuration and broadcast hours
 - `sitemap_table`: Scraped web articles
 - `stop_word`: Advertising/repetitive phrases to filter out
@@ -97,7 +95,7 @@ A separate module/database that detects, clusters and tracks **disinformation na
 Migrated from the `climateguard` repository. `jobs/label_misinformation` labels misinformation in transcripts with an LLM (Mistral/OpenAI) and pushes extracts to Label Studio; `jobs/get_audio_video` collects German audio/video for annotation; `experiments/` holds non-deployed fine-tuning/research code. Dependencies are optional Poetry groups of the root `pyproject.toml`: `misinformation`, `germany-audio-video-collector`, `misinformation-dev`, `misinformation-dev-cuda` (torch is the CPU build for every group: one `poetry.lock`). Job images are built from the repo root (`docker build -f detect_misinformation/jobs/<job>/Dockerfile .`, `poetry install --only <group>`). `label_misinformation` keeps its own bump2version version and CI (`.github/workflows/label-misinformation.yml`: `dev` image on PR, `<version>`/`latest` on main); `deploy-main.yml` ignores `detect_misinformation/**`. See `detect_misinformation/jobs/README.md`. Its Scaleway infrastructure (Label Studio, bucket, secrets and `label-misinformation-<country>-<env>` job per country, project `climate-safeguards-<env>`) is the Terragrunt target `infrastructure/live/misinformation`, with countries as a `for_each` map in one state per environment; never rename a country key (it recreates its resources). See `infrastructure/Readme.md`, "Misinformation (climate safeguards)".
 
 ### Extended perimeter ("Droit à l'info")
-On top of the regular France TV perimeter, a wider set of French channels (`tf1`, `france2`, `fr3-idf`, `rtl`, `france5`, `tmc`, `lcp`) is tracked under country code `ext-fra` in its own isolated `extended-perimeter` database, S3 buckets and Label Studio project — toggled by the `EXTENDED_PERIMETER` env var and threading through `transform_program.py`, dbt grants, and the RRS `source=extended` flows. It shares all the regular French-language detection/subtitle logic. See the root README's "Extended perimeter" section, `infrastructure/Readme.md`'s RRS section, and `rrs/README.md`'s "Extended perimeter" section for the full picture across app/infra/RRS.
+On top of the regular France TV perimeter, a wider set of French channels (`tf1`, `france2`, `fr3-idf`, `rtl`, `france5`, `tmc`, `lcp`) is tracked under country code `ext-fra` in its own isolated `extended-perimeter` database, S3 buckets and Label Studio project — toggled by the `EXTENDED_PERIMETER` env var and threading through the program grid (`program_metadata.py`), dbt grants, and the RRS `source=extended` flows. It shares all the regular French-language detection/subtitle logic. See the root README's "Extended perimeter" section, `infrastructure/Readme.md`'s RRS section, and `rrs/README.md`'s "Extended perimeter" section for the full picture across app/infra/RRS.
 
 ### Orchestration — Kestra
 Production runs are scheduled by Kestra flows in `infrastructure/kestra/flows/`. The `main-pipeline` flow runs twice daily (01:10 and 12:30 Europe/Paris) and chains, in order: `extended-perimeter` → `rrs-climate` (extended, no clustering) → `rrs-insecurity` (extended, no clustering) → `rrs-pollution` (extended, no RAG fact-checking, no clustering) → `barometre` → `rrs-climate` (barometre, with clustering) → `rrs-insecurity` (barometre, with clustering) → `rrs-pollution` (barometre, with RAG fact-checking and clustering) → `metabase-sync` (`force=true`: pushes the versioned `metabase/*/*.sql` queries to their Metabase questions, overwriting SQL edited in Metabase). Each step fails the whole chain if it fails (`transmitFailed: true`), except the last one, `metabase-sync` (`allowFailure: true`), whose failure only marks the run as WARNING; it can also be run by hand. Dev mirrors prod in the `*-dev` namespaces/flows, with no schedule (run manually).
@@ -106,7 +104,7 @@ Production runs are scheduled by Kestra flows in `infrastructure/kestra/flows/`.
 - `quotaclimat/data_processing/mediatree/api_import.py` — main daily import job
 - `quotaclimat/data_ingestion/ingest_db/ingest_sitemap_in_db.py` — web scraping
 - `quotaclimat/data_processing/mediatree/stop_word/main.py` — stop word detection
-- `docker-entrypoint.sh` — full pipeline: migrate → transform program metadata → import → ingest labelstudio → dbt
+- `docker-entrypoint.sh` — full pipeline: migrate → import (loads the program grid) → ingest labelstudio → dbt
 
 ## Docker Services
 
@@ -131,7 +129,7 @@ Secrets (API credentials) are mounted from `secrets/` directory as Docker secret
 | `CHANNEL` | Limit processing to a specific channel |
 | `UPDATE` | Reprocess existing data |
 | `MODIN_ENGINE` | Set to `ray` for distributed pandas |
-| `EXTENDED_PERIMETER` | `true`/`false` — toggles the extended France perimeter ("Droit à l'info") across `transform_program.py`, Label Studio ingestion and dbt grants |
+| `EXTENDED_PERIMETER` | `true`/`false` — toggles the extended France perimeter ("Droit à l'info") across the program grid (`program_metadata.py`), Label Studio ingestion and dbt grants |
 | `RRS_PG_*` | RRS PostgreSQL connection (separate database from `barometre`) |
 | `ANTHROPIC_API_KEY`, `MISTRAL_API_KEY` | LLM providers used by RRS clustering/misinformation classification and the advertising classification VLM/ASR pipeline |
 

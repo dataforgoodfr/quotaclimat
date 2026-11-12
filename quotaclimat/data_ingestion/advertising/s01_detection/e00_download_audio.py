@@ -14,13 +14,13 @@ logger = logging.getLogger(__name__)
 async def download_all_audio_parts(
     channel, start_date: datetime, end_date: datetime
 ) -> list[ChunkCreatorJob]:
-    # Only the files of the shows of program_metadata.json (with their margins) are
+    # Only the files of the shows of the program grid (with their margins) are
     # analysed: what mediatree sent outside the program is skipped, what is missing is
     # reported by check_partition_cover.
     expected_parts = expected_parts_for_week(channel, start_date.date().isoformat())
     if not expected_parts:
         logger.warning(
-            f"No show in program_metadata.json for {channel} the week of {start_date.date()}"
+            f"No show in the program grid for {channel} the week of {start_date.date()}"
         )
         return []
 

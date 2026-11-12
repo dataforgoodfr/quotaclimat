@@ -21,7 +21,7 @@
       midnight. An emission with an invalid time is left out.
     - rediffusion: 'oui' for a rerun.
     - grid_start / grid_end: validity of the row (YYYY-MM-DD or DD/MM/YYYY): an empty grid_end is
-      2100-01-01 (like transform_program.py), an empty grid_start has no lower bound.
+      2100-01-01 (like quotaclimat/data_processing/mediatree/program_metadata.py), an empty grid_start has no lower bound.
     Invalid weekdays, times or dates are reported by the seed tests (seeds/ref/_ref_seeds.yml). -#}
 
 {% set no_grid_end = "'2100-01-01'::date" %}

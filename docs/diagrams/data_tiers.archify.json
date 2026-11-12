@@ -51,7 +51,7 @@
     {
       "id": "s_git",
       "type": "external",
-      "label": "program_metadata.json",
+      "label": "channel_program.py",
       "pos": [
         440,
         40
@@ -62,7 +62,7 @@
       ],
       "sources": [
         {
-          "path": "transform_program.py",
+          "path": "quotaclimat/data_processing/mediatree/program_metadata.py",
           "label": "loader"
         }
       ]

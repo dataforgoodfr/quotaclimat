@@ -2,7 +2,6 @@ import json
 import logging
 import os
 from datetime import datetime
-from json import JSONDecodeError
 
 import pandas as pd
 from sqlalchemy import (
@@ -24,6 +23,9 @@ from sqlalchemy.orm import relationship, sessionmaker
 from postgres.database_connection import connect_to_db, get_db_session
 from postgres.schemas.base import Base
 from quotaclimat.data_processing.mediatree.i8n.country import FRANCE
+from quotaclimat.data_processing.mediatree.program_metadata import (
+    build_program_metadata,
+)
 from quotaclimat.data_processing.mediatree.keyword.keyword import THEME_KEYWORDS
 from quotaclimat.data_processing.mediatree.keyword.macro_category import (
     MACRO_CATEGORIES,
@@ -386,14 +388,8 @@ def update_program_metadata(engine):
     logging.info("Updating program metadata")
     Session = sessionmaker(bind=engine)
     session = Session()
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    json_file_path = os.path.join(current_dir, "..", "program_metadata.json")
-
     try:
-        with open(json_file_path, "r") as f:
-            data = json.load(f)
-
-        for item in data:
+        for item in build_program_metadata():
             metadata = {
                 "id": item["id"],
                 "channel_name": item["channel_name"],
@@ -430,9 +426,6 @@ def update_program_metadata(engine):
         session.commit()
         logging.info("Program metadata updated successfully")
 
-    except (OSError, JSONDecodeError) as file_error:
-        logging.error(f"Error reading JSON file: {file_error}")
-        session.rollback()
     except SQLAlchemyError as db_error:
         logging.error(f"Database error while updating program metadata: {db_error}")
         session.rollback()

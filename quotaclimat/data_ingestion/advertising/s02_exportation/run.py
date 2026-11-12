@@ -104,7 +104,7 @@ def _base_ads_query(start_date: datetime | None, end_date: datetime | None):
     base_query = (
         select(Ad, Ad_Occurrence)
         .join(Ad_Occurrence, Ad_Occurrence.ad_id == Ad.id)
-        .where(Ad.obsolete_at.is_(None))
+        .where(Ad.deleted_at.is_(None))
     )
 
     if start_date:

@@ -16,7 +16,7 @@ Each stage reads pending rows filtered by `prediction_status` in the `Ad` table,
 | 4 | `e04_classify_subcat.py`    | `dict_tier2_no_kw` / `dict_tier3_no_kw` / `dict_miss` | `subcat_done` / `subcat_parse_error` / `no_data` | LLM call to get the sub-cat                             |
 | 5 | `e05_canonicalise_brand.py` | `predicted_brand IS NULL` & has stage-2 brand | populates `predicted_brand` | Fuzzy matching of LLM-extracted brands                  |
 
-Every stage skips the obsolete ads (`obsolete_at` set: ads merged by hand into another, see
+Every stage skips the soft deleted ads (`deleted_at` set: ads merged by hand into another, see
 `s04_consolidation/README.md`, "Merge of two ads").
 
 Stages 1-4 must run in order. Stage 5 can run any time after stage 2 (it just fills in canonical forms of the brand names the dictionary didn't already provide).

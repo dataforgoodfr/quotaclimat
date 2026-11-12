@@ -26,7 +26,7 @@ def select_pending(
         stmt = (
             select(Ad.id, Ad.prediction, Ad.transcript)
             .where(Ad.prediction_status == "ad_type_done")
-            .where(Ad.obsolete_at.is_(None))
+            .where(Ad.deleted_at.is_(None))
             .order_by(Ad.first_detection_date.desc())
         )
         if limit:

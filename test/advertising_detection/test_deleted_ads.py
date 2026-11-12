@@ -1,4 +1,4 @@
-"""The detection no longer matches the fingerprints of an obsolete ad (merged by hand into another)."""
+"""The detection no longer matches the fingerprints of a soft deleted ad (merged by hand into another)."""
 
 import asyncio
 from datetime import datetime
@@ -47,7 +47,7 @@ def engine():
     engine.dispose()
 
 
-def add_ad(engine, ad_id, obsolete=False):
+def add_ad(engine, ad_id, deleted=False):
     with Session(engine) as session:
         session.add(
             Ad(
@@ -56,8 +56,8 @@ def add_ad(engine, ad_id, obsolete=False):
                 duration_sec=10.0,
                 chunks=[{"hash": HASH, "fingerprints": [FINGERPRINT.to_dict()]}],
                 fragment_type="AD",
-                obsolete_at=T0 if obsolete else None,
-                replaced_by_ad_id="live" if obsolete else None,
+                deleted_at=T0 if deleted else None,
+                replaced_by_ad_id="live" if deleted else None,
             )
         )
         session.commit()
@@ -68,8 +68,8 @@ def identify():
     return asyncio.run(run_chunk_identification([chunk], HASH, EverythingMatches()))
 
 
-def test_obsolete_ad_is_not_matched(engine):
-    add_ad(engine, "obsolete", obsolete=True)
+def test_deleted_ad_is_not_matched(engine):
+    add_ad(engine, "deleted", deleted=True)
     known, unknown = identify()
     assert known == [] and len(unknown) == 1
 

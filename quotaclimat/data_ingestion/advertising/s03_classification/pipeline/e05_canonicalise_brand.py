@@ -43,7 +43,7 @@ def _select_rows(engine, recanonicalize_existing: bool = False) -> pd.DataFrame:
         stmt = select(
             Ad.id, Ad.prediction, Ad.predicted_sector, Ad.predicted_brand
         ).where(
-            Ad.prediction_status.isnot(None), Ad.obsolete_at.is_(None)
+            Ad.prediction_status.isnot(None), Ad.deleted_at.is_(None)
         )
         if not recanonicalize_existing:
             stmt = stmt.where(Ad.predicted_brand.is_(None))

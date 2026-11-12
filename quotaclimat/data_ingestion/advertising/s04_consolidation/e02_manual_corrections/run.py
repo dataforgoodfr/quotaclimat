@@ -8,7 +8,7 @@ the name of a tab gives its kind (TAB_KINDS), all the tabs of a kind have the sa
 - dechets...: occurrences that are not ads (occurrence_id), soft deleted;
 - reattribution...: occurrences attributed to the wrong ad (occurrence_id), moved to an existing ad (ad_id);
 - fusion...: ads stored twice (ad_id), all their occurrences moved to another existing ad (target_ad_id), the
-  ad becoming obsolete (kept for its history, left out of every step).
+  ad being soft deleted (deleted_at: kept for its history, left out of every step).
 
 Each row is processed once: the job fills traite_le, resultat (appliqué, avertissement or erreur) and
 message, and the rows with a traite_le are skipped (to process a row again, empty its traite_le). A warning
@@ -42,7 +42,7 @@ from quotaclimat.data_ingestion.advertising.s04_consolidation.e02_manual_correct
     create_ad_from_occurrences,
     live_occurrences,
     merge_ad_into,
-    obsolete_error,
+    deleted_error,
     new_ad_id,
     reattribute_occurrence,
     trash_occurrence,
@@ -189,7 +189,7 @@ def process_reattribution_rows(
 def process_merge_rows(
     session: Session, rows: list[SheetRow], spreadsheet: str, tab: str
 ) -> list[tuple[SheetRow, dict[str, str]]]:
-    """Rows processed in order: an ad merged higher in the tab is obsolete, it can no longer be merged nor be a
+    """Rows processed in order: an ad merged higher in the tab is deleted, it can no longer be merged nor be a
     target (A -> B then B -> C works, B -> C then A -> B is an error)."""
     updates = []
     for row in rows:
@@ -227,9 +227,9 @@ def _new_ad_group(
             occurrence_ids.append(occurrence_id)
     occurrences, errors = live_occurrences(session, occurrence_ids)
     existing_ad = session.get(Ad, ad_id)
-    if existing_ad is not None and obsolete_error(existing_ad):
+    if existing_ad is not None and deleted_error(existing_ad):
         for occurrence_id in occurrences:
-            errors[occurrence_id] = Outcome.error(obsolete_error(existing_ad))
+            errors[occurrence_id] = Outcome.error(deleted_error(existing_ad))
         occurrences = {}
     for occurrence_id, occurrence in list(occurrences.items()):
         if occurrence.ad_id == ad_id:

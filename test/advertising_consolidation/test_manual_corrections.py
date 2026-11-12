@@ -89,7 +89,7 @@ def make_ad(ad_id, status="subcat_done", fragment_type="AD", brand="Pytest", **k
         id=ad_id,
         first_detection_date=T0,
         duration_sec=kwargs.pop("duration_sec", 20.0),
-        chunks=[{"hash": "h", "fingerprints": []}],
+        chunks=kwargs.pop("chunks", [{"hash": "h", "fingerprints": []}]),
         fragment_type=fragment_type,
         prediction=kwargs.pop(
             "prediction",
@@ -548,13 +548,31 @@ def today() -> str:
     return datetime.now(UTC).strftime("%Y-%m-%d")
 
 
-def test_merge_moves_every_occurrence_of_the_ad_to_the_target_and_makes_it_obsolete(
+FP = {
+    "duration_sec": 2.0,
+    "energy_mean": 1.0,
+    "spectral_centroid": 1.0,
+    "zcr_mean": 1.0,
+}
+MAIN_CHUNK = {"hash": "h", "fingerprints": [FP]}
+TWIN_CHUNKS = [
+    # the same as main: not copied
+    {"hash": "h", "fingerprints": [FP]},
+    # another recording of the spot
+    {"hash": "h", "fingerprints": [{**FP, "energy_mean": 2.0}]},
+    # another fingerprinter configuration
+    {"hash": "other-config", "fingerprints": [FP, FP]},
+    {"hash": "h", "fingerprints": []},
+]
+
+
+def test_merge_moves_every_occurrence_of_the_ad_to_the_target_and_soft_deletes_it(
     engine,
 ):
     insert(
         engine,
-        make_ad("twin"),
-        make_ad("main"),
+        make_ad("twin", chunks=TWIN_CHUNKS),
+        make_ad("main", chunks=[MAIN_CHUNK]),
         make_occ("o1", "twin", 0),
         make_occ("o2", "twin", 600, channel="france2"),
         make_occ("o3", "main", 1200),
@@ -581,9 +599,9 @@ def test_merge_moves_every_occurrence_of_the_ad_to_the_target_and_makes_it_obsol
     live = live_occurrences_by_ad(engine)
     assert set(live.values()) == {"main"}
     assert len(live) == 3 and "o3" in live
-    # the obsolete ad, its old occurrences and its screenshot stay, for the history
+    # the soft deleted ad, its old occurrences and its screenshot stay, for the history
     twin = get_ad(engine, "twin")
-    assert twin.obsolete_at is not None
+    assert twin.deleted_at is not None
     assert twin.replaced_by_ad_id == "main"
     assert twin.prediction[-1]["stage"] == "manual_fusion"
     assert twin.prediction[-1]["replaced_by"] == "main"
@@ -593,7 +611,15 @@ def test_merge_moves_every_occurrence_of_the_ad_to_the_target_and_makes_it_obsol
         "tab": "fusion",
         "row": 2,
     }
-    assert get_ad(engine, "main").obsolete_at is None
+    main = get_ad(engine, "main")
+    assert main.deleted_at is None
+    # the fingerprints of twin not in main yet, the empty entry left
+    assert main.chunks == [
+        MAIN_CHUNK,
+        {**TWIN_CHUNKS[1], "from_ad_id": "twin"},
+        {**TWIN_CHUNKS[2], "from_ad_id": "twin"},
+    ]
+    assert twin.prediction[-1]["nb_fingerprint_entries_copied"] == 2
     with Session(engine) as session:
         old = session.scalars(
             select(Ad_Occurrence).where(Ad_Occurrence.ad_id == "twin")
@@ -603,7 +629,7 @@ def test_merge_moves_every_occurrence_of_the_ad_to_the_target_and_makes_it_obsol
         assert session.get(Ad_Screenshot, ("ad", "twin")) is not None
     assert sheet.column("fusion", "nb_occurrences_deplacees") == ["2", ""]
     assert sheet.column("fusion", "message") == [
-        "2 occurrences déplacées, ad devenue obsolète",
+        "2 occurrences déplacées, 2 empreintes copiées, ad supprimée (deleted_at)",
         "ad_id et target_ad_id identiques : rien à faire",
     ]
     assert all(sheet.column("fusion", "traite_le"))
@@ -655,14 +681,19 @@ def test_merge_errors_and_warnings(engine):
         "target_ad_id vide",
         "ad inconnue inconnue",
         "ad cible inconnue inconnue",
-        "0 occurrences déplacées, ad devenue obsolète",
+        "0 occurrences déplacées, 0 empreintes copiées, ad supprimée (deleted_at)",
     ]
     assert (
         "durée de l'ad (5s) différente de celle de l'ad d'origine (20s)" in messages[4]
     )
-    assert messages[5] == f"ad cible obsolète depuis le {today()}, fusionnée dans c"
-    assert messages[6].endswith("1 occurrences déplacées, ad devenue obsolète")
-    assert messages[7] == f"ad obsolète depuis le {today()}, fusionnée dans c"
+    assert messages[5] == f"ad cible supprimée le {today()}, fusionnée dans c"
+    assert "empreintes non copiées : durées des deux ads différentes (20s et 5s)" in (
+        messages[4]
+    )
+    assert messages[6].endswith(
+        "1 occurrences déplacées, 0 empreintes copiées, ad supprimée (deleted_at)"
+    )
+    assert messages[7] == f"ad supprimée le {today()}, fusionnée dans c"
     assert (
         messages[8]
         == messages[9]
@@ -673,14 +704,14 @@ def test_merge_errors_and_warnings(engine):
     assert set(live_occurrences_by_ad(engine).values()) == {"c"}
     with Session(engine) as session:
         assert sorted(
-            session.scalars(select(Ad.id).where(Ad.obsolete_at.is_not(None)))
+            session.scalars(select(Ad.id).where(Ad.deleted_at.is_not(None)))
         ) == ["a", "b", "empty"]
 
 
-def test_obsolete_ad_cannot_be_corrected_nor_receive_occurrences(engine):
+def test_deleted_ad_cannot_be_corrected_nor_receive_occurrences(engine):
     insert(
         engine,
-        make_ad("old", obsolete_at=T0, replaced_by_ad_id="main"),
+        make_ad("old", deleted_at=T0, replaced_by_ad_id="main"),
         make_ad("main"),
         make_occ("o1", "main", 0),
     )
@@ -691,7 +722,7 @@ def test_obsolete_ad_cannot_be_corrected_nor_receive_occurrences(engine):
         }
     )
     assert run(engine, sheet) == {"erreur": 2}
-    message = f"ad obsolète depuis le {T0:%Y-%m-%d}, fusionnée dans main"
+    message = f"ad supprimée le {T0:%Y-%m-%d}, fusionnée dans main"
     assert sheet.column("correction_ads", "message") == [message]
     assert sheet.column("reattribution", "message") == [message]
     assert get_ad(engine, "old").predicted_brand == "Pytest"
@@ -702,7 +733,7 @@ def test_merge_dry_run_writes_nothing(engine):
     sheet = MemorySheet({"fusion": [["ad_id", "target_ad_id"], ["twin", "main"]]})
     assert run(engine, sheet, dry_run=True) == {"appliqué": 1}
     assert live_occurrences_by_ad(engine) == {"o1": "twin"}
-    assert get_ad(engine, "twin").obsolete_at is None
+    assert get_ad(engine, "twin").deleted_at is None
     assert sheet.grid["fusion"][1] == ["twin", "main"]
 
 

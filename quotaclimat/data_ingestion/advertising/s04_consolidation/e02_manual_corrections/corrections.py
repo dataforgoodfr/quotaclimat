@@ -5,7 +5,7 @@
 - create_ad_from_occurrences: a new ad for occurrences attributed to the wrong ad;
 - reattribute_occurrence: an occurrence attributed to the wrong ad, moved to an existing ad;
 - merge_ad_into: every occurrence of an ad moved to another existing ad (the same spot stored twice), the
-  ad becoming obsolete (kept, but left out of every step).
+  ad being soft deleted (deleted_at: kept, but left out of every step).
 
 Each one returns an Outcome: the result and the messages written in the row of the spreadsheet. An error
 changes nothing, a warning (inconsistency with the reference data) does not stop the correction.
@@ -46,7 +46,7 @@ RESULT_ERROR = "erreur"
 MANUAL_METHOD = "manual"
 # entry of advertising.ad.prediction keeping the values before the correction
 MANUAL_STAGE = "manual_correction"
-# entry of advertising.ad.prediction of an ad merged by hand into another (obsolete)
+# entry of advertising.ad.prediction of an ad merged by hand into another (soft deleted)
 MANUAL_FUSION_STAGE = "manual_fusion"
 CONTENT_TYPES = get_args(ContentType)
 # input status of the dictionary stage (s03_classification/pipeline/e03_dict_match.py)
@@ -197,8 +197,8 @@ def correct_ad(
     ad = session.get(Ad, ad_id)
     if ad is None:
         return Outcome.error(f"ad {ad_id} inconnue"), None
-    if obsolete_error(ad):
-        return Outcome.error(obsolete_error(ad)), None
+    if deleted_error(ad):
+        return Outcome.error(deleted_error(ad)), None
     if not correction.content_type and ad.fragment_type not in CONTENT_TYPES:
         # not classified yet (fragment_type of the detection: advertising, jingle, no_data)
         return (
@@ -436,8 +436,8 @@ def reattribute_occurrence(
     ad = session.get(Ad, ad_id)
     if ad is None:
         return Outcome.error(f"ad {ad_id} inconnue"), None
-    if obsolete_error(ad):
-        return Outcome.error(obsolete_error(ad)), None
+    if deleted_error(ad):
+        return Outcome.error(deleted_error(ad)), None
     occurrence = session.get(Ad_Occurrence, occurrence_id)
     if occurrence is None:
         return Outcome.error(f"occurrence {occurrence_id} inconnue"), None
@@ -456,11 +456,41 @@ def reattribute_occurrence(
     return outcome, new_id
 
 
-def obsolete_error(ad: Ad, role: str = "ad") -> str | None:
-    """Error message for an obsolete ad (merged by hand into another), None for a live ad."""
-    if ad.obsolete_at is None:
+def deleted_error(ad: Ad, role: str = "ad") -> str | None:
+    """Error message for a soft deleted ad (merged by hand into another), None for a live ad."""
+    if ad.deleted_at is None:
         return None
-    return f"{role} obsolète depuis le {ad.obsolete_at:%Y-%m-%d}, fusionnée dans {ad.replaced_by_ad_id}"
+    return f"{role} supprimée le {ad.deleted_at:%Y-%m-%d}, fusionnée dans {ad.replaced_by_ad_id}"
+
+
+def copy_fingerprints(source_ad: Ad, target_ad: Ad, outcome: Outcome) -> int:
+    """Copy the chunk entries (fingerprints) of source_ad to target_ad, so that the detection matches the spot
+    with both: another fingerprinter configuration (hash), or the same one on a slightly different recording.
+    Each copied entry keeps its hash and fingerprints, with "from_ad_id". An entry already in the target and an
+    entry without fingerprints are left. Not done when the durations differ by more than
+    MAX_DURATION_SPREAD_SEC (warning): the detection gives a matched broadcast the duration of the ad, the
+    fingerprints of another duration would cut it wrong. Returns the number of entries copied.
+    """
+    if abs(source_ad.duration_sec - target_ad.duration_sec) > MAX_DURATION_SPREAD_SEC:
+        outcome.warn(
+            "empreintes non copiées : durées des deux ads différentes"
+            f" ({source_ad.duration_sec:g}s et {target_ad.duration_sec:g}s)"
+        )
+        return 0
+    chunks = list(target_ad.chunks or [])
+    known = [(e.get("hash"), e.get("fingerprints")) for e in chunks]
+    copied = 0
+    for entry in source_ad.chunks or []:
+        if not entry.get("fingerprints"):
+            continue
+        if (entry.get("hash"), entry.get("fingerprints")) in known:
+            continue
+        chunks.append({**entry, "from_ad_id": source_ad.id})
+        known.append((entry.get("hash"), entry.get("fingerprints")))
+        copied += 1
+    if copied:
+        target_ad.chunks = chunks
+    return copied
 
 
 def merge_ad_into(
@@ -471,11 +501,13 @@ def merge_ad_into(
 
     1. Every live occurrence of ad_id is moved to target_ad_id like a reattribution: replaced by an occurrence
        of the target ad (id of the detection formula), the old one soft deleted.
-    2. The ad ad_id becomes obsolete: obsolete_at and replaced_by_ad_id are set, and an entry
+    2. Its fingerprints (chunk entries) are copied to target_ad_id (copy_fingerprints): the detection matches the
+       spot with both.
+    3. The ad ad_id is soft deleted: deleted_at and replaced_by_ad_id are set, and an entry
        {"stage": "manual_fusion", ...} is added to its prediction. It stays in the database with its old
        occurrences (history), but every step leaves it out: the detection no longer matches its fingerprints.
 
-    The same id in both columns changes nothing (applied). Errors: empty target, unknown or obsolete ad, an ad of
+    The same id in both columns changes nothing (applied). Errors: empty target, unknown or deleted ad, an ad of
     a merge of split pieces (advertising.ad_merge, redone on its pieces after a reprocessing of the detection).
     Warnings: the warnings of a reattribution. Returns the outcome and the number of occurrences moved.
     """
@@ -491,7 +523,7 @@ def merge_ad_into(
     target_ad = session.get(Ad, target_ad_id)
     if target_ad is None:
         return Outcome.error(f"ad cible {target_ad_id} inconnue"), 0
-    error = obsolete_error(source_ad) or obsolete_error(target_ad, "ad cible")
+    error = deleted_error(source_ad) or deleted_error(target_ad, "ad cible")
     if error:
         return Outcome.error(error), 0
     in_merge = session.scalar(
@@ -521,8 +553,9 @@ def merge_ad_into(
     if occurrences:
         _target_warnings(outcome, source_ad, target_ad)
         move_occurrences(session, target_ad_id, occurrences)
+    nb_copied = copy_fingerprints(source_ad, target_ad, outcome)
     now = _utcnow()
-    source_ad.obsolete_at = now
+    source_ad.deleted_at = now
     source_ad.replaced_by_ad_id = target_ad_id
     source_ad.prediction = list(source_ad.prediction or []) + [
         {
@@ -531,10 +564,12 @@ def merge_ad_into(
             "source": source,
             "replaced_by": target_ad_id,
             "nb_occurrences": len(occurrences),
+            "nb_fingerprint_entries_copied": nb_copied,
         }
     ]
     session.flush()
     outcome.messages.append(
-        f"{len(occurrences)} occurrences déplacées, ad devenue obsolète"
+        f"{len(occurrences)} occurrences déplacées, {nb_copied} empreintes copiées,"
+        " ad supprimée (deleted_at)"
     )
     return outcome, len(occurrences)

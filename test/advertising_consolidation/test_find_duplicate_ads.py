@@ -181,8 +181,43 @@ def test_group_rows_one_row_per_ad():
     assert rows["c"]["best_match_ad_id"] == "b" and rows["c"]["best_shared_keys"] == 12
 
 
+def test_multibrand_columns_only_for_other_brands():
+    a, b, c, d = (ad_print(x, []) for x in "abcd")
+    b.meta["brand"] = "Peugeot"  # a, c: Renault, d: no brand
+    d.meta["brand"] = None
+    pairs = [
+        fd.DuplicatePair(a, b, 10, 0.9, 0.8, True),
+        fd.DuplicatePair(a, c, 12, 0.95, 0.9, True),
+        fd.DuplicatePair(c, d, 11, 0.7, 0.7, False),
+    ]
+    rows = {row["ad_id"]: row for row in fd.group_rows(pairs)}
+    assert all(row["is_multibrand_group"] for row in rows.values())
+    assert rows["a"]["group_brands"] == "Peugeot | Renault"
+    # a: its best match is c (Renault), but only b is another brand
+    assert rows["a"]["best_match_ad_id"] == "c"
+    assert rows["a"]["nb_matches_other_brand"] == 1
+    assert rows["a"]["other_brand_match_ad_id"] == "b"
+    assert rows["a"]["other_brand_matches"] == "b(Peugeot):0.9"
+    assert rows["b"]["other_brand_match_brand"] == "Renault"
+    # c: linked to Peugeot only through a, d: no brand
+    assert rows["c"]["nb_matches_other_brand"] == 0
+    assert rows["c"]["other_brand_match_ad_id"] is None
+    assert rows["d"]["nb_matches_other_brand"] == 0
+
+
+def test_sql_literal():
+    assert fd._sql_literal(True) == "true"
+    assert fd._sql_literal(None) == "NULL"
+    assert fd._sql_literal("l'ad") == "'l''ad'"
+    assert fd._sql_literal(0.5) == "0.5"
+
+
 def test_metabase_query_path():
     assert fd.metabase_query_path("out/dups.csv") == "out/dups_metabase.txt"
+    assert (
+        fd.metabase_query_path("out/dups.csv", "metabase_multimarques")
+        == "out/dups_metabase_multimarques.txt"
+    )
 
 
 def test_connected_groups():
@@ -331,3 +366,28 @@ def test_run_on_database(connection, tmp_path):
     )
     # without any duplicate, the query still runs
     assert connection.execute(text(fd.metabase_query([], "b"))).all() == []
+
+    # groups with several brands: none here (Renault twice)
+    assert not any(row["is_multibrand_group"] for row in rows)
+    assert connection.execute(text(fd.metabase_multibrand_query(rows, "b"))).all() == []
+    # the same pair with another brand on dup-2
+    pairs[0].ad_b.meta["brand"] = "Peugeot"
+    rows = fd.group_rows(pairs)
+    result = (
+        # raw SQL, as Metabase runs it (text() would read ":0" of "matches" as a parameter)
+        connection.exec_driver_sql(
+            fd.metabase_multibrand_query(rows, "advertising-detection")
+        )
+        .mappings()
+        .all()
+    )
+    assert [(r["ad_id"], r["match_id"], r["marque_match"]) for r in result] == [
+        ("dup-1", "dup-2", "Peugeot"),
+        ("dup-2", "dup-1", "Renault"),
+    ]
+    assert result[0]["marques_groupe"] == "Peugeot | Renault"
+    assert result[0]["mosaique"] == "https://bucket/screenshots/ads/dup-1.jpg"
+    assert result[1]["mosaique_match"] == "https://bucket/screenshots/ads/dup-1.jpg"
+    assert result[0]["match_score_min"] > 0.9
+    assert result[0]["match_acoustique_compatible"] is True
+    assert result[1]["lien_sauvegarde_match"].endswith("/files/ads/dup-1/")

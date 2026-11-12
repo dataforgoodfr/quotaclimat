@@ -13,8 +13,16 @@ Env vars:
 - CURSOR_BATCH_SIZE: number of ads read and committed per batch (default 500).
 - AUDIO_WORKERS: number of processes computing the fingerprints (default: CPUs of the
   Scaleway job, from SCW_SLS_CPU, minus one, at least 1).
-- DOWNLOAD_CONCURRENCY: number of audio files downloaded at once (default 16). Each batch
-  downloads its audio files concurrently and computes them in the worker processes.
+- DOWNLOAD_CONCURRENCY: number of ads downloaded or being computed at once (default 16), which
+  also caps the audio files waiting on disk (the disk of a Scaleway job counts in its memory).
+- WORKER_MAX_TASKS: number of ads a worker process computes before being replaced by a new one
+  (default 1000), so that the memory a worker keeps does not grow during the whole run.
+
+One ad must not stop the run: an ad that cannot be downloaded or decoded, or whose computation
+kills its worker process (e.g. out of memory), is counted, logged, and listed in the summary of
+the failures logged at the end of the run. When a worker dies, the pool of processes is
+restarted, and the ads that were computing in it are retried one at a time: an ad that kills its
+worker again on its own is counted as `worker_crashed`.
 """
 
 import asyncio
@@ -23,6 +31,7 @@ import multiprocessing
 import os
 import tempfile
 from concurrent.futures import ProcessPoolExecutor
+from concurrent.futures.process import BrokenProcessPool
 from datetime import datetime
 
 import s3fs
@@ -60,6 +69,9 @@ MAX_ADS = _env_int("MAX_ADS")
 # Downloads wait on S3 far more than on the CPU (the fingerprints of a 5s ad take ~25ms):
 # many of them run at once whatever the number of workers
 DOWNLOAD_CONCURRENCY = _env_int("DOWNLOAD_CONCURRENCY") or 16
+WORKER_MAX_TASKS = _env_int("WORKER_MAX_TASKS") or 1000
+# Ad ids listed per failure status in the summary logged at the end of the run
+FAILURES_LOGGED_PER_STATUS = 200
 MERGES_BATCH_SIZE = 500
 # Marks the chunk entry of a merged ad built by concatenating the entries of its source ads
 FROM_SOURCES_KEY = "from_sources"
@@ -163,7 +175,8 @@ def ads_to_process_query(
     fingerprint_hash: str, clean_other_chunks: bool, limit: int | None
 ):
     """Ads to process, the most broadcast first, then by id for a stable order. An ad counts its
-    own occurrences (not deleted) plus those of the active merged ads it is a source of."""
+    own occurrences (not deleted) plus those of the active merged ads it is a source of.
+    """
     own = _live_occurrences()
     through_merges = _occurrences_through_merges(own)
     priority = func.coalesce(own.c.nb, 0) + func.coalesce(through_merges.c.nb, 0)
@@ -359,39 +372,141 @@ def number_of_workers() -> int:
     return max(1, (mvcpu or 0) // 1000 - 1)
 
 
+class WorkerPool:
+    """Pool of the processes computing the fingerprints, restarted when one of them dies (the
+    kernel kills a worker that exceeds the memory of the job: the whole ProcessPoolExecutor is
+    then broken, and every computation running or waiting in it fails)."""
+
+    def __init__(
+        self,
+        workers: int,
+        compute=None,
+        mp_context: str = "spawn",
+        max_tasks_per_child: int | None = WORKER_MAX_TASKS,
+    ):
+        self.workers = workers
+        self.compute = compute or compute_fingerprints
+        self.mp_context = mp_context
+        self.max_tasks_per_child = max_tasks_per_child
+        self.restarts = 0
+        self.executor = self._new_executor()
+
+    def _new_executor(self) -> ProcessPoolExecutor:
+        # spawn rather than fork: s3fs runs its own event loop thread in this process
+        return ProcessPoolExecutor(
+            max_workers=self.workers,
+            mp_context=multiprocessing.get_context(self.mp_context),
+            max_tasks_per_child=self.max_tasks_per_child,
+        )
+
+    async def run(self, *args):
+        """Result of compute(*args) in a worker. Raises BrokenProcessPool when the pool breaks,
+        after replacing it, so that the next computations go to a new pool."""
+        executor = self.executor
+        try:
+            return await asyncio.get_running_loop().run_in_executor(
+                executor, self.compute, *args
+            )
+        except BrokenProcessPool:
+            self._restart(executor)
+            raise
+
+    def _restart(self, broken: ProcessPoolExecutor):
+        # every computation of the broken pool fails: only the first one restarts it
+        if broken is not self.executor:
+            return
+        self.restarts += 1
+        logger.warning(
+            f"A worker process died (out of memory?): restarting the pool of "
+            f"{self.workers} workers (restart #{self.restarts})"
+        )
+        broken.shutdown(wait=False, cancel_futures=True)
+        self.executor = self._new_executor()
+
+    def shutdown(self):
+        self.executor.shutdown(wait=True)
+
+
 async def _download_and_compute(
     ad: Ad,
     fs: s3fs.S3FileSystem,
     dest_dir: str,
-    executor: ProcessPoolExecutor,
-    downloads: asyncio.Semaphore,
-) -> tuple[str, list[dict] | None]:
-    """("download_failed", None), ("decode_failed", None) or ("ok", fingerprints)."""
-    async with downloads:
-        audio_file_path = await _download_audio_file(fs, ad.id, dest_dir)
-    if audio_file_path is None:
-        return "download_failed", None
-    try:
-        fingerprints, error = await asyncio.get_running_loop().run_in_executor(
-            executor,
-            compute_fingerprints,
-            audio_file_path,
-            ad.first_detection_date,
-            ad.duration_sec,
-        )
-    finally:
-        os.remove(audio_file_path)
+    pool: WorkerPool,
+    in_flight: asyncio.Semaphore,
+) -> tuple[str, list[dict] | None, str | None]:
+    """(status, fingerprints, error): ("ok", fingerprints, None), or (status, None, error) with
+    status "download_failed", "decode_failed", "worker_crashed" (the pool broke while the ad was
+    computing in it: to retry) or "error" (anything else). Never raises, so that one ad does not
+    stop the run. The slot is held until the computation ends: the files downloaded and waiting
+    for a worker stay few."""
+    async with in_flight:
+        audio_file_path = None
+        try:
+            audio_file_path = await _download_audio_file(fs, ad.id, dest_dir)
+            if audio_file_path is None:
+                return "download_failed", None, "download failed"
+            fingerprints, error = await pool.run(
+                audio_file_path, ad.first_detection_date, ad.duration_sec
+            )
+        except BrokenProcessPool as e:
+            return "worker_crashed", None, repr(e)
+        except Exception as e:
+            logger.exception(f"Error processing ad {ad.id}")
+            return "error", None, repr(e)
+        finally:
+            if audio_file_path is not None and os.path.exists(audio_file_path):
+                os.remove(audio_file_path)
     if error is not None:
         logger.error(f"Error computing the fingerprints of ad {ad.id}: {error}")
-        return "decode_failed", None
-    return "ok", fingerprints
+        return "decode_failed", None, error
+    return "ok", fingerprints, None
+
+
+async def compute_batch(
+    ads: list[Ad],
+    fs: s3fs.S3FileSystem,
+    dest_dir: str,
+    pool: WorkerPool,
+    in_flight: asyncio.Semaphore,
+) -> list[tuple[str, list[dict] | None, str | None]]:
+    """Results of _download_and_compute for each ad, in order. The ads that were computing in a
+    pool that broke are retried one at a time, so that an ad that kills its worker on its own is
+    told apart from the ones that only shared the pool with it."""
+    results = await asyncio.gather(
+        *(_download_and_compute(ad, fs, dest_dir, pool, in_flight) for ad in ads)
+    )
+    for i, (ad, (status, _, _)) in enumerate(zip(ads, results)):
+        if status == "worker_crashed":
+            results[i] = await _download_and_compute(ad, fs, dest_dir, pool, in_flight)
+            if results[i][0] == "worker_crashed":
+                logger.error(
+                    f"Ad {ad.id} killed its worker process on its own (out of memory?): "
+                    f"skipped"
+                )
+    return results
+
+
+def log_failures(failures: dict[str, list[tuple[str, str | None]]]):
+    """Summary of the ads that failed in the run, by status, with their ids and errors."""
+    if not any(failures.values()):
+        logger.info("Recompute saved chunks: no ad failed")
+        return
+    lines = []
+    for status, ads in failures.items():
+        if not ads:
+            continue
+        lines.append(f"{status}: {len(ads)} ads")
+        for ad_id, error in ads[:FAILURES_LOGGED_PER_STATUS]:
+            lines.append(f"  {ad_id}: {error}")
+        if len(ads) > FAILURES_LOGGED_PER_STATUS:
+            lines.append(f"  ... and {len(ads) - FAILURES_LOGGED_PER_STATUS} more")
+    logger.error("Recompute saved chunks failures:\n" + "\n".join(lines))
 
 
 async def run():
-    fingerprint_hash = fingerprinter.params_hash()
     fs = get_s3_filesystem()
     workers = number_of_workers()
-    downloads = asyncio.Semaphore(DOWNLOAD_CONCURRENCY)
+    in_flight = asyncio.Semaphore(DOWNLOAD_CONCURRENCY)
 
     counters = {
         "ads_seen": 0,
@@ -399,105 +514,116 @@ async def run():
         "cleaned_other_chunks": 0,
         "download_failed": 0,
         "decode_failed": 0,
+        "worker_crashed": 0,
+        "error": 0,
         "chunk_computed": 0,
     }
+    failures = {
+        "download_failed": [],
+        "decode_failed": [],
+        "worker_crashed": [],
+        "error": [],
+    }
+    pool = WorkerPool(workers)
 
-    with (
-        get_db_session() as read_session,
-        get_db_session() as write_session,
-        # spawn rather than fork: s3fs runs its own event loop thread in this process
-        ProcessPoolExecutor(
-            max_workers=workers, mp_context=multiprocessing.get_context("spawn")
-        ) as executor,
-    ):
-        counts = count_ads(read_session, fingerprint_hash, CLEAN_OTHER_CHUNKS)
-        taken = (
-            counts["to_process"]
-            if MAX_ADS is None
-            else min(MAX_ADS, counts["to_process"])
-        )
-        logger.info(
-            f"Recompute saved chunks with fingerprint hash {fingerprint_hash}: "
-            f"{counts['total']} ads in total, "
-            f"{counts['already_had_chunk']} already have a chunk with this hash, "
-            f"{counts['no_data']} skipped as fragment_type no_data (no media), "
-            f"{counts['merged']} merged ads not downloaded "
-            f"({counts['merges_to_concatenate']} active merges to concatenate at the end), "
-            f"{counts['to_process']} to process"
-            + (
-                " (including ads to clean, CLEAN_OTHER_CHUNKS)"
-                if CLEAN_OTHER_CHUNKS
-                else ""
+    try:
+        with get_db_session() as read_session, get_db_session() as write_session:
+            await _run_batches(
+                read_session, write_session, fs, pool, in_flight, counters, failures
             )
-            + f", {taken} taken in this run "
-            + (f"(MAX_ADS={MAX_ADS})" if MAX_ADS is not None else "(no MAX_ADS)")
-            + f", most occurrences first (with those of their merges), {workers} workers, "
-            f"{DOWNLOAD_CONCURRENCY} concurrent downloads"
+    finally:
+        pool.shutdown()
+        counters["pool_restarts"] = pool.restarts
+        log_failures(failures)
+        logger.info(f"Recompute saved chunks finished: {counters}")
+
+
+async def _run_batches(
+    read_session, write_session, fs, pool, in_flight, counters, failures
+):
+    fingerprint_hash = fingerprinter.params_hash()
+    workers = pool.workers
+    counts = count_ads(read_session, fingerprint_hash, CLEAN_OTHER_CHUNKS)
+    taken = (
+        counts["to_process"] if MAX_ADS is None else min(MAX_ADS, counts["to_process"])
+    )
+    logger.info(
+        f"Recompute saved chunks with fingerprint hash {fingerprint_hash}: "
+        f"{counts['total']} ads in total, "
+        f"{counts['already_had_chunk']} already have a chunk with this hash, "
+        f"{counts['no_data']} skipped as fragment_type no_data (no media), "
+        f"{counts['merged']} merged ads not downloaded "
+        f"({counts['merges_to_concatenate']} active merges to concatenate at the end), "
+        f"{counts['to_process']} to process"
+        + (
+            " (including ads to clean, CLEAN_OTHER_CHUNKS)"
+            if CLEAN_OTHER_CHUNKS
+            else ""
         )
+        + f", {taken} taken in this run "
+        + (f"(MAX_ADS={MAX_ADS})" if MAX_ADS is not None else "(no MAX_ADS)")
+        + f", most occurrences first (with those of their merges), {workers} workers, "
+        f"{DOWNLOAD_CONCURRENCY} concurrent downloads"
+    )
 
-        query = ads_to_process_query(fingerprint_hash, CLEAN_OTHER_CHUNKS, MAX_ADS)
-        for ads in read_session.scalars(
-            query.execution_options(yield_per=CURSOR_BATCH_SIZE)
-        ).partitions():
-            to_compute = []
-            for ad in ads:
-                counters["ads_seen"] += 1
-                # every entry of the current hash: the one of the ad, and the ones copied from the ads
-                # merged into it by hand (s04_consolidation/e02_manual_corrections, fusion)
-                current_entries = [
-                    chunk
-                    for chunk in ad.chunks
-                    if chunk.get("hash") == fingerprint_hash
-                ]
-                if not current_entries:
-                    to_compute.append(ad)
-                    continue
-                counters["already_had_chunk"] += 1
-                if CLEAN_OTHER_CHUNKS and len(current_entries) < len(ad.chunks):
-                    counters["cleaned_other_chunks"] += 1
-                    write_session.execute(
-                        update(Ad).where(Ad.id == ad.id).values(chunks=current_entries)
-                    )
-
-            with tempfile.TemporaryDirectory() as dest_dir:
-                results = await asyncio.gather(
-                    *(
-                        _download_and_compute(ad, fs, dest_dir, executor, downloads)
-                        for ad in to_compute
-                    )
-                )
-
-            for ad, (status, fingerprints) in zip(to_compute, results):
-                if status != "ok":
-                    counters[status] += 1
-                    continue
-                counters["chunk_computed"] += 1
-                new_chunk_entry = {
-                    "hash": fingerprint_hash,
-                    "fingerprints": fingerprints,
-                }
+    query = ads_to_process_query(fingerprint_hash, CLEAN_OTHER_CHUNKS, MAX_ADS)
+    for ads in read_session.scalars(
+        query.execution_options(yield_per=CURSOR_BATCH_SIZE)
+    ).partitions():
+        to_compute = []
+        for ad in ads:
+            counters["ads_seen"] += 1
+            # every entry of the current hash: the one of the ad, and the ones copied from the ads
+            # merged into it by hand (s04_consolidation/e02_manual_corrections, fusion)
+            current_entries = [
+                chunk for chunk in ad.chunks if chunk.get("hash") == fingerprint_hash
+            ]
+            if not current_entries:
+                to_compute.append(ad)
+                continue
+            counters["already_had_chunk"] += 1
+            if CLEAN_OTHER_CHUNKS and len(current_entries) < len(ad.chunks):
+                counters["cleaned_other_chunks"] += 1
                 write_session.execute(
-                    update(Ad)
-                    .where(Ad.id == ad.id)
-                    .values(
-                        chunks=(
-                            [new_chunk_entry]
-                            if CLEAN_OTHER_CHUNKS or len(ad.chunks) == 0
-                            else [*ad.chunks, new_chunk_entry]
-                        )
-                    )
+                    update(Ad).where(Ad.id == ad.id).values(chunks=current_entries)
                 )
 
-            write_session.commit()
-            logger.info(f"Recompute saved chunks progress: {counters} / {taken}")
+        with tempfile.TemporaryDirectory() as dest_dir:
+            results = await compute_batch(to_compute, fs, dest_dir, pool, in_flight)
 
-        counters.update(
-            concatenate_merges(
-                read_session, write_session, fingerprint_hash, CLEAN_OTHER_CHUNKS
+        for ad, (status, fingerprints, error) in zip(to_compute, results):
+            if status != "ok":
+                counters[status] += 1
+                failures[status].append((ad.id, error))
+                continue
+            counters["chunk_computed"] += 1
+            new_chunk_entry = {
+                "hash": fingerprint_hash,
+                "fingerprints": fingerprints,
+            }
+            write_session.execute(
+                update(Ad)
+                .where(Ad.id == ad.id)
+                .values(
+                    chunks=(
+                        [new_chunk_entry]
+                        if CLEAN_OTHER_CHUNKS or len(ad.chunks) == 0
+                        else [*ad.chunks, new_chunk_entry]
+                    )
+                )
             )
+
+        write_session.commit()
+        logger.info(
+            f"Recompute saved chunks progress: {counters} / {taken}, "
+            f"{pool.restarts} pool restarts"
         )
 
-    logger.info(f"Recompute saved chunks finished: {counters}")
+    counters.update(
+        concatenate_merges(
+            read_session, write_session, fingerprint_hash, CLEAN_OTHER_CHUNKS
+        )
+    )
 
 
 if __name__ == "__main__":

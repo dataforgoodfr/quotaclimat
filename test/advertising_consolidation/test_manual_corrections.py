@@ -554,6 +554,29 @@ def test_fully_processed_tabs_are_archived(engine):
     assert sheet.tabs() == ["dechets_mai", "fusion", "autre"]
 
 
+def test_row_deleted_during_the_run_writes_nothing_nor_commits(engine):
+    insert(
+        engine,
+        make_ad("a1"),
+        make_occ("o1", "a1", 0),
+        make_occ("o2", "a1", 10),
+    )
+    sheet = MemorySheet({"dechets": [["occurrence_id"], ["o1"], ["o2"]]})
+    read = sheet.read
+
+    def read_then_delete_a_row(tab):
+        result = read(tab)
+        sheet.grid["dechets"] = [["occurrence_id"], ["o1"]]  # a human deletes o2
+        return result
+
+    sheet.read = read_then_delete_a_row
+    assert run(engine, sheet) == {}
+    assert sheet.grid == {"dechets": [["occurrence_id"], ["o1"]]}
+    with Session(engine) as session:
+        assert session.get(Ad_Occurrence, "o1").deleted_at is None
+        assert session.get(Ad_Occurrence, "o2").deleted_at is None
+
+
 def test_tab_with_rows_left_to_process_is_not_archived(engine):
     insert(engine, make_ad("a1"), make_occ("o1", "a1", 0))
     sheet = MemorySheet({"dechets": [["occurrence_id"], ["o1"]]})

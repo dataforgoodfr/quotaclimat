@@ -381,8 +381,7 @@ def process_tab(
     written = sheet.write_rows(tab, key_column, updates)
     session.commit()
     logging.info("Tab %s: %s, %s rows written", tab, dict(results), written)
-    # a row not found again is processed by the next run: the tab stays
-    return results, written == len(updates)
+    return results, True
 
 
 def run(

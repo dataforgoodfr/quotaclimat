@@ -229,8 +229,9 @@ class CorrectionsSheet:
         """Write the values of the job in the rows of the tab, adding the missing columns after the last one.
 
         The tab is read again first: a row moved by a human since the first read (sorted, inserted above) is
-        found again by its key (first row with this key whose columns of the job are empty). A row not found
-        is logged and left: it is processed again by the next run. Returns the number of rows written.
+        found again by its key (first row with this key whose columns of the job are empty). When a row is not
+        found (deleted, its key changed), nothing is written and an error is raised: the database is not
+        committed either, so the sheet always says what the database holds. Returns the number of rows written.
         """
         if not updates:
             return 0
@@ -248,6 +249,7 @@ class CorrectionsSheet:
 
         rows_by_number = {row.number: row for row in rows}
         taken = set()
+        missing = []
         written = 0
         for row, values in updates:
             key = row.values.get(key_column, "")
@@ -264,13 +266,7 @@ class CorrectionsSheet:
                     None,
                 )
                 if current is None:
-                    logging.error(
-                        "Tab %s: row %s (%s=%s) not found any more, not written",
-                        tab,
-                        row.number,
-                        key_column,
-                        key,
-                    )
+                    missing.append(f"row {row.number} ({key_column}={key})")
                     continue
             taken.add(current.number)
             cells.extend(
@@ -278,5 +274,9 @@ class CorrectionsSheet:
                 for column, value in values.items()
             )
             written += 1
+        if missing:
+            raise RuntimeError(
+                f"Tab {tab}: rows not found any more, nothing written: {', '.join(missing)}"
+            )
         self._write_cells(tab, cells)
         return written

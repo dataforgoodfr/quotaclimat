@@ -167,7 +167,9 @@ are skipped. To process a row again (after fixing it), empty its `traite_le`. `r
 
 The sheet is written before the database is committed: when it cannot be written, nothing is changed and the
 rows are processed again by the next run. A row moved by a human during the run (sorted, inserted above) is
-found again by its `ad_id` / `occurrence_id`.
+found again by its `ad_id` / `occurrence_id`. A row deleted (or whose id was changed) during the run makes the
+whole tab fail: nothing is written to the sheet nor committed, the tab is processed again by the next run. The
+sheet always says what the database holds.
 
 A tab whose rows all have a `traite_le` after the run (errors included) is archived: the job renames it with a
 `_` in front (`dechets_mai` -> `_dechets_mai`), so the next runs do not read it again. A tab without any row yet

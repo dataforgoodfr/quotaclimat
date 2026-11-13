@@ -11,6 +11,8 @@ Equivalent to:
     AND s.n_keywords = :n_keywords
     AND s.start >= :start_date
     AND s.start < :end_date
+    ORDER BY s.start
+    LIMIT :max_segments
 
 Output columns: id, channel_name, datetime, plaintext, url
 (segment_id, channel_name, start, recovered text, url_mediatree).
@@ -19,6 +21,7 @@ Usage:
     poetry run python -m rrs.keyword_detection.export_segments
     poetry run python -m rrs.keyword_detection.export_segments --subject environmental_health --n-keywords 4
     poetry run python -m rrs.keyword_detection.export_segments --subject environmental_health --start-date 2024-01-01 --end-date 2024-03-31
+    poetry run python -m rrs.keyword_detection.export_segments --subject environmental_health --max-segments 500
     poetry run python -m rrs.keyword_detection.export_segments --subject environmental_health --output ./export.csv
 """
 
@@ -123,6 +126,7 @@ def export_segments(
     n_keywords: Optional[int] = None,
     start_date: Optional[date] = None,
     end_date: Optional[date] = None,
+    max_segments: Optional[int] = None,
     output_path: Optional[str] = None,
 ):
     con = duckdb.connect()
@@ -141,12 +145,17 @@ def export_segments(
     if end_date is not None:
         extra_filters += " AND s.start < $end_date"
         params["end_date"] = end_date
+    limit_clause = ""
+    if max_segments is not None:
+        # ORDER BY makes the capped subset deterministic (earliest segments first)
+        limit_clause = f"ORDER BY s.start LIMIT {int(max_segments)}"
 
     logging.info(
         f"Fetching segments for subject={subject_name!r}"
         + (f", n_keywords={n_keywords}" if n_keywords is not None else "")
         + (f", start_date={start_date}" if start_date is not None else "")
         + (f", end_date={end_date}" if end_date is not None else "")
+        + (f", max_segments={max_segments}" if max_segments is not None else "")
         + "..."
     )
     df = con.execute(
@@ -156,6 +165,7 @@ def export_segments(
         INNER JOIN rrs.subjects sb ON s.subject_id = sb.subject_id
         WHERE sb.name = $subject_name
         {extra_filters}
+        {limit_clause}
         """,
         params,
     ).df()
@@ -215,6 +225,12 @@ if __name__ == "__main__":
         help="Filter segments with start < this date (env: END_DATE)",
     )
     parser.add_argument(
+        "--max-segments",
+        type=int,
+        default=os.getenv("MAX_SEGMENTS"),
+        help="Maximum number of segments to export, earliest first (env: MAX_SEGMENTS)",
+    )
+    parser.add_argument(
         "--output",
         default=os.getenv("OUTPUT_PATH", "./output/segments_export.csv"),
         help="Path to save results as CSV (env: OUTPUT_PATH)",
@@ -226,5 +242,6 @@ if __name__ == "__main__":
         n_keywords=int(args.n_keywords) if args.n_keywords is not None else None,
         start_date=date.fromisoformat(args.start_date) if args.start_date else None,
         end_date=date.fromisoformat(args.end_date) if args.end_date else None,
+        max_segments=int(args.max_segments) if args.max_segments else None,
         output_path=args.output,
     )

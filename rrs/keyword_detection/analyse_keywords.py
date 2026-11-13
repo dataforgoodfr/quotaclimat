@@ -29,6 +29,10 @@ _con = duckdb.connect()
 
 DEFAULT_SUBJECT_NAME = "insecurity"
 
+# "lemma": whole-lemma matching (rrs.keyword_detection.lemma_matching, same notion of
+# match as filter_keywords). "regex": legacy case-insensitive substring match in DuckDB.
+MATCH_MODE = os.environ.get("MATCH_MODE", "lemma")
+
 
 def get_secret_docker(secret_name: str) -> str:
     value = os.environ.get(secret_name, "")
@@ -343,6 +347,76 @@ def _build_day_query(
     return " UNION ALL ".join(union_parts)
 
 
+def get_weak_keywords(subject_name: str) -> set[str]:
+    """Lowercased keywords of the subject's dictionary file marked "weak": True.
+
+    Weak keywords are too generic to be evidence on their own, so a segment needs
+    at least two distinct weak keywords (or one regular keyword) to be kept. The
+    flag lives in rrs/dictionary/subject/<subject>.py only, not in the DB, and
+    subjects without weak keywords are matched exactly as before.
+    """
+    from rrs.dictionary.subjects import subjects
+
+    entries = subjects.get(subject_name, {}).get("keywords", [])
+    if not isinstance(entries, list):  # climate: THEME_KEYWORDS is a dict
+        return set()
+    return {e["keyword"].lower() for e in entries if e.get("weak")}
+
+
+def _detect_lemma(
+    df: pd.DataFrame,
+    keywords_by_subject: dict[str, tuple[list[str], list[str], list[str]]],
+    weak_keywords: frozenset = frozenset(),
+) -> pd.DataFrame:
+    """Lemma-based equivalent of _build_day_query: same output columns and the same
+    row selection (validated match or enough non-validated matches, no high-risk match).
+
+    Keywords in weak_keywords are matched as a separate tier: they never trigger the
+    high-risk exclusion, and count only when at least two distinct ones are found."""
+    from rrs.keyword_detection.lemma_matching import LemmaMatcher, lemmatize_texts
+
+    if df.empty:
+        return df.assign(
+            subject_id=None,
+            keywords_found=None,
+            n_keywords_found=0,
+            n_hrfp_found=0,
+            n_non_validated_found=0,
+        )
+    text_lemmas = lemmatize_texts(df["plaintext"].fillna(""))
+    parts = []
+    for subject_id, (kws, high_risk_kws, non_validated_kws) in keywords_by_subject.items():
+        is_weak = lambda k: k.lower() in weak_keywords  # noqa: E731
+        weak_kws = [k for k in kws + high_risk_kws if is_weak(k)]
+        strong_matcher = LemmaMatcher([k for k in kws if not is_weak(k)])
+        hr_matcher = LemmaMatcher([k for k in high_risk_kws if not is_weak(k)])
+        weak_matcher = LemmaMatcher(weak_kws)
+        nv_matcher = LemmaMatcher(non_validated_kws)
+        rows = []
+        for lemmas in text_lemmas:
+            kw_found = strong_matcher.find(lemmas)
+            weak_found = weak_matcher.find(lemmas)
+            n_hrfp = len(hr_matcher.find(lemmas))
+            nv_found = nv_matcher.find(lemmas)
+            n_nv = len(set(nv_found))
+            nv_enough = n_nv >= NON_VALIDATED_KEYWORD_THRESHOLD
+            weak_enough = len({w.lower() for w in weak_found}) >= 2
+            validated_ok = len(kw_found) > 0 or weak_enough
+            found = kw_found + (weak_found if validated_ok else [])
+            if nv_enough:
+                found = found + nv_found
+            keep = (validated_ok or nv_enough) and n_hrfp == 0
+            rows.append((keep, found, n_hrfp, n_nv))
+        out = df.drop(columns=["srt"], errors="ignore").copy()
+        out["subject_id"] = subject_id
+        out["keywords_found"] = [r[1] for r in rows]
+        out["n_keywords_found"] = [len(r[1]) for r in rows]
+        out["n_hrfp_found"] = [r[2] for r in rows]
+        out["n_non_validated_found"] = [r[3] for r in rows]
+        parts.append(out[[r[0] for r in rows]])
+    return pd.concat(parts, ignore_index=True)
+
+
 def detect_keywords(
     start_date: date,
     end_date: Optional[date] = None,
@@ -371,7 +445,9 @@ def detect_keywords(
     if not keywords_by_subject:
         raise ValueError(f"No keywords found for subject '{subject}'.")
 
-    query = _build_day_query(keywords_by_subject)
+    query = (
+        _build_day_query(keywords_by_subject) if MATCH_MODE == "regex" else None
+    )
 
     if end_date is None:
         end_date = start_date
@@ -389,7 +465,14 @@ def detect_keywords(
             continue
 
         con.register("source", source)
-        df = con.sql(query).df()
+        if query is None:
+            df = _detect_lemma(
+                con.sql("SELECT * FROM source").df(),
+                keywords_by_subject,
+                frozenset(get_weak_keywords(subject)),
+            )
+        else:
+            df = con.sql(query).df()
         logging.info(f"  {current}: {len(df)} match(es).")
         yield current, df
 

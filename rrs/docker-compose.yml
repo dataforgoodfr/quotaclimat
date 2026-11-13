@@ -132,6 +132,7 @@ services:
       N_KEYWORDS: ${N_KEYWORDS:-1}
       START_DATE: ${START_DATE:-}
       END_DATE: ${END_DATE:-}
+      MAX_SEGMENTS: ${MAX_SEGMENTS:-}
       OUTPUT_PATH: ${OUTPUT_PATH:-/app/output/segments_export.csv}
     volumes:
       - ./output:/app/output

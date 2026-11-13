@@ -106,3 +106,39 @@ variable "gpu_root_volume_size_in_gb" {
   default = 100
 }
 
+
+variable "registry_cleanup_enabled" {
+  type        = bool
+  default     = false
+  description = "Creates the weekly registry-cleanup-<env> job that deletes old tags of registry_namespace_name (registry_cleanup.tf)."
+}
+
+variable "registry_namespace_name" {
+  type        = string
+  default     = ""
+  description = "Container Registry namespace cleaned by the registry-cleanup job (in this environment's project)."
+}
+
+variable "registry_cleanup_keep" {
+  type        = number
+  default     = 10
+  description = "Most recent tags kept per image, on top of the protected tags and the tags used by jobs/containers."
+}
+
+variable "registry_cleanup_protected_tags" {
+  type        = list(string)
+  default     = ["latest"]
+  description = "Tag names never deleted."
+}
+
+variable "registry_cleanup_dry_run" {
+  type        = bool
+  default     = true
+  description = "If true, the job only logs the tags it would delete."
+}
+
+variable "registry_cleanup_cron" {
+  type        = string
+  default     = "17 3 * * 0"
+  description = "Schedule of the registry-cleanup job (Europe/Paris), weekly by default."
+}

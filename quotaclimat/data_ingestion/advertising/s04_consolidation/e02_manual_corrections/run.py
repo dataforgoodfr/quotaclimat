@@ -14,6 +14,9 @@ Each row is processed once: the job fills traite_le, resultat (appliqué, averti
 message, and the rows with a traite_le are skipped (to process a row again, empty its traite_le). A warning
 (value inconsistent with the reference data) does not stop the correction, an error changes nothing.
 
+A tab whose rows all have a traite_le after the run is archived: renamed with a "_" in front, it is not read
+by the next runs. To process rows of an archived tab again, remove the "_" and empty their traite_le.
+
 Env: POSTGRES_*, GOOGLE_SHEETS_EDITOR_SERVICE_ACCOUNT_JSON, EXTERNAL_SOURCES_DRIVE_FOLDER,
 MANUAL_CORRECTIONS_SPREADSHEET (default Corrections_publicites), BUCKET, BUCKET_SECRET,
 ADVERTISING_BUCKET_NAME, MEDIATREE_BUCKET_NAME (videos of the new ads), MANUAL_CORRECTIONS_DRY_RUN
@@ -324,7 +327,8 @@ def process_tab(
     references: References,
     export_video: VideoExporter,
     dry_run: bool,
-) -> Counter:
+) -> tuple[Counter, bool]:
+    """Results of the rows of the tab, and whether all its rows are processed (the tab can be archived)."""
     kind = tab_kind(tab)
     if kind is None:
         logging.warning(
@@ -332,19 +336,17 @@ def process_tab(
             tab,
             ", ".join(TAB_KINDS),
         )
-        return Counter()
+        return Counter(), False
     key_column = KEY_COLUMNS[kind]
     header, rows = sheet.read(tab)
     if key_column not in header:
         logging.error("Tab %s skipped: no column %s", tab, key_column)
-        return Counter()
-    pending = [
-        row
-        for row in rows
-        if row.values.get(key_column) and not row.values.get(COLUMN_DONE)
-    ]
+        return Counter(), False
+    keyed = [row for row in rows if row.values.get(key_column)]
+    pending = [row for row in keyed if not row.values.get(COLUMN_DONE)]
     if not pending:
-        return Counter()
+        # a tab without any row may be being filled by a human: not archived
+        return Counter(), bool(keyed)
     for row in pending:
         row.values[key_column] = row.values[key_column].strip()
 
@@ -374,12 +376,13 @@ def process_tab(
     if dry_run:
         session.rollback()
         logging.info("Dry run: tab %s, %s, nothing written", tab, dict(results))
-        return results
+        return results, False
     # the sheet first: when it cannot be written, nothing is committed and the rows are processed again
     written = sheet.write_rows(tab, key_column, updates)
     session.commit()
     logging.info("Tab %s: %s, %s rows written", tab, dict(results), written)
-    return results
+    # a row not found again is processed by the next run: the tab stays
+    return results, written == len(updates)
 
 
 def run(
@@ -394,12 +397,21 @@ def run(
     total = Counter()
     for tab in sheet.tabs():
         try:
-            total += process_tab(
+            results, done = process_tab(
                 sheet, session, tab, spreadsheet, references, export_video, dry_run
             )
         except Exception:
             session.rollback()
             logging.exception("Tab %s failed, nothing written for it", tab)
+            continue
+        total += results
+        if done:
+            try:
+                archived = sheet.archive(tab)
+                if archived:
+                    logging.info("Tab %s fully processed, renamed %s", tab, archived)
+            except Exception:
+                logging.exception("Tab %s fully processed, but not archived", tab)
     logging.info("Manual corrections: %s", dict(total))
     return total
 

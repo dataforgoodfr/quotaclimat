@@ -57,6 +57,16 @@ class MemorySheet(CorrectionsSheet):
     def tabs(self) -> list[str]:
         return [tab for tab in self.grid if not tab.startswith("_")]
 
+    def _titles(self) -> set[str]:
+        return set(self.grid)
+
+    def _rename(self, tab, new_title):
+        self.grid = {new_title if t == tab else t: v for t, v in self.grid.items()}
+
+    def tab(self, tab) -> list[list[str]]:
+        """Rows of the tab, archived ("_" in front) or not."""
+        return self.grid[tab] if tab in self.grid else self.grid["_" + tab]
+
     def read(self, tab):
         return parse_rows(self.grid[tab])
 
@@ -71,9 +81,9 @@ class MemorySheet(CorrectionsSheet):
             line[column] = value
 
     def column(self, tab, name) -> list[str]:
-        header = self.grid[tab][0]
+        header = self.tab(tab)[0]
         index = header.index(name)
-        return [line[index] if index < len(line) else "" for line in self.grid[tab][1:]]
+        return [line[index] if index < len(line) else "" for line in self.tab(tab)[1:]]
 
 
 @pytest.fixture
@@ -169,6 +179,102 @@ def test_tab_kind():
     assert corrections_run.tab_kind("reattribution_mai") == "reattribution"
     assert corrections_run.tab_kind("fusion_doublons") == "fusion"
     assert corrections_run.tab_kind("autre") is None
+
+
+class FakeResponse:
+    def __init__(self, body=None, status_code=200):
+        self.body = body or {}
+        self.status_code = status_code
+        self.reason = "Bad Request" if status_code >= 400 else "OK"
+        self.url = "https://sheets"
+        self.text = json.dumps(self.body)
+
+    def json(self):
+        return self.body
+
+
+class FakeSession:
+    """The Google Sheets API of one tab of 1000 rows x 3 columns (a tab imported from a CSV)."""
+
+    def __init__(self, status_code=200):
+        self.posts = []
+        self.status_code = status_code
+
+    def get(self, url, params=None, timeout=None):
+        return FakeResponse(
+            {
+                "sheets": [
+                    {
+                        "properties": {
+                            "sheetId": 7,
+                            "title": "fusion_csv",
+                            "sheetType": "GRID",
+                            "gridProperties": {"rowCount": 1000, "columnCount": 3},
+                        }
+                    }
+                ]
+            }
+        )
+
+    def post(self, url, json=None, timeout=None):
+        self.posts.append((url, json))
+        return FakeResponse(
+            {"error": {"message": "exceeds grid limits"}}, self.status_code
+        )
+
+
+def test_write_adds_the_columns_missing_in_the_grid():
+    session = FakeSession()
+    CorrectionsSheet(session, "s")._write_cells(
+        "fusion_csv", [(1, 3, "traite_le"), (2, 4, "x")]
+    )
+    (grid_url, grid), (values_url, values) = session.posts
+    assert grid_url.endswith("/s:batchUpdate")
+    assert grid == {
+        "requests": [
+            {"appendDimension": {"sheetId": 7, "dimension": "COLUMNS", "length": 2}}
+        ]
+    }
+    assert values_url.endswith("/s/values:batchUpdate")
+    assert [d["range"] for d in values["data"]] == [
+        "'fusion_csv'!D1",
+        "'fusion_csv'!E2",
+    ]
+
+
+def test_write_inside_the_grid_does_not_change_it():
+    session = FakeSession()
+    CorrectionsSheet(session, "s")._write_cells("fusion_csv", [(2, 2, "x")])
+    assert [url for url, _ in session.posts] == [
+        "https://sheets.googleapis.com/v4/spreadsheets/s/values:batchUpdate"
+    ]
+
+
+def test_error_of_the_api_gives_its_message():
+    with pytest.raises(RuntimeError, match="exceeds grid limits"):
+        CorrectionsSheet(FakeSession(status_code=400), "s")._write_cells(
+            "fusion_csv", [(2, 2, "x")]
+        )
+
+
+def test_archive_renames_the_tab():
+    session = FakeSession()
+    assert CorrectionsSheet(session, "s").archive("fusion_csv") == "_fusion_csv"
+    assert session.posts == [
+        (
+            "https://sheets.googleapis.com/v4/spreadsheets/s:batchUpdate",
+            {
+                "requests": [
+                    {
+                        "updateSheetProperties": {
+                            "properties": {"sheetId": 7, "title": "_fusion_csv"},
+                            "fields": "title",
+                        }
+                    }
+                ]
+            },
+        )
+    ]
 
 
 def test_write_rows_finds_a_row_moved_since_the_read():
@@ -416,6 +522,52 @@ def test_tabs_for_humans_and_unknown_tabs_are_skipped(engine):
     )
     assert run(engine, sheet) == {}
     assert get_ad(engine, "a1").predicted_brand == "Pytest"
+
+
+def test_fully_processed_tabs_are_archived(engine):
+    insert(engine, make_ad("a1"), make_occ("o1", "a1", 0))
+    sheet = MemorySheet(
+        {
+            # processed by this run, one row in error: archived too
+            "dechets": [["occurrence_id"], ["o1"], ["inconnue"]],
+            # processed by an earlier run
+            "dechets_mars": [["occurrence_id", "traite_le"], ["o0", "2026-03-01"]],
+            # no row yet: a human may be filling it
+            "dechets_mai": [["occurrence_id"]],
+            # an archived tab of the same name already exists
+            "fusion": [["ad_id", "target_ad_id", "traite_le"], ["a2", "a1", "x"]],
+            "_fusion": [["ad_id"]],
+            "autre": [["ad_id"], ["a1"]],
+        }
+    )
+    assert run(engine, sheet) == {"appliqué": 1, "erreur": 1}
+    assert set(sheet.grid) == {
+        "_dechets",
+        "_dechets_mars",
+        "dechets_mai",
+        "fusion",
+        "_fusion",
+        "autre",
+    }
+    assert sheet.column("dechets", "resultat") == ["appliqué", "erreur"]
+    # the next run does not read the archived tabs
+    assert sheet.tabs() == ["dechets_mai", "fusion", "autre"]
+
+
+def test_tab_with_rows_left_to_process_is_not_archived(engine):
+    insert(engine, make_ad("a1"), make_occ("o1", "a1", 0))
+    sheet = MemorySheet({"dechets": [["occurrence_id"], ["o1"]]})
+    run(engine, sheet, dry_run=True)
+    assert "dechets" in sheet.grid
+
+    def fail(*args):
+        raise RuntimeError("400 Bad Request")
+
+    sheet._write_cells = fail
+    run(engine, sheet)
+    assert "dechets" in sheet.grid
+    with Session(engine) as session:
+        assert session.get(Ad_Occurrence, "o1").deleted_at is None
 
 
 # ---------- junk occurrences ----------
@@ -903,6 +1055,8 @@ def test_rows_added_later_go_to_the_same_new_ad(engine):
     insert(engine, make_ad("a1"), make_occ("o1", "a1", 0), make_occ("o2", "a1", 600))
     sheet = MemorySheet({"nouvelle_ad": [["occurrence_id"], ["o1"]]})
     run(engine, sheet)
+    # a human takes the archived tab back to add a row
+    sheet._rename("_nouvelle_ad", "nouvelle_ad")
     sheet.grid["nouvelle_ad"].append(["o2"])
     exported = []
     run(engine, sheet, lambda *args: exported.append(args))

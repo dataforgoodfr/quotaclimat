@@ -2,7 +2,8 @@
 service account (generic, shared with other jobs), shared as editor on this spreadsheet only.
 
 Only the columns of the job (COLUMNS_FILLED_BY_THE_JOB in run.py) are written, never the columns of the
-humans. The tabs whose name starts with "_" are for humans and never read.
+humans. The tabs whose name starts with "_" are for humans and never read: a tab whose rows are all processed is
+renamed with a "_" in front (archive), so that the next runs do not read it again.
 """
 
 import json
@@ -14,6 +15,7 @@ from google.auth.transport.requests import AuthorizedSession
 from google.oauth2 import service_account
 
 from quotaclimat.data_ingestion.external_sources.download_external_sources import (
+    HUMAN_TAB_PREFIX,
     SHEETS_API_URL,
     ensure_not_public,
     find_spreadsheet,
@@ -35,6 +37,14 @@ class SheetRow:
     # number of the row in the tab (1 = header), to write it back
     number: int
     values: dict[str, str]
+
+
+def raise_for_status(response) -> None:
+    """raise_for_status with the body of the response, which says why Google refused the request."""
+    if response.status_code >= 400:
+        raise RuntimeError(
+            f"{response.status_code} {response.reason} for {response.url}: {response.text[:2000]}"
+        )
 
 
 def _quote(tab: str) -> str:
@@ -90,20 +100,91 @@ class CorrectionsSheet:
         ensure_not_public(spreadsheet)
         return cls(session, spreadsheet["id"])
 
-    def tabs(self) -> list[str]:
-        """Names of the grid tabs, without the tabs for humans (starting with "_")."""
+    def _properties(self) -> list[dict]:
+        """Properties of every tab (sheetId, title, sheetType, gridProperties)."""
         response = self.session.get(
             f"{SHEETS_API_URL}/{self.spreadsheet_id}",
-            params={"fields": "sheets.properties(title,sheetType)"},
+            params={
+                "fields": "sheets.properties(sheetId,title,sheetType,gridProperties)"
+            },
             timeout=TIMEOUT_SEC,
         )
-        response.raise_for_status()
+        raise_for_status(response)
+        return [s["properties"] for s in response.json().get("sheets", [])]
+
+    def _tab_properties(self, tab: str) -> dict:
+        return next(p for p in self._properties() if p["title"] == tab)
+
+    def _update(self, requests: list[dict]) -> None:
+        """spreadsheets.batchUpdate: changes of the structure of the spreadsheet (not of the values)."""
+        response = self.session.post(
+            f"{SHEETS_API_URL}/{self.spreadsheet_id}:batchUpdate",
+            json={"requests": requests},
+            timeout=TIMEOUT_SEC,
+        )
+        raise_for_status(response)
+
+    def tabs(self) -> list[str]:
+        """Names of the grid tabs, without the tabs for humans (starting with "_")."""
         return [
-            s["properties"]["title"]
-            for s in response.json().get("sheets", [])
-            if s["properties"].get("sheetType", "GRID") == "GRID"
-            and not is_human_tab(s["properties"]["title"])
+            p["title"]
+            for p in self._properties()
+            if p.get("sheetType", "GRID") == "GRID" and not is_human_tab(p["title"])
         ]
+
+    def _titles(self) -> set[str]:
+        return {p["title"] for p in self._properties()}
+
+    def _rename(self, tab: str, new_title: str) -> None:
+        self._update(
+            [
+                {
+                    "updateSheetProperties": {
+                        "properties": {
+                            "sheetId": self._tab_properties(tab)["sheetId"],
+                            "title": new_title,
+                        },
+                        "fields": "title",
+                    }
+                }
+            ]
+        )
+
+    def archive(self, tab: str) -> str | None:
+        """Rename the tab with a "_" in front: the next runs skip it (a human removes the "_" to process it
+        again). Returns the new name, None when a tab already has this name (the tab is left as it is)."""
+        new_title = HUMAN_TAB_PREFIX + tab
+        if new_title in self._titles():
+            logging.warning(
+                "Tab %s not archived: a tab %s already exists", tab, new_title
+            )
+            return None
+        self._rename(tab, new_title)
+        return new_title
+
+    def _ensure_grid_size(self, tab: str, rows: int, columns: int) -> None:
+        """Add rows or columns at the end of the tab when it is smaller than rows x columns: the values API
+        refuses to write outside the grid (400 "exceeds grid limits"), e.g. in the column added for the job in
+        a tab imported from a CSV, whose grid has only the columns of the file."""
+        properties = self._tab_properties(tab)
+        grid = properties.get("gridProperties", {})
+        requests = []
+        for dimension, needed, current in (
+            ("ROWS", rows, grid.get("rowCount", 0)),
+            ("COLUMNS", columns, grid.get("columnCount", 0)),
+        ):
+            if needed > current:
+                requests.append(
+                    {
+                        "appendDimension": {
+                            "sheetId": properties["sheetId"],
+                            "dimension": dimension,
+                            "length": needed - current,
+                        }
+                    }
+                )
+        if requests:
+            self._update(requests)
 
     def read(self, tab: str) -> tuple[list[str], list[SheetRow]]:
         response = self.session.get(
@@ -111,13 +192,18 @@ class CorrectionsSheet:
             params={"valueRenderOption": "FORMATTED_VALUE"},
             timeout=TIMEOUT_SEC,
         )
-        response.raise_for_status()
+        raise_for_status(response)
         return parse_rows(response.json().get("values", []))
 
     def _write_cells(self, tab: str, cells: list[tuple[int, int, str]]) -> None:
         """cells: (row number, 0-based column index, value), in one request."""
         if not cells:
             return
+        self._ensure_grid_size(
+            tab,
+            max(row for row, _, _ in cells),
+            max(column for _, column, _ in cells) + 1,
+        )
         response = self.session.post(
             f"{SHEETS_API_URL}/{self.spreadsheet_id}/values:batchUpdate",
             json={
@@ -132,7 +218,7 @@ class CorrectionsSheet:
             },
             timeout=TIMEOUT_SEC,
         )
-        response.raise_for_status()
+        raise_for_status(response)
 
     def write_rows(
         self,

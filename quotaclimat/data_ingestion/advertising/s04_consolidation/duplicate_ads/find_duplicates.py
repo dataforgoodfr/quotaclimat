@@ -651,10 +651,37 @@ def _batches(values: list, size: int = 1000) -> Iterator[list]:
         yield values[start : start + size]
 
 
+def screenshot_ad_ids(connection, rows: list[dict]) -> list[str]:
+    """The ads of the rows and, for the merged ads, the ads they were merged from: the ads whose
+    mosaics the CSV shows."""
+    ad_ids = {row["ad_id"] for row in rows}
+    sources = set()
+    for batch in _batches(sorted(ad_ids)):
+        for (source_ad_ids,) in connection.execute(
+            select(Ad_Merge.source_ad_ids).where(Ad_Merge.merged_ad_id.in_(batch))
+        ):
+            sources.update(source_ad_ids)
+    return sorted(ad_ids | sources)
+
+
+def make_screenshots(ad_ids: list[str]) -> None:
+    """Make the missing mosaics of these ads with the screenshots job (s05_enrichment/e02_screenshots),
+    a merged ad without its own video from the videos of its pieces (merged_from_sources)."""
+    import asyncio
+
+    from quotaclimat.data_ingestion.advertising.s05_enrichment.e02_screenshots.run import (
+        run_ads_by_ids,
+    )
+
+    logger.info(f"Screenshots of {len(ad_ids)} ads (missing mosaics only)")
+    asyncio.run(run_ads_by_ids(ad_ids, merged_from_sources=True))
+
+
 def enrich_rows(
     connection, rows: list[dict], link_max_age_days: int, now: datetime | None = None
 ) -> None:
     """Add to the rows, from the database:
+    - mosaic: the mosaic of the ad (read again: --screenshots may have made it since the ads were read);
     - mediatree_link: Mediatree player on the last live occurrence of the ad, when it is less than
       link_max_age_days old (Mediatree keeps a limited history, like curated.publicite);
     - nb_merge_sources: when the ad is a merged ad (advertising.ad_merge), the number of ads it was
@@ -686,7 +713,9 @@ def enrich_rows(
         ):
             sources[merged_ad_id] = list(source_ad_ids)
 
-    source_ids = list({ad_id for ids in sources.values() for ad_id in ids})
+    source_ids = list(
+        {ad_id for ids in sources.values() for ad_id in ids} | set(ad_ids)
+    )
     mosaics: dict[str, str] = {}
     for batch in _batches(source_ids):
         for target_id, image_url in connection.execute(
@@ -699,6 +728,7 @@ def enrich_rows(
             mosaics[target_id] = image_url
 
     for row in rows:
+        row["mosaic"] = mosaics.get(row["ad_id"])
         occurrence = last_occurrence.get(row["ad_id"])
         row["mediatree_link"] = (
             mediatree_link(occurrence[1], occurrence[0], row["duration_sec"])
@@ -989,6 +1019,13 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="random sample of ads (stable), to try the thresholds",
     )
     parser.add_argument(
+        "--screenshots",
+        action="store_true",
+        help="before writing the CSV, make the missing mosaics of the ads of the groups and of "
+        "the pieces of the merged ones (screenshots job, a merged ad without video from the "
+        "videos of its pieces)",
+    )
+    parser.add_argument(
         "--mediatree-link-max-age-days",
         type=int,
         default=365,
@@ -1039,6 +1076,11 @@ def main(argv: list[str] | None = None) -> None:
     with engine.connect() as connection:
         pairs = run(connection, args)
         rows = group_rows(pairs, args.compare)
+        if args.screenshots:
+            ad_ids = screenshot_ad_ids(connection, rows)
+    if args.screenshots:
+        make_screenshots(ad_ids)
+    with engine.connect() as connection:
         enrich_rows(connection, rows, args.mediatree_link_max_age_days)
     write_csv(args.output, rows)
     query_path = metabase_query_path(args.output)

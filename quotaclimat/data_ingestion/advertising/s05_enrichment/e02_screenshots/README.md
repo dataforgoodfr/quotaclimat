@@ -32,6 +32,14 @@ START_DATE=2026-04-01 END_DATE=2026-04-08 poetry run python -m quotaclimat.data_
   an ad exported after its detection (merged ad, mp4 exported again) gets the margin of its export; the
   detection date gives it when ffprobe can't read the duration. It is kept in `details.margin_sec`.
   No video: `missing_source`.
+- **Merged ads, from their pieces** (`MERGED_FROM_SOURCES=true`, off by default): a merged ad
+  (`advertising.ad_merge`, e.g. `merge_inherited`) has no video of its own until it is exported. With this option,
+  a merged ad without `ads/<ad_id>/raw.mp4` gets a mosaic from the videos of the ads it was merged from (each with its
+  own export margin), in broadcast order. The frames are at the usual offsets of an ad of this duration, mapped to
+  the pieces put end to end and scaled to the duration of the merged ad: the gaps between the pieces are not known,
+  so a frame can be off by as much as them. A piece without video gives black tiles, no video at all
+  `missing_source`. `source` is `merged_sources`, `details` lists the sources and the missing ones. A merged ad that
+  has its own video keeps the usual mosaic. Already `missing_source` merged ads need `RETRY_MISSING=true`.
 - **Occurrences**: the 2-minutes archives of the mediatree bucket (`output/<channel>/<yyyy>/<mm>/<dd>/`),
   the ones the exportation cuts the ads from. The occurrences are streamed from Postgres one channel and
   UTC day at a time. The day folders are listed first: an occurrence with a frame in an archive missing
@@ -107,6 +115,7 @@ the first ads sooner.
 | `OCCURRENCES_FROM` | none | only the occurrences broadcast from this date, Paris time (`2025-09-29`) |
 | `ADS_PER_OCCURRENCE_BATCH` | `20` | ads per batch of occurrences, see Order |
 | `RETRY_MISSING` | `false` | also retry the `missing_source` rows |
+| `MERGED_FROM_SOURCES` | `false` | a merged ad without video: mosaic from the videos of its pieces (see Sources) |
 | `SCREENSHOT_ON_EXPORT` | `true` | exportation job (`s02_exportation`) only: make the mosaic of each exported ad |
 | `SCREENSHOT_ACL` | `public-read` | ACL of the uploaded images (`private` to keep them private) |
 | `SCREENSHOT_NB_FRAMES`, `SCREENSHOT_MOSAIC_COLUMNS` | `6`, `3` | mosaic layout |

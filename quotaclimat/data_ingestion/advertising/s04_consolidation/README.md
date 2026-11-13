@@ -352,6 +352,12 @@ of a group gets its own row (a group of 2 ads has 2 rows), never two ads mixed o
   own brand. The header of the query lists how to read the scores. With `--blocking brand` (default), the ads of different brands are never
   compared: these groups only come from `--blocking none`.
 
+`--screenshots` makes the missing mosaics before writing the CSV: of the ads of the groups and of the ads the merged
+ones were merged from, with the screenshots job (`s05_enrichment/e02_screenshots`, `run_ads_by_ids`: every
+classification, `missing_source` retried, a merged ad without video from the videos of its pieces). It needs the
+environment of the screenshots job (`ADVERTISING_BUCKET_NAME`, `ADVERTISING_BUCKET_REGION`, `SCREENSHOT_ACL`, ffmpeg),
+which the `advertising_exportation` job has. The mosaics are kept in `advertising.ad_screenshot` like the others.
+
 Thresholds are not calibrated: start on a brand (`--brand`) or a duration range (`--min-duration`, `--max-duration`)
 or a sample (`--max-ads`), check pairs at several score levels, then widen. Other filters: `--date-from`/`--date-to`
 (first detection), `--fragment-types` (default `advertising AD`), `--min-occurrences` (default 1: skips the pieces

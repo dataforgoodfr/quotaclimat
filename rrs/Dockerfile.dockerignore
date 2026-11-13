@@ -1,0 +1,20 @@
+# Used only by rrs/Dockerfile (BuildKit picks <Dockerfile>.dockerignore over the root .dockerignore).
+# The build context is the repo root; the image only needs what the Dockerfile COPYs.
+*
+
+!pyproject.toml
+!poetry.lock
+!rrs/
+!quotaclimat/
+!postgres/
+
+# Local data and artefacts inside the copied folders
+rrs/pgdata
+rrs/exports
+rrs/output
+rrs/.ruff_cache
+rrs/.env
+**/__pycache__
+**/*.pyc
+**/.pytest_cache
+**/.ruff_cache

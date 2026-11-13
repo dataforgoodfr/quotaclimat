@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 from postgres.database_connection import connect_to_db
 from postgres.schemas.advertising.models import (
     Ad,
+    Ad_Merge,
     Ad_Occurrence,
     Ad_Screenshot,
     AdvertisingBase,
@@ -255,8 +256,38 @@ def test_csv_separator_between_groups(tmp_path):
     fd.write_csv(str(output), fd.group_rows(pairs))
     lines = output.read_text().splitlines()
     assert len(lines) == 6
-    assert lines[3] == ",".join(["-"] * 10)
+    assert lines[3] == ",".join(["-"] * len(fd.CSV_COLUMNS))
     assert [line.split(",")[4] for line in lines[1:3] + lines[4:]] == list("abcd")
+
+
+def test_chunks_coherent():
+    audio = random_audio(1, 20)
+    a = ad_print("a", split_in_chunks(audio, [0, 5, 12, 20]))
+    b = ad_print("b", split_in_chunks(audio, [0, 5, 12, 20]))
+    a.chunks = [
+        fd.Fingerprint.from_dict(c) for c in split_in_chunks(audio, [0, 5, 12, 20])
+    ]
+    b.chunks = list(a.chunks)
+    assert fd.chunks_coherent(COMPARE, a, b)
+    # the same audio split elsewhere: chunk 1 of 7 s against chunk 1 of 3 s
+    b.chunks = [
+        fd.Fingerprint.from_dict(c) for c in split_in_chunks(audio, [0, 5, 8, 20])
+    ]
+    assert not fd.chunks_coherent(COMPARE, a, b)
+    # another number of chunks
+    b.chunks = b.chunks[:2]
+    assert not fd.chunks_coherent(COMPARE, a, b)
+    # another audio, split at the same places
+    other = split_in_chunks(random_audio(2, 20), [0, 5, 12, 20])
+    b.chunks = [fd.Fingerprint.from_dict(c) for c in other]
+    assert not fd.chunks_coherent(COMPARE, a, b)
+
+
+def test_mediatree_link():
+    assert fd.mediatree_link("tf1", datetime(2026, 4, 13, 20, 0, 0, 500000), 10.2) == (
+        "https://keywords.mediatree.fr/player/?fifo=tf1&start_cts=1776110400"
+        "&end_cts=1776110411&position_cts=1776110400"
+    )
 
 
 def test_metabase_query_path():
@@ -337,6 +368,25 @@ def connection():
                 image_url="https://bucket/screenshots/ads/dup-1.jpg",
             )
         )
+        # dup-2 is a merged ad: the mosaics of its pieces (piece-b has none)
+        session.add(
+            Ad_Merge(
+                merged_ad_id="dup-2",
+                source_ad_ids=["piece-a", "piece-b", "piece-c"],
+                method="manual",
+                status="active",
+            )
+        )
+        for piece in ("piece-a", "piece-c"):
+            session.add(
+                Ad_Screenshot(
+                    target_type="ad",
+                    target_id=piece,
+                    ad_id=piece,
+                    status="done",
+                    image_url=f"https://bucket/screenshots/ads/{piece}.jpg",
+                )
+            )
         session.commit()
     with engine.connect() as connection:
         yield connection
@@ -382,17 +432,36 @@ def test_run_on_database(connection, tmp_path):
     assert fd.run(connection, args(min_duration=21)) == []
     assert [ad.id for ad in fd.stream_ads(connection, args(brand="peugeot"), FPS)] == []
 
-    rows = fd.group_rows(pairs)
+    rows = fd.group_rows(pairs, COMPARE)
+    fd.enrich_rows(connection, rows, 365, now=T0 + timedelta(days=1))
     output = tmp_path / "duplicates.csv"
     fd.write_csv(str(output), rows)
     lines = output.read_text().splitlines()
-    # one line per ad of the group, the target (most broadcast) first
+    # one line per ad of the group, the target (most broadcast) first; dup-1 and dup-2 are split
+    # in chunks at different places: not chunk-coherent
+    link_1 = (
+        "https://keywords.mediatree.fr/player/?fifo=tf1&start_cts=1776110460"
+        "&end_cts=1776110480&position_cts=1776110460"
+    )
+    link_2 = (
+        "https://keywords.mediatree.fr/player/?fifo=tf1&start_cts=1776110400"
+        "&end_cts=1776110420&position_cts=1776110400"
+    )
     assert lines == [
         "group_id,group_size,mosaique,mosaique_image,ad_id,target_ad_id,brand,sector,"
-        "category,nb_occurrences",
-        "dup-1,2,https://bucket/screenshots/ads/dup-1.jpg,,dup-1,dup-1,Renault,,,2",
-        "dup-1,2,,,dup-2,dup-1,RENAULT,,,1",
+        "category,nb_occurrences,lien_mediatree,mosaiques_sources,chunk_coherent,"
+        "chunk_coherent_target",
+        "dup-1,2,https://bucket/screenshots/ads/dup-1.jpg,,dup-1,dup-1,Renault,,,2,"
+        f"{link_1},,False,",
+        f"dup-1,2,,,dup-2,dup-1,RENAULT,,,1,{link_2},"
+        "https://bucket/screenshots/ads/piece-a.jpg https://bucket/screenshots/ads/piece-c.jpg,"
+        "False,False",
     ]
+    # no Mediatree link for an occurrence older than the limit
+    old_rows = fd.group_rows(pairs)
+    fd.enrich_rows(connection, old_rows, 365, now=T0 + timedelta(days=400))
+    assert [row["mediatree_link"] for row in old_rows] == [None, None]
+    assert old_rows[0]["chunk_coherent"] is None
 
     # the Metabase query runs on the database and loads the data of the ads
     result = (

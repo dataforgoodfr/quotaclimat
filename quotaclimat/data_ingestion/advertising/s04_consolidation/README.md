@@ -328,7 +328,13 @@ of a group gets its own row (a group of 2 ads has 2 rows), never two ads mixed o
   group, on every row of the group, whose first row it is: among the ads of the most frequent brand of the group
   (`brand_key`; several brands when tied; ads without brand only when no ad has one), the ones that are not a merged
   ad (`advertising.ad_merge`) when there are some, then the most broadcast one. The other rows follow by number of
-  occurrences;
+  occurrences. Then `lien_mediatree` (Mediatree player on the last live occurrence of the ad, empty when it is older
+  than `--mediatree-link-max-age-days`, default 365 as `curated.publicite`), `mosaiques_sources` (for a merged ad,
+  the mosaics of the ads it was merged from, in broadcast order, separated by spaces), `chunk_coherent` (one of the
+  direct matches of the ad at least matches chunk by chunk, in order, as the detection recognises a known ad: same
+  number of chunks, chunk i `is_similar` to chunk i) and `chunk_coherent_target` (the same with the target of the
+  group, empty on the target's row). Two copies of an ad split in chunks at different places are not chunk-coherent:
+  `False` does not mean a wrong match, but a wrong match should be `False`;
 - `<csv name>_metabase.txt`: a SQL query to paste in Metabase (database holding the `advertising` schema). The ids
   and matching columns of the rows are written in the query (`VALUES`); it loads the data of each ad: mosaic
   (`advertising.ad_screenshot`, column to display as an image), brand, sector, category, classification status,

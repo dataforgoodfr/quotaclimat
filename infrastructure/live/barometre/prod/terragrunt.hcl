@@ -43,4 +43,10 @@ inputs = {
   # stale personal IPs is a separate follow-up, not part of the import.
   # JSON-encoded list of {ip, description} objects — see .env.secrets.dist.
   acl_allowed_ips = get_env("TF_VAR_acl_allowed_ips")
+
+  # Weekly deletion of old image tags (registry_cleanup.tf). Starts in dry run:
+  # read the logs of a run of registry-cleanup-prod, then set it to false.
+  registry_cleanup_enabled = true
+  registry_namespace_name  = "namespace-barometre"
+  registry_cleanup_dry_run = true
 }

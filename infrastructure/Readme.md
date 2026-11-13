@@ -377,6 +377,11 @@ Resources marked *per country* are `for_each` over the `countries` input (addres
 | IAM Application | `scaleway_iam_application.mediatree_videos_application` | App identity scoped to the `mediatree-videos` bucket (project-wide in practice) |
 | IAM Policy | `scaleway_iam_policy.mediatree_videos_policy` | Object storage read/write for `mediatree_videos_application` |
 | IAM API key | `scaleway_iam_api_key.mediatree_videos_api_key` | Credentials for `mediatree_videos_application` |
+| IAM Application | `scaleway_iam_application.registry_cleanup` | Identity of the registry cleanup job (only when `registry_cleanup_enabled`, prod) |
+| IAM Policy | `scaleway_iam_policy.registry_cleanup` | Registry full access on the project, jobs/containers read-only on the organization |
+| IAM API key | `scaleway_iam_api_key.registry_cleanup` | Credentials for `registry_cleanup`, stored in the secret below |
+| Secret | `scaleway_secret.registry_cleanup_secret_key` (+ `_version`) | Secret key of the cleanup job, path `/registry-cleanup` |
+| Job definition | `scaleway_job_definition.registry_cleanup` | `registry-cleanup-<env>`, weekly (Sunday 03:17 Europe/Paris): deletes the tags of `registry_namespace_name` (`namespace-barometre` in prod) except the `registry_cleanup_keep` (10) most recent per image, `latest` and the tags used by a job or container of the organization (`scripts/registry_cleanup.py`, inline in `python:3.12-alpine`). `registry_cleanup_dry_run = true` only logs what it would delete |
 
 ### `rrs` (`live/rrs/template/`)
 | Resource | Address | Purpose |

@@ -1,8 +1,9 @@
 import logging
+import time
 from collections import defaultdict
 from dataclasses import dataclass
 
-from sqlalchemy import select
+from sqlalchemy import Row, func, select
 
 from postgres.database_connection import get_db_session
 from postgres.schemas.advertising.models import Ad
@@ -16,6 +17,10 @@ logger = logging.getLogger(__name__)
 
 CURSOR_BATCH_SIZE = 1000
 
+# The comparison to the ads of the database is the longest step of the detection and
+# grows with the table: its progress is logged every PROGRESS_LOG_INTERVAL_SEC seconds
+PROGRESS_LOG_INTERVAL_SEC = 30
+
 # fragment_type of the ads: "advertising" from the detection, then the content type of the
 # classification (s03_classification/pipeline/e02_classify_ad.py), "AD" for an advertising
 ADVERTISING_FRAGMENT_TYPES = {"advertising", "AD"}
@@ -23,7 +28,7 @@ ADVERTISING_FRAGMENT_TYPES = {"advertising", "AD"}
 
 @dataclass
 class AdChunkMatch:
-    ad: Ad
+    ad: Row  # id, duration_sec, fragment_type and chunks of an Ad
     chunk_entry_index: int  # index in ad.chunks list (the entry matching params_hash)
     chunk_index: int  # index within that entry's "fingerprints" list
 
@@ -55,13 +60,32 @@ async def run_chunk_identification(
     matches: dict[int, list[AdChunkMatch]] = defaultdict(list)
 
     # Build inverted index over local chunks once — queried for each DB fingerprint
+    started = time.monotonic()
     local_index = compare.build_similarity_index([c.fingerprint for c in chunks])
+    logger.info(
+        f"Chunks identification: index of the {len(chunks)} chunks of the week built "
+        f"in {time.monotonic() - started:.0f}s"
+    )
 
+    compared_ads = 0
     total_db_fingerprints = 0
+    total_candidates = 0
+    total_matches = 0
+    last_progress_log = time.monotonic()
 
     with get_db_session() as session:
-        for ads in session.scalars(
-            select(Ad)
+        total_ads = session.scalar(
+            select(func.count()).select_from(Ad).where(Ad.deleted_at.is_(None))
+        )
+        logger.info(
+            f"Chunks identification: comparing the chunks to the fingerprints of the "
+            f"{total_ads} ads of the database"
+        )
+
+        # Only the columns used here: the transcript and the prediction of the ads are
+        # not read, and no ORM object is built for the hundreds of thousands of ads
+        for ads in session.execute(
+            select(Ad.id, Ad.duration_sec, Ad.fragment_type, Ad.chunks)
             .where(Ad.deleted_at.is_(None))
             .execution_options(yield_per=CURSOR_BATCH_SIZE)
         ).partitions():
@@ -76,8 +100,10 @@ async def run_chunk_identification(
                         total_db_fingerprints += 1
 
                         candidates = local_index.get_similar_indices(db_fp)
+                        total_candidates += len(candidates)
                         for local_idx in candidates:
                             if compare.is_similar(chunks[local_idx].fingerprint, db_fp):
+                                total_matches += 1
                                 matches[local_idx].append(
                                     AdChunkMatch(
                                         ad=ad,
@@ -86,8 +112,20 @@ async def run_chunk_identification(
                                     )
                                 )
 
+            compared_ads += len(ads)
+            if time.monotonic() - last_progress_log >= PROGRESS_LOG_INTERVAL_SEC:
+                last_progress_log = time.monotonic()
+                logger.info(
+                    f"Chunks identification: {compared_ads}/{total_ads} ads compared "
+                    f"({total_db_fingerprints} fingerprints, {total_candidates} candidate "
+                    f"chunks, {total_matches} matching chunks) "
+                    f"in {time.monotonic() - started:.0f}s"
+                )
+
     logger.info(
-        f"Loaded {total_db_fingerprints} DB fingerprints (params_hash={params_hash})"
+        f"Chunks identification: {compared_ads} ads compared ({total_db_fingerprints} "
+        f"fingerprints with params_hash={params_hash}, {total_candidates} candidate "
+        f"chunks, {total_matches} matching chunks) in {time.monotonic() - started:.0f}s"
     )
 
     # --- Build final lists ---

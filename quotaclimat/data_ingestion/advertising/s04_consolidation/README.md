@@ -157,8 +157,9 @@ logs).
 | `reattribution` | `occurrence_id`, `ad_id`, free columns | `traite_le`, `resultat`, `message`, `nouvelle_occurrence_id` |
 | `fusion` | `ad_id`, `target_ad_id`, free columns | `traite_le`, `resultat`, `message`, `nb_occurrences_deplacees` |
 
-The columns of the job are added after the last column when missing. Each row is processed once: the rows with
-a `traite_le` are skipped. To process a row again (after fixing it), empty its `traite_le`. `resultat`:
+The columns of the job are added after the last column when missing (the grid of the tab is enlarged first when
+it has no room for them, e.g. a tab imported from a CSV). Each row is processed once: the rows with a `traite_le`
+are skipped. To process a row again (after fixing it), empty its `traite_le`. `resultat`:
 
 - `appliqué`: done;
 - `avertissement`: done, but a value does not match the reference data (`message` says which);
@@ -166,7 +167,16 @@ a `traite_le` are skipped. To process a row again (after fixing it), empty its `
 
 The sheet is written before the database is committed: when it cannot be written, nothing is changed and the
 rows are processed again by the next run. A row moved by a human during the run (sorted, inserted above) is
-found again by its `ad_id` / `occurrence_id`.
+found again by its `ad_id` / `occurrence_id`. A row deleted (or whose id was changed) during the run makes the
+whole tab fail: nothing is written to the sheet nor committed, the tab is processed again by the next run. The
+sheet always says what the database holds.
+
+A tab whose rows all have a `traite_le` after the run (errors included) is archived: the job renames it with a
+`_` in front (`dechets_mai` -> `_dechets_mai`), so the next runs do not read it again. A tab without any row yet
+is left as it is, and so is a tab when a tab with the archived name already exists (warning in the logs). To
+process rows of an archived tab again, or to add rows to it, remove the `_` from its name (and empty the
+`traite_le` of the rows to process again). A tab whose name gives no kind (warning in the logs) is not renamed:
+start its name with `_` by hand if it is for humans.
 
 ### Correction of an ad (`correction_ads`)
 

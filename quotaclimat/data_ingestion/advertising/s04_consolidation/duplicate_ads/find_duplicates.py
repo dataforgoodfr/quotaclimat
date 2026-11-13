@@ -660,8 +660,9 @@ def enrich_rows(
     - nb_merge_sources: when the ad is a merged ad (advertising.ad_merge), the number of ads it was
       merged from;
     - source_mosaic_1 to source_mosaic_<MAX_SOURCE_MOSAICS>: the mosaics of these ads, in broadcast
-      order, the first ones only, pieces without mosaic skipped. The screenshots job only takes ads
-      with live occurrences, which the pieces of a merge no longer have: most of them have none."""
+      order, the first ones only, pieces without mosaic skipped. The screenshots job takes the most
+      broadcast ads first (only those broadcast since OCCURRENCES_FROM when set): the pieces of a
+      merge, whose occurrences are deleted, come last or not at all, most of them have none."""
     now = now or datetime.utcnow()
     ad_ids = list({row["ad_id"] for row in rows})
     last_occurrence: dict[str, tuple[datetime, str]] = {}

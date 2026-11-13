@@ -226,26 +226,18 @@ async def list_days_parts(
     )
 
 
-async def download_days_audio_parts(
+async def list_days_archives(
     fs: s3fs.S3FileSystem,
     channel: str,
     days: list[date],
-    dest_dir: str,
-    max_concurrent_downloads: int = 10,
     only_parts: set[tuple[datetime, datetime]] | None = None,
 ) -> list[str]:
-    """Download every 2-minutes tar archive for `channel` on each of `days` (UTC calendar
-    dates, matching how mediatree lays out its S3 bucket) and extract each one's mp3 into
-    `dest_dir`. Only the extracted mp3s are kept; the tar archives themselves are
-    discarded once extracted. Parts whose mp3 is already present in `dest_dir` are left
-    untouched rather than re-downloaded.
+    """S3 keys of the 2-minutes tar archives for `channel` on each of `days` (UTC
+    calendar dates, matching how mediatree lays out its S3 bucket), sorted
+    chronologically, without downloading them.
 
-    With `only_parts` (UTC (start, end) of 2-minutes parts), archives of the bucket that
-    are not in this set are skipped. Parts of `only_parts` absent from the bucket are
-    simply missing from the result. A day without any folder is treated as empty.
-
-    Returns the mp3 path of every part (both pre-existing and newly downloaded), sorted
-    chronologically.
+    With `only_parts` (UTC (start, end) of 2-minutes parts), archives that are not in
+    this set are skipped. A day without any folder is treated as empty.
     """
 
     async def _ls_day(day: date) -> list[str]:
@@ -259,17 +251,43 @@ async def download_days_audio_parts(
     s3_keys = sorted(key for keys in keys_per_day for key in keys)
     if only_parts is not None:
         listed = len(s3_keys)
-        s3_keys = [
-            key
-            for key in s3_keys
-            if get_datetime_from_basename(os.path.splitext(os.path.basename(key))[0])
-            in only_parts
-        ]
+        s3_keys = [key for key in s3_keys if archive_part(key) in only_parts]
         logger.info(
             f"{len(s3_keys)} of the {listed} archives listed for {channel} are kept, "
             f"{listed - len(s3_keys)} are outside the expected parts"
         )
+    return s3_keys
 
+
+def archive_part(s3_key: str) -> tuple[datetime, datetime]:
+    """UTC (start, end) of the part of an archive key."""
+    return get_datetime_from_basename(os.path.splitext(os.path.basename(s3_key))[0])
+
+
+def archive_audio_path(s3_key: str, dest_dir: str) -> str:
+    """Local path of the mp3 that `download_audio_archives` extracts from an archive."""
+    return os.path.join(
+        dest_dir, f"{os.path.splitext(os.path.basename(s3_key))[0]}.mp3"
+    )
+
+
+async def download_audio_archives(
+    fs: s3fs.S3FileSystem,
+    s3_keys: list[str],
+    dest_dir: str,
+    max_concurrent_downloads: int = 10,
+    disable_progress: bool = False,
+    skip_failures: bool = False,
+) -> list[str]:
+    """Download the given tar archives and extract each one's mp3 into `dest_dir`
+    (at `archive_audio_path`). Only the extracted mp3s are kept; the tar archives
+    themselves are discarded once extracted. Parts whose mp3 is already present in
+    `dest_dir` are left untouched rather than re-downloaded.
+
+    Returns the mp3 path of every part, in the order of `s3_keys`. With
+    `skip_failures`, an archive that fails is logged and left out instead of failing
+    every download.
+    """
     os.makedirs(dest_dir, exist_ok=True)
     inflight = asyncio.Semaphore(max_concurrent_downloads)
 
@@ -277,11 +295,11 @@ async def download_days_audio_parts(
         total=len(s3_keys),
         desc="Downloading mediatree parts",
         unit="file",
+        disable=disable_progress,
     )
 
-    async def _bounded_download(s3_key: str, archive_dir: str) -> str:
-        audio_name = f"{os.path.splitext(os.path.basename(s3_key))[0]}.mp3"
-        audio_path = os.path.join(dest_dir, audio_name)
+    async def _bounded_download(s3_key: str, archive_dir: str) -> str | None:
+        audio_path = archive_audio_path(s3_key, dest_dir)
         try:
             if os.path.isfile(audio_path):
                 progress.count("cached")
@@ -293,17 +311,41 @@ async def download_days_audio_parts(
                 )
                 progress.count("downloaded")
                 return result
+        except Exception as e:
+            if not skip_failures:
+                raise
+            logger.warning(f"Skipping missing/unreadable part {s3_key}: {e}")
+            progress.count("failed")
+            return None
         finally:
             progress.update(1)
 
     try:
         with tempfile.TemporaryDirectory(dir=dest_dir) as archive_dir:
-            result = await asyncio.gather(
+            paths = await asyncio.gather(
                 *(_bounded_download(s3_key, archive_dir) for s3_key in s3_keys)
             )
-            return result
+            return [path for path in paths if path is not None]
     finally:
         progress.close()
+
+
+async def download_days_audio_parts(
+    fs: s3fs.S3FileSystem,
+    channel: str,
+    days: list[date],
+    dest_dir: str,
+    max_concurrent_downloads: int = 10,
+    only_parts: set[tuple[datetime, datetime]] | None = None,
+) -> list[str]:
+    """Download every 2-minutes archive for `channel` on each of `days` (see
+    `list_days_archives`) and extract each one's mp3 into `dest_dir` (see
+    `download_audio_archives`). Returns the mp3 paths, sorted chronologically.
+    """
+    s3_keys = await list_days_archives(fs, channel, days, only_parts)
+    return await download_audio_archives(
+        fs, s3_keys, dest_dir, max_concurrent_downloads
+    )
 
 
 async def _merge_audio_parts(

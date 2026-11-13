@@ -231,7 +231,7 @@ COVER_CHECK_ONLY=true START_DATE=2026-10-12 poetry run python quotaclimat/data_i
 The same summary is written in the text report of a normal detection run.
 
 ### Run the advertising detection
-`entrypoints/ad_s01_run_detection.sh` (Scaleway job `ad_s01_run_detection`) processes one week (Monday to Sunday, Paris time) of one channel per run. Only the 2-minutes files of the shows of the program grid (see "Program Metadata table") (with the same margins as the cover check) are downloaded and analysed: files of the bucket outside the program are skipped, missing ones are reported in the text report.
+`entrypoints/ad_s01_run_detection.sh` (Scaleway job `ad_s01_run_detection`) processes one week (Monday to Sunday, Paris time) of one channel per run. Only the 2-minutes files of the shows of the program grid (see "Program Metadata table") (with the same margins as the cover check) are downloaded and analysed: files of the bucket outside the program are skipped, missing ones are reported in the text report. The job's disk is 1 GB while a week of audio weighs several GB (up to ~7 GB for a 24h news channel): files are downloaded, split in chunks and deleted by batches of 100 (`DOWNLOAD_BATCH_SIZE` in `e00_download_audio.py`).
 
 | Variable | Purpose |
 |---|---|

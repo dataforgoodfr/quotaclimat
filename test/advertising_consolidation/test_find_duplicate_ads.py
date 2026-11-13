@@ -447,15 +447,20 @@ def test_run_on_database(connection, tmp_path):
         "https://keywords.mediatree.fr/player/?fifo=tf1&start_cts=1776110400"
         "&end_cts=1776110420&position_cts=1776110400"
     )
+    sources_header = ",".join(
+        f"mosaique_source_{i},mosaique_source_{i}_image" for i in range(1, 6)
+    )
     assert lines == [
         "group_id,group_size,mosaique,mosaique_image,ad_id,target_ad_id,brand,sector,"
-        "category,nb_occurrences,lien_mediatree,mosaiques_sources,chunk_coherent,"
-        "chunk_coherent_target",
-        "dup-1,2,https://bucket/screenshots/ads/dup-1.jpg,,dup-1,dup-1,Renault,,,2,"
-        f"{link_1},,False,",
-        f"dup-1,2,,,dup-2,dup-1,RENAULT,,,1,{link_2},"
-        "https://bucket/screenshots/ads/piece-a.jpg https://bucket/screenshots/ads/piece-c.jpg,"
-        "False,False",
+        "category,nb_occurrences,duration_sec,lien_mediatree,nb_sources_fusion,"
+        f"{sources_header},chunk_coherent,chunk_coherent_target",
+        "dup-1,2,https://bucket/screenshots/ads/dup-1.jpg,,dup-1,dup-1,Renault,,,2,20.0,"
+        f"{link_1},{',' * 10},False,",
+        # dup-2 is merged from 3 pieces, piece-b has no mosaic
+        f"dup-1,2,,,dup-2,dup-1,RENAULT,,,1,20.0,{link_2},3,"
+        "https://bucket/screenshots/ads/piece-a.jpg,,"
+        "https://bucket/screenshots/ads/piece-c.jpg,"
+        f"{',' * 6},False,False",
     ]
     # no Mediatree link for an occurrence older than the limit
     old_rows = fd.group_rows(pairs)

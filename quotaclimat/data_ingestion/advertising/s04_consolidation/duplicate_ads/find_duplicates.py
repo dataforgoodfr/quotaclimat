@@ -21,7 +21,9 @@ How it works:
 7. The pairs with score_min >= --min-score are grouped (connected components): a group_id gathers
    the ads linked by these pairs. Output, one row per ad of a group (an ad of a group of 2 has its
    own row, as the other one): the CSV with the mosaic and data of the ad, the target proposed for
-   a merge of its group (choose_target, first row of the group) and a row of "-" between groups, and
+   a merge of its group (choose_target, first row of the group), its Mediatree link, the mosaics of
+   the pieces of a merged ad, whether it matches chunk by chunk as the detection (chunks_coherent),
+   and a row of "-" between groups, and
    a .txt file next to it (<csv name>_metabase.txt) holding a SQL query to run in Metabase, which
    shows the same rows with the mosaic of each ad and links to its video. A second query
    (<csv name>_metabase_multimarques.txt) shows only the groups with several brands, with, for
@@ -40,7 +42,9 @@ Usage (POSTGRES_* env vars of the database holding the advertising schema):
 from __future__ import annotations
 
 import argparse
+import calendar
 import csv
+import math
 import logging
 import random
 import time
@@ -48,7 +52,7 @@ from collections import Counter, defaultdict, deque
 from collections.abc import Iterable, Iterator
 from dataclasses import dataclass, field
 import os
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 
 from sqlalchemy import cast, exists, func, literal_column, select
 from sqlalchemy.dialects.postgresql import JSONB
@@ -87,6 +91,9 @@ class AdPrint:
     nb_chunks: int
     index_keys: frozenset = field(default_factory=frozenset)
     meta: dict = field(default_factory=dict)  # copied to the output (brand, sector...)
+    chunks: list[Fingerprint] = field(
+        default_factory=list
+    )  # chunk fingerprints, in order
 
 
 def whole_ad_fingerprint(
@@ -379,6 +386,7 @@ def stream_ads(
             block=block,
             fingerprint=fingerprint,
             nb_chunks=len(row["fingerprints"] or []),
+            chunks=[Fingerprint.from_dict(c) for c in row["fingerprints"] or []],
             index_keys=sample_index_keys(
                 fingerprint.pairs,
                 args.index_pairs,
@@ -449,13 +457,26 @@ def choose_target(ads: list[AdPrint]) -> AdPrint:
     )
 
 
-def group_rows(pairs: list[DuplicatePair]) -> list[dict]:
+def chunks_coherent(compare: FingerprintsCompare, ad_a: AdPrint, ad_b: AdPrint) -> bool:
+    """Whether the two ads match chunk by chunk, in order, as the detection recognises a known ad
+    (s01_detection/e03_already_identified_advertising.py): same number of chunks, and chunk i of
+    one is_similar to chunk i of the other (acoustic pre-filter, then score threshold)."""
+    if not ad_a.chunks or len(ad_a.chunks) != len(ad_b.chunks):
+        return False
+    return all(compare.is_similar(a, b) for a, b in zip(ad_a.chunks, ad_b.chunks))
+
+
+def group_rows(
+    pairs: list[DuplicatePair], compare: FingerprintsCompare | None = None
+) -> list[dict]:
     """One row per ad of a group, sorted by group (biggest first), the target of the group first
     (choose_target, in target_ad_id on every row of the group), then by occurrences. Matching columns: the
     number of ads of the group it matches directly, its best match (highest score_min) with its
     scores, and every direct match as "ad_id:score_min" separated by spaces. Plus the
     MULTIBRAND_COLUMNS: a group is multi-brand when its ads have at least two different brands
-    (brand_key, the ads without brand not counted)."""
+    (brand_key, the ads without brand not counted). With compare: chunk_coherent (one of its direct
+    matches at least is chunk-coherent, see chunks_coherent) and chunk_coherent_target (with the
+    target of the group, empty on the target's own row)."""
     groups = connected_groups(pairs)
     ads: dict[str, AdPrint] = {}
     matches: dict[str, list[tuple[DuplicatePair, AdPrint]]] = defaultdict(list)
@@ -514,6 +535,16 @@ def group_rows(pairs: list[DuplicatePair]) -> list[dict]:
                 "group_brands": " | ".join(sorted(group_brands[group_id].values())),
                 "is_multibrand_group": len(group_brands[group_id]) >= 2,
                 **other_brand_columns(ad, other_brand),
+                "chunk_coherent": (
+                    any(chunks_coherent(compare, ad, other) for _, other in ad_matches)
+                    if compare
+                    else None
+                ),
+                "chunk_coherent_target": (
+                    chunks_coherent(compare, ad, ads[targets[group_id]])
+                    if compare and ad_id != targets[group_id]
+                    else None
+                ),
             }
         )
     return sorted(
@@ -567,6 +598,10 @@ CSV_COLUMNS = {
     "sector": "sector",
     "category": "category",
     "nb_occurrences": "nb_occurrences",
+    "lien_mediatree": "mediatree_link",
+    "mosaiques_sources": "source_mosaics",
+    "chunk_coherent": "chunk_coherent",
+    "chunk_coherent_target": "chunk_coherent_target",
 }
 SEPARATOR_ROW = {column: "-" for column in CSV_COLUMNS}
 
@@ -583,10 +618,83 @@ def write_csv(path: str, rows: list[dict]) -> None:
             previous_group = row["group_id"]
             writer.writerow(
                 {
-                    column: row[key] if key else None
+                    column: row.get(key) if key else None
                     for column, key in CSV_COLUMNS.items()
                 }
             )
+
+
+def mediatree_link(channel_name: str, start: datetime, duration_sec: float) -> str:
+    """Mediatree player on a broadcast, like lien_mediatree of curated.publicite (start in UTC: its
+    epoch is the cts of Mediatree)."""
+    epoch = calendar.timegm(start.utctimetuple()) + start.microsecond / 1e6
+    return (
+        f"https://keywords.mediatree.fr/player/?fifo={channel_name}"
+        f"&start_cts={math.floor(epoch)}&end_cts={math.ceil(epoch + duration_sec)}"
+        f"&position_cts={math.floor(epoch)}"
+    )
+
+
+def _batches(values: list, size: int = 1000) -> Iterator[list]:
+    for start in range(0, len(values), size):
+        yield values[start : start + size]
+
+
+def enrich_rows(
+    connection, rows: list[dict], link_max_age_days: int, now: datetime | None = None
+) -> None:
+    """Add to the rows, from the database:
+    - mediatree_link: Mediatree player on the last live occurrence of the ad, when it is less than
+      link_max_age_days old (Mediatree keeps a limited history, like curated.publicite);
+    - source_mosaics: when the ad is a merged ad (advertising.ad_merge), the mosaics of the ads it
+      was merged from, in broadcast order, separated by spaces (pieces without mosaic skipped)."""
+    now = now or datetime.utcnow()
+    ad_ids = list({row["ad_id"] for row in rows})
+    last_occurrence: dict[str, tuple[datetime, str]] = {}
+    sources: dict[str, list[str]] = {}
+    for batch in _batches(ad_ids):
+        for ad_id, occurrence_date, channel_name in connection.execute(
+            select(
+                Ad_Occurrence.ad_id,
+                Ad_Occurrence.occurrence_date,
+                Ad_Occurrence.channel_name,
+            )
+            .where(Ad_Occurrence.ad_id.in_(batch), Ad_Occurrence.deleted_at.is_(None))
+            .distinct(Ad_Occurrence.ad_id)
+            .order_by(Ad_Occurrence.ad_id, Ad_Occurrence.occurrence_date.desc())
+        ):
+            last_occurrence[ad_id] = (occurrence_date, channel_name)
+        for merged_ad_id, source_ad_ids in connection.execute(
+            select(Ad_Merge.merged_ad_id, Ad_Merge.source_ad_ids).where(
+                Ad_Merge.merged_ad_id.in_(batch)
+            )
+        ):
+            sources[merged_ad_id] = list(source_ad_ids)
+
+    source_ids = list({ad_id for ids in sources.values() for ad_id in ids})
+    mosaics: dict[str, str] = {}
+    for batch in _batches(source_ids):
+        for target_id, image_url in connection.execute(
+            select(Ad_Screenshot.target_id, Ad_Screenshot.image_url).where(
+                Ad_Screenshot.target_type == "ad",
+                Ad_Screenshot.target_id.in_(batch),
+                Ad_Screenshot.status == "done",
+            )
+        ):
+            mosaics[target_id] = image_url
+
+    for row in rows:
+        occurrence = last_occurrence.get(row["ad_id"])
+        row["mediatree_link"] = (
+            mediatree_link(occurrence[1], occurrence[0], row["duration_sec"])
+            if occurrence and occurrence[0] >= now - timedelta(days=link_max_age_days)
+            else None
+        )
+        row["source_mosaics"] = (
+            " ".join(mosaics[i] for i in sources[row["ad_id"]] if i in mosaics)
+            if row["ad_id"] in sources
+            else None
+        ) or None
 
 
 def _sql_literal(value) -> str:
@@ -863,6 +971,13 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         type=int,
         help="random sample of ads (stable), to try the thresholds",
     )
+    parser.add_argument(
+        "--mediatree-link-max-age-days",
+        type=int,
+        default=365,
+        help="no Mediatree link for a last occurrence older than this (default 365, as "
+        "curated.publicite)",
+    )
     parser.add_argument("--duration-tol", type=float, default=1.0)
     parser.add_argument("--index-pairs", type=int, default=60)
     parser.add_argument("--min-shared-keys", type=int, default=10)
@@ -906,7 +1021,8 @@ def main(argv: list[str] | None = None) -> None:
     engine = connect_to_db()
     with engine.connect() as connection:
         pairs = run(connection, args)
-    rows = group_rows(pairs)
+        rows = group_rows(pairs, args.compare)
+        enrich_rows(connection, rows, args.mediatree_link_max_age_days)
     write_csv(args.output, rows)
     query_path = metabase_query_path(args.output)
     with open(query_path, "w") as f:

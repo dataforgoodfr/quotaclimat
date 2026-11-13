@@ -332,8 +332,8 @@ of a group gets its own row (a group of 2 ads has 2 rows), never two ads mixed o
   than `--mediatree-link-max-age-days`, default 365 as `curated.publicite`), `duration_sec`, `nb_sources_fusion`
   (for a merged ad, the number of ads it was merged from) and `mosaique_source_1` to `mosaique_source_5`, each followed
   by an empty `..._image` column (the mosaics of these ads, in broadcast order, the first 5 with a mosaic; the
-  screenshots job only takes ads with live occurrences, which the pieces of a merge no longer have, so most pieces
-  have none), `chunk_coherent` (one of the
+  screenshots job takes the most broadcast ads first, and with `OCCURRENCES_FROM` only the ads broadcast since then:
+  the pieces of a merge, whose occurrences are deleted, come last or not at all, so most of them have none), `chunk_coherent` (one of the
   direct matches of the ad at least matches chunk by chunk, in order, as the detection recognises a known ad: same
   number of chunks, chunk i `is_similar` to chunk i) and `chunk_coherent_target` (the same with the target of the
   group, empty on the target's row). Two copies of an ad split in chunks at different places are not chunk-coherent:

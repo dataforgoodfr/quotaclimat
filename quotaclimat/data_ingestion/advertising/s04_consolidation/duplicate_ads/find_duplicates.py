@@ -349,6 +349,17 @@ def ads_query(args: argparse.Namespace):
         query = query.where(Ad.first_detection_date >= args.date_from)
     if args.date_to is not None:
         query = query.where(Ad.first_detection_date < args.date_to)
+    if args.occurrences_from is not None:
+        # only the ads still broadcast since this date (live occurrence, UTC), on both sides of a pair
+        query = query.where(
+            exists(
+                select(1).where(
+                    Ad_Occurrence.ad_id == Ad.id,
+                    Ad_Occurrence.deleted_at.is_(None),
+                    Ad_Occurrence.occurrence_date >= args.occurrences_from,
+                )
+            ).correlate(Ad)
+        )
     if args.max_ads is not None:
         # sample of ads spread over all durations, stable across runs (hash of the id)
         sampled = aliased(Ad)
@@ -1003,6 +1014,12 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument(
         "--date-to", type=date.fromisoformat, help="first_detection_date < (ISO date)"
+    )
+    parser.add_argument(
+        "--occurrences-from",
+        type=date.fromisoformat,
+        help="only the ads with a live occurrence from this date (ISO date, UTC), e.g. 2026-01-01: "
+        "an ad no longer broadcast since then is not compared at all",
     )
     parser.add_argument(
         "--fragment-types", nargs="+", default=list(DEFAULT_FRAGMENT_TYPES)

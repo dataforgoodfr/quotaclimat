@@ -370,7 +370,9 @@ which the `advertising_exportation` job has. The mosaics are kept in `advertisin
 
 Thresholds are not calibrated: start on a brand (`--brand`) or a duration range (`--min-duration`, `--max-duration`)
 or a sample (`--max-ads`), check pairs at several score levels, then widen. Other filters: `--date-from`/`--date-to`
-(first detection), `--fragment-types` (default `advertising AD`), `--min-occurrences` (default 1: skips the pieces
+(first detection), `--occurrences-from` (only the ads with a live occurrence from this date, UTC, e.g. `2026-01-01`:
+an ad no longer broadcast since then is not compared at all, so a recent ad and its old duplicate are not paired),
+`--fragment-types` (default `advertising AD`), `--min-occurrences` (default 1: skips the pieces
 of merged ads and the junk, whose occurrences are deleted), `--include-unbranded`.
 
 ```bash

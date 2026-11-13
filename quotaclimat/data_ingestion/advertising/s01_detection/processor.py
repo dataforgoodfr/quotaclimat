@@ -7,15 +7,21 @@ from functools import partial
 from ..tools.fingerprint_tools.compare import FingerprintsCompare
 from ..tools.fingerprints import fingerprinter
 from ..tools.interactive_tqdm import interactive_tqdm
-from .e00_download_audio import (DOWNLOAD_BATCH_SIZE, delete_audio,
-                                 download_jobs_audio, list_audio_jobs)
+from .e00_download_audio import (
+    DOWNLOAD_BATCH_SIZE,
+    delete_audio,
+    download_jobs_audio,
+    list_audio_jobs,
+)
 from .e01_check_partition_cover import check_partition_cover
 from .e02_split_in_chunks import ChunkCreator, ChunkCreatorJob
 from .e03_already_identified_advertising import run_chunk_identification
 from .e04_group_chunks import group_chunks
 from .e05_classify_fragments import FragmentsClassifier
-from .e06_export_classification import (clean_pre_existing_detections,
-                                        database_storage_save)
+from .e06_export_classification import (
+    clean_pre_existing_detections,
+    database_storage_save,
+)
 from .e07_export_raw_data import Report, TimingCollector, export_chunks_to_s3
 from .tools.cache import LocalCache
 from .tools.common_objects import Chunk

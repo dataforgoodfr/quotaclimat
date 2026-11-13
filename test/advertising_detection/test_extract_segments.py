@@ -7,12 +7,13 @@ import pytest
 
 from postgres.schemas.advertising.models import AdvertisingBase
 from postgres.schemas.models import connect_to_db
-from quotaclimat.data_ingestion.advertising.s01_detection.e00_download_audio import \
-    WeekAudio
-from quotaclimat.data_ingestion.advertising.s01_detection.e02_split_in_chunks import \
-    ChunkCreatorJob
-from quotaclimat.data_ingestion.advertising.s01_detection.processor import \
-    processor
+from quotaclimat.data_ingestion.advertising.s01_detection.e00_download_audio import (
+    WeekAudio,
+)
+from quotaclimat.data_ingestion.advertising.s01_detection.e02_split_in_chunks import (
+    ChunkCreatorJob,
+)
+from quotaclimat.data_ingestion.advertising.s01_detection.processor import processor
 from quotaclimat.data_ingestion.advertising.tools.segments import Segment
 
 logger = logging.getLogger(__name__)

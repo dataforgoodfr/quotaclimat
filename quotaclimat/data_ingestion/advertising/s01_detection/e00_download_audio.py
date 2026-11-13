@@ -4,11 +4,13 @@ import os
 from dataclasses import dataclass, field
 from datetime import datetime
 
-from ..tools.mediatree.bucket_mediatree import (archive_audio_path,
-                                                archive_part,
-                                                download_audio_archives,
-                                                get_s3_filesystem,
-                                                list_days_archives)
+from ..tools.mediatree.bucket_mediatree import (
+    archive_audio_path,
+    archive_part,
+    download_audio_archives,
+    get_s3_filesystem,
+    list_days_archives,
+)
 from ..tools.segments import Segment
 from .e01_check_partition_cover import expected_parts_for_week
 from .e02_split_in_chunks import ChunkCreatorJob
@@ -17,14 +19,6 @@ logger = logging.getLogger(__name__)
 
 AUDIO_DIR = "./.cache/mediatree"
 
-<<<<<<< Updated upstream
-async def download_all_audio_parts(
-    channel, start_date: datetime, end_date: datetime
-) -> list[ChunkCreatorJob]:
-    # Only the files of the shows of the program grid (with their margins) are
-    # analysed: what mediatree sent outside the program is skipped, what is missing is
-    # reported by check_partition_cover.
-=======
 # The job's disk is small (1 GB): the week is downloaded, split in chunks and deleted
 # by batches of 2-minutes files (a mp3 is ~2 MB, the tar it comes from, with its
 # video, much more: at most MAX_CONCURRENT_DOWNLOADS tars are on disk at once).
@@ -42,12 +36,11 @@ class WeekAudio:
 async def list_audio_jobs(channel: str, start_date: datetime) -> WeekAudio:
     """One job per 2-minutes file of the week to analyse, without downloading anything.
 
-    Only the files of the shows of program_metadata.json (with their margins) are
+    Only the files of the shows of the program grid (with their margins) are
     analysed: what mediatree sent outside the program is skipped, what is missing is
     reported by check_partition_cover. The audio of the jobs is downloaded later, batch
     by batch, by `download_jobs_audio`.
     """
->>>>>>> Stashed changes
     expected_parts = expected_parts_for_week(channel, start_date.date().isoformat())
     if not expected_parts:
         logger.warning(

@@ -3,12 +3,15 @@ from unittest.mock import patch
 
 import pytest
 
-from quotaclimat.data_ingestion.advertising.s01_detection import \
-    e00_download_audio
+from quotaclimat.data_ingestion.advertising.s01_detection import e00_download_audio
 from quotaclimat.data_ingestion.advertising.s01_detection.e00_download_audio import (
-    WeekAudio, delete_audio, download_jobs_audio)
-from quotaclimat.data_ingestion.advertising.s01_detection.e02_split_in_chunks import \
-    ChunkCreatorJob
+    WeekAudio,
+    delete_audio,
+    download_jobs_audio,
+)
+from quotaclimat.data_ingestion.advertising.s01_detection.e02_split_in_chunks import (
+    ChunkCreatorJob,
+)
 from quotaclimat.data_ingestion.advertising.tools.segments import Segment
 
 START = datetime(2025, 10, 13, 11, 0, tzinfo=timezone.utc)

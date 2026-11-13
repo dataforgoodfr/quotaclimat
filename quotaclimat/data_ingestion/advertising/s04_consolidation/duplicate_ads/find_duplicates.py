@@ -21,8 +21,8 @@ How it works:
 7. The pairs with score_min >= --min-score are grouped (connected components): a group_id gathers
    the ads linked by these pairs. Output, one row per ad of a group (an ad of a group of 2 has its
    own row, as the other one): the CSV with the mosaic and data of the ad, the target proposed for
-   a merge of its group (choose_target, first row of the group), its Mediatree link, the mosaics of
-   the pieces of a merged ad, whether it matches chunk by chunk as the detection (chunks_coherent),
+   a merge of its group (choose_target, first row of the group), its duration and Mediatree link,
+   the mosaics of the pieces of a merged ad (one column each), whether it matches chunk by chunk as the detection (chunks_coherent),
    and a row of "-" between groups, and
    a .txt file next to it (<csv name>_metabase.txt) holding a SQL query to run in Metabase, which
    shows the same rows with the mosaic of each ad and links to its video. A second query
@@ -587,6 +587,7 @@ def other_brand_columns(
 
 
 # CSV column -> key of the row (None: left empty, mosaique_image is for an image formula)
+MAX_SOURCE_MOSAICS = 5
 CSV_COLUMNS = {
     "group_id": "group_id",
     "group_size": "group_size",
@@ -598,8 +599,18 @@ CSV_COLUMNS = {
     "sector": "sector",
     "category": "category",
     "nb_occurrences": "nb_occurrences",
+    "duration_sec": "duration_sec",
     "lien_mediatree": "mediatree_link",
-    "mosaiques_sources": "source_mosaics",
+    "nb_sources_fusion": "nb_merge_sources",
+    # mosaics of the pieces of a merged ad, each one followed by an empty column for an image formula
+    **{
+        column: key
+        for i in range(1, MAX_SOURCE_MOSAICS + 1)
+        for column, key in (
+            (f"mosaique_source_{i}", f"source_mosaic_{i}"),
+            (f"mosaique_source_{i}_image", None),
+        )
+    },
     "chunk_coherent": "chunk_coherent",
     "chunk_coherent_target": "chunk_coherent_target",
 }
@@ -646,8 +657,11 @@ def enrich_rows(
     """Add to the rows, from the database:
     - mediatree_link: Mediatree player on the last live occurrence of the ad, when it is less than
       link_max_age_days old (Mediatree keeps a limited history, like curated.publicite);
-    - source_mosaics: when the ad is a merged ad (advertising.ad_merge), the mosaics of the ads it
-      was merged from, in broadcast order, separated by spaces (pieces without mosaic skipped)."""
+    - nb_merge_sources: when the ad is a merged ad (advertising.ad_merge), the number of ads it was
+      merged from;
+    - source_mosaic_1 to source_mosaic_<MAX_SOURCE_MOSAICS>: the mosaics of these ads, in broadcast
+      order, the first ones only, pieces without mosaic skipped. The screenshots job only takes ads
+      with live occurrences, which the pieces of a merge no longer have: most of them have none."""
     now = now or datetime.utcnow()
     ad_ids = list({row["ad_id"] for row in rows})
     last_occurrence: dict[str, tuple[datetime, str]] = {}
@@ -690,11 +704,13 @@ def enrich_rows(
             if occurrence and occurrence[0] >= now - timedelta(days=link_max_age_days)
             else None
         )
-        row["source_mosaics"] = (
-            " ".join(mosaics[i] for i in sources[row["ad_id"]] if i in mosaics)
-            if row["ad_id"] in sources
-            else None
-        ) or None
+        ad_sources = sources.get(row["ad_id"], [])
+        row["nb_merge_sources"] = len(ad_sources) if ad_sources else None
+        source_mosaics = [mosaics[i] for i in ad_sources if i in mosaics]
+        for i in range(MAX_SOURCE_MOSAICS):
+            row[f"source_mosaic_{i + 1}"] = (
+                source_mosaics[i] if i < len(source_mosaics) else None
+            )
 
 
 def _sql_literal(value) -> str:

@@ -332,8 +332,8 @@ of a group gets its own row (a group of 2 ads has 2 rows), never two ads mixed o
   than `--mediatree-link-max-age-days`, default 365 as `curated.publicite`), `duration_sec`, `nb_sources_fusion`
   (for a merged ad, the number of ads it was merged from) and `mosaique_source_1` to `mosaique_source_5`, each followed
   by an empty `..._image` column (the mosaics of these ads, in broadcast order, the first 5 with a mosaic; the
-  screenshots job only takes ads with live occurrences, which the pieces of a merge no longer have, so most pieces
-  have none), `chunk_coherent` (one of the
+  screenshots job takes the most broadcast ads first, and with `OCCURRENCES_FROM` only the ads broadcast since then:
+  the pieces of a merge, whose occurrences are deleted, come last or not at all, so most of them have none), `chunk_coherent` (one of the
   direct matches of the ad at least matches chunk by chunk, in order, as the detection recognises a known ad: same
   number of chunks, chunk i `is_similar` to chunk i) and `chunk_coherent_target` (the same with the target of the
   group, empty on the target's row). Two copies of an ad split in chunks at different places are not chunk-coherent:
@@ -351,6 +351,12 @@ of a group gets its own row (a group of 2 ads has 2 rows), never two ads mixed o
   ones of the ad. They are empty when the ad has no brand, or is linked to the other brands only through ads of its
   own brand. The header of the query lists how to read the scores. With `--blocking brand` (default), the ads of different brands are never
   compared: these groups only come from `--blocking none`.
+
+`--screenshots` makes the missing mosaics before writing the CSV: of the ads of the groups and of the ads the merged
+ones were merged from, with the screenshots job (`s05_enrichment/e02_screenshots`, `run_ads_by_ids`: every
+classification, `missing_source` retried, a merged ad without video from the videos of its pieces). It needs the
+environment of the screenshots job (`ADVERTISING_BUCKET_NAME`, `ADVERTISING_BUCKET_REGION`, `SCREENSHOT_ACL`, ffmpeg),
+which the `advertising_exportation` job has. The mosaics are kept in `advertising.ad_screenshot` like the others.
 
 Thresholds are not calibrated: start on a brand (`--brand`) or a duration range (`--min-duration`, `--max-duration`)
 or a sample (`--max-ads`), check pairs at several score levels, then widen. Other filters: `--date-from`/`--date-to`

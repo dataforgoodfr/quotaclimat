@@ -462,6 +462,14 @@ def test_run_on_database(connection, tmp_path):
         "https://bucket/screenshots/ads/piece-c.jpg,"
         f"{',' * 6},False,False",
     ]
+    # --screenshots: the ads of the groups and the pieces of the merged ones
+    assert fd.screenshot_ad_ids(connection, rows) == [
+        "dup-1",
+        "dup-2",
+        "piece-a",
+        "piece-b",
+        "piece-c",
+    ]
     # no Mediatree link for an occurrence older than the limit
     old_rows = fd.group_rows(pairs)
     fd.enrich_rows(connection, old_rows, 365, now=T0 + timedelta(days=400))

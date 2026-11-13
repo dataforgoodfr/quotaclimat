@@ -16,6 +16,7 @@ from sqlalchemy.orm import Session
 from postgres.database_connection import connect_to_db
 from postgres.schemas.advertising.models import (
     Ad,
+    Ad_Merge,
     Ad_Occurrence,
     Ad_Screenshot,
     AdvertisingBase,
@@ -452,3 +453,98 @@ def test_exportation_makes_the_ad_mosaic(tmp_path, monkeypatch):
 
     monkeypatch.setattr(exportation, "SCREENSHOT_ON_EXPORT", False)
     assert _export(str(tmp_path)) is None
+
+
+def test_source_positions_put_the_pieces_end_to_end():
+    sources = [
+        screenshots.SourceAd("a", 4.0, T0),
+        screenshots.SourceAd("b", 8.0, T0),
+    ]
+    # merged ad of the sum of the pieces: offsets 1, 3 in a; 5, 7, 9, 11 in b
+    assert screenshots.source_positions(frame_offsets(12.0), 12.0, sources) == [
+        (0, 1.0),
+        (0, 3.0),
+        (1, 1.0),
+        (1, 3.0),
+        (1, 5.0),
+        (1, 7.0),
+    ]
+    # merged ad longer than its pieces (gaps between them): offsets scaled to the pieces
+    assert screenshots.source_positions([0.0, 12.0, 24.0], 24.0, sources) == [
+        (0, 0.0),
+        (1, 2.0),
+        (1, 8.0),
+    ]
+
+
+@needs_ffmpeg
+def test_merged_ad_mosaic_from_the_videos_of_its_pieces(tmp_path, monkeypatch):
+    # pieces of 4s and 8s exported with the 1s margins, no video for the merged ad
+    videos = {
+        "piece-a": _test_video(str(tmp_path / "a.mp4"), duration_sec=6),
+        "piece-b": _test_video(str(tmp_path / "b.mp4"), duration_sec=10),
+    }
+    monkeypatch.setattr(screenshots, "LOCAL_CACHE_DIR", str(tmp_path))
+
+    async def _get_file(s3_key, local_path):
+        for ad_id, video in videos.items():
+            if f"/{ad_id}/" in s3_key:
+                shutil.copy(video, local_path)
+                return
+        raise FileNotFoundError(s3_key)
+
+    fs = SimpleNamespace(_get_file=_get_file)
+    sources = [
+        screenshots.SourceAd("piece-a", 4.0, T0),
+        screenshots.SourceAd("piece-b", 8.0, T0),
+    ]
+    with patch(f"{RUN_MODULE}._upload_mosaic", AsyncMock(return_value="https://img")):
+        merged = asyncio.run(
+            screenshots.screenshot_ad(fs, "merged", 12.0, T0, sources=sources)
+        )
+        # one piece without video: black tiles for its frames
+        half = asyncio.run(
+            screenshots.screenshot_ad(
+                fs,
+                "merged-2",
+                12.0,
+                T0,
+                sources=[sources[0], screenshots.SourceAd("piece-x", 8.0, T0)],
+            )
+        )
+        none = asyncio.run(
+            screenshots.screenshot_ad(
+                fs, "merged-3", 12.0, T0, [screenshots.SourceAd("piece-x", 8.0, T0)]
+            )
+        )
+        # without sources (option off), a merged ad without video is missing_source
+        off = asyncio.run(screenshots.screenshot_ad(fs, "merged", 12.0, T0))
+
+    assert merged.status == "done" and merged.source == "merged_sources"
+    assert merged.nb_frames == 6 and merged.image_url == "https://img"
+    assert merged.details == {"sources": ["piece-a", "piece-b"], "missing_sources": []}
+    assert half.status == "done" and half.nb_frames == 2
+    assert half.details["missing_sources"] == ["piece-x"]
+    assert none.status == "missing_source"
+    assert off.status == "missing_source" and off.source == "ad_export"
+
+
+def test_merge_sources(session):
+    for ad_id, duration in (("piece-b", 8.0), ("piece-a", 4.0)):
+        _add_ad(session, ad_id, 0, duration_sec=duration)
+    session.add(
+        Ad_Merge(
+            merged_ad_id="merged",
+            source_ad_ids=["piece-a", "piece-b", "deleted-piece"],
+            method="auto_split_pieces",
+            status="active",
+        )
+    )
+    session.commit()
+    sources = screenshots.merge_sources(session, ["merged", "other"])
+    assert sources == {
+        "merged": [
+            screenshots.SourceAd("piece-a", 4.0, T0),
+            screenshots.SourceAd("piece-b", 8.0, T0),
+        ]
+    }

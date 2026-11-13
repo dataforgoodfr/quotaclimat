@@ -244,6 +244,8 @@ The same summary is written in the text report of a normal detection run.
 
 There is no default value: without a channel or a start date the job fails. When the week to process is not finished yet (less than 7 days ago), the job stops without doing anything, so a scheduled catch-up stops by itself.
 
+The chunks of the week are first compared with the ads already in `advertising.ad` (`e03_already_identified_advertising.py`). Only the ads detected less than 3 months before the Monday of the processed week are searched for (`KNOWN_AD_MAX_AGE`): first detection or last occurrence not deleted, on any channel. An older ad that is broadcast again is detected as a new ad.
+
 ### Explore postgres data using Metabase - a BI tool
 ```
 docker compose up metabase -d

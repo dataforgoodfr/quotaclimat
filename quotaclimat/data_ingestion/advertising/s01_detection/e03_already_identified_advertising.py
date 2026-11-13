@@ -1,11 +1,12 @@
 import logging
 from collections import defaultdict
 from dataclasses import dataclass
+from datetime import datetime, timedelta
 
-from sqlalchemy import select
+from sqlalchemy import exists, or_, select
 
 from postgres.database_connection import get_db_session
-from postgres.schemas.advertising.models import Ad
+from postgres.schemas.advertising.models import Ad, Ad_Occurrence
 from quotaclimat.data_ingestion.advertising.tools.fingerprint_tools.compare import (
     FingerprintsCompare,
 )
@@ -20,6 +21,11 @@ CURSOR_BATCH_SIZE = 1000
 # classification (s03_classification/pipeline/e02_classify_ad.py), "AD" for an advertising
 ADVERTISING_FRAGMENT_TYPES = {"advertising", "AD"}
 
+# Only the ads detected (on any channel) less than this before the start of the processed
+# window are searched for: older ads are no longer broadcast, and comparing with them costs
+# time and false matches. An ad that comes back after this delay is detected again as a new ad.
+KNOWN_AD_MAX_AGE = timedelta(days=90)
+
 
 @dataclass
 class AdChunkMatch:
@@ -32,6 +38,7 @@ async def run_chunk_identification(
     chunks: list[Chunk],
     params_hash: str,
     compare: FingerprintsCompare,
+    reference_date: datetime,
 ) -> tuple[list[Fragment], list[Chunk]]:
     """
     Identifie les chunks déjà connus (présents dans la DB) et les chunks inconnus.
@@ -47,6 +54,9 @@ async def run_chunk_identification(
         chunks: Les chunks locaux à identifier.
         params_hash: Hash des paramètres ChunkCreator, pour filtrer les chunks DB compatibles.
         compare: FingerprintsCompare configuré avec les tolérances/seuils à utiliser.
+        reference_date: début de la fenêtre traitée. Seules les Ad détectées depuis
+            reference_date - KNOWN_AD_MAX_AGE (dernière occurrence non supprimée, toutes
+            chaînes, ou première détection) sont recherchées.
 
     Returns:
         (known_chunks, unknown_chunks): chunks reconnus (avec leurs Ad correspondantes) et inconnus.
@@ -58,14 +68,25 @@ async def run_chunk_identification(
     local_index = compare.build_similarity_index([c.fingerprint for c in chunks])
 
     total_db_fingerprints = 0
+    total_db_ads = 0
+    cutoff = reference_date - KNOWN_AD_MAX_AGE
+    recently_detected = or_(
+        Ad.first_detection_date >= cutoff,
+        exists().where(
+            Ad_Occurrence.ad_id == Ad.id,
+            Ad_Occurrence.deleted_at.is_(None),
+            Ad_Occurrence.occurrence_date >= cutoff,
+        ),
+    )
 
     with get_db_session() as session:
         for ads in session.scalars(
             select(Ad)
-            .where(Ad.deleted_at.is_(None))
+            .where(Ad.deleted_at.is_(None), recently_detected)
             .execution_options(yield_per=CURSOR_BATCH_SIZE)
         ).partitions():
             for ad in ads:
+                total_db_ads += 1
                 for entry_idx, chunk_entry in enumerate(ad.chunks or []):
                     if chunk_entry.get("hash") != params_hash:
                         continue
@@ -87,7 +108,8 @@ async def run_chunk_identification(
                                 )
 
     logger.info(
-        f"Loaded {total_db_fingerprints} DB fingerprints (params_hash={params_hash})"
+        f"Loaded {total_db_fingerprints} DB fingerprints of {total_db_ads} ads detected since {cutoff} "
+        f"(params_hash={params_hash})"
     )
 
     # --- Build final lists ---

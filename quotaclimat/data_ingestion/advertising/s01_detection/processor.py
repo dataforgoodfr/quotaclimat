@@ -153,6 +153,7 @@ async def processor(
             chunks,
             params_hash=fingerprint_hash,
             compare=fingerprints_compare,
+            reference_date=start_date,
         )
 
     #### Chunk grouping

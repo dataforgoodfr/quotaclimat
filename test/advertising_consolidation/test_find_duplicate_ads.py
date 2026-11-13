@@ -298,6 +298,26 @@ def test_metabase_query_path():
     )
 
 
+def test_upload_file_uses_a_new_s3_instance(monkeypatch):
+    # the cached instance may be bound to the event loop of --screenshots, closed since
+    from quotaclimat.data_ingestion.advertising.tools.mediatree import bucket_mediatree
+
+    calls = []
+
+    class FakeFs:
+        def put_file(self, local, remote):
+            calls.append((local, remote))
+
+    def fake_get_s3_filesystem(**kwargs):
+        assert kwargs == {"skip_instance_cache": True}
+        return FakeFs()
+
+    monkeypatch.setattr(bucket_mediatree, "get_s3_filesystem", fake_get_s3_filesystem)
+    args = SimpleNamespace(output_bucket="bucket", output_prefix="duplicate_ads")
+    assert fd.upload_file(args, "out/a.csv") == "bucket/duplicate_ads/a.csv"
+    assert calls == [("out/a.csv", "bucket/duplicate_ads/a.csv")]
+
+
 def test_connected_groups():
     a, b, c, d = (ad_print(x, []) for x in "abcd")
     pair = lambda x, y: fd.DuplicatePair(x, y, 10, 1.0, 1.0, True)  # noqa: E731

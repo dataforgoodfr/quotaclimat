@@ -52,7 +52,7 @@ from collections import Counter, defaultdict, deque
 from collections.abc import Iterable, Iterator
 from dataclasses import dataclass, field
 import os
-from datetime import date, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 
 from sqlalchemy import cast, exists, func, literal_column, select
 from sqlalchemy.dialects.postgresql import JSONB
@@ -690,7 +690,7 @@ def enrich_rows(
       order, the first ones only, pieces without mosaic skipped. The screenshots job takes the most
       broadcast ads first (only those broadcast since OCCURRENCES_FROM when set): the pieces of a
       merge, whose occurrences are deleted, come last or not at all, most of them have none."""
-    now = now or datetime.utcnow()
+    now = now or datetime.now(UTC).replace(tzinfo=None)
     ad_ids = list({row["ad_id"] for row in rows})
     last_occurrence: dict[str, tuple[datetime, str]] = {}
     sources: dict[str, list[str]] = {}
@@ -1113,7 +1113,8 @@ def upload_file(args: argparse.Namespace, path: str) -> str:
     )
 
     s3_path = output_s3_path(args.output_bucket, args.output_prefix, path)
-    get_s3_filesystem().put_file(path, s3_path)
+    # a new instance: the cached one may be bound to the event loop of --screenshots, closed since
+    get_s3_filesystem(skip_instance_cache=True).put_file(path, s3_path)
     return s3_path
 
 

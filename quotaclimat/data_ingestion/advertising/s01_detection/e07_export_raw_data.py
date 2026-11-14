@@ -41,10 +41,14 @@ class Timer:
         self.key = key
 
     def __enter__(self):
+        # Logged so that the job's logs show which step is running, and for how long
+        logger.info(f"Step {self.key}: start")
         self.t0 = time.monotonic()
 
     def __exit__(self, exc_type, exc_value, exc_traceback):
         self.timings[self.key] = time.monotonic() - self.t0
+        outcome = "done" if exc_type is None else f"failed ({exc_type.__name__})"
+        logger.info(f"Step {self.key}: {outcome} in {self.timings[self.key]:.0f}s")
 
 
 class TimingCollector:

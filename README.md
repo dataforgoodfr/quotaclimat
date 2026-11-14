@@ -242,6 +242,8 @@ The same summary is written in the text report of a normal detection run.
 | `MINIMAL_START_DATE` | Monday to start from for a channel without any occurrence |
 | `AUDIO_WORKERS` | Number of processes (default: Scaleway CPUs minus 2) |
 
+The logs give the start and the duration of every step (`Step <name>: start`, `Step <name>: done in <n>s`): `audio_listing`, `audio_download_and_processing`, `chunk_identification`, `chunk_grouping`, `fragment_classification`, `clean_pre_existing_occurrences`, `database_storage`. `chunk_identification` compares the chunks of the week to the fingerprints of every ad of `advertising.ad`, so it grows with the table: it logs its progress every 30 seconds (ads compared out of the total, fingerprints, candidate and matching chunks).
+
 There is no default value: without a channel or a start date the job fails. When the week to process is not finished yet (less than 7 days ago), the job stops without doing anything, so a scheduled catch-up stops by itself.
 
 The chunks of the week are first compared with the ads already in `advertising.ad` (`e03_already_identified_advertising.py`). Only the ads detected less than 3 months before the Monday of the processed week are searched for (`KNOWN_AD_MAX_AGE`): first detection or last occurrence not deleted, on any channel. An older ad that is broadcast again is detected as a new ad.

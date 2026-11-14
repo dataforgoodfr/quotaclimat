@@ -423,6 +423,7 @@ def args(**kwargs):
         max_duration=None,
         date_from=None,
         date_to=None,
+        occurrences_from=None,
         fragment_types=["AD", "advertising"],
         min_occurrences=1,
         max_ads=None,
@@ -450,6 +451,15 @@ def test_run_on_database(connection, tmp_path):
     assert [(p.ad_a.id, p.ad_b.id) for p in pairs] == [("dup-1", "dup-2")]
 
     assert fd.run(connection, args(min_duration=21)) == []
+    # occurrences from: dup-1 has occurrences at T0 and T0 + 1 min, dup-2 and other at T0
+    from_date = T0 + timedelta(seconds=30)
+    assert [
+        ad.id for ad in fd.stream_ads(connection, args(occurrences_from=from_date), FPS)
+    ] == ["dup-1"]
+    assert fd.run(connection, args(occurrences_from=from_date)) == []
+    assert (
+        len(list(fd.stream_ads(connection, args(occurrences_from=T0.date()), FPS))) == 3
+    )
     assert [ad.id for ad in fd.stream_ads(connection, args(brand="peugeot"), FPS)] == []
 
     rows = fd.group_rows(pairs, COMPARE)

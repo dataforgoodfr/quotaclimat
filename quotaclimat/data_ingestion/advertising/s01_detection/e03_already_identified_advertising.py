@@ -2,11 +2,12 @@ import logging
 import time
 from collections import defaultdict
 from dataclasses import dataclass
+from datetime import datetime, timedelta
 
-from sqlalchemy import Row, func, select
+from sqlalchemy import Row, exists, func, or_, select
 
 from postgres.database_connection import get_db_session
-from postgres.schemas.advertising.models import Ad
+from postgres.schemas.advertising.models import Ad, Ad_Occurrence
 from quotaclimat.data_ingestion.advertising.tools.fingerprint_tools.compare import (
     FingerprintsCompare,
 )
@@ -25,6 +26,11 @@ PROGRESS_LOG_INTERVAL_SEC = 30
 # classification (s03_classification/pipeline/e02_classify_ad.py), "AD" for an advertising
 ADVERTISING_FRAGMENT_TYPES = {"advertising", "AD"}
 
+# Only the ads detected (on any channel) less than this before the start of the processed
+# window are searched for: older ads are no longer broadcast, and comparing with them costs
+# time and false matches. An ad that comes back after this delay is detected again as a new ad.
+KNOWN_AD_MAX_AGE = timedelta(days=90)
+
 
 @dataclass
 class AdChunkMatch:
@@ -37,6 +43,7 @@ async def run_chunk_identification(
     chunks: list[Chunk],
     params_hash: str,
     compare: FingerprintsCompare,
+    reference_date: datetime,
 ) -> tuple[list[Fragment], list[Chunk]]:
     """
     Identifie les chunks déjà connus (présents dans la DB) et les chunks inconnus.
@@ -52,6 +59,9 @@ async def run_chunk_identification(
         chunks: Les chunks locaux à identifier.
         params_hash: Hash des paramètres ChunkCreator, pour filtrer les chunks DB compatibles.
         compare: FingerprintsCompare configuré avec les tolérances/seuils à utiliser.
+        reference_date: début de la fenêtre traitée. Seules les Ad détectées depuis
+            reference_date - KNOWN_AD_MAX_AGE (dernière occurrence non supprimée, toutes
+            chaînes, ou première détection) sont recherchées.
 
     Returns:
         (known_chunks, unknown_chunks): chunks reconnus (avec leurs Ad correspondantes) et inconnus.
@@ -72,21 +82,33 @@ async def run_chunk_identification(
     total_candidates = 0
     total_matches = 0
     last_progress_log = time.monotonic()
+    cutoff = reference_date - KNOWN_AD_MAX_AGE
+    searched_ads = (
+        Ad.deleted_at.is_(None),
+        or_(
+            Ad.first_detection_date >= cutoff,
+            exists().where(
+                Ad_Occurrence.ad_id == Ad.id,
+                Ad_Occurrence.deleted_at.is_(None),
+                Ad_Occurrence.occurrence_date >= cutoff,
+            ),
+        ),
+    )
 
     with get_db_session() as session:
         total_ads = session.scalar(
-            select(func.count()).select_from(Ad).where(Ad.deleted_at.is_(None))
+            select(func.count()).select_from(Ad).where(*searched_ads)
         )
         logger.info(
             f"Chunks identification: comparing the chunks to the fingerprints of the "
-            f"{total_ads} ads of the database"
+            f"{total_ads} ads of the database detected since {cutoff}"
         )
 
         # Only the columns used here: the transcript and the prediction of the ads are
         # not read, and no ORM object is built for the hundreds of thousands of ads
         for ads in session.execute(
             select(Ad.id, Ad.duration_sec, Ad.fragment_type, Ad.chunks)
-            .where(Ad.deleted_at.is_(None))
+            .where(*searched_ads)
             .execution_options(yield_per=CURSOR_BATCH_SIZE)
         ).partitions():
             for ad in ads:

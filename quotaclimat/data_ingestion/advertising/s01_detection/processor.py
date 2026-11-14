@@ -145,6 +145,9 @@ async def processor(
 
             # Sort by start time. Should already be the case, but ensure it.
             chunks.sort(key=lambda c: c.start_sec)
+            logger.info(
+                f"{len(chunks)} chunks in the {len(chunks_creator_jobs)} audio files"
+            )
 
     #### Identification of known chunks
 
@@ -166,6 +169,10 @@ async def processor(
         fragment_classifier = FragmentsClassifier.from_channel(channel)
         fragments = fragment_classifier.run(
             groups, already_known_fragments=previously_known_fragments
+        )
+        logger.info(
+            f"{len(fragments)} fragments classified from {len(groups)} groups of chunks "
+            f"and {len(previously_known_fragments)} fragments of known ads"
         )
 
     #### Database storage

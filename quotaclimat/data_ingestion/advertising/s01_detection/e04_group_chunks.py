@@ -85,7 +85,7 @@ def _cluster(
             if j > i:
                 candidates.add((i, j))
 
-    logger.debug(
+    logger.info(
         f"Clustering {n} chunks — {len(candidates)} candidate pairs "
         f"(pruned from {n * (n - 1) // 2} exhaustive)"
     )
@@ -101,7 +101,7 @@ def _cluster(
             union(i, j)
             matches += 1
 
-    logger.debug(f"  {matches} similar pairs found")
+    logger.info(f"Clustering: {matches} similar pairs found")
 
     groups = defaultdict(list)
     for i in range(n):
@@ -113,7 +113,7 @@ def _cluster(
 def group_chunks(source: List[Chunk], compare: FingerprintsCompare) -> list[ChunkGroup]:
     # Filter out very short chunks
     chunks = [c for c in source if c.fingerprint.duration_sec >= 0.5]
-    logger.debug(f"{len(chunks)} chunks to group")
+    logger.info(f"{len(chunks)} chunks to group (out of {len(source)} unknown chunks)")
 
     groups = _cluster(chunks, compare)
 

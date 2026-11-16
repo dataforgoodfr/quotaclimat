@@ -137,9 +137,6 @@ inondations:
 cop_climat:
   periodes:
     france:
-      - id: 202311_cop28_dubai
-        start: 2023-11-23
-        end: 2023-12-21
       - id: 202411_cop29_bakou
         start: 2024-11-04
         end: 2024-12-02

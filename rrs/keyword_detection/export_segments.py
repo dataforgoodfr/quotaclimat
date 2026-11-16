@@ -14,8 +14,9 @@ Equivalent to:
     ORDER BY s.start
     LIMIT :max_segments
 
-Output columns: id, channel_name, datetime, plaintext, url
-(segment_id, channel_name, start, recovered text, url_mediatree).
+Output columns: id, channel_name, datetime, plaintext, url, keywords
+(segment_id, channel_name, start, recovered text, url_mediatree, keywords found
+joined with " | ").
 
 Usage:
     poetry run python -m rrs.keyword_detection.export_segments
@@ -44,6 +45,7 @@ logging.basicConfig(level=logging.INFO)
 
 DEFAULT_SUBJECT_NAME = "environmental_health"
 REGION = "fr-par"
+KEYWORDS_SEPARATOR = " | "
 
 
 def get_secret_docker(secret_name: str) -> str:
@@ -121,6 +123,13 @@ def _fetch_plaintexts(con: duckdb.DuckDBPyConnection, df: pd.DataFrame) -> pd.Se
     return plaintext
 
 
+def _join_keywords(keywords) -> Optional[str]:
+    """Join the keywords array of a segment into one CSV-friendly string."""
+    if keywords is None or (not hasattr(keywords, "__iter__")):
+        return None
+    return KEYWORDS_SEPARATOR.join(str(k) for k in keywords)
+
+
 def export_segments(
     subject_name: str = DEFAULT_SUBJECT_NAME,
     n_keywords: Optional[int] = None,
@@ -182,13 +191,15 @@ def export_segments(
     df["plaintext"] = _fetch_plaintexts(con, df)
     logging.info(f"  {df['plaintext'].notna().sum()}/{len(df)} segment(s) matched a plaintext.")
 
+    df["keywords"] = df["keywords"].apply(_join_keywords)
+
     out = df.rename(
         columns={
             "segment_id": "id",
             "start": "datetime",
             "url_mediatree": "url",
         }
-    )[["id", "channel_name", "datetime", "plaintext", "url"]]
+    )[["id", "channel_name", "datetime", "plaintext", "url", "keywords"]]
 
     if output_path:
         out.to_csv(output_path, index=False)

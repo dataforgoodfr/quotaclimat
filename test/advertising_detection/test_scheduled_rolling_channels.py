@@ -1,5 +1,6 @@
 from datetime import datetime
 from unittest.mock import patch
+from zoneinfo import ZoneInfo
 
 import pytest
 
@@ -48,3 +49,30 @@ def test_weekday_cron_only_runs_that_day(monkeypatch):
 )
 def test_fixed_minute_cron(now, expected, monkeypatch):
     assert channel_at("55 7-18 * * *:tf1,france2,m6", now, monkeypatch) == expected
+
+
+def now_timezone(src, monkeypatch):
+    monkeypatch.setenv("SCHEDULED_ROLLING_CHANNELS", src)
+    with patch(f"{MODULE}.datetime") as mocked:
+        mocked.now.return_value = datetime(2026, 11, 16, 10, 15)
+        channel = scheduled_rolling_channels.get_scheduled_rolling_channel()
+        return channel, mocked.now.call_args.kwargs["tz"]
+
+
+def test_cron_hours_default_to_paris_time(monkeypatch):
+    assert now_timezone("15 8-19 * * *:tf1,itele,arte", monkeypatch) == (
+        "arte",
+        ZoneInfo("Europe/Paris"),
+    )
+
+
+def test_cron_timezone_in_the_variable(monkeypatch):
+    assert now_timezone("15 8-19 * * *:Etc/UTC:tf1,itele,arte", monkeypatch) == (
+        "arte",
+        ZoneInfo("Etc/UTC"),
+    )
+
+
+def test_unknown_timezone(monkeypatch):
+    monkeypatch.setenv("SCHEDULED_ROLLING_CHANNELS", "15 8-19 * * *:Mars/Olympus:tf1")
+    assert scheduled_rolling_channels.get_scheduled_rolling_channel() is None

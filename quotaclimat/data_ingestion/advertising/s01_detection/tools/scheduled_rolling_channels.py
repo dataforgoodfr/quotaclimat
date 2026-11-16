@@ -2,7 +2,7 @@ import logging
 import os
 import re
 from datetime import datetime
-from zoneinfo import ZoneInfo
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 logger = logging.getLogger(__name__)
 
@@ -10,8 +10,9 @@ logger = logging.getLogger(__name__)
 def get_scheduled_rolling_channel():
     # This var env allows the job to run alternatively on all the channels.
     # This var should be in the format:
-    # CRON:CHANNELS
-    # where CRON is the value of the cron expression placed on the job
+    # CRON:TIMEZONE:CHANNELS (or CRON:CHANNELS, TIMEZONE is then Europe/Paris)
+    # where CRON is the value of the cron expression placed on the job,
+    # TIMEZONE the time zone of the job's cron schedule (e.g. Europe/Paris, Etc/UTC)
     # and CHANNELS is the list of channels separated by a ","
     #
     # Behavior:
@@ -20,8 +21,7 @@ def get_scheduled_rolling_channel():
     #   "*/30 18-23 * * 1": every 30 minutes from 18:00 to 23:30, on Mondays
     #   "55 7-18 * * *": every hour at minute 55 from 7:55 to 18:55, every day
     #   (the weekday can be a number or "*")
-    # - The cron hours are read in Europe/Paris time (the time zone of the job's cron schedule),
-    #   not in the container's time zone (UTC). SCHEDULED_ROLLING_CHANNELS_TIMEZONE can change it.
+    # - The cron hours are read in TIMEZONE, not in the container's time zone (UTC)
     # - When the process is running, it tries to find if it was triggered by the cron, and count the number of iterations already happens this day
     # - This number is used in the CHANNELS list to pick the channel. If the list is to short, this feature is desactivated
 
@@ -29,11 +29,28 @@ def get_scheduled_rolling_channel():
     if src is None:
         return
 
-    cron, channels_str = src.split(":")
+    parts = src.split(":")
+    if len(parts) == 2:
+        cron, timezone_name, channels_str = parts[0], "Europe/Paris", parts[1]
+    elif len(parts) == 3:
+        cron, timezone_name, channels_str = parts
+    else:
+        logger.warning(
+            f"SCHEDULED_ROLLING_CHANNELS should be CRON:TIMEZONE:CHANNELS or CRON:CHANNELS: {src}"
+        )
+        return
     if not cron or not channels_str or cron.startswith("-"):
         return
 
     channels = [c.strip() for c in channels_str.split(",")]
+
+    try:
+        tz = ZoneInfo(timezone_name.strip())
+    except (ZoneInfoNotFoundError, ValueError):
+        logger.warning(
+            f"It looks like a SCHEDULED_ROLLING_CHANNELS but the time zone is unknown: {timezone_name}"
+        )
+        return
 
     # Expected cron format: "*/INTERVAL HOUR_START-HOUR_END * * WEEKDAY"
     # or "MINUTE HOUR_START-HOUR_END * * WEEKDAY" (WEEKDAY can be *)
@@ -56,9 +73,7 @@ def get_scheduled_rolling_channel():
         5
     )  # cron: 0=Sunday … 6=Saturday, 7=Sunday; iso: 1=Monday … 7=Sunday
 
-    now = datetime.now(
-        tz=ZoneInfo(os.environ.get("SCHEDULED_ROLLING_CHANNELS_TIMEZONE", "Europe/Paris"))
-    )
+    now = datetime.now(tz=tz)
 
     # % 7 maps both cron 0 and cron 7 to 0 (Sunday), and isoweekday() 7 to 0 as well
     if weekday != "*" and now.isoweekday() % 7 != int(weekday) % 7:

@@ -51,10 +51,28 @@ def test_fixed_minute_cron(now, expected, monkeypatch):
     assert channel_at("55 7-18 * * *:tf1,france2,m6", now, monkeypatch) == expected
 
 
-def test_cron_hours_are_read_in_paris_time(monkeypatch):
-    monkeypatch.delenv("SCHEDULED_ROLLING_CHANNELS_TIMEZONE", raising=False)
-    monkeypatch.setenv("SCHEDULED_ROLLING_CHANNELS", "15 8-19 * * *:tf1,itele,arte")
+def now_timezone(src, monkeypatch):
+    monkeypatch.setenv("SCHEDULED_ROLLING_CHANNELS", src)
     with patch(f"{MODULE}.datetime") as mocked:
         mocked.now.return_value = datetime(2026, 11, 16, 10, 15)
-        assert scheduled_rolling_channels.get_scheduled_rolling_channel() == "arte"
-        mocked.now.assert_called_once_with(tz=ZoneInfo("Europe/Paris"))
+        channel = scheduled_rolling_channels.get_scheduled_rolling_channel()
+        return channel, mocked.now.call_args.kwargs["tz"]
+
+
+def test_cron_hours_default_to_paris_time(monkeypatch):
+    assert now_timezone("15 8-19 * * *:tf1,itele,arte", monkeypatch) == (
+        "arte",
+        ZoneInfo("Europe/Paris"),
+    )
+
+
+def test_cron_timezone_in_the_variable(monkeypatch):
+    assert now_timezone("15 8-19 * * *:Etc/UTC:tf1,itele,arte", monkeypatch) == (
+        "arte",
+        ZoneInfo("Etc/UTC"),
+    )
+
+
+def test_unknown_timezone(monkeypatch):
+    monkeypatch.setenv("SCHEDULED_ROLLING_CHANNELS", "15 8-19 * * *:Mars/Olympus:tf1")
+    assert scheduled_rolling_channels.get_scheduled_rolling_channel() is None

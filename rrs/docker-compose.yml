@@ -293,8 +293,9 @@ services:
       SPACY_MODEL: fr_core_news_sm
       WINDOW_SIZE: 3
       OVERLAP_TOKENS: 30
-      PROVIDER: anthropic
-      MAX_CONCURRENT_REQUESTS: 5
+      PROVIDER: mistral
+      LLM_MODEL: mistral-small-2603
+      MAX_CONCURRENT_REQUESTS: 20
       # INITIAL_LABELS_FILE: ./labels # overrides seed labels
       # NO_SEEDS: 0
       # SKIP_MERGE: 0

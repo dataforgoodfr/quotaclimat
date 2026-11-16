@@ -1,0 +1,71 @@
+summary: Run a Docker container on the host
+description: "Windmill equivalent of Kestra's docker.Run: pulls the image, runs
+  it with its environment and streams its logs. Secrets are passed as variable
+  paths and read at run time. See docs/windmill_flows.md."
+lock: '!inline f/shared/docker_run.script.lock'
+kind: script
+schema:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  order:
+    - image
+    - entrypoint
+    - command
+    - env
+    - secret_env
+    - registry
+    - registry_password_secret
+    - shm_size
+    - stdout_logs
+  properties:
+    command:
+      type: array
+      description: Arguments given to the entrypoint. Empty keeps the image's.
+      default: null
+      items:
+        type: string
+      originalType: string[]
+    entrypoint:
+      type: array
+      description: Replaces the image's entrypoint. Empty keeps the image's.
+      default: null
+      items:
+        type: string
+      originalType: string[]
+    env:
+      type: object
+      description: Environment variables of the container.
+      default: null
+      properties: {}
+    image:
+      type: string
+      description: Image to run, pulled before each run.
+      default: null
+      originalType: string
+    registry:
+      type: string
+      description: Private registry of the image (user nologin).
+      default: ''
+      originalType: string
+    registry_password_secret:
+      type: string
+      description: Path of the variable holding the registry password.
+      default: ''
+      originalType: string
+    secret_env:
+      type: object
+      description: 'Environment variables read from Windmill variables: {NAME:
+        "f/secrets/X"}, or "f/secrets/X#key" for one key of a JSON variable.'
+      default: null
+      properties: {}
+    shm_size:
+      type: string
+      description: Size of /dev/shm.
+      default: 6g
+      originalType: string
+    stdout_logs:
+      type: boolean
+      description: False keeps only stderr in the logs (Kestra's logLevel WARN).
+      default: true
+  required:
+    - image

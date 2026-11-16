@@ -1,0 +1,24 @@
+summary: quotaclimat-dev/alert-test
+description: >-
+  Always fails. Called by the dev `main-pipeline` when run with
+  `test_alert=true`, to
+
+  check that a failing step sends the Mattermost alert (message, links to the
+
+  failed subflow and to the execution).
+value:
+  modules:
+    - id: fail
+      summary: fail
+      value:
+        type: rawscript
+        content: '!inline fail.py'
+        input_transforms: {}
+        lock: '!inline fail.lock'
+        language: python3
+schema:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  order: []
+  properties: {}
+  required: []

@@ -1,6 +1,6 @@
 # Screenshots (visual checks)
 
-Scaleway job (`entrypoints/advertising_screenshots.sh`, image `quotaclimat_with_media_tools` for ffmpeg).
+Scaleway job (`entrypoints/ad_s05e02_screenshots_enrichment.sh`, image `quotaclimat_with_media_tools` for ffmpeg).
 Screenshots of every ad and every occurrence, to check by eye in Metabase that:
 
 - the metadata of an ad (brand, sector, category) match what is shown;
@@ -17,13 +17,29 @@ START_DATE=2026-04-01 END_DATE=2026-04-08 poetry run python -m quotaclimat.data_
 
 ## Sources
 
-- **Ads**: the video saved by the exportation (`s02_exportation`), `ads/<ad_id>/raw.mp4` in the advertising
+- **Ads, at the exportation**: the exportation (`s02_exportation/run.py`) makes the mosaic of every ad it
+  exports, right after cutting its video and before deleting the local copy: no download, and the margin is
+  the one it has just applied (`MARGIN_ON_MEDIA_EXPORT`). It runs before the classification, so every
+  exported ad gets one, whatever its future `prediction_status` (jingles and non ads included). A new export
+  of an ad (merged ad, corrupted mp4 exported again) replaces its mosaic. A failed mosaic is an `error` row
+  and does not fail the export. `SCREENSHOT_ON_EXPORT=false` turns it off. The exportation job needs the same
+  `ADVERTISING_BUCKET_REGION` and `SCREENSHOT_ACL` as this job (defaults `fr-par`, `public-read`).
+- **Ads, catch-up by this job**: the ads without a `done` row (exported before this change, or whose mosaic
+  failed at the exportation), from the video saved by the exportation (`s02_exportation`), `ads/<ad_id>/raw.mp4` in the advertising
   bucket. It starts a margin before the ad, which changed over time (`MARGIN_ON_MEDIA_EXPORT_HISTORY` in
   `s02_exportation/ad_bucket.py`, shared with `recompute_saved_chunks.py`: 1s, then 0.1s from
   2026-04-27). The margin is the one of the history closest to (video duration - ad duration) / 2, so that
   an ad exported after its detection (merged ad, mp4 exported again) gets the margin of its export; the
   detection date gives it when ffprobe can't read the duration. It is kept in `details.margin_sec`.
   No video: `missing_source`.
+- **Merged ads, from their pieces** (`MERGED_FROM_SOURCES=true`, off by default): a merged ad
+  (`advertising.ad_merge`, e.g. `merge_inherited`) has no video of its own until it is exported. With this option,
+  a merged ad without `ads/<ad_id>/raw.mp4` gets a mosaic from the videos of the ads it was merged from (each with its
+  own export margin), in broadcast order. The frames are at the usual offsets of an ad of this duration, mapped to
+  the pieces put end to end and scaled to the duration of the merged ad: the gaps between the pieces are not known,
+  so a frame can be off by as much as them. A piece without video gives black tiles, no video at all
+  `missing_source`. `source` is `merged_sources`, `details` lists the sources and the missing ones. A merged ad that
+  has its own video keeps the usual mosaic. Already `missing_source` merged ads need `RETRY_MISSING=true`.
 - **Occurrences**: the 2-minutes archives of the mediatree bucket (`output/<channel>/<yyyy>/<mm>/<dd>/`),
   the ones the exportation cuts the ads from. The occurrences are streamed from Postgres one channel and
   UTC day at a time. The day folders are listed first: an occurrence with a frame in an archive missing
@@ -99,6 +115,8 @@ the first ads sooner.
 | `OCCURRENCES_FROM` | none | only the occurrences broadcast from this date, Paris time (`2025-09-29`) |
 | `ADS_PER_OCCURRENCE_BATCH` | `20` | ads per batch of occurrences, see Order |
 | `RETRY_MISSING` | `false` | also retry the `missing_source` rows |
+| `MERGED_FROM_SOURCES` | `false` | a merged ad without video: mosaic from the videos of its pieces (see Sources) |
+| `SCREENSHOT_ON_EXPORT` | `true` | exportation job (`s02_exportation`) only: make the mosaic of each exported ad |
 | `SCREENSHOT_ACL` | `public-read` | ACL of the uploaded images (`private` to keep them private) |
 | `SCREENSHOT_NB_FRAMES`, `SCREENSHOT_MOSAIC_COLUMNS` | `6`, `3` | mosaic layout |
 | `ADVERTISING_BUCKET_NAME`, `ADVERTISING_BUCKET_REGION`, `MEDIATREE_BUCKET_NAME`, `BUCKET`, `BUCKET_SECRET` | | buckets and credentials, as for the exportation |

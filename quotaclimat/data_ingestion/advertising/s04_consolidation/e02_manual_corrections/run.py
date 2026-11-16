@@ -6,11 +6,16 @@ the name of a tab gives its kind (TAB_KINDS), all the tabs of a kind have the sa
 - nouvelle_ad...: occurrences attributed to the wrong ad (occurrence_id), moved to a new ad, one per tab
   and per value of the optional ad_indicator column;
 - dechets...: occurrences that are not ads (occurrence_id), soft deleted;
-- reattribution...: occurrences attributed to the wrong ad (occurrence_id), moved to an existing ad (ad_id).
+- reattribution...: occurrences attributed to the wrong ad (occurrence_id), moved to an existing ad (ad_id);
+- fusion...: ads stored twice (ad_id), all their occurrences moved to another existing ad (target_ad_id), the
+  ad being soft deleted (deleted_at: kept for its history, left out of every step).
 
 Each row is processed once: the job fills traite_le, resultat (appliqué, avertissement or erreur) and
 message, and the rows with a traite_le are skipped (to process a row again, empty its traite_le). A warning
 (value inconsistent with the reference data) does not stop the correction, an error changes nothing.
+
+A tab whose rows all have a traite_le after the run is archived: renamed with a "_" in front, it is not read
+by the next runs. To process rows of an archived tab again, remove the "_" and empty their traite_le.
 
 Env: POSTGRES_*, GOOGLE_SHEETS_EDITOR_SERVICE_ACCOUNT_JSON, EXTERNAL_SOURCES_DRIVE_FOLDER,
 MANUAL_CORRECTIONS_SPREADSHEET (default Corrections_publicites), BUCKET, BUCKET_SECRET,
@@ -39,6 +44,8 @@ from quotaclimat.data_ingestion.advertising.s04_consolidation.e02_manual_correct
     correct_ad,
     create_ad_from_occurrences,
     live_occurrences,
+    merge_ad_into,
+    deleted_error,
     new_ad_id,
     reattribute_occurrence,
     trash_occurrence,
@@ -57,14 +64,16 @@ KIND_AD = "correction_ads"
 KIND_NEW_AD = "nouvelle_ad"
 KIND_TRASH = "dechets"
 KIND_REATTRIBUTION = "reattribution"
+KIND_MERGE = "fusion"
 # beginning of the name of a tab -> its kind
-TAB_KINDS = (KIND_AD, KIND_NEW_AD, KIND_TRASH, KIND_REATTRIBUTION)
+TAB_KINDS = (KIND_AD, KIND_NEW_AD, KIND_TRASH, KIND_REATTRIBUTION, KIND_MERGE)
 # column identifying the rows of a kind of tab
 KEY_COLUMNS = {
     KIND_AD: "ad_id",
     KIND_NEW_AD: "occurrence_id",
     KIND_TRASH: "occurrence_id",
     KIND_REATTRIBUTION: "occurrence_id",
+    KIND_MERGE: "ad_id",
 }
 
 # columns filled by the job (added after the last column when missing)
@@ -75,6 +84,8 @@ COLUMN_PREVIOUS = "valeurs_precedentes"
 COLUMN_NEW_AD = "nouvelle_ad_id"
 COLUMN_NEW_OCCURRENCE = "nouvelle_occurrence_id"
 COLUMN_AD_INDICATOR = "ad_indicator"
+COLUMN_TARGET_AD = "target_ad_id"
+COLUMN_MOVED = "nb_occurrences_deplacees"
 
 VideoExporter = Callable[..., object]
 
@@ -178,6 +189,29 @@ def process_reattribution_rows(
     return updates
 
 
+def process_merge_rows(
+    session: Session, rows: list[SheetRow], spreadsheet: str, tab: str
+) -> list[tuple[SheetRow, dict[str, str]]]:
+    """Rows processed in order: an ad merged higher in the tab is deleted, it can no longer be merged nor be a
+    target (A -> B then B -> C works, B -> C then A -> B is an error)."""
+    updates = []
+    for row in rows:
+        ad_id = row.values["ad_id"]
+        target_ad_id = row.values.get(COLUMN_TARGET_AD, "").strip()
+        source = {"spreadsheet": spreadsheet, "tab": tab, "row": row.number}
+        extra = {}
+        try:
+            with session.begin_nested():
+                outcome, moved = merge_ad_into(session, ad_id, target_ad_id, source)
+            if outcome.result != RESULT_ERROR and ad_id != target_ad_id:
+                extra = {COLUMN_MOVED: str(moved)}
+        except Exception as e:
+            logging.exception("Merge of the ad %s failed", ad_id)
+            outcome = Outcome.error(f"échec : {e}")
+        updates.append((row, _cells(outcome, **extra)))
+    return updates
+
+
 def _new_ad_group(
     session: Session,
     rows: list[SheetRow],
@@ -196,6 +230,10 @@ def _new_ad_group(
             occurrence_ids.append(occurrence_id)
     occurrences, errors = live_occurrences(session, occurrence_ids)
     existing_ad = session.get(Ad, ad_id)
+    if existing_ad is not None and deleted_error(existing_ad):
+        for occurrence_id in occurrences:
+            errors[occurrence_id] = Outcome.error(deleted_error(existing_ad))
+        occurrences = {}
     for occurrence_id, occurrence in list(occurrences.items()):
         if occurrence.ad_id == ad_id:
             errors[occurrence_id] = Outcome.error("occurrence déjà dans cette ad")
@@ -289,7 +327,8 @@ def process_tab(
     references: References,
     export_video: VideoExporter,
     dry_run: bool,
-) -> Counter:
+) -> tuple[Counter, bool]:
+    """Results of the rows of the tab, and whether all its rows are processed (the tab can be archived)."""
     kind = tab_kind(tab)
     if kind is None:
         logging.warning(
@@ -297,19 +336,17 @@ def process_tab(
             tab,
             ", ".join(TAB_KINDS),
         )
-        return Counter()
+        return Counter(), False
     key_column = KEY_COLUMNS[kind]
     header, rows = sheet.read(tab)
     if key_column not in header:
         logging.error("Tab %s skipped: no column %s", tab, key_column)
-        return Counter()
-    pending = [
-        row
-        for row in rows
-        if row.values.get(key_column) and not row.values.get(COLUMN_DONE)
-    ]
+        return Counter(), False
+    keyed = [row for row in rows if row.values.get(key_column)]
+    pending = [row for row in keyed if not row.values.get(COLUMN_DONE)]
     if not pending:
-        return Counter()
+        # a tab without any row may be being filled by a human: not archived
+        return Counter(), bool(keyed)
     for row in pending:
         row.values[key_column] = row.values[key_column].strip()
 
@@ -319,6 +356,8 @@ def process_tab(
         updates = process_trash_rows(session, pending)
     elif kind == KIND_REATTRIBUTION:
         updates = process_reattribution_rows(session, pending)
+    elif kind == KIND_MERGE:
+        updates = process_merge_rows(session, pending, spreadsheet, tab)
     else:
         updates = process_new_ad_rows(
             session, pending, spreadsheet, tab, export_video, dry_run
@@ -337,12 +376,12 @@ def process_tab(
     if dry_run:
         session.rollback()
         logging.info("Dry run: tab %s, %s, nothing written", tab, dict(results))
-        return results
+        return results, False
     # the sheet first: when it cannot be written, nothing is committed and the rows are processed again
     written = sheet.write_rows(tab, key_column, updates)
     session.commit()
     logging.info("Tab %s: %s, %s rows written", tab, dict(results), written)
-    return results
+    return results, True
 
 
 def run(
@@ -357,12 +396,21 @@ def run(
     total = Counter()
     for tab in sheet.tabs():
         try:
-            total += process_tab(
+            results, done = process_tab(
                 sheet, session, tab, spreadsheet, references, export_video, dry_run
             )
         except Exception:
             session.rollback()
             logging.exception("Tab %s failed, nothing written for it", tab)
+            continue
+        total += results
+        if done:
+            try:
+                archived = sheet.archive(tab)
+                if archived:
+                    logging.info("Tab %s fully processed, renamed %s", tab, archived)
+            except Exception:
+                logging.exception("Tab %s fully processed, but not archived", tab)
     logging.info("Manual corrections: %s", dict(total))
     return total
 

@@ -1,0 +1,63 @@
+summary: quotaclimat/metabase-sync
+description: |-
+  Updates the Metabase questions listed in metabase/*/questions.yml with the SQL
+  queries versioned in metabase/ (see metabase/README.md), from the
+  quotaclimat_base image built on main. By default (force), a question whose
+  SQL was edited in Metabase since its last synchronization is overwritten too,
+  with the difference in the logs; without force it is left as it is and fails
+  the run. Runs at the end of main-pipeline (the queries read the dbt tables),
+  or by hand.
+value:
+  modules:
+  - id: sync_metabase_questions
+    summary: sync metabase questions
+    value:
+      type: script
+      path: f/shared/docker_run
+      input_transforms:
+        image:
+          type: static
+          value: rg.fr-par.scw.cloud/namespace-barometre/quotaclimat_base:latest
+        entrypoint:
+          type: javascript
+          expr: '["/bin/sh", "-c", `cd /app && python -m quotaclimat.metabase.sync_questions ${flow_input.apply ? ''--apply''
+            : ''''} ${flow_input.force ? ''--force'' : ''''}`]'
+        env:
+          type: static
+          value: {}
+        secret_env:
+          type: static
+          value:
+            METABASE_URL: f/secrets/METABASE_URL
+            METABASE_API_KEY: f/secrets/METABASE_API_KEY
+        registry:
+          type: static
+          value: rg.fr-par.scw.cloud/namespace-barometre
+        registry_password_secret:
+          type: static
+          value: f/secrets/SCW_SECRET
+        shm_size:
+          type: static
+          value: 64m
+        stdout_logs:
+          type: static
+          value: true
+schema:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  order:
+  - apply
+  - force
+  properties:
+    apply:
+      type: boolean
+      description: When false, only logs what would change in each question.
+      default: true
+    force:
+      type: boolean
+      description: Also overwrite the questions whose SQL was edited in Metabase (their differences are in the logs). When
+        false, they are left as they are and the run fails.
+      default: true
+  required:
+  - apply
+  - force

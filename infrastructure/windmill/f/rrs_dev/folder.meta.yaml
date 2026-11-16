@@ -1,0 +1,4 @@
+summary: RRS pipelines, dev (Kestra namespace rrs-dev).
+display_name: rrs_dev
+owners: []
+extra_perms: {}

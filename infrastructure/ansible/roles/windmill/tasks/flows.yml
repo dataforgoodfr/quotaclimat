@@ -1,0 +1,58 @@
+---
+# Pushes the flows and scripts of infrastructure/windmill/ to the Windmill workspace with the
+# Windmill CLI (wmill sync push), pinned to the server version. The CLI runs in a container on
+# the Windmill network and talks to the server directly. Items deleted from the repository are
+# deleted in Windmill, only inside the folders listed in infrastructure/windmill/wmill.yaml.
+
+# Recreated on each run so files deleted from the repository are not pushed again
+- name: Remove the previous copy of the Windmill workspace files
+  file:
+    path: "{{ windmill_workspace_dir }}"
+    state: absent
+  changed_when: false
+
+- name: Copy the Windmill workspace files
+  copy:
+    src: "{{ playbook_dir }}/../windmill/"
+    dest: "{{ windmill_workspace_dir }}/"
+    mode: "0644"
+    directory_mode: "0755"
+  changed_when: false
+
+# The token goes through the environment (-e WM_TOKEN without a value), never on a command line
+- name: Push the flows and scripts to Windmill
+  command:
+    argv:
+      - docker
+      - run
+      - --rm
+      - --network
+      - windmill-internal
+      - -v
+      - "{{ windmill_workspace_dir }}:/workspace"
+      - -w
+      - /workspace
+      - -e
+      - WM_TOKEN
+      - -e
+      - WM_WORKSPACE
+      - -e
+      - BASE_URL
+      - "{{ windmill_cli_image }}"
+      - npx
+      - --yes
+      - "windmill-cli@{{ windmill_cli_version }}"
+      - sync
+      - push
+      - --yes
+  environment:
+    WM_TOKEN: "{{ windmill_token }}"
+    WM_WORKSPACE: "{{ windmill_workspace }}"
+    BASE_URL: http://windmill-server:8000
+  register: windmill_sync_push
+  changed_when: "(windmill_sync_push.stdout ~ windmill_sync_push.stderr) is not search('<- local: 0 changes')"
+
+- name: Show the result of the push
+  debug:
+    # Without the CLI's colour codes
+    msg: "{{ (windmill_sync_push.stdout | regex_replace('\\x1b\\[[0-9;]*m', '')).strip().splitlines() }}"

@@ -1,4 +1,4 @@
-# Databases for Kestra and GlitchTip on the existing managed Postgres instance.
+# Databases for Kestra, GlitchTip and Windmill on the existing managed Postgres instance.
 
 data "scaleway_account_project" "pg_project" {
   name = var.pg_project_name
@@ -49,4 +49,25 @@ resource "scaleway_rdb_privilege" "glitchtip" {
   database_name = scaleway_rdb_database.glitchtip.name
   permission    = "all"
   depends_on    = [scaleway_rdb_user.glitchtip, scaleway_rdb_database.glitchtip]
+}
+
+# --- Windmill ---
+# Only the user: the windmill database is created and owned by this user itself (grants.tf), so that it owns the
+# `public` schema and can grant it to the Windmill roles. is_admin (CREATEDB + CREATEROLE) is only needed while
+# bootstrapping the database and roles, and before a destroy: set TF_VAR_windmill_bootstrap=true for those applies.
+
+resource "scaleway_rdb_user" "windmill" {
+  instance_id = data.scaleway_rdb_instance.shared.id
+  name        = "windmill"
+  password    = var.postgres_password_windmill
+  is_admin    = var.windmill_bootstrap
+}
+
+# CONNECT on Scaleway's default database `rdb`: the windmill user connects there to create its own database
+# (CREATE DATABASE needs a connection to an existing database) and to drop it on destroy.
+resource "scaleway_rdb_privilege" "windmill_rdb" {
+  instance_id   = data.scaleway_rdb_instance.shared.id
+  user_name     = scaleway_rdb_user.windmill.name
+  database_name = "rdb"
+  permission    = "readonly"
 }

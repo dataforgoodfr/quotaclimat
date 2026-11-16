@@ -4,7 +4,7 @@ in-memory spreadsheet."""
 import asyncio
 import json
 import threading
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from types import SimpleNamespace
 
@@ -13,7 +13,14 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from postgres.database_connection import connect_to_db
-from postgres.schemas.advertising.models import Ad, Ad_Occurrence, AdvertisingBase
+from postgres.schemas.advertising.models import (
+    Ad,
+    Ad_Merge,
+    Ad_Merge_Occurrence,
+    Ad_Occurrence,
+    Ad_Screenshot,
+    AdvertisingBase,
+)
 from quotaclimat.data_ingestion.advertising.s04_consolidation.e02_manual_corrections import (
     run as corrections_run,
 )
@@ -50,6 +57,16 @@ class MemorySheet(CorrectionsSheet):
     def tabs(self) -> list[str]:
         return [tab for tab in self.grid if not tab.startswith("_")]
 
+    def _titles(self) -> set[str]:
+        return set(self.grid)
+
+    def _rename(self, tab, new_title):
+        self.grid = {new_title if t == tab else t: v for t, v in self.grid.items()}
+
+    def tab(self, tab) -> list[list[str]]:
+        """Rows of the tab, archived ("_" in front) or not."""
+        return self.grid[tab] if tab in self.grid else self.grid["_" + tab]
+
     def read(self, tab):
         return parse_rows(self.grid[tab])
 
@@ -64,9 +81,9 @@ class MemorySheet(CorrectionsSheet):
             line[column] = value
 
     def column(self, tab, name) -> list[str]:
-        header = self.grid[tab][0]
+        header = self.tab(tab)[0]
         index = header.index(name)
-        return [line[index] if index < len(line) else "" for line in self.grid[tab][1:]]
+        return [line[index] if index < len(line) else "" for line in self.tab(tab)[1:]]
 
 
 @pytest.fixture
@@ -83,7 +100,7 @@ def make_ad(ad_id, status="subcat_done", fragment_type="AD", brand="Pytest", **k
         id=ad_id,
         first_detection_date=T0,
         duration_sec=kwargs.pop("duration_sec", 20.0),
-        chunks=[{"hash": "h", "fingerprints": []}],
+        chunks=kwargs.pop("chunks", [{"hash": "h", "fingerprints": []}]),
         fragment_type=fragment_type,
         prediction=kwargs.pop(
             "prediction",
@@ -160,7 +177,104 @@ def test_tab_kind():
     assert corrections_run.tab_kind("nouvelle_ad_renault") == "nouvelle_ad"
     assert corrections_run.tab_kind("dechets") == "dechets"
     assert corrections_run.tab_kind("reattribution_mai") == "reattribution"
+    assert corrections_run.tab_kind("fusion_doublons") == "fusion"
     assert corrections_run.tab_kind("autre") is None
+
+
+class FakeResponse:
+    def __init__(self, body=None, status_code=200):
+        self.body = body or {}
+        self.status_code = status_code
+        self.reason = "Bad Request" if status_code >= 400 else "OK"
+        self.url = "https://sheets"
+        self.text = json.dumps(self.body)
+
+    def json(self):
+        return self.body
+
+
+class FakeSession:
+    """The Google Sheets API of one tab of 1000 rows x 3 columns (a tab imported from a CSV)."""
+
+    def __init__(self, status_code=200):
+        self.posts = []
+        self.status_code = status_code
+
+    def get(self, url, params=None, timeout=None):
+        return FakeResponse(
+            {
+                "sheets": [
+                    {
+                        "properties": {
+                            "sheetId": 7,
+                            "title": "fusion_csv",
+                            "sheetType": "GRID",
+                            "gridProperties": {"rowCount": 1000, "columnCount": 3},
+                        }
+                    }
+                ]
+            }
+        )
+
+    def post(self, url, json=None, timeout=None):
+        self.posts.append((url, json))
+        return FakeResponse(
+            {"error": {"message": "exceeds grid limits"}}, self.status_code
+        )
+
+
+def test_write_adds_the_columns_missing_in_the_grid():
+    session = FakeSession()
+    CorrectionsSheet(session, "s")._write_cells(
+        "fusion_csv", [(1, 3, "traite_le"), (2, 4, "x")]
+    )
+    (grid_url, grid), (values_url, values) = session.posts
+    assert grid_url.endswith("/s:batchUpdate")
+    assert grid == {
+        "requests": [
+            {"appendDimension": {"sheetId": 7, "dimension": "COLUMNS", "length": 2}}
+        ]
+    }
+    assert values_url.endswith("/s/values:batchUpdate")
+    assert [d["range"] for d in values["data"]] == [
+        "'fusion_csv'!D1",
+        "'fusion_csv'!E2",
+    ]
+
+
+def test_write_inside_the_grid_does_not_change_it():
+    session = FakeSession()
+    CorrectionsSheet(session, "s")._write_cells("fusion_csv", [(2, 2, "x")])
+    assert [url for url, _ in session.posts] == [
+        "https://sheets.googleapis.com/v4/spreadsheets/s/values:batchUpdate"
+    ]
+
+
+def test_error_of_the_api_gives_its_message():
+    with pytest.raises(RuntimeError, match="exceeds grid limits"):
+        CorrectionsSheet(FakeSession(status_code=400), "s")._write_cells(
+            "fusion_csv", [(2, 2, "x")]
+        )
+
+
+def test_archive_renames_the_tab():
+    session = FakeSession()
+    assert CorrectionsSheet(session, "s").archive("fusion_csv") == "_fusion_csv"
+    assert session.posts == [
+        (
+            "https://sheets.googleapis.com/v4/spreadsheets/s:batchUpdate",
+            {
+                "requests": [
+                    {
+                        "updateSheetProperties": {
+                            "properties": {"sheetId": 7, "title": "_fusion_csv"},
+                            "fields": "title",
+                        }
+                    }
+                ]
+            },
+        )
+    ]
 
 
 def test_write_rows_finds_a_row_moved_since_the_read():
@@ -410,6 +524,75 @@ def test_tabs_for_humans_and_unknown_tabs_are_skipped(engine):
     assert get_ad(engine, "a1").predicted_brand == "Pytest"
 
 
+def test_fully_processed_tabs_are_archived(engine):
+    insert(engine, make_ad("a1"), make_occ("o1", "a1", 0))
+    sheet = MemorySheet(
+        {
+            # processed by this run, one row in error: archived too
+            "dechets": [["occurrence_id"], ["o1"], ["inconnue"]],
+            # processed by an earlier run
+            "dechets_mars": [["occurrence_id", "traite_le"], ["o0", "2026-03-01"]],
+            # no row yet: a human may be filling it
+            "dechets_mai": [["occurrence_id"]],
+            # an archived tab of the same name already exists
+            "fusion": [["ad_id", "target_ad_id", "traite_le"], ["a2", "a1", "x"]],
+            "_fusion": [["ad_id"]],
+            "autre": [["ad_id"], ["a1"]],
+        }
+    )
+    assert run(engine, sheet) == {"appliqué": 1, "erreur": 1}
+    assert set(sheet.grid) == {
+        "_dechets",
+        "_dechets_mars",
+        "dechets_mai",
+        "fusion",
+        "_fusion",
+        "autre",
+    }
+    assert sheet.column("dechets", "resultat") == ["appliqué", "erreur"]
+    # the next run does not read the archived tabs
+    assert sheet.tabs() == ["dechets_mai", "fusion", "autre"]
+
+
+def test_row_deleted_during_the_run_writes_nothing_nor_commits(engine):
+    insert(
+        engine,
+        make_ad("a1"),
+        make_occ("o1", "a1", 0),
+        make_occ("o2", "a1", 10),
+    )
+    sheet = MemorySheet({"dechets": [["occurrence_id"], ["o1"], ["o2"]]})
+    read = sheet.read
+
+    def read_then_delete_a_row(tab):
+        result = read(tab)
+        sheet.grid["dechets"] = [["occurrence_id"], ["o1"]]  # a human deletes o2
+        return result
+
+    sheet.read = read_then_delete_a_row
+    assert run(engine, sheet) == {}
+    assert sheet.grid == {"dechets": [["occurrence_id"], ["o1"]]}
+    with Session(engine) as session:
+        assert session.get(Ad_Occurrence, "o1").deleted_at is None
+        assert session.get(Ad_Occurrence, "o2").deleted_at is None
+
+
+def test_tab_with_rows_left_to_process_is_not_archived(engine):
+    insert(engine, make_ad("a1"), make_occ("o1", "a1", 0))
+    sheet = MemorySheet({"dechets": [["occurrence_id"], ["o1"]]})
+    run(engine, sheet, dry_run=True)
+    assert "dechets" in sheet.grid
+
+    def fail(*args):
+        raise RuntimeError("400 Bad Request")
+
+    sheet._write_cells = fail
+    run(engine, sheet)
+    assert "dechets" in sheet.grid
+    with Session(engine) as session:
+        assert session.get(Ad_Occurrence, "o1").deleted_at is None
+
+
 # ---------- junk occurrences ----------
 
 
@@ -521,7 +704,283 @@ def test_reattribution_to_an_ad_of_another_duration_or_not_classified_gives_warn
     assert run(engine, sheet) == {"avertissement": 1}
     message = sheet.column("reattribution", "message")[0]
     assert "durée de l'ad (5s) différente de celle de l'ad d'origine (20s)" in message
-    assert "l'occurrence n'apparaît pas dans les analyses" in message
+    assert "ses occurrences n'apparaissent pas dans les analyses" in message
+
+
+# ---------- merge of two ads ----------
+
+
+def live_occurrences_by_ad(engine) -> dict[str, str]:
+    with Session(engine) as session:
+        return {
+            o.id: o.ad_id
+            for o in session.scalars(
+                select(Ad_Occurrence).where(Ad_Occurrence.deleted_at.is_(None))
+            )
+        }
+
+
+def today() -> str:
+    return datetime.now(UTC).strftime("%Y-%m-%d")
+
+
+FP = {
+    "duration_sec": 2.0,
+    "energy_mean": 1.0,
+    "spectral_centroid": 1.0,
+    "zcr_mean": 1.0,
+}
+MAIN_CHUNK = {"hash": "h", "fingerprints": [FP]}
+TWIN_CHUNKS = [
+    # the same as main: not copied
+    {"hash": "h", "fingerprints": [FP]},
+    # another recording of the spot
+    {"hash": "h", "fingerprints": [{**FP, "energy_mean": 2.0}]},
+    # another fingerprinter configuration
+    {"hash": "other-config", "fingerprints": [FP, FP]},
+    {"hash": "h", "fingerprints": []},
+]
+
+
+def test_merge_moves_every_occurrence_of_the_ad_to_the_target_and_soft_deletes_it(
+    engine,
+):
+    insert(
+        engine,
+        make_ad("twin", chunks=TWIN_CHUNKS),
+        make_ad("main", chunks=[MAIN_CHUNK]),
+        make_occ("o1", "twin", 0),
+        make_occ("o2", "twin", 600, channel="france2"),
+        make_occ("o3", "main", 1200),
+        make_occ("junk", "twin", 1800),
+    )
+    insert(
+        engine,
+        Ad_Screenshot(target_type="ad", target_id="twin", ad_id="twin", status="done"),
+    )
+    with Session(engine) as session:
+        session.get(Ad_Occurrence, "junk").deleted_at = T0
+        session.commit()
+    sheet = MemorySheet(
+        {
+            "fusion": [
+                ["ad_id", "target_ad_id", "commentaire"],
+                ["twin", "main", "même spot"],
+                ["main", "main", ""],
+            ]
+        }
+    )
+    assert run(engine, sheet) == {"appliqué": 2}
+
+    live = live_occurrences_by_ad(engine)
+    assert set(live.values()) == {"main"}
+    assert len(live) == 3 and "o3" in live
+    # the soft deleted ad, its old occurrences and its screenshot stay, for the history
+    twin = get_ad(engine, "twin")
+    assert twin.deleted_at is not None
+    assert twin.replaced_by_ad_id == "main"
+    assert twin.prediction[-1]["stage"] == "manual_fusion"
+    assert twin.prediction[-1]["replaced_by"] == "main"
+    assert twin.prediction[-1]["nb_occurrences"] == 2
+    assert twin.prediction[-1]["source"] == {
+        "spreadsheet": SPREADSHEET,
+        "tab": "fusion",
+        "row": 2,
+    }
+    main = get_ad(engine, "main")
+    assert main.deleted_at is None
+    # the fingerprints of twin not in main yet, the empty entry left
+    assert main.chunks == [
+        MAIN_CHUNK,
+        {**TWIN_CHUNKS[1], "from_ad_id": "twin"},
+        {**TWIN_CHUNKS[2], "from_ad_id": "twin"},
+    ]
+    assert twin.prediction[-1]["nb_fingerprint_entries_copied"] == 2
+    with Session(engine) as session:
+        old = session.scalars(
+            select(Ad_Occurrence).where(Ad_Occurrence.ad_id == "twin")
+        ).all()
+        assert sorted(o.id for o in old) == ["junk", "o1", "o2"]
+        assert all(o.deleted_at is not None for o in old)
+        assert session.get(Ad_Screenshot, ("ad", "twin")) is not None
+    assert sheet.column("fusion", "nb_occurrences_deplacees") == ["2", ""]
+    assert sheet.column("fusion", "message") == [
+        "2 occurrences déplacées, 2 empreintes copiées, ad supprimée (deleted_at)",
+        "ad_id et target_ad_id identiques : rien à faire",
+    ]
+    assert all(sheet.column("fusion", "traite_le"))
+    # processed once
+    assert run(engine, sheet) == {}
+
+
+def test_merge_errors_and_warnings(engine):
+    insert(
+        engine,
+        make_ad("a"),
+        make_ad("b"),
+        make_ad("c", duration_sec=5.0),
+        make_ad("empty"),
+        make_occ("o1", "a", 0),
+        make_occ("o2", "b", 600),
+    )
+    sheet = MemorySheet(
+        {
+            "fusion_mai": [
+                ["ad_id", "target_ad_id"],
+                ["a", ""],
+                ["inconnue", "b"],
+                ["a", "inconnue"],
+                ["empty", "b"],
+                ["b", "c"],
+                ["a", "b"],
+                ["a", "c"],
+                ["a", "c"],
+            ]
+        }
+    )
+    assert run(engine, sheet) == {"erreur": 5, "appliqué": 1, "avertissement": 2}
+    messages = sheet.column("fusion_mai", "message")
+    assert messages[:4] == [
+        "target_ad_id vide",
+        "ad inconnue inconnue",
+        "ad cible inconnue inconnue",
+        "0 occurrences déplacées, 0 empreintes copiées, ad supprimée (deleted_at)",
+    ]
+    assert (
+        "durée de l'ad (5s) différente de celle de l'ad d'origine (20s)" in messages[4]
+    )
+    assert messages[5] == f"ad cible supprimée le {today()}, fusionnée dans c"
+    assert "empreintes non copiées : durées des deux ads différentes (20s et 5s)" in (
+        messages[4]
+    )
+    assert messages[6].endswith(
+        "1 occurrences déplacées, 0 empreintes copiées, ad supprimée (deleted_at)"
+    )
+    assert messages[7] == f"ad supprimée le {today()}, fusionnée dans c"
+    assert set(live_occurrences_by_ad(engine).values()) == {"c"}
+    with Session(engine) as session:
+        assert sorted(
+            session.scalars(select(Ad.id).where(Ad.deleted_at.is_not(None)))
+        ) == ["a", "b", "empty"]
+
+
+def insert_split_merge(engine):
+    """Two pieces glued by the merge of the split pieces: "castorama" (a Castorama spot classified Elanco by
+    mistake) then "elanco", broadcast together once (merged occurrence "om"), and alone once each."""
+    insert(
+        engine,
+        make_ad("castorama", brand="Elanco"),
+        make_ad("elanco", brand="Elanco", duration_sec=15.0),
+        make_ad("merged", brand="Elanco", duration_sec=35.0),
+        make_ad("right", brand="Castorama"),
+        make_occ("p1", "castorama", 0),
+        make_occ("p2", "elanco", 20),
+        make_occ("om", "merged", 0),
+        make_occ("alone1", "castorama", 600),
+        make_occ("alone2", "elanco", 1200),
+    )
+    with Session(engine) as session:
+        for occurrence_id in ("p1", "p2"):
+            session.get(Ad_Occurrence, occurrence_id).deleted_at = T0
+        session.add(
+            Ad_Merge(
+                merged_ad_id="merged",
+                source_ad_ids=["castorama", "elanco"],
+                method="auto_split_pieces",
+                status="active",
+            )
+        )
+        session.add_all(
+            Ad_Merge_Occurrence(
+                merged_occurrence_id="om",
+                source_occurrence_id=source,
+                merged_ad_id="merged",
+                source_ad_id=ad_id,
+                role="piece",
+                position=position,
+            )
+            for position, (source, ad_id) in enumerate(
+                [("p1", "castorama"), ("p2", "elanco")]
+            )
+        )
+        session.commit()
+
+
+def test_merge_of_a_piece_reverts_its_merge_of_split_pieces(engine):
+    insert_split_merge(engine)
+    sheet = MemorySheet({"fusion": [["ad_id", "target_ad_id"], ["castorama", "right"]]})
+    assert run(engine, sheet) == {"appliqué": 1}
+    assert sheet.column("fusion", "message") == [
+        "fusion de morceaux merged annulée (2 occurrences des morceaux restaurées) ;"
+        " 2 occurrences déplacées, 0 empreintes copiées, ad supprimée (deleted_at)"
+    ]
+    assert sheet.column("fusion", "nb_occurrences_deplacees") == ["2"]
+
+    live = live_occurrences_by_ad(engine)
+    # the broadcasts of the Castorama piece (alone, and the one glued to Elanco) go to the right ad, the Elanco
+    # piece gets its broadcast back, the merged ad has none left
+    assert sorted(live.values()) == ["elanco", "elanco", "right", "right"]
+    assert "p2" in live and "alone2" in live
+    with Session(engine) as session:
+        merge = session.get(Ad_Merge, "merged")
+        assert merge.status == "reverted"
+        assert session.get(Ad, "merged").chunks == []
+        assert session.get(Ad, "merged").deleted_at is None
+        assert session.get(Ad, "castorama").deleted_at is not None
+    assert get_ad(engine, "castorama").prediction[-1]["reverted_merges"] == ["merged"]
+
+
+def test_merge_of_a_merged_ad_gives_its_occurrences_back_to_its_pieces(engine):
+    insert_split_merge(engine)
+    sheet = MemorySheet({"fusion": [["ad_id", "target_ad_id"], ["merged", "right"]]})
+    # durations 35s and 20s: the fingerprints (emptied by the revert anyway) are not copied
+    assert run(engine, sheet) == {"avertissement": 1}
+    assert sheet.column("fusion", "message")[0].startswith(
+        "fusion de morceaux merged annulée (2 occurrences des morceaux restaurées)"
+    )
+    live = live_occurrences_by_ad(engine)
+    assert sorted(live.values()) == ["castorama", "castorama", "elanco", "elanco"]
+    assert get_ad(engine, "merged").deleted_at is not None
+
+
+def test_reverted_merge_of_split_pieces_does_not_block_a_merge(engine):
+    insert_split_merge(engine)
+    with Session(engine) as session:
+        session.get(Ad_Merge, "merged").status = "reverted"
+        session.commit()
+    sheet = MemorySheet({"fusion": [["ad_id", "target_ad_id"], ["elanco", "right"]]})
+    run(engine, sheet)
+    assert "fusion de morceaux" not in sheet.column("fusion", "message")[0]
+    assert get_ad(engine, "elanco").deleted_at is not None
+
+
+def test_deleted_ad_cannot_be_corrected_nor_receive_occurrences(engine):
+    insert(
+        engine,
+        make_ad("old", deleted_at=T0, replaced_by_ad_id="main"),
+        make_ad("main"),
+        make_occ("o1", "main", 0),
+    )
+    sheet = MemorySheet(
+        {
+            "correction_ads": [AD_HEADER, ["old", "Renault", "", "", "", ""]],
+            "reattribution": [["occurrence_id", "ad_id"], ["o1", "old"]],
+        }
+    )
+    assert run(engine, sheet) == {"erreur": 2}
+    message = f"ad supprimée le {T0:%Y-%m-%d}, fusionnée dans main"
+    assert sheet.column("correction_ads", "message") == [message]
+    assert sheet.column("reattribution", "message") == [message]
+    assert get_ad(engine, "old").predicted_brand == "Pytest"
+
+
+def test_merge_dry_run_writes_nothing(engine):
+    insert(engine, make_ad("twin"), make_ad("main"), make_occ("o1", "twin", 0))
+    sheet = MemorySheet({"fusion": [["ad_id", "target_ad_id"], ["twin", "main"]]})
+    assert run(engine, sheet, dry_run=True) == {"appliqué": 1}
+    assert live_occurrences_by_ad(engine) == {"o1": "twin"}
+    assert get_ad(engine, "twin").deleted_at is None
+    assert sheet.grid["fusion"][1] == ["twin", "main"]
 
 
 # ---------- new ads ----------
@@ -619,6 +1078,8 @@ def test_rows_added_later_go_to_the_same_new_ad(engine):
     insert(engine, make_ad("a1"), make_occ("o1", "a1", 0), make_occ("o2", "a1", 600))
     sheet = MemorySheet({"nouvelle_ad": [["occurrence_id"], ["o1"]]})
     run(engine, sheet)
+    # a human takes the archived tab back to add a row
+    sheet._rename("_nouvelle_ad", "nouvelle_ad")
     sheet.grid["nouvelle_ad"].append(["o2"])
     exported = []
     run(engine, sheet, lambda *args: exported.append(args))

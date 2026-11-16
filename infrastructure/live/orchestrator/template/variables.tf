@@ -46,6 +46,17 @@ variable "postgres_password_glitchtip" {
   sensitive = true
 }
 
+variable "postgres_password_windmill" {
+  type      = string
+  sensitive = true
+}
+
+variable "windmill_bootstrap" {
+  type        = bool
+  default     = false
+  description = "Makes the windmill user a Scaleway admin (CREATEDB + CREATEROLE), to create its database and roles (grants.tf) or drop them on destroy. Set it for those applies only, then apply again without it."
+}
+
 variable "glitchtip_bucket_admin_user_ids" {
   type        = list(string)
   description = "IAM user IDs allowed to administer the GlitchTip bucket (everyone running OpenTofu on this target). Without them the bucket policy locks them out of the bucket."

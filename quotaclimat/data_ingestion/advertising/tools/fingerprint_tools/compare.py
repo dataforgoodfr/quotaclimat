@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections import Counter, defaultdict
+from collections import Counter
 
 import numpy as np
 
@@ -13,6 +13,18 @@ _ADJ_3D = [
     (df1, df2, ddt) for df1 in (-1, 0, 1) for df2 in (-1, 0, 1) for ddt in (-1, 0, 1)
 ]
 
+# A key (f1 // freq_tol, f2 // freq_tol, dt // dt_tol) is packed in one int64, 21 bits
+# per dimension, so that the index is a sorted array instead of a dict of tuples. Values
+# are frequency bins and frame counts, far below this range; a value outside is clipped,
+# which can only add candidates (two keys one cell apart stay at most one cell apart).
+_KEY_BITS = 21
+_KEY_OFFSET = 1 << (_KEY_BITS - 1)
+_KEY_MIN = 1 - _KEY_OFFSET
+_KEY_MAX = _KEY_OFFSET - 2
+_KEY_WEIGHTS = np.array([1 << (2 * _KEY_BITS), 1 << _KEY_BITS, 1], dtype=np.int64)
+# Added to the code of a key, gives the codes of its 27 neighbor cells
+_NEIGHBOR_CODE_OFFSETS = np.array(_ADJ_3D, dtype=np.int64) @ _KEY_WEIGHTS
+
 
 class FingerprintsIndex:
     """
@@ -20,6 +32,11 @@ class FingerprintsIndex:
 
     Tolerances are set once at construction and reused consistently across
     build() and get_similar_indices() calls.
+
+    The index is stored as numpy arrays (sorted key codes and, for each of them, the
+    slice of `_postings` listing the fingerprints holding that key) and queried without
+    any Python loop: the detection queries it once per fingerprint of the database
+    (about a million times), against the tens of thousands of chunks of a week.
     """
 
     def __init__(
@@ -31,7 +48,19 @@ class FingerprintsIndex:
         self.freq_tol = freq_tol
         self.dt_tol = dt_tol
         self.min_matching_pairs = min_matching_pairs
-        self._index: dict[tuple[int, int, int], set[int]] = {}
+        self._tols = np.array([freq_tol, freq_tol, dt_tol], dtype=np.int64)
+        self._size = 0
+        self._codes = np.empty(0, dtype=np.int64)
+        self._starts = np.empty(0, dtype=np.int64)
+        self._lengths = np.empty(0, dtype=np.int64)
+        self._postings = np.empty(0, dtype=np.int64)
+
+    def _pair_codes(self, pairs: list) -> np.ndarray:
+        """Code of the key of each pair, duplicates included."""
+        keys = np.array(pairs, dtype=np.int64)[:, :3] // self._tols
+        np.clip(keys, _KEY_MIN, _KEY_MAX, out=keys)
+        keys += _KEY_OFFSET
+        return keys @ _KEY_WEIGHTS
 
     def build(self, fingerprints: list[Fingerprint]) -> "FingerprintsIndex":
         """
@@ -40,22 +69,34 @@ class FingerprintsIndex:
         Key = (f1 // freq_tol, f2 // freq_tol, dt // dt_tol).
         Spreads pairs across a large key space so each cell stays small,
         enabling fast candidate lookups in get_similar_indices().
+        A fingerprint is listed once per key, however many of its pairs share it.
         """
-        index: dict[tuple[int, int, int], set[int]] = defaultdict(set)
+        codes_per_fp: list[np.ndarray] = []
+        positions: list[int] = []
         for i, fp in enumerate(fingerprints):
             pairs = fp.pairs or []
             if not pairs:
                 continue
-            arr = np.array(pairs, dtype=np.int32)
-            for key in set(
-                zip(
-                    (arr[:, 0] // self.freq_tol).tolist(),
-                    (arr[:, 1] // self.freq_tol).tolist(),
-                    (arr[:, 2] // self.dt_tol).tolist(),
-                )
-            ):
-                index[key].add(i)
-        self._index = dict(index)
+            codes_per_fp.append(np.unique(self._pair_codes(pairs)))
+            positions.append(i)
+
+        self._size = len(fingerprints)
+        if not codes_per_fp:
+            self._codes = np.empty(0, dtype=np.int64)
+            self._starts = np.empty(0, dtype=np.int64)
+            self._lengths = np.empty(0, dtype=np.int64)
+            self._postings = np.empty(0, dtype=np.int64)
+            return self
+
+        all_codes = np.concatenate(codes_per_fp)
+        all_positions = np.repeat(
+            np.array(positions, dtype=np.int64), [len(c) for c in codes_per_fp]
+        )
+        order = np.argsort(all_codes, kind="stable")
+        self._postings = all_positions[order]
+        self._codes, self._starts, self._lengths = np.unique(
+            all_codes[order], return_index=True, return_counts=True
+        )
         return self
 
     def get_similar_indices(
@@ -72,27 +113,32 @@ class FingerprintsIndex:
         always yield a count >= k (no false negatives).
         """
         pairs = query_fp.pairs or []
-        if not pairs:
+        if not pairs or not len(self._codes):
             return set()
         threshold = (
             min_matching_pairs
             if min_matching_pairs is not None
             else self.min_matching_pairs
         )
-        arr = np.array(pairs, dtype=np.int32)
-        keys = list(
-            zip(
-                (arr[:, 0] // self.freq_tol).tolist(),
-                (arr[:, 1] // self.freq_tol).tolist(),
-                (arr[:, 2] // self.dt_tol).tolist(),
-            )
+
+        # Codes of the 27 neighbor cells of each pair, then their rank in the index
+        cells = (self._pair_codes(pairs)[:, None] + _NEIGHBOR_CODE_OFFSETS).ravel()
+        ranks = np.searchsorted(self._codes, cells)
+        ranks[ranks == len(self._codes)] = 0
+        ranks = ranks[self._codes[ranks] == cells]
+        lengths = self._lengths[ranks]
+        total = int(lengths.sum())
+        if total == 0 or total < threshold:
+            return set()
+
+        # Positions in _postings of the fingerprints of every cell found: for a cell
+        # starting at `start` with `length` fingerprints, start, start + 1, ...
+        ends = np.cumsum(lengths)
+        where = np.arange(total) + np.repeat(
+            self._starts[ranks] - ends + lengths, lengths
         )
-        neighbor_counts: Counter[int] = Counter()
-        for kf1, kf2, kdt in keys:
-            for df1, df2, ddt in _ADJ_3D:
-                for j in self._index.get((kf1 + df1, kf2 + df2, kdt + ddt), ()):
-                    neighbor_counts[j] += 1
-        return {j for j, count in neighbor_counts.items() if count >= threshold}
+        counts = np.bincount(self._postings[where], minlength=self._size)
+        return set(np.flatnonzero(counts >= max(threshold, 1)).tolist())
 
 
 class FingerprintsCompare:
@@ -157,9 +203,8 @@ class FingerprintsCompare:
         tolerance). Then check temporal coherence: matched pairs should share
         a consistent time offset between the two chunks.
 
-        Uses a sum-based index (f1+f2+dt) to pre-filter candidates: two pairs
-        can only match if their sums differ by at most 2*freq_tol + dt_tol.
-        This avoids the O(Na*Nb) full cross-product.
+        Every pair of A is compared to every pair of B at once (a fingerprint has a few
+        dozen pairs): the detection scores hundreds of thousands of fingerprint couples.
         """
         pairs_a_raw = fp_a.pairs or []
         pairs_b_raw = fp_b.pairs or []
@@ -172,52 +217,29 @@ class FingerprintsCompare:
         pairs_a = np.array(pairs_a_raw, dtype=np.int32)  # (Na, 4): f1, f2, dt, t_offset
         pairs_b = np.array(pairs_b_raw, dtype=np.int32)  # (Nb, 4)
 
-        # Sort B by sum of first 3 dims for binary-search pre-filtering
-        sums_b = pairs_b[:, 0] + pairs_b[:, 1] + pairs_b[:, 2]
-        order_b = np.argsort(sums_b)
-        pairs_b_sorted = pairs_b[order_b]
-        sums_b_sorted = sums_b[order_b]
+        # B sorted by the sum of its first 3 dims: between pairs of B at the same
+        # distance of a pair of A, the first one in this order is the one matched
+        order_b = np.argsort(pairs_b[:, 0] + pairs_b[:, 1] + pairs_b[:, 2])
+        pairs_b = pairs_b[order_b]
 
-        sum_tol = 2 * self.freq_tol + self.dt_tol
-
-        matched_a = []
-        matched_b = []
-        for i in range(len(pairs_a)):
-            s_a = int(pairs_a[i, 0]) + int(pairs_a[i, 1]) + int(pairs_a[i, 2])
-            lo = np.searchsorted(sums_b_sorted, s_a - sum_tol, side="left")
-            hi = np.searchsorted(sums_b_sorted, s_a + sum_tol, side="right")
-            if lo >= hi:
-                continue
-
-            candidates_sorted = pairs_b_sorted[lo:hi]
-            # Per-dimension check within the narrow candidate window
-            close_mask = (
-                (np.abs(pairs_a[i, 0] - candidates_sorted[:, 0]) <= self.freq_tol)
-                & (np.abs(pairs_a[i, 1] - candidates_sorted[:, 1]) <= self.freq_tol)
-                & (np.abs(pairs_a[i, 2] - candidates_sorted[:, 2]) <= self.dt_tol)
-            )
-            close_idxs = np.where(close_mask)[0]
-            if len(close_idxs) > 0:
-                dists = np.abs(pairs_a[i, :3] - candidates_sorted[close_idxs, :3]).sum(
-                    axis=1
-                )
-                best_local = close_idxs[dists.argmin()]
-                matched_a.append(i)
-                matched_b.append(int(order_b[lo + best_local]))
-
+        # (Na, Nb, 3) distances per dimension, then the closest pair of B in tolerance
+        diffs = np.abs(pairs_a[:, None, :3] - pairs_b[None, :, :3])
+        close = (
+            (diffs[:, :, 0] <= self.freq_tol)
+            & (diffs[:, :, 1] <= self.freq_tol)
+            & (diffs[:, :, 2] <= self.dt_tol)
+        )
+        matched_a = np.flatnonzero(close.any(axis=1))
         if len(matched_a) < self.min_matching_pairs:
             return 0.0
+        dists = np.where(close, diffs.sum(axis=2), np.iinfo(np.int32).max)
+        matched_b = dists[matched_a].argmin(axis=1)
 
-        # Temporal coherence with tolerance (sliding window on sorted offsets)
-        offsets = pairs_a[matched_a, 3] - pairs_b[matched_b, 3]
-        sorted_offsets = np.sort(offsets)
-
-        best_count = 0
-        left = 0
-        for right in range(len(sorted_offsets)):
-            while sorted_offsets[right] - sorted_offsets[left] > 2 * self.offset_tol:
-                left += 1
-            best_count = max(best_count, right - left + 1)
+        # Temporal coherence with tolerance: the largest number of matched pairs whose
+        # offsets fit in a window of 2 * offset_tol
+        offsets = np.sort(pairs_a[matched_a, 3] - pairs_b[matched_b, 3])
+        window_starts = np.searchsorted(offsets, offsets - 2 * self.offset_tol)
+        best_count = int((np.arange(len(offsets)) - window_starts).max()) + 1
 
         return best_count / (min(len(pairs_a), len(pairs_b)) + 1)
 

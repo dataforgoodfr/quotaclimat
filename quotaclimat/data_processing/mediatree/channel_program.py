@@ -4,19 +4,13 @@ import os
 from datetime import datetime
 import json
 from quotaclimat.data_processing.mediatree.utils import get_epoch_from_datetime, get_timestamp_from_yyyymmdd,format_hour_minute
-from quotaclimat.data_ingestion.scrap_sitemap import get_consistent_hash
+from quotaclimat.data_processing.mediatree.program_metadata import generate_program_id
 from quotaclimat.data_processing.mediatree.i8n.country import (
     CountryMediaTree,
     FRANCE,
     EPOCH__5MIN_MARGIN, 
     EPOCH__1MIN_MARGIN
 )
-
-def generate_program_id(channel_name, weekday, program_name, program_grid_start) -> str:
-    data_str = f"{channel_name}-{weekday}-{program_name}-{program_grid_start}"
-    pk: str = get_consistent_hash(data_str)
-    logging.debug(f"adding for {data_str} pk {pk}")
-    return pk
 
 def get_programs(country: CountryMediaTree = FRANCE):
     logging.debug("Getting program tv/radio...")

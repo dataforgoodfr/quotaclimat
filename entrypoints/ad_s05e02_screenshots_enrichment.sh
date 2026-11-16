@@ -1,6 +1,5 @@
 #!/bin/bash
 
-set pipefail
 set -e
 
 # Run migrations before starting the application
@@ -14,11 +13,11 @@ else
 fi
 
 echo "============================================"
-echo "Starting advertising exportation pipeline"
+echo "Starting advertising screenshots"
 echo "============================================"
 
-python quotaclimat/data_ingestion/advertising/s02_exportation/run.py
+python quotaclimat/data_ingestion/advertising/s05_enrichment/e02_screenshots/run.py
 
 echo "============================================"
-echo "Advertising exportation pipeline complete"
+echo "Advertising screenshots complete"
 echo "============================================"

@@ -44,9 +44,13 @@ infrastructure/
 ├── compose/                   # Docker Compose stacks deployed by Ansible
 │   ├── traefik/
 │   ├── kestra/
-│   └── glitchtip/
+│   ├── glitchtip/
+│   └── windmill/
 ├── kestra/
 │   └── flows/                 # Kestra flow definitions (uploaded by Ansible)
+├── windmill/                  # Windmill copy of the Kestra flows (wmill project, pushed by Ansible)
+│   ├── wmill.yaml             # Synced folders (sync push deletes what is missing in them)
+│   └── f/                     # quotaclimat, quotaclimat_dev, rrs, rrs_dev, shared (see docs/windmill_flows.md)
 └── ansible/
     ├── ansible.cfg
     ├── inventory.yml.j2       # Template — fill with VM IP from terraform output
@@ -55,7 +59,8 @@ infrastructure/
         ├── common/            # Docker, fail2ban, unattended-upgrades
         ├── traefik/           # Reverse proxy with auto-TLS
         ├── kestra/            # Orchestrator + secrets/KV provisioning + flow upload
-        └── glitchtip/         # Error tracking + Redis
+        ├── glitchtip/         # Error tracking + Redis
+        └── windmill/          # Windmill server + workers (Kestra alternative) + secrets sync + flow push
 ```
 
 The root `live/terragrunt.hcl` generates the S3 backend and Scaleway provider configuration for every environment automatically, so there is no duplicated `backend.tf` or `provider.tf` to maintain. Each environment folder only needs a `terragrunt.hcl` with its specific input values.
@@ -147,7 +152,7 @@ make env=prod target=orchestrator tg-apply
 | `make tags=kestra ansible` | Run only the kestra role |
 | `make tags=traefik,kestra ansible` | Run specific roles |
 
-Available tags: `common`, `traefik`, `kestra`, `glitchtip`.
+Available tags: `common`, `traefik`, `kestra`, `glitchtip`, `windmill`.
 
 Before running Ansible for the first time, create the inventory file from the template:
 ```bash
@@ -192,7 +197,7 @@ cd ansible && cp inventory.yml.j2 inventory.yml
 #     (rdb-poc's ACL is managed outside this repo). On migration, remove the old IP.
 
 # 5b. Point DNS records to the server IP
-#     traefik.<domain>, kestra.<domain>, glitchtip.<domain>
+#     traefik.<domain>, kestra.<domain>, glitchtip.<domain>, windmill.<domain>
 
 # 6. Deploy services
 cd .. && make ansible
@@ -203,7 +208,23 @@ cd .. && make ansible
 ```bash
 make tags=kestra ansible     # Redeploy Kestra + re-upload flows + sync secrets
 make tags=glitchtip ansible  # Redeploy GlitchTip only
+make tags=windmill ansible   # Redeploy Windmill + sync secrets + push flows
 ```
+
+[Windmill](https://www.windmill.dev/docs/advanced/self_host) (Kestra alternative) runs as a server plus default, native and `dbt` workers (`compose/windmill/docker-compose.yml.j2`, role `windmill`), on its own `windmill` database on the managed Postgres. Traefik routes `WINDMILL_DOMAIN` to the server (port 8000) with automatic TLS. Set `WINDMILL_DOMAIN`, `WINDMILL_DB_USER`, `WINDMILL_DB_PASSWORD`, `WINDMILL_DB_NAME` in `.env.secrets` and `TF_VAR_postgres_password_windmill` (same value as `WINDMILL_DB_PASSWORD`) for OpenTofu. First login is `admin@windmill.dev` / `changeme`: change it right away.
+
+The Windmill copy of the Kestra flows (`windmill/`, no schedules yet: Kestra still runs production) is deployed by the same role, after Windmill starts: it writes every entry of `kestra_secrets`/`kestra_secrets_dev` as the secret variable `f/secrets/<NAME>` (API, only what changed), then pushes `windmill/` with `wmill sync push`, which makes the synced Windmill folders match the repository, deletions included: create and change flows in `windmill/`, never in the Windmill UI. Before the first deploy, create the workspace in the UI and an API token of a superadmin (account settings → Tokens), then set in `.env.secrets`: `WINDMILL_WORKSPACE` (the workspace **id**, e.g. `quotaclimat`) and `WINDMILL_TOKEN` (superadmin: it also writes the instance SMTP settings).
+
+Invitation emails go through the same Brevo account as GlitchTip (`BREVO_SMTP_LOGIN`, `BREVO_SMTP_KEY`, `BREVO_SMTP_HOST`): the role writes them as the `smtp_settings` instance setting (`ansible/roles/windmill/tasks/smtp.yml`, same fields as Instance settings → SMTP in the UI, port left to Windmill's default), with `WINDMILL_FROM_EMAIL` as sender (default `windmill@quotaclimat.org`, on the domain verified in Brevo). Skipped when `BREVO_SMTP_LOGIN`/`BREVO_SMTP_KEY` are empty. Windmill masks the stored password, so the setting is rewritten only when another field changes: after changing only `BREVO_SMTP_KEY`, run `WINDMILL_SMTP_FORCE=true make tags=windmill ansible` (or update it in the UI). The workers mount the Docker socket to run the flows' containers, like Kestra. Details (conversion from Kestra, container runner, dbt worker, adding a flow or a secret): [`docs/windmill_flows.md`](../docs/windmill_flows.md).
+
+The `windmill` user creates and owns its own database (`live/orchestrator/template/grants.tf`, `terraform_data.windmill_database`): a database created by Scaleway's API would be owned by `_rdb_superadmin`, and nobody else could grant the Windmill roles `USAGE` on its `public` schema. The managed Postgres has no superuser, so `windmill_admin` is created without `BYPASSRLS` and relies on Windmill's row-level-security migration: keep the image (`windmill_image`, `ansible/roles/windmill/defaults/main.yml`) recent. Creating the database and roles needs `CREATEDB`/`CREATEROLE`, so `windmill` is a Scaleway admin only during the bootstrap:
+
+```bash
+TF_VAR_windmill_bootstrap=true make env=prod target=orchestrator tg-apply   # windmill is admin, creates its database and roles
+make env=prod target=orchestrator tg-apply                                  # removes admin; windmill stays owner of its database
+```
+
+Before removing Windmill, apply once with `TF_VAR_windmill_bootstrap=true`: the destroy step (`DROP DATABASE windmill`, `DROP ROLE windmill_admin, windmill_user`) needs `CREATEROLE` to drop the roles.
 
 GlitchTip stores files and archived events/logs (DuckDB cold storage) in S3. After `make env=prod target=orchestrator tg-apply`, copy the `glitchtip_s3_*` outputs into `GLITCHTIP_S3_ACCESS_KEY`, `GLITCHTIP_S3_SECRET_KEY` and `GLITCHTIP_S3_BUCKET` in `.env.secrets` (rendered by `compose/glitchtip/.env.s3.j2`). Invitation emails go through [Brevo](https://www.brevo.com) SMTP (`compose/glitchtip/.env.email.j2`, loaded after `.env`). Verify the `quotaclimat.org` domain in Brevo (DKIM/DMARC), create an SMTP key (SMTP & API), then set in `.env.secrets`: `BREVO_SMTP_LOGIN` (Brevo login email), `BREVO_SMTP_KEY`, and optionally `GLITCHTIP_FROM_EMAIL` (default `glitchtip@quotaclimat.org`), `BREVO_SMTP_HOST` (default `smtp-relay.brevo.com`), `BREVO_SMTP_PORT` (default `587`). Without `BREVO_SMTP_LOGIN`/`BREVO_SMTP_KEY`, emails are only printed in the container logs (`consolemail://`). Redeploy with `make tags=glitchtip ansible`. If sending fails, check the Brevo logs and try port 465 with `smtp+ssl` in the template.
 The managed Postgres sets `max_locks_per_transaction = 512` for GlitchTip (`live/barometre/template/database.tf`).
@@ -403,6 +424,8 @@ Resources marked *per country* are `for_each` over the `countries` input (addres
 | RDB user | `scaleway_rdb_user.glitchtip` | GlitchTip app DB user |
 | RDB database | `scaleway_rdb_database.glitchtip` | GlitchTip database |
 | RDB privilege | `scaleway_rdb_privilege.glitchtip` | Grants for `glitchtip` user |
+| RDB user | `scaleway_rdb_user.windmill` | Windmill app DB user, Scaleway admin only while `TF_VAR_windmill_bootstrap=true` |
+| Terraform data | `terraform_data.windmill_database` | Creates the `windmill` database (owned by the `windmill` user) and the `windmill_admin`/`windmill_user` roles with `psql`; drops them on destroy |
 | IAM SSH key | `scaleway_iam_ssh_key.paul_gabriel` | SSH access to the baremetal server |
 | IAM SSH key | `scaleway_iam_ssh_key.gmguarino` | SSH access to the baremetal server |
 | Object bucket | `scaleway_object_bucket.glitchtip` | GlitchTip file storage and cold storage (`cold_storage/` prefix) |

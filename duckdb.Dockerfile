@@ -36,6 +36,5 @@ COPY postgres ./postgres
 COPY pyproject.toml pyproject.toml
 COPY alembic/ ./alembic
 COPY alembic.ini ./alembic.ini
-COPY transform_program.py ./transform_program.py
 
 

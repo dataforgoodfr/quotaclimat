@@ -1,0 +1,33 @@
+# Windmill CLI configuration (wmill sync push), run by the Ansible windmill role (tasks/flows.yml).
+# Full reference: https://www.windmill.dev/docs/advanced/cli/wmill-yaml-reference
+#
+# Only the folders below are synced. sync push deletes, in the synced folders, what no longer exists here: never
+# create or edit flows or scripts in them from the Windmill UI, the next deploy would overwrite or delete them.
+# Create and change them in this repository, then deploy (make tags=windmill ansible).
+includes:
+  - "f/quotaclimat/**"
+  - "f/quotaclimat_dev/**"
+  - "f/rrs/**"
+  - "f/rrs_dev/**"
+  - "f/shared/**"
+excludes: []
+
+# Secrets are pushed by Ansible through the API (tasks/secrets.yml), never from files: variables, resources and
+# their types are left out of the sync, so it cannot delete them either.
+skipVariables: true
+skipSecrets: true
+skipResources: true
+skipResourceTypes: true
+skipScripts: false
+skipFlows: false
+skipApps: true
+skipFolders: false
+skipWorkspaceDependencies: true
+skipDatatableMigrations: true
+
+# Flows are deployed without schedules for now: they are run by hand while Kestra keeps running prod.
+includeSchedules: false
+includeTriggers: false
+
+nonDottedPaths: true
+syncBehavior: v1

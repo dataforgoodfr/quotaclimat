@@ -1,0 +1,160 @@
+summary: quotaclimat/main-pipeline
+description: |-
+  Main pipeline, twice daily (01:10 and 12:30). Runs the extended perimeter
+  pipeline, processes it in RRS (without clustering), runs the standard OME
+  `barometre` pipeline, then the RRS flows on the barometre source, and last
+  updates the Metabase questions versioned in metabase/ (`metabase-sync`,
+  once all the tables they read are built).
+  Each step is a subflow that must succeed before the next one starts.
+  `metabase-sync` failing (Metabase down, a table unknown to Metabase) only
+  marks the run as WARNING. It runs with force: SQL edited in Metabase is
+  overwritten by the versioned one (differences in its logs).
+value:
+  modules:
+  - id: extended_perimeter
+    summary: extended perimeter
+    value:
+      type: flow
+      path: f/rrs/extended_perimeter
+      input_transforms:
+        days_back:
+          type: javascript
+          expr: flow_input.days_back
+        start_date:
+          type: javascript
+          expr: '(flow_input.start_date ? String(flow_input.start_date).slice(0, 10) : new Date().toISOString().slice(0, 10))'
+    skip_if:
+      expr: '!(flow_input.with_rrs)'
+  - id: rrs_climate_extended
+    summary: rrs climate extended
+    value:
+      type: flow
+      path: f/rrs/rrs_climate
+      input_transforms:
+        source:
+          type: static
+          value: extended
+        run_clustering:
+          type: static
+          value: false
+    skip_if:
+      expr: '!(flow_input.with_rrs)'
+  - id: rrs_insecurity_extended
+    summary: rrs insecurity extended
+    value:
+      type: flow
+      path: f/rrs/rrs_insecurity
+      input_transforms:
+        source:
+          type: static
+          value: extended
+        run_clustering:
+          type: static
+          value: false
+    skip_if:
+      expr: '!(flow_input.with_rrs)'
+  - id: rrs_pollution_extended
+    summary: rrs pollution extended
+    value:
+      type: flow
+      path: f/rrs/rrs_pollution
+      input_transforms:
+        source:
+          type: static
+          value: extended
+        run_detect_misinformation_rag:
+          type: static
+          value: false
+        run_clustering:
+          type: static
+          value: false
+    skip_if:
+      expr: '!(flow_input.with_rrs)'
+  - id: barometre
+    summary: barometre
+    value:
+      type: flow
+      path: f/quotaclimat/barometre
+      input_transforms:
+        days_back:
+          type: javascript
+          expr: flow_input.days_back
+        start_date:
+          type: javascript
+          expr: '(flow_input.start_date ? String(flow_input.start_date).slice(0, 10) : new Date().toISOString().slice(0, 10))'
+  - id: rrs_climate
+    summary: rrs climate
+    value:
+      type: flow
+      path: f/rrs/rrs_climate
+      input_transforms: {}
+    skip_if:
+      expr: '!(flow_input.with_rrs)'
+  - id: rrs_insecurity
+    summary: rrs insecurity
+    value:
+      type: flow
+      path: f/rrs/rrs_insecurity
+      input_transforms: {}
+    skip_if:
+      expr: '!(flow_input.with_rrs)'
+  - id: rrs_pollution
+    summary: rrs pollution
+    value:
+      type: flow
+      path: f/rrs/rrs_pollution
+      input_transforms: {}
+    skip_if:
+      expr: '!(flow_input.with_rrs)'
+  - id: metabase_sync
+    summary: metabase sync
+    value:
+      type: flow
+      path: f/quotaclimat/metabase_sync
+      input_transforms:
+        apply:
+          type: static
+          value: true
+        force:
+          type: static
+          value: true
+    continue_on_error: true
+  failure_module:
+    id: failure
+    summary: Post the failure to Mattermost
+    value:
+      type: script
+      path: f/shared/mattermost_alert
+      input_transforms:
+        flow_name:
+          type: static
+          value: f/quotaclimat/main_pipeline
+        error:
+          type: javascript
+          expr: error
+        webhooks_secret:
+          type: static
+          value: f/secrets/MATTERMOST_WEBHOOK_URLS
+schema:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  order:
+  - with_rrs
+  - days_back
+  - start_date
+  properties:
+    with_rrs:
+      type: boolean
+      description: When false, skips the extended perimeter and all RRS jobs and only runs barometre.
+      default: true
+    days_back:
+      type: integer
+      description: Days prior to the start date to process. Defaults to 1.
+      default: 1
+    start_date:
+      type: string
+      format: date
+      description: Reference date (YYYY-MM-DD) from which to count days back. Defaults to now.
+  required:
+  - with_rrs
+  - days_back

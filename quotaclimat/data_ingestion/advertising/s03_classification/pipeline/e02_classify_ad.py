@@ -37,6 +37,7 @@ def select_pending(engine, limit: int | None) -> list[tuple[str, str | None]]:
         stmt = (
             select(Ad.id, Ad.transcript)
             .where(Ad.prediction_status.is_(None))
+            .where(Ad.deleted_at.is_(None))
             .where(Ad.fragment_type != "no_data")
             .order_by(Ad.first_detection_date.desc())
         )

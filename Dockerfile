@@ -49,7 +49,6 @@ COPY my_dbt_project/ ./my_dbt_project
 COPY postgres ./postgres
 COPY pyproject.toml pyproject.toml
 COPY quotaclimat ./quotaclimat
-COPY transform_program.py ./transform_program.py
 
 # healthcheck
 EXPOSE 5050

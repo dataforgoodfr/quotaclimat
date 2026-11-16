@@ -1,0 +1,123 @@
+summary: quotaclimat/dbt
+description: |-
+  Runs the dbt models of the barometre database (entrypoints/dbt.sh). Called as a
+  subflow by barometre, barometre-catchup and dbt-analytics, so that two dbt runs
+  never overlap: they drop and rebuild the same tables. Its steps carry the `dbt`
+  tag, served by a single worker (windmill-worker-dbt): one dbt container at a time,
+  the others wait in the queue. The queue is per step, not per run: the steps of
+  two runs started together can alternate (A dbt, B dbt, A curated, B curated).
+  With only_analytics, the models of models/dashboards and models/homepage (the
+  long part, computed from the whole keywords table) are left out and keep their
+  last build.
+value:
+  modules:
+  - id: dbt_run_transformations
+    summary: dbt run transformations
+    value:
+      type: script
+      path: f/shared/docker_run
+      input_transforms:
+        image:
+          type: static
+          value: rg.fr-par.scw.cloud/namespace-barometre/quotaclimat_base:latest
+        entrypoint:
+          type: javascript
+          expr: '["/bin/sh", "-c", `cd /app && /app/entrypoints/dbt.sh ${flow_input.only_analytics ? ''analytics'' : ''''}`]'
+        env:
+          type: static
+          value:
+            DBT_ENV: prod
+            DBT_PROFILES_DIR: /app/my_dbt_project/dbt
+            DBT_PROJECT_DIR: /app/my_dbt_project
+            LOGLEVEL: INFO
+            MODIN_CPUS: 2
+            MODIN_ENGINE: python
+            MODIN_MEMORY: 3000000000
+            POSTGRES_DB: barometre
+            POSTGRES_PORT: 22737
+            LABELSTUDIO_POSTGRES_PORT: 22737
+        secret_env:
+          type: static
+          value:
+            EXTERNAL_SOURCES_DRIVE_FOLDER: f/secrets/EXTERNAL_SOURCES_DRIVE_FOLDER
+            GOOGLE_SHEETS_SERVICE_ACCOUNT_JSON: f/secrets/GOOGLE_SHEETS_SERVICE_ACCOUNT_JSON
+            BUCKET: f/secrets/SCW_ACCESS
+            BUCKET_SECRET: f/secrets/SCW_SECRET
+            LABELSTUDIO_INGESTION_POSTGRES_USER: f/secrets/POSTGRES_USER_READ
+            LABELSTUDIO_INGESTION_POSTGRES_PASSWORD: f/secrets/POSTGRES_PASSWORD_READ
+            LABELSTUDIO_POSTGRES_HOST: f/secrets/POSTGRES_HOST
+            POSTGRES_USER: f/secrets/POSTGRES_USER
+            POSTGRES_HOST: f/secrets/POSTGRES_HOST
+            POSTGRES_PASSWORD: f/secrets/POSTGRES_PASSWORD
+        registry:
+          type: static
+          value: rg.fr-par.scw.cloud/namespace-barometre
+        registry_password_secret:
+          type: static
+          value: f/secrets/SCW_SECRET
+        shm_size:
+          type: static
+          value: 6g
+        stdout_logs:
+          type: static
+          value: true
+      tag_override: dbt
+  - id: curated_and_metabase_docs
+    summary: curated and metabase docs
+    value:
+      type: script
+      path: f/shared/docker_run
+      input_transforms:
+        image:
+          type: static
+          value: rg.fr-par.scw.cloud/namespace-barometre/quotaclimat_base:latest
+        entrypoint:
+          type: static
+          value:
+          - /bin/sh
+          - -c
+          - cd /app && /app/entrypoints/curated.sh
+        env:
+          type: static
+          value:
+            DBT_ENV: prod
+            DBT_PROFILES_DIR: /app/my_dbt_project/dbt
+            DBT_PROJECT_DIR: /app/my_dbt_project
+            LOGLEVEL: INFO
+            POSTGRES_DB: barometre
+            POSTGRES_PORT: 22737
+            METABASE_CURATED_DATABASES: 2 13
+        secret_env:
+          type: static
+          value:
+            POSTGRES_USER: f/secrets/POSTGRES_USER
+            POSTGRES_HOST: f/secrets/POSTGRES_HOST
+            POSTGRES_PASSWORD: f/secrets/POSTGRES_PASSWORD
+            METABASE_URL: f/secrets/METABASE_URL
+            METABASE_API_KEY: f/secrets/METABASE_API_KEY
+        registry:
+          type: static
+          value: rg.fr-par.scw.cloud/namespace-barometre
+        registry_password_secret:
+          type: static
+          value: f/secrets/SCW_SECRET
+        shm_size:
+          type: static
+          value: 64m
+        stdout_logs:
+          type: static
+          value: true
+      tag_override: dbt
+    continue_on_error: true
+schema:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  order:
+  - only_analytics
+  properties:
+    only_analytics:
+      type: boolean
+      description: When true, leaves out the models of models/dashboards and models/homepage (dbt.sh analytics).
+      default: false
+  required:
+  - only_analytics

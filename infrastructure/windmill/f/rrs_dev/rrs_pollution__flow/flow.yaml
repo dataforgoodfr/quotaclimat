@@ -1,0 +1,266 @@
+summary: rrs-dev/rrs-pollution
+description: |-
+  Chemical-pollution (environmental_health) pipeline for RRS: filters already-detected
+  climate keywords down to the environmental_health dictionary, builds/refreshes the RAG
+  expert-model index from source documents, runs the RAG fact-checking agent against the
+  filtered segments, then clusters the resulting misinformation narratives.
+value:
+  modules:
+  - id: filter_keywords
+    summary: filter keywords
+    value:
+      type: script
+      path: f/shared/docker_run
+      input_transforms:
+        image:
+          type: static
+          value: rg.fr-par.scw.cloud/rrs-dev/rrs-base:latest
+        entrypoint:
+          type: static
+          value:
+          - python
+          - -m
+          - rrs.keyword_detection.filter_keywords
+        env:
+          type: javascript
+          expr: |-
+            ({
+              "PYTHONPATH": "/app",
+              "START_DATE": flow_input.start_date ?? '',
+              "END_DATE": flow_input.end_date ?? '',
+              "BUCKET_NAME": flow_input.source === 'extended' ? 'mediatree-extended-perimeter-dev' : 'mediatree',
+              "POSTGRES_DB": flow_input.source === 'extended' ? 'extended-perimeter' : 'barometre',
+              "POSTGRES_PORT": flow_input.source === 'extended' ? 18047 : 22737,
+              "RRS_PG_DATABASE": "rrs",
+              "RRS_PG_PORT": 18047,
+              "SUBJECT": "environmental_health"
+            })
+        secret_env:
+          type: javascript
+          expr: |-
+            ({
+              "POSTGRES_HOST": flow_input.source === 'extended' ? 'f/secrets/RRS_PG_HOST_DEV' : 'f/secrets/POSTGRES_HOST',
+              "POSTGRES_USER": "f/secrets/RRS_BAROMETRE_READ_USER_DEV",
+              "POSTGRES_PASSWORD": "f/secrets/RRS_BAROMETRE_READ_PASSWORD_DEV",
+              "RRS_PG_HOST": "f/secrets/RRS_PG_HOST_DEV",
+              "RRS_PG_USER": "f/secrets/RRS_PG_USER_DEV",
+              "RRS_PG_PASSWORD": "f/secrets/RRS_PG_PASSWORD_DEV"
+            })
+        registry:
+          type: static
+          value: rg.fr-par.scw.cloud/rrs-dev
+        registry_password_secret:
+          type: static
+          value: f/secrets/RRS_SCW_SECRET_DEV
+        shm_size:
+          type: static
+          value: 6g
+        stdout_logs:
+          type: static
+          value: true
+  - id: build_embeddings
+    summary: build embeddings
+    value:
+      type: script
+      path: f/shared/docker_run
+      input_transforms:
+        image:
+          type: static
+          value: rg.fr-par.scw.cloud/rrs-dev/rrs-base:latest
+        entrypoint:
+          type: static
+          value:
+          - python
+          - -m
+          - rrs.rag.build_embeddings
+        env:
+          type: static
+          value:
+            PYTHONPATH: /app
+            SUBJECT: environmental_health
+            EMBEDDINGS_BUCKET_NAME: expert-model-source-documents-dev
+        secret_env:
+          type: static
+          value:
+            EMBEDDINGS_BUCKET: f/secrets/RRS_SCW_ACCESS_DEV
+            EMBEDDINGS_BUCKET_SECRET: f/secrets/RRS_SCW_SECRET_DEV
+            MISTRAL_API_KEY: f/secrets/MISTRAL_API_KEY
+        registry:
+          type: static
+          value: rg.fr-par.scw.cloud/rrs-dev
+        registry_password_secret:
+          type: static
+          value: f/secrets/RRS_SCW_SECRET_DEV
+        shm_size:
+          type: static
+          value: 6g
+        stdout_logs:
+          type: static
+          value: true
+    skip_if:
+      expr: '!(flow_input.run_detect_misinformation_rag)'
+  - id: detect_misinformation_rag
+    summary: detect misinformation rag
+    value:
+      type: script
+      path: f/shared/docker_run
+      input_transforms:
+        image:
+          type: static
+          value: rg.fr-par.scw.cloud/rrs-dev/rrs-base:latest
+        entrypoint:
+          type: static
+          value:
+          - python
+          - -m
+          - rrs.rag.run_rag_agent_mistral
+        env:
+          type: javascript
+          expr: |-
+            ({
+              "PYTHONPATH": "/app",
+              "START_DATE": flow_input.start_date ?? '',
+              "END_DATE": flow_input.end_date ?? '',
+              "DAYS_PRIOR": flow_input.days_back ?? 1,
+              "RRS_PG_DATABASE": "rrs",
+              "RRS_PG_PORT": 18047,
+              "BUCKET_NAME": "mediatree",
+              "EXTENDED_BUCKET_NAME": "mediatree-extended-perimeter-dev",
+              "EMBEDDINGS_BUCKET_NAME": "expert-model-source-documents-dev",
+              "MISTRAL_MODEL": "mistral-small-2603",
+              "SUBJECT": "environmental_health",
+              "CONCURRENCY": 10
+            })
+        secret_env:
+          type: static
+          value:
+            RRS_PG_HOST: f/secrets/RRS_PG_HOST_DEV
+            RRS_PG_USER: f/secrets/RRS_PG_USER_DEV
+            RRS_PG_PASSWORD: f/secrets/RRS_PG_PASSWORD_DEV
+            BUCKET: f/secrets/SCW_ACCESS
+            BUCKET_SECRET: f/secrets/SCW_SECRET
+            RRS_BUCKET: f/secrets/RRS_SCW_ACCESS_DEV
+            RRS_BUCKET_SECRET: f/secrets/RRS_SCW_SECRET_DEV
+            EMBEDDINGS_BUCKET: f/secrets/RRS_SCW_ACCESS_DEV
+            EMBEDDINGS_BUCKET_SECRET: f/secrets/RRS_SCW_SECRET_DEV
+            MISTRAL_API_KEY: f/secrets/MISTRAL_API_KEY
+        registry:
+          type: static
+          value: rg.fr-par.scw.cloud/rrs-dev
+        registry_password_secret:
+          type: static
+          value: f/secrets/RRS_SCW_SECRET_DEV
+        shm_size:
+          type: static
+          value: 6g
+        stdout_logs:
+          type: static
+          value: true
+    skip_if:
+      expr: '!(flow_input.run_detect_misinformation_rag)'
+  - id: clustering
+    summary: clustering
+    value:
+      type: script
+      path: f/shared/docker_run
+      input_transforms:
+        image:
+          type: static
+          value: rg.fr-par.scw.cloud/rrs-dev/rrs-base:latest
+        entrypoint:
+          type: static
+          value:
+          - python
+          - -m
+          - rrs.clustering.main
+        env:
+          type: javascript
+          expr: |-
+            ({
+              "PYTHONPATH": "/app",
+              "START_DATE": flow_input.start_date ?? '',
+              "END_DATE": flow_input.end_date ?? '',
+              "DAYS_PRIOR": flow_input.days_back ?? '',
+              "RRS_PG_DATABASE": "rrs",
+              "RRS_PG_PORT": 18047,
+              "SPACY_MODEL": "fr_core_news_sm",
+              "WINDOW_SIZE": 3,
+              "OVERLAP_TOKENS": 30,
+              "PROVIDER": "mistral",
+              "LLM_MODEL": "mistral-small-2603",
+              "MAX_CONCURRENT_REQUESTS": 5,
+              "MERGE_BATCH_SIZE": 30,
+              "MERGE_MAX_ROUNDS": 5,
+              "TARGET_CLUSTERS": 5,
+              "MIN_CLUSTERS": 7,
+              "MAX_CLUSTERS": 150,
+              "CLUSTER_SCALE": 1.0,
+              "LOW_THRESHOLD": 0.4,
+              "HIGH_THRESHOLD": 0.85,
+              "EMBEDDING_BACKEND": "mistral",
+              "EXPIRY_DAYS": 30,
+              "OUTPUT_DIR": "/app/output",
+              "SUBJECT": "environmental_health"
+            })
+        secret_env:
+          type: static
+          value:
+            RRS_PG_HOST: f/secrets/RRS_PG_HOST_DEV
+            RRS_PG_USER: f/secrets/RRS_PG_USER_DEV
+            RRS_PG_PASSWORD: f/secrets/RRS_PG_PASSWORD_DEV
+            MISTRAL_API_KEY: f/secrets/MISTRAL_API_KEY
+            ANTHROPIC_API_KEY: f/secrets/ANTHROPIC_API_KEY
+            SENTRY_DSN: f/secrets/SENTRY_DSN
+        registry:
+          type: static
+          value: rg.fr-par.scw.cloud/rrs-dev
+        registry_password_secret:
+          type: static
+          value: f/secrets/RRS_SCW_SECRET_DEV
+        shm_size:
+          type: static
+          value: 6g
+        stdout_logs:
+          type: static
+          value: true
+    skip_if:
+      expr: '!(flow_input.run_clustering)'
+schema:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  order:
+  - source
+  - days_back
+  - start_date
+  - end_date
+  - run_detect_misinformation_rag
+  - run_clustering
+  properties:
+    source:
+      type: string
+      enum:
+      - barometre
+      - extended
+      description: 'Source database/perimeter to read from: the OME `barometre` DB or the `extended-perimeter` DB.'
+      default: barometre
+    days_back:
+      type: integer
+      description: |-
+        Days prior to current date. Only applicable if `start_date` and `end_date` not set.
+        If not set automatic logic will kick in.
+    start_date:
+      type: string
+      description: Start of the analysis window (YYYY-MM-DD). Overrides days_back when set.
+    end_date:
+      type: string
+      description: End of the analysis window (YYYY-MM-DD). Defaults to now when not set.
+    run_detect_misinformation_rag:
+      type: boolean
+      default: true
+    run_clustering:
+      type: boolean
+      default: true
+  required:
+  - source
+  - run_detect_misinformation_rag
+  - run_clustering

@@ -4,7 +4,6 @@ from dotenv import load_dotenv
 import duckdb
 from datetime import date
 import pandas as pd
-import numpy as np
 
 import quotaclimat.data_processing.thematic_extracts.thematic_utils as utils
 
@@ -85,19 +84,21 @@ def create_thematic_keywords_table(con: duckdb.DuckDBPyConnection,
         if not dry_run:
             con.execute(f"""
                 CREATE TABLE IF NOT EXISTS {postgres_db}.{schema}.{destination_table} (
-                    this_id VARCHAR NOT NULL,
+                    id VARCHAR NOT NULL,
                     channel_name VARCHAR NOT NULL,
                     channel_title VARCHAR,
+                    period VARCHAR NOT NULL,
                     start TIMESTAMPTZ NOT NULL,
-                    thematic_chunk BOOLEAN NOT NULL,
                     keywords_found VARCHAR,
                     themes VARCHAR,
-                    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
                     plaintext_normalized VARCHAR NOT NULL,
-                    source_keywords_id VARCHAR,
+                    plaintext_normalized_prev VARCHAR,
+                    plaintext_normalized_next VARCHAR,
+                    start_prev TIMESTAMPTZ,
+                    start_next TIMESTAMPTZ,
                     country VARCHAR NOT NULL,
-                    period VARCHAR NOT NULL,
-                    PRIMARY KEY (this_id)
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+                    PRIMARY KEY (id)
                 )
             """)
             logging.info(f"[{destination_table}] TABLE CREATED OR ALREADY EXISTED")
@@ -179,142 +180,136 @@ def read_day_from_s3(con: duckdb.DuckDBPyConnection, day: date, channels: list[s
 
     return df
 
-### GETTING ADJACENT CHUNKS ###
-def extract_adjacent_chunks_day(keywords_day_df: pd.DataFrame, s3_day_df: pd.DataFrame,
-                                gap: pd.Timedelta) -> tuple[pd.DataFrame, int, dict[str, int]]:
-    """Keeps thematic chunks (from the keywords table) and their adjacents (within gap) fetched from s3.
-    Also returns the number of thematic chunks whose plaintext differs from S3,
-    and the number of thematic chunks missing from S3 per channel."""
+### ADDING ADJACENT PLAINTEXTS ###
+def _normalize_or_none(text) -> str | None:
+    """normalize_text, with None for a missing neighbour (NaN after a merge)."""
+    return utils.normalize_text(text) if isinstance(text, str) else None
+
+
+def add_adjacent_plaintexts_day(keywords_day_df: pd.DataFrame, s3_day_df: pd.DataFrame,
+                                gap: pd.Timedelta) -> tuple[pd.DataFrame, dict[str, int], dict[str, int]]:
+    """One row per thematic chunk (from the keywords table), with the normalized plaintext of the previous
+    and the next chunk of the same channel fetched from S3: the closest one within gap, None if there is none.
+    A neighbour is filled even when it is itself a thematic chunk. start_prev / start_next give the start of
+    that neighbour (NaT if none): they tell which neighbour texts are the same chunk, to count each chunk once.
+    Also returns, per channel, the number of thematic chunks whose plaintext differs from S3
+    and the number of thematic chunks missing from S3."""
     try:
-        gap_ns = pd.Timedelta(gap).value  # integer, nanoseconds
-        keys = ["start", "channel_name"]
-        #normalising in Paris time
-        keywords_day_df = keywords_day_df.assign(start=pd.to_datetime(keywords_day_df["start"]).dt.tz_convert("Europe/Paris"))
-        s3_day_df = s3_day_df.assign(start=pd.to_datetime(s3_day_df["start"]).dt.tz_convert("Europe/Paris"))
+        keys = ["channel_name", "start"]
+        # Paris time, same unit on both sides: needed to compare starts and by merge_asof
+        keywords_day_df = keywords_day_df.assign(
+            start=pd.to_datetime(keywords_day_df["start"]).dt.tz_convert("Europe/Paris").dt.as_unit("ns"))
+        s3_day_df = s3_day_df.assign(
+            start=pd.to_datetime(s3_day_df["start"]).dt.tz_convert("Europe/Paris").dt.as_unit("ns"))
+        s3 = s3_day_df[keys + ["plaintext"]].drop_duplicates(subset=keys, keep="last").sort_values("start")
 
-        # All chunks coming from the keywords table are thematic chunks
-        kw = (
-            keywords_day_df[keys + ["id", "channel_title", "plaintext", "keywords_found", "themes"]]
-            .drop_duplicates(subset=keys)
-            .rename(columns={"id": "source_keywords_id"})
-            .assign(thematic_chunk=True)
-        )
+        # id of the keywords table is a hash of channel + start: one row per chunk
+        kw = (keywords_day_df[["id", "channel_title", "plaintext", "keywords_found", "themes"] + keys]
+              .drop_duplicates(subset="id")
+              .sort_values("start"))
 
-        # S3 chunks within gap of at least one thematic chunk (the chunk itself, 0 gap, is included)
-        parts = []
-        for channel, s3_chan in s3_day_df.groupby("channel_name"):
-            kw_starts = (
-                pd.to_datetime(kw.loc[kw["channel_name"] == channel, "start"])
-                .dt.as_unit("ns").astype("int64").to_numpy()
-            )
-            if len(kw_starts) == 0:
-                continue
-            s3_starts = (
-                pd.to_datetime(s3_chan["start"])
-                .dt.as_unit("ns").astype("int64").to_numpy()
-            )
-            ecart = np.abs(s3_starts[:, None] - kw_starts[None, :])
-            parts.append(s3_chan[(ecart <= gap_ns).any(axis=1)])
-
-        if not parts:
-            raise ValueError(
-                f"No chunk in S3 found on {len(kw)} thematic chunks: "
-                f"missing channels in S3 or timezone shifting?"
-            )
-        near = pd.concat(parts, ignore_index=True)
+        # Previous / next S3 chunk of the same channel, strictly before / after, within gap (bounds included),
+        # with its plaintext and its start (merge_asof keeps only the left start: copied before the merge)
+        for side, direction in (("prev", "backward"), ("next", "forward")):
+            neighbour = pd.merge_asof(
+                kw[["id"] + keys],
+                s3.rename(columns={"plaintext": f"plaintext_{side}"}).assign(**{f"start_{side}": s3["start"]}),
+                on="start", by="channel_name", tolerance=pd.Timedelta(gap),
+                direction=direction, allow_exact_matches=False,
+            ).set_index("id")
+            kw[f"plaintext_{side}"] = kw["id"].map(neighbour[f"plaintext_{side}"])
+            kw[f"start_{side}"] = kw["id"].map(neighbour[f"start_{side}"])
 
         # Thematic chunks should be in S3. On old days, the keywords table was filled before S3 was written,
         # with another program window (e.g. fr3-idf JT 12h on 2024-01-07): counted per channel and logged,
         # kept with the source table plaintext
-        found = kw.merge(near[keys], on=keys, how="left", indicator=True)
-        missing_s3 = found[found["_merge"] == "left_only"]
+        check = kw.merge(s3, on=keys, how="left", suffixes=("_kw", "_s3"), indicator=True)
+        missing_s3 = check[check["_merge"] == "left_only"]
+        if len(missing_s3) == len(kw) and kw["plaintext_prev"].isna().all() and kw["plaintext_next"].isna().all():
+            raise ValueError(
+                f"No chunk in S3 found on {len(kw)} thematic chunks, nor any neighbour: "
+                f"missing channels in S3 or timezone shifting?"
+            )
         n_missing_s3 = missing_s3["channel_name"].value_counts().to_dict()
         if missing_s3.empty:
-            logging.info("[EXTRACT_ADJACENT_CHUNKS] 0 thematic chunk missing from S3")
+            logging.info("[ADJACENT_PLAINTEXTS] 0 thematic chunk missing from S3")
         else:
             logging.warning(
-                f"[EXTRACT_ADJACENT_CHUNKS] {len(missing_s3)} thematic chunks missing from S3, "
+                f"[ADJACENT_PLAINTEXTS] {len(missing_s3)} thematic chunks missing from S3, "
                 f"source table plaintext kept. First 5:\n"
-                + "\n".join(f"{row['channel_name']} {row['start']} (source id {row['source_keywords_id']})"
+                + "\n".join(f"{row['channel_name']} {row['start']} (source id {row['id']})"
                             for _, row in missing_s3.head(5).iterrows())
             )
 
         # For the same channel and start time, source plaintext should match S3 plaintext.
         # Mediatree can deliver two versions of the same chunk (a different 30 s segment missing in each):
-        # counted and logged, the source table plaintext is kept for thematic chunks
-        check = kw.merge(near, on=keys, suffixes=("_kw", "_s3"))
-        mismatch = check[check["plaintext_kw"] != check["plaintext_s3"]]
+        # counted and logged, the source table plaintext is kept
+        found = check[check["_merge"] == "both"]
+        mismatch = found[found["plaintext_kw"] != found["plaintext_s3"]]
         if mismatch.empty:
-            logging.info("[EXTRACT_ADJACENT_CHUNKS] 0 plaintext mismatch between source table and S3")
+            logging.info("[ADJACENT_PLAINTEXTS] 0 plaintext mismatch between source table and S3")
         else:
             examples = []
             for _, row in mismatch.head(5).iterrows():
-                kw_text, s3_text = row["plaintext_kw"], row["plaintext_s3"]
+                kw_text, s3_text = row["plaintext_kw"] or "", row["plaintext_s3"] or ""
                 # first character where both plaintexts differ
                 diverge = next((i for i, (a, b) in enumerate(zip(kw_text, s3_text)) if a != b),
                                min(len(kw_text), len(s3_text)))
                 examples.append(
-                    f"{row['channel_name']} {row['start']} (source id {row['source_keywords_id']}): "
+                    f"{row['channel_name']} {row['start']} (source id {row['id']}): "
                     f"diverge at char {diverge}\n"
                     f"  source table: {kw_text[max(0, diverge - 50):diverge + 100]!r}\n"
                     f"  S3:           {s3_text[max(0, diverge - 50):diverge + 100]!r}"
                 )
             logging.warning(
-                f"[EXTRACT_ADJACENT_CHUNKS] {len(mismatch)} plaintext mismatch between source table and S3 "
+                f"[ADJACENT_PLAINTEXTS] {len(mismatch)} plaintext mismatch between source table and S3 "
                 f"at the same channel and start time, source table plaintext kept. First 5:\n"
                 + "\n".join(examples)
             )
 
-        # Pure adjacents: in S3 near a thematic chunk, absent from the keywords table
-        pure = near.merge(kw[keys], on=keys, how="left", indicator=True)
-        pure = pure[pure["_merge"] == "left_only"].drop(columns="_merge")
-        pure = pure.assign(source_keywords_id=None, keywords_found=None, themes=None,
-                           thematic_chunk=False)
-
-        out = pd.concat([kw, pure], ignore_index=True)
-
-        # id = primary key: channel + start UTC TZ so no doubles on winter/summer swithcing
-        out["this_id"] = (out["channel_name"] + "_"
-                  + out["start"].dt.tz_convert("UTC").dt.strftime("%Y%m%d%H%M%S").str.replace("+", "", regex=False))
-        # adjacent chunks (from s3) take the title of their channel, known from its thematic chunks of the day
-        titles = (kw.dropna(subset=["channel_title"]).drop_duplicates("channel_name")
-                  .set_index("channel_name")["channel_title"])
-        out["channel_title"] = out["channel_name"].map(titles)
-        # plaintext was only needed to compare the source with S3: only the normalized form is ingested,
+        # plaintexts were only needed to compare the source with S3: only the normalized forms are ingested,
         # like title / snippet / body of the articles
-        out["plaintext_normalized"] = out["plaintext"].map(utils.normalize_text)
-        cols = ["this_id", "channel_name", "channel_title", "start",
-                "thematic_chunk",
-                "source_keywords_id", "keywords_found", "themes", "plaintext_normalized"]
+        out = kw.assign(
+            plaintext_normalized=kw["plaintext"].map(utils.normalize_text),
+            plaintext_normalized_prev=kw["plaintext_prev"].map(_normalize_or_none),
+            plaintext_normalized_next=kw["plaintext_next"].map(_normalize_or_none),
+        )
+        logging.info(
+            f"[ADJACENT_PLAINTEXTS] {len(out)} thematic chunks: "
+            f"{out['plaintext_normalized_prev'].isna().sum()} without previous chunk, "
+            f"{out['plaintext_normalized_next'].isna().sum()} without next chunk in S3 (within {gap})"
+        )
+        cols = ["id", "channel_name", "channel_title", "start", "keywords_found", "themes",
+                "plaintext_normalized", "plaintext_normalized_prev", "plaintext_normalized_next",
+                "start_prev", "start_next"]
         n_mismatch = mismatch["channel_name"].value_counts().to_dict()
-        return out.sort_values(["channel_name", "start"])[cols].reset_index(drop=True), n_mismatch, n_missing_s3
+        return out.sort_values(keys)[cols].reset_index(drop=True), n_mismatch, n_missing_s3
 
     except Exception as e:
-        logging.error(f"[EXTRACT_ADJACENT_CHUNKS] ERROR EXTRACTING ADJACENT CHUNKS: {e}")
+        logging.error(f"[ADJACENT_PLAINTEXTS] ERROR ADDING ADJACENT PLAINTEXTS: {e}")
         raise e
     
     
 ### CHECKING RESULTS
 def check_keywords(con: duckdb.DuckDBPyConnection, postgres_db: str, destination_table: str,
-                   schema: str, gap: pd.Timedelta, dry_run: bool, source_table: str,
+                   schema: str, dry_run: bool, source_table: str,
                    n_plaintext_mismatch: dict[str, int] | None = None,
                    n_missing_s3: dict[str, int] | None = None) -> pd.DataFrame | None:
-    """Per channel report on the destination table, using gap as the extraction does (starts are not always on a 2 min grid).
-    - n_expected_adj: sides (before / after) of thematic chunks with no other thematic chunk within gap
-    - n_missing_adj (missing_prev + missing_next) / pct_missing_adj: expected sides with no chunk within gap.
+    """Per channel report on the destination table (one row per thematic chunk):
+    - missing_prev / missing_next: thematic chunks without previous / next chunk plaintext (no S3 chunk within gap)
+    - n_missing_adj (missing_prev + missing_next) / pct_missing_adj: out of the 2 sides of every thematic chunk.
       Program edges are legitimate misses (~105 per day in France, every news program edge for Belgian TV)
-    - orphans: adjacent chunks with no thematic chunk of the same channel within gap
-    - n_missing_s3: thematic chunks of this run missing from S3 (counted per channel by extract_adjacent_chunks_day),
+    - n_missing_s3: thematic chunks of this run missing from S3 (counted per channel by add_adjacent_plaintexts_day),
       only this run: a resumed run does not count the days ingested before
     - n_plaintext_mismatch: thematic chunks of this run whose plaintext differs from S3 (counted per channel by
-      extract_adjacent_chunks_day), only this run as well
+      add_adjacent_plaintexts_day), only this run as well
     Both counts are logged even in dry run, with a per channel table. The table report needs the rows
     of this run in the table: skipped in dry run (returns None)"""
     n_plaintext_mismatch = n_plaintext_mismatch or {}
     if n_plaintext_mismatch:
         logging.warning(
             f"[CHECK] {sum(n_plaintext_mismatch.values())} plaintext mismatch between {source_table} and S3 during this run, "
-            f"{source_table} plaintext kept: see the [EXTRACT_ADJACENT_CHUNKS] warnings of each day"
+            f"{source_table} plaintext kept: see the [ADJACENT_PLAINTEXTS] warnings of each day"
         )
     else:
         logging.info(f"[CHECK] 0 plaintext mismatch between {source_table} and S3 during this run")
@@ -322,7 +317,7 @@ def check_keywords(con: duckdb.DuckDBPyConnection, postgres_db: str, destination
     if n_missing_s3:
         logging.warning(
             f"[CHECK] {sum(n_missing_s3.values())} thematic chunks of {source_table} missing from S3 during this run, "
-            f"{source_table} plaintext kept: see the [EXTRACT_ADJACENT_CHUNKS] warnings of each day"
+            f"{source_table} plaintext kept: see the [ADJACENT_PLAINTEXTS] warnings of each day"
         )
     else:
         logging.info(f"[CHECK] 0 thematic chunk of {source_table} missing from S3 during this run")
@@ -338,55 +333,20 @@ def check_keywords(con: duckdb.DuckDBPyConnection, postgres_db: str, destination
         logging.info(f"[CHECK] DRY_RUN: nothing ingested, no check on {destination_table}")
         return None
 
-    gap_sql = f"INTERVAL '{int(pd.Timedelta(gap).total_seconds())} seconds'"
     try:
         report = con.sql(f"""
-            WITH base AS MATERIALIZED (
-                SELECT channel_name, start, thematic_chunk
-                FROM {postgres_db}.{schema}.{destination_table}
-            ),
-            t AS (
-                SELECT channel_name, start, thematic_chunk,
-                    lag(start)  OVER (PARTITION BY channel_name ORDER BY start) AS prev_start,
-                    lead(start) OVER (PARTITION BY channel_name ORDER BY start) AS next_start,
-                    max(CASE WHEN thematic_chunk THEN start END) OVER (
-                        PARTITION BY channel_name ORDER BY start
-                        ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING) AS prev_thematic,
-                    min(CASE WHEN thematic_chunk THEN start END) OVER (
-                        PARTITION BY channel_name ORDER BY start
-                        ROWS BETWEEN 1 FOLLOWING AND UNBOUNDED FOLLOWING) AS next_thematic
-                FROM base
-            ),
-            flags AS (
-                SELECT *,
-                    thematic_chunk AND coalesce(prev_start < start - {gap_sql}, true) AS missing_prev,
-                    thematic_chunk AND coalesce(next_start > start + {gap_sql}, true) AS missing_next,
-                    -- a side covered by another thematic chunk expects no adjacent
-                    thematic_chunk AND coalesce(prev_thematic < start - {gap_sql}, true) AS expected_prev,
-                    thematic_chunk AND coalesce(next_thematic > start + {gap_sql}, true) AS expected_next,
-                    NOT thematic_chunk
-                        AND coalesce(start - prev_thematic > {gap_sql}, true)
-                        AND coalesce(next_thematic - start > {gap_sql}, true) AS orphan
-                FROM t
-            ),
-            per_channel AS (
+            WITH per_channel AS (
                 SELECT channel_name,
                     count(*) AS n_chunks,
-                    count(*) FILTER (WHERE thematic_chunk) AS n_thematic,
-                    count(*) FILTER (WHERE NOT thematic_chunk) AS n_adjacent,
-                    count(*) FILTER (WHERE missing_prev) AS missing_prev,
-                    count(*) FILTER (WHERE missing_next) AS missing_next,
-                    count(*) FILTER (WHERE expected_prev) + count(*) FILTER (WHERE expected_next) AS n_expected_adj,
-                    count(*) FILTER (WHERE orphan) AS orphans
-                FROM flags
+                    count(*) FILTER (WHERE plaintext_normalized_prev IS NULL) AS missing_prev,
+                    count(*) FILTER (WHERE plaintext_normalized_next IS NULL) AS missing_next
+                FROM {postgres_db}.{schema}.{destination_table}
                 GROUP BY channel_name
             )
-            SELECT channel_name, n_chunks, n_thematic, n_adjacent,
+            SELECT channel_name, n_chunks,
                 missing_prev, missing_next,
-                n_expected_adj,
                 missing_prev + missing_next AS n_missing_adj,
-                round(100.0 * (missing_prev + missing_next) / nullif(n_expected_adj, 0), 2) AS pct_missing_adj,
-                orphans
+                round(100.0 * (missing_prev + missing_next) / (2 * n_chunks), 2) AS pct_missing_adj
             FROM per_channel
             ORDER BY n_missing_adj DESC, channel_name
         """).df()
@@ -397,15 +357,13 @@ def check_keywords(con: duckdb.DuckDBPyConnection, postgres_db: str, destination
     report["n_missing_s3"] = report["channel_name"].map(n_missing_s3).fillna(0).astype(int)
     report["n_plaintext_mismatch"] = report["channel_name"].map(n_plaintext_mismatch).fillna(0).astype(int)
     total = report.drop(columns=["channel_name", "pct_missing_adj"]).sum()
-    pct_total = (round(100 * total["n_missing_adj"] / total["n_expected_adj"], 2)
-                 if total["n_expected_adj"] else None)
+    pct_total = (round(100 * total["n_missing_adj"] / (2 * total["n_chunks"]), 2)
+                 if total["n_chunks"] else None)
     logging.info(
-        f"[CHECK] {destination_table}: {total['n_chunks']} chunks "
-        f"({total['n_thematic']} thematic, {total['n_adjacent']} adjacent) on {len(report)} channels\n"
-        f"thematic chunks without neighbour: {total['missing_prev']} before, {total['missing_next']} after\n"
-        f"missing adjacents (within gap): {total['n_missing_adj']} / {total['n_expected_adj']} expected ({pct_total} %). Up to ~105 per day (France) can be program edges, "
+        f"[CHECK] {destination_table}: {total['n_chunks']} thematic chunks on {len(report)} channels\n"
+        f"thematic chunks without neighbour plaintext: {total['missing_prev']} before, {total['missing_next']} after\n"
+        f"missing neighbours: {total['n_missing_adj']} / {2 * total['n_chunks']} sides ({pct_total} %). Up to ~105 per day (France) can be program edges, "
         f"and chunks can be missing in S3.\n"
-        f"orphan adjacents: {total['orphans']}\n"
         f"thematic chunks missing from S3 (this run): {total['n_missing_s3']}\n"
         f"plaintext mismatch with S3 (this run): {total['n_plaintext_mismatch']}"
     )

@@ -469,10 +469,32 @@ class ChunkCreator:
         signal to that window and make sure the returned chunks cover it fully.
         """
         y = self.load(audio_file_path, offset=offset, duration=duration)
+        if len(y) == 0:
+            return []
 
-        fingerprints = self.split_in_chunks_and_build_fingerprints(y=y)
+        features = self.extract_features(y)
+        silence_mask = self._compute_silence_mask(features["energy"])
+        peaks_sec = self._detect_peaks(silence_mask, features["energy"])
 
-        return [fingerprint for (start, end, fingerprint) in fingerprints]
+        # The window edges are the ad's own boundaries (silence peaks of the broadcast
+        # stream when the ad was detected), but the silences around them are cut by the
+        # crop, so they are rarely detected as peaks here. Use the edges as boundaries,
+        # and drop the peaks closer than min_chunk_sec to them (the edge silences
+        # themselves when they are detected), as _detect_peaks does between two peaks.
+        # Without this, an ad with fewer than two inner silences gets no chunk at all,
+        # and every ad loses its first and last chunks.
+        total_sec = len(y) / self.sr
+        inner_peaks = [
+            float(p)
+            for p in peaks_sec
+            if self.min_chunk_sec <= p <= total_sec - self.min_chunk_sec
+        ]
+        boundaries = [0.0, *inner_peaks, total_sec]
+
+        return [
+            self._build_fingerprint(t_start, t_end, y, features)
+            for (t_start, t_end) in self._split_from_peaks(np.array(boundaries))
+        ]
 
     def params(self) -> dict:
         return {

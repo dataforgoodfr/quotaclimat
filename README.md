@@ -217,7 +217,7 @@ docker compose build test # or ingest_to_db, mediatree etc
 docker build -f Dockerfile -t quotaclimat_base:latest .
 docker build -f Dockerfile.ffmpeg -t quotaclimat_base_ffmpeg:latest .
 ```
-In CI, it's built `FROM` the freshly pushed `quotaclimat_base:${PROJECT_VERSION}` image and pushed as `quotaclimat_base_ffmpeg`, which is what the `advertising_detection` Scaleway job runs.
+In CI, it's built `FROM` the freshly pushed `quotaclimat_base:${PROJECT_VERSION}` image and pushed as `quotaclimat_base_ffmpeg`, which is what the `ad_s01_run_detection` Scaleway job runs.
 
 ### Check what is missing in Mediatree's bucket (advertising detection)
 Before running the detection, you can check which 2-minutes files of a week are missing in Mediatree's bucket, for every channel of the bucket. It only lists the bucket (nothing is downloaded), so it takes a few seconds:
@@ -225,10 +225,30 @@ Before running the detection, you can check which 2-minutes files of a week are 
 COVER_CHECK_ONLY=true START_DATE=2026-10-12 poetry run python quotaclimat/data_ingestion/advertising/s01_detection/run.py
 ```
 - `START_DATE` is the Monday of the week (at least 7 days ago). `COVER_CHECK_CHANNELS=tf1,france2` limits the check to some channels.
-- The expected files are the shows of `postgres/program_metadata.json` whose program grid is valid that week, with margins of 15 minutes before and after (`PROGRAM_MARGIN_BEFORE_MINUTES`, `PROGRAM_MARGIN_AFTER_MINUTES`), rounded up to Mediatree's even minutes.
+- The expected files are the shows of the program grid (see "Program Metadata table") whose grid is valid that week, with margins of 15 minutes before and after (`PROGRAM_MARGIN_BEFORE_MINUTES`, `PROGRAM_MARGIN_AFTER_MINUTES`), rounded up to Mediatree's even minutes.
 - The report gives a table per channel (missing time, shows entirely missing, partly missing, or complete but with missing margins), then for each channel the shows not fully received and the missing time slots, grouped by time of day (a slot missing every day is written once, `every day`).
 
 The same summary is written in the text report of a normal detection run.
+
+### Run the advertising detection
+`entrypoints/ad_s01_run_detection.sh` (Scaleway job `ad_s01_run_detection`) processes one week (Monday to Sunday, Paris time) of one channel per run. Only the 2-minutes files of the shows of the program grid (see "Program Metadata table") (with the same margins as the cover check) are downloaded and analysed: files of the bucket outside the program are skipped, missing ones are reported in the text report. The job's disk is 1 GB while a week of audio weighs several GB (up to ~7 GB for a 24h news channel): files are downloaded, split in chunks and deleted by batches of 100 (`DOWNLOAD_BATCH_SIZE` in `e00_download_audio.py`).
+
+| Variable | Purpose |
+|---|---|
+| `CHANNEL` | Channel to process. Empty: taken from `SCHEDULED_ROLLING_CHANNELS`, then `ROLLING_CHANNELS` |
+| `SCHEDULED_ROLLING_CHANNELS` | Channels the job's cron goes through, e.g. `tf1,itele,arte`: the n-th run of a cron's hours runs the n-th channel. Needs `SCHEDULED_ROLLING_CHANNELS_CRON` |
+| `SCHEDULED_ROLLING_CHANNELS_CRON` | The job's cron, e.g. `*/30 1-6 * * *` (every 30 minutes) or `55 7-18 * * *` (every hour at minute 55). It must have one of these two exact shapes, its weekday can be a number or `*` (every day). Several crons are separated by `;` (`15 8-12 * * *;15 20-23 * * *`): each one goes through the whole list. Starting with `-` disables the rotation |
+| `SCHEDULED_ROLLING_CHANNELS_TIMEZONE` | Time zone of the job's cron (default `Europe/Paris`): the cron hours are read in it, not in the container's UTC |
+| `ROLLING_CHANNELS` | `tf1,france2`: rotation of the channels over 2 hours (see `run.py`) |
+| `START_DATE` | Monday of the week to process. Empty: the Monday after the last week with occurrences of the channel in `advertising.ad_occurrence` |
+| `MINIMAL_START_DATE` | Monday to start from for a channel without any occurrence |
+| `AUDIO_WORKERS` | Number of processes (default: Scaleway CPUs minus 2) |
+
+The logs give the start and the duration of every step (`Step <name>: start`, `Step <name>: done in <n>s`): `audio_listing`, `audio_download_and_processing`, `chunk_identification`, `chunk_grouping`, `fragment_classification`, `clean_pre_existing_occurrences`, `database_storage`. `chunk_identification` compares the chunks of the week to the fingerprints of every ad of `advertising.ad`, so it grows with the table: it logs its progress every 30 seconds (ads compared out of the total, fingerprints, candidate and matching chunks).
+
+There is no default value: without a channel or a start date the job fails. When the week to process is not finished yet (less than 7 days ago), the job stops without doing anything, so a scheduled catch-up stops by itself.
+
+The chunks of the week are first compared with the ads already in `advertising.ad` (`e03_already_identified_advertising.py`). Only the ads detected less than 3 months before the Monday of the processed week are searched for (`KNOWN_AD_MAX_AGE`): first detection or last occurrence not deleted, on any channel. An older ad that is broadcast again is detected as a new ad.
 
 ### Explore postgres data using Metabase - a BI tool
 ```
@@ -436,28 +456,21 @@ poetry run python3 transform_excel_to_json.py
 ```
 
 ## Program Metadata table
-The media perimeter is defined here : "quotaclimat/data_processing/mediatree/channel_program_data.py"
+The media perimeter is defined per country in `quotaclimat/data_processing/mediatree/i8n/<country>/channel_program.py` (France: `i8n/france/channel_program.py`).
 
-To evolve the media perimeter, we use `program_grid_start` and `program_grid_end` columns to version all evolutions.
+To evolve the media perimeter, we use `program_grid_start` and `program_grid_end` columns to version all evolutions. Never delete or modify a line used by past data: close it with a `program_grid_end` (the day before the change) and add a new line starting the next day (`program_grid_start`). The program id is computed from the channel, weekday, program name and `program_grid_start`, so closed lines keep their id.
 
-To calculate the right total duration for each channel, after updating "quotaclimat/data_processing/mediatree/channel_program_data.py" you need to execute this command to update `postgres/program_metadata.json` 
-```
-poetry run python3 transform_program.py
-```
-The SQL queries are based on this file that generate the Program Metadata table.
+The France grid follows the perimeter Mediatree records for us (contract annex). The times are those of the shows, without the 15 minutes margins Mediatree adds before and after each block (see "Check what is missing in Mediatree's bucket" above).
+
+`quotaclimat/data_processing/mediatree/program_metadata.py` builds the grid from these files (one entry per weekday, with its duration and an id), and `create_tables()` (`postgres/schemas/models.py`) writes it into the Program Metadata table at each import: there is no file to regenerate after updating a `channel_program.py`. The SQL queries and the advertising detection read this grid.
 
 Program data will not be updated to avoid lock concurrent issues when using `UPDATE=true` for keywords logic. Note: The default case will update them.
-
-**With the docker-entrypoint.sh this command is done automatically, so for production uses, you will not have to run this command.**
 
 ### Extended perimeter (Droit à l'info)
 For the "Droit à l'info" scope, we track an extended set of France programs (`tf1`, `france2`, `fr3-idf`, `rtl`, `france5`, `tmc`, `lcp`) on top of the regular France perimeter, defined in `quotaclimat/data_processing/mediatree/i8n/extended_france/`. This uses the country code `ext-fra` (`EXTENDED_FRANCE` in `country.py`), which shares the `french` language and subtitle format with `fra`/`bel` - subtitle matching in `detect_keywords.py` is routed by `country.language == "french"`, not by a per-country code allowlist, so extended perimeter automatically reuses the same French subtitle matching logic.
 
 The `EXTENDED_PERIMETER` env variable (`"true"`/`"false"`, default `"false"`) toggles extended perimeter behaviour across the pipeline:
-* `transform_program.py`: also includes the extended perimeter programs in `postgres/program_metadata.json`.
-  ```
-  EXTENDED_PERIMETER=true poetry run python3 transform_program.py
-  ```
+* `quotaclimat/data_processing/mediatree/program_metadata.py`: also includes the extended perimeter programs in the Program Metadata table.
 * `quotaclimat/data_ingestion/labelstudio/ingest_labelstudio.py`: uses `db_config_extended_perimeter` (`quotaclimat/data_ingestion/labelstudio/configs.py`) instead of the regular `db_config`, to only ingest the extended perimeter's Label Studio project into the aggregate tables.
 * `my_dbt_project/dbt_project.yml`: the `analytics`/`dashboards` model grants only select to the `rrs-read` user matching `DBT_ENV` (`rrs-read-dev` or `rrs-read-prod`) instead of the regular grant list, since the extended-perimeter database has no `climateguard-reader-user`.
 
@@ -631,14 +644,14 @@ The models for the two tables can be found in `quotaclimat/data_ingestion/labels
 The sources for the Labelstudio ingestion can be found in `quotaclimat/data_ingestion/labelstudio/configs.py`. The `db_config` variable consists of a list of record (python dictionaries) with the source database name and a mapping of the project ids to countries:
 ```python
 db_config = [
-  {
-    "database": "<labelstudio_db>", 
-    "countries": {
-      1: "<country_1>", 
-      2: "<country_2>", 
-      3: "<country_3>",
-    }
-  },
+    {
+        "database": "<labelstudio_db>",
+        "countries": {
+            1: "<country_1>",
+            2: "<country_2>",
+            3: "<country_3>",
+        },
+    },
 ]
 ```
 When a new source is added (if a new Labelstudio instance is deployed) it suffices to add the source to the record list. (This assumes that all sources are on the same DB instace, as is the case at the time of writing).

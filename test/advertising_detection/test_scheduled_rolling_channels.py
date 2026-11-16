@@ -1,5 +1,6 @@
 from datetime import datetime
 from unittest.mock import patch
+from zoneinfo import ZoneInfo
 
 import pytest
 
@@ -48,3 +49,12 @@ def test_weekday_cron_only_runs_that_day(monkeypatch):
 )
 def test_fixed_minute_cron(now, expected, monkeypatch):
     assert channel_at("55 7-18 * * *:tf1,france2,m6", now, monkeypatch) == expected
+
+
+def test_cron_hours_are_read_in_paris_time(monkeypatch):
+    monkeypatch.delenv("SCHEDULED_ROLLING_CHANNELS_TIMEZONE", raising=False)
+    monkeypatch.setenv("SCHEDULED_ROLLING_CHANNELS", "15 8-19 * * *:tf1,itele,arte")
+    with patch(f"{MODULE}.datetime") as mocked:
+        mocked.now.return_value = datetime(2026, 11, 16, 10, 15)
+        assert scheduled_rolling_channels.get_scheduled_rolling_channel() == "arte"
+        mocked.now.assert_called_once_with(tz=ZoneInfo("Europe/Paris"))

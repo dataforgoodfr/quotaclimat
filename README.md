@@ -236,7 +236,9 @@ The same summary is written in the text report of a normal detection run.
 | Variable | Purpose |
 |---|---|
 | `CHANNEL` | Channel to process. Empty: taken from `SCHEDULED_ROLLING_CHANNELS`, then `ROLLING_CHANNELS` |
-| `SCHEDULED_ROLLING_CHANNELS` | `CRON:TIMEZONE:CHANNELS` or `CRON:CHANNELS`, e.g. `*/30 1-6 * * *:tf1,france2` (every 30 minutes) or `55 7-18 * * *:tf1,france2` (every hour at minute 55): the n-th run of the cron's hours runs the n-th channel. The cron must have one of these two exact shapes, its weekday can be a number or `*` (every day). TIMEZONE is the time zone of the job's cron (e.g. `15 8-19 * * *:Europe/Paris:tf1,arte`), Europe/Paris when omitted: the cron hours are read in it, not in the container's UTC |
+| `SCHEDULED_ROLLING_CHANNELS` | Channels the job's cron goes through, e.g. `tf1,itele,arte`: the n-th run of a cron's hours runs the n-th channel. Needs `SCHEDULED_ROLLING_CHANNELS_CRON` |
+| `SCHEDULED_ROLLING_CHANNELS_CRON` | The job's cron, e.g. `*/30 1-6 * * *` (every 30 minutes) or `55 7-18 * * *` (every hour at minute 55). It must have one of these two exact shapes, its weekday can be a number or `*` (every day). Several crons are separated by `;` (`15 8-12 * * *;15 20-23 * * *`): each one goes through the whole list. Starting with `-` disables the rotation |
+| `SCHEDULED_ROLLING_CHANNELS_TIMEZONE` | Time zone of the job's cron (default `Europe/Paris`): the cron hours are read in it, not in the container's UTC |
 | `ROLLING_CHANNELS` | `tf1,france2`: rotation of the channels over 2 hours (see `run.py`) |
 | `START_DATE` | Monday of the week to process. Empty: the Monday after the last week with occurrences of the channel in `advertising.ad_occurrence` |
 | `MINIMAL_START_DATE` | Monday to start from for a channel without any occurrence |

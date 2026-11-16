@@ -149,31 +149,12 @@ cop_climat:
       - id: 202611_cop31_antalya
         start: 2026-11-02
         end: 2026-11-28
-    # Belgique : mêmes fenêtres. Une période sans données produit une table vide pour cette période,
-    # la profondeur réelle des données belges est à contrôler avant toute comparaison entre COP (decisions.md, C-4).
+    # Belgique : COP31 seulement, pas de données belges avant 2026.
     belgiumfr:
-      - id: 202311_cop28_dubai
-        start: 2023-11-23
-        end: 2023-12-21
-      - id: 202411_cop29_bakou
-        start: 2024-11-04
-        end: 2024-12-02
-      - id: 202511_cop30_belem
-        start: 2025-11-03
-        end: 2025-11-30
       - id: 202611_cop31_antalya
         start: 2026-11-02
         end: 2026-11-28
     belgiumnl:
-      - id: 202311_cop28_dubai
-        start: 2023-11-23
-        end: 2023-12-21
-      - id: 202411_cop29_bakou
-        start: 2024-11-04
-        end: 2024-12-02
-      - id: 202511_cop30_belem
-        start: 2025-11-03
-        end: 2025-11-30
       - id: 202611_cop31_antalya
         start: 2026-11-02
         end: 2026-11-28

@@ -64,7 +64,7 @@ inputs:
   - id: countries
     type: MULTISELECT
     values: ["bel", "bel-fla", "deu", "esp", "pol"]
-    defaults: ["bel", "bel-fla", "deu", "esp", "pol"]
+    defaults: ["bel", "bel-fla"] #, "deu", "esp", "pol"]
     description: "Countries to process. Defaults to all; untick all but one to run a single country."
   - id: api_data_overwrite
     type: BOOL

@@ -140,7 +140,7 @@ if __name__ == "__main__":
                 channel = rolling_channels[rolling_index]
         assert channel, (
             "Need a channel to run the detection process: "
-            "CHANNEL, SCHEDULED_ROLLING_CHANNELS or ROLLING_CHANNELS"
+            "CHANNEL, SCHEDULED_ROLLING_CHANNELS (with SCHEDULED_ROLLING_CHANNELS_CRON) or ROLLING_CHANNELS"
         )
 
         start_date = os.environ.get("START_DATE")

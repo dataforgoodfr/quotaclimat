@@ -15,9 +15,10 @@ def get_scheduled_rolling_channel():
     #
     # Behavior:
     # - If the CRON starts with a "-", this feature is desactivated
-    # - Currently the CRON should be in the exact format of this example "*/30 18-23 * * 1"
-    # (or "*/30 18-23 * * *" to run every day)
-    # (numbers can be different but not their places and number, because we did not implement full behavior of the cron)
+    # - The CRON should have one of these exact shapes (the full cron syntax is not implemented):
+    #   "*/30 18-23 * * 1": every 30 minutes from 18:00 to 23:30, on Mondays
+    #   "55 7-18 * * *": every hour at minute 55 from 7:55 to 18:55, every day
+    #   (the weekday can be a number or "*")
     # - When the process is running, it tries to find if it was triggered by the cron, and count the number of iterations already happens this day
     # - This number is used in the CHANNELS list to pick the channel. If the list is to short, this feature is desactivated
 
@@ -31,19 +32,25 @@ def get_scheduled_rolling_channel():
 
     channels = [c.strip() for c in channels_str.split(",")]
 
-    # Expected cron format: "*/INTERVAL HOUR_START-HOUR_END * * WEEKDAY" (WEEKDAY can be *)
-    match = re.match(r"^\*/(\d+)\s+(\d+)-(\d+)\s+\*\s+\*\s+(\d+|\*)$", cron.strip())
+    # Expected cron format: "*/INTERVAL HOUR_START-HOUR_END * * WEEKDAY"
+    # or "MINUTE HOUR_START-HOUR_END * * WEEKDAY" (WEEKDAY can be *)
+    match = re.match(
+        r"^(?:\*/(\d+)|(\d+))\s+(\d+)-(\d+)\s+\*\s+\*\s+(\d+|\*)$", cron.strip()
+    )
     if not match:
         logger.warning(
             f"It looks like a SCHEDULED_ROLLING_CHANNELS but the cron part did not match: {cron}"
         )
         return
 
-    interval = int(match.group(1))
-    hour_start = int(match.group(2))
-    hour_end = int(match.group(3))
+    if match.group(1) is not None:
+        interval, first_minute = int(match.group(1)), 0
+    else:
+        interval, first_minute = 60, int(match.group(2))
+    hour_start = int(match.group(3))
+    hour_end = int(match.group(4))
     weekday = match.group(
-        4
+        5
     )  # cron: 0=Sunday … 6=Saturday, 7=Sunday; iso: 1=Monday … 7=Sunday
 
     now = datetime.now()
@@ -52,12 +59,11 @@ def get_scheduled_rolling_channel():
     if weekday != "*" and now.isoweekday() % 7 != int(weekday) % 7:
         return
 
-    if not (hour_start <= now.hour <= hour_end):
-        return
-
     minutes_since_start = (
-        (now.hour - hour_start) * 60 + now.minute + 1
+        now.hour * 60 + now.minute - (hour_start * 60 + first_minute) + 1
     )  # Plus one in case the cron starts just before the official time (already observed)
+    if minutes_since_start < 0 or now.hour > hour_end:
+        return
     iteration = minutes_since_start // interval
 
     if iteration >= len(channels):

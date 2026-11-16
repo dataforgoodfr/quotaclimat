@@ -32,3 +32,19 @@ def test_weekday_cron_only_runs_that_day(monkeypatch):
     src = "*/30 18-23 * * 1:tf1,france2"
     assert channel_at(src, datetime(2026, 11, 9, 18, 0), monkeypatch) == "tf1"
     assert channel_at(src, datetime(2026, 11, 10, 18, 0), monkeypatch) is None
+
+
+@pytest.mark.parametrize(
+    "now,expected",
+    [
+        (datetime(2026, 11, 16, 7, 55), "tf1"),
+        (datetime(2026, 11, 16, 7, 54), "tf1"),  # Cron started a little early
+        (datetime(2026, 11, 16, 8, 56), "france2"),
+        (datetime(2026, 11, 16, 9, 55), "m6"),
+        (datetime(2026, 11, 16, 7, 30), None),  # Before the first run
+        (datetime(2026, 11, 16, 10, 55), None),  # After the last channel
+        (datetime(2026, 11, 16, 19, 55), None),  # After the last hour
+    ],
+)
+def test_fixed_minute_cron(now, expected, monkeypatch):
+    assert channel_at("55 7-18 * * *:tf1,france2,m6", now, monkeypatch) == expected

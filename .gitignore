@@ -122,6 +122,7 @@ celerybeat.pid
 # Environments
 .env
 .env.secrets
+.advertising.env
 .venv
 env/
 venv/
@@ -171,6 +172,12 @@ germany_s3_bucket
 .aws/
 # reference seeds downloaded from Google Sheets before dbt seed
 my_dbt_project/seeds/ref/*.csv
+
+# Reference data snapshots of the advertising analysis, fetched from the Google Sheet
+quotaclimat/data_ingestion/advertising/s03_classification/sector_and_brand/reference_data/*_versions/
+
+# local copies of the brand inventory and recherche-entreprises cache of the SIRENE job
+quotaclimat/data_ingestion/advertising/s05_enrichment/e01_brand_groups/data/
 
 # detect_misinformation (migrated from climateguard)
 detect_misinformation/**/secrets/*

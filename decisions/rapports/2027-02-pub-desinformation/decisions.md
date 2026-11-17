@@ -14,7 +14,7 @@ Chaîne de données :
 1. **Publicités** : détection, classification et consolidation (`quotaclimat/data_ingestion/advertising/`, voir les README des étapes s03 à s05), puis dbt : `analytics.publicites` (une diffusion), `advertising.pub_annonceur_emission_jour` (secondes de pub de chaque marque autour de chaque émission, par jour ; [`my_dbt_project/models/analytics/pub_annonceur_emission_jour.sql`](../../../my_dbt_project/models/analytics/pub_annonceur_emission_jour.sql)). Les colonnes `secteur`, `categorie`, `entreprise`, `agence_media`, `groupe_agence`, `fiabilite_agence` viennent de là.
 2. **Mésinformation et environnement par émission** : `public.emission_jour` (une ligne par émission et par jour : `env_heures`, `nb_cas` validés ; [`my_dbt_project/models/analytics/emission_jour.sql`](../../../my_dbt_project/models/analytics/emission_jour.sql)). Jointure avec la pub sur `emission_cle`.
 3. **Chaînes** : `curated.chaine` (`est_info_continue` sépare chaînes d'information en continu et généralistes). **Plage de dates** : `curated.publicite` (dernier jour de pub extrait).
-4. **Google Sheets puis Google Doc** : requête de `queries/`, procédure dans [`google_sheets.md`](google_sheets.md).
+4. **Google Sheets puis Google Doc** : les résultats des requêtes de `queries/` vont dans le Google Sheet `2027-02-pub-desinformation` (un onglet par graphique, données et graphique dans le même onglet), dont les graphiques sont collés dans le Google Doc du rapport.
 
 ## 2. Règles de calcul
 
@@ -48,8 +48,8 @@ Chaîne de données :
 - **Une couleur par secteur** dans les graphiques à bulles (la série est le nom du secteur). Couleurs fixées : Automobile et transport `#509EE3`, Alimentation `#88BF4D`, Établissements financiers et assurance `#F2A86F`, moyenne du secteur en noir ; les autres secteurs en couleurs automatiques. Barres de R11 : gris clair `#DCDFE0` pour la pub hors émissions à fort taux, gris `#949AAB` pour « Autres émissions à fort taux ».
 - **Taille des bulles** : racine carrée des minutes de pub. Le rayon est proportionnel à la valeur, la surface l'est donc aux minutes ; avec les minutes brutes, les plus gros annonceurs écrasaient les autres. Les moyennes de secteur ont une taille fixe (4).
 - **Bulles alignées** : toutes les bulles d'un secteur ont la même abscisse (le rang du secteur).
-- **Noms des entreprises ou des catégories sur les bulles** : impossible dans Metabase (les étiquettes d'un nuage de points ne montrent que la valeur de l'axe vertical ; le nom n'est qu'au survol). Les graphiques à bulles sont donc faits dans Google Sheets (colonne d'étiquette), puis collés dans le Google Doc : [`google_sheets.md`](google_sheets.md).
-- **Rafraîchissement du Sheet** : à la main pour l'instant ([`google_sheets.md`](google_sheets.md)) ; un flow Kestra d'export des requêtes de `queries/` vers les Sheets, lancé à la main, est en cours de développement. Pas de lien public Metabase lu par `IMPORTDATA` : il publierait sur internet des données de suivi non publiées.
+- **Noms des entreprises ou des catégories sur les bulles** : impossible dans Metabase (les étiquettes d'un nuage de points ne montrent que la valeur de l'axe vertical ; le nom n'est qu'au survol). Les graphiques à bulles sont donc faits dans Google Sheets (colonne d'étiquette), puis collés dans le Google Doc.
+- **Rafraîchissement du Sheet** : un flow Kestra d'export des requêtes de `queries/` vers les Sheets, lancé à la main, est en cours de développement. Pas de lien public Metabase lu par `IMPORTDATA` : il publierait sur internet des données de suivi non publiées.
 
 ## 4. Carte des graphiques
 

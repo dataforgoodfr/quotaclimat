@@ -433,8 +433,8 @@ async def run(start_date: datetime | None, end_date: datetime | None):
         # group task has finished, so nothing else is using the session concurrently.
         if reset_no_data_ads:
             # fragment_type is NOT NULL, so fall back to "advertising" -- same default
-            # e02_classify_ad uses -- just to clear it out of "no_data" and let it be
-            # picked back up by the transcribe/classify pipeline stages.
+            # sector_and_brand/e1_classify_ad uses -- just to clear it out of "no_data" and let it be
+            # picked back up by the s03_classification stages.
             session.execute(
                 update(Ad)
                 .where(Ad.id.in_(reset_no_data_ads))

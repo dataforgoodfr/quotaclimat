@@ -30,7 +30,7 @@ from quotaclimat.data_ingestion.advertising.s01_detection.tools.rolling_channels
     parse_channels,
     plan_week,
 )
-from quotaclimat.utils.logger import getLogger
+from quotaclimat.utils.logger import getLogger, set_log_prefix
 from quotaclimat.utils.sentry import sentry_init
 
 logger = logging.getLogger(__name__)
@@ -101,6 +101,8 @@ def _run_detection():
             f"Channel {index + 1}/{len(channels_to_run)}: {channel}, week of {week}"
         )
         started = time.monotonic()
+        # Every log line of this channel (worker processes included) starts with it
+        set_log_prefix(channel)
         try:
             _process_week(channel, week.isoformat())
             status = "done"
@@ -108,6 +110,8 @@ def _run_detection():
             # The other channels still run, the job fails at the end
             logger.exception(f"Detection failed for {channel} on the week of {week}")
             status = "FAILED"
+        finally:
+            set_log_prefix(None)
         results.append((channel, status, time.monotonic() - started))
         if len(channels_to_run) > 1:
             _clean_local_files()

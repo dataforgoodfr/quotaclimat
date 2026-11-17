@@ -1,6 +1,20 @@
 import logging
 import os
 import sys
+
+# Text put at the start of every log line (e.g. the channel being processed), see set_log_prefix
+_prefix = ""
+
+
+def set_log_prefix(prefix: str | None):
+    """Start every log line with `prefix` (e.g. the channel), or with nothing if None/"".
+
+    Worker processes forked afterwards (ProcessPoolExecutor on Linux) keep the prefix.
+    """
+    global _prefix
+    _prefix = f"{prefix} | " if prefix else ""
+
+
 class CustomFormatter(logging.Formatter):
 
     grey = "\x1b[38;20m"
@@ -9,30 +23,47 @@ class CustomFormatter(logging.Formatter):
     bold_red = "\x1b[31;1m"
     reset = "\x1b[0m"
     light_blue = "\x1b[36m"
-    format = "%(asctime)s - %(levelname)s - %(filename)s:%(lineno)d | %(message)s"
+    # No time by default: Scaleway Cockpit and Kestra already show it in front of each line.
+    # The level stays: Cockpit reads it from the line (a line without it shows as UNK).
+    # LOG_TIME=true puts the time back (to run a script locally).
+    LOG_FORMAT = "%(levelname)s - %(filename)s:%(lineno)d | %(message)s"
+    LOG_FORMAT_WITH_TIME = "%(asctime)s - " + LOG_FORMAT
 
-    FORMATS = {
-        logging.DEBUG: grey + format + reset,
-        logging.INFO: light_blue + format + reset,
-        logging.WARNING: yellow + format + reset,
-        logging.ERROR: red + format + reset,
-        logging.CRITICAL: bold_red + format + reset
+    COLORS = {
+        logging.DEBUG: grey,
+        logging.INFO: light_blue,
+        logging.WARNING: yellow,
+        logging.ERROR: red,
+        logging.CRITICAL: bold_red,
     }
 
+    def __init__(self, with_time: bool | None = None):
+        super().__init__()
+        if with_time is None:
+            with_time = os.getenv("LOG_TIME", "false").lower() in ("1", "true", "yes")
+        log_fmt = self.LOG_FORMAT_WITH_TIME if with_time else self.LOG_FORMAT
+        self.formatters = {
+            level: logging.Formatter(color + "%(log_prefix)s" + log_fmt + self.reset)
+            for level, color in self.COLORS.items()
+        }
+
     def format(self, record):
-        log_fmt = self.FORMATS.get(record.levelno)
-        formatter = logging.Formatter(log_fmt)
+        record.log_prefix = _prefix
+        formatter = self.formatters.get(record.levelno, self.formatters[logging.INFO])
         return formatter.format(record)
-    
-def getLogger():
+
+
+def getLogger(prefix: str | None = None):
     # create logger with 'spam_application'
     logger = logging.getLogger()
     logger.setLevel(level=os.getenv('LOGLEVEL', 'INFO').upper())
     # create console handler with a higher log level
     if (logger.hasHandlers()):
         logger.handlers.clear()
-    ch = logging.StreamHandler(sys.stdout)                                                                                                                                                                                        
+    ch = logging.StreamHandler(sys.stdout)
     ch.setFormatter(CustomFormatter())
     logger.addHandler(ch)
+    if prefix is not None:
+        set_log_prefix(prefix)
 
     return logger

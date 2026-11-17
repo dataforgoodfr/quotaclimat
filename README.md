@@ -252,7 +252,7 @@ Only the 2-minutes files of the shows of the program grid (see "Program Metadata
 | `MINIMAL_START_DATE` | Monday to start from for a channel without any occurrence. A channel added to `ROLLING_CHANNELS` starts from it: it is the only one to run until it has caught up with the others |
 | `AUDIO_WORKERS` | Number of worker processes of the CPU bound steps: audio processing, `chunk_identification` and `chunk_grouping` (default: Scaleway CPUs minus 1, the main process downloading the audio and reading the database) |
 
-The logs give the start and the duration of every step (`Step <name>: start`, `Step <name>: done in <n>s`): `audio_listing`, `audio_download_and_processing`, `chunk_identification`, `chunk_grouping`, `fragment_classification`, `clean_pre_existing_occurrences`, `database_storage`. `chunk_identification` compares the chunks of the week to the fingerprints of every ad of `advertising.ad`, so it grows with the table: it logs its progress every 30 seconds (ads compared out of the total, fingerprints, candidate and matching chunks).
+Every log line of a channel starts with its name (`tf1 | INFO - ...`, `set_log_prefix` of `quotaclimat/utils/logger.py`, worker processes included). The logs give the start and the duration of every step (`Step <name>: start`, `Step <name>: done in <n>s`): `audio_listing`, `audio_download_and_processing`, `chunk_identification`, `chunk_grouping`, `fragment_classification`, `clean_pre_existing_occurrences`, `database_storage`. `chunk_identification` compares the chunks of the week to the fingerprints of every ad of `advertising.ad`, so it grows with the table: it logs its progress every 30 seconds (ads compared out of the total, fingerprints, candidate and matching chunks).
 
 There is no default value: without channels, or without a start date for a channel that has no occurrence, the job fails before processing anything. When the week to process is not finished yet (less than 7 days ago), the job stops without doing anything, so a scheduled catch-up stops by itself.
 
@@ -311,6 +311,9 @@ Learn [more here.](https://www.scaleway.com/en/docs/tutorials/use-container-regi
 With Sentry or [GlitchTip](https://glitchtip.com) (Sentry-compatible, hosted on the orchestrator, see `infrastructure/Readme.md`), with env variable `SENTRY_DSN`. The jobs call `sentry_init()` (`quotaclimat/utils/sentry.py`), which tags events and logs with `country` (`COUNTRY`), `service` (`SERVICE_NAME`, or the name of the entry script) and sets `environment` from `ENV`.
 
 Learn more here : https://docs.sentry.io/platforms/python/configuration/options/
+
+### Log format
+The jobs that call `getLogger()` (`quotaclimat/utils/logger.py`) write `LEVEL - file.py:line | message`, without the time: Scaleway Cockpit and Kestra already put it in front of each line. The level stays in the line because Cockpit reads it from there (a line without it shows as `UNK`). `LOG_TIME=true` puts the time back, to run a script locally. `set_log_prefix("tf1")` (or `getLogger(prefix="tf1")`) starts every following line with `tf1 | `, `set_log_prefix(None)` removes it.
 
 ### Send logs to Sentry
 By setting `SENTRY_LOGGING` to `"true"` we can send the job logs (`INFO` and above) to sentry or GlitchTip (as Scaleway Cockpit is not always reliable). The Kestra flows `barometre`, `barometre-catchup` and `barometre-i18n` (and the dev one) set it.

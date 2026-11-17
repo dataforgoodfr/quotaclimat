@@ -97,3 +97,12 @@ class TestChannelNames:
     def test_list_channels_with_our_names(self, folders, expected):
         fs = FakeS3([archive(folder, DAY, 6) for folder in folders])
         assert asyncio.run(list_channels(fs)) == expected
+
+
+def test_get_s3_filesystem_is_not_shared_between_event_loops():
+    # A detection run calls asyncio.run once per channel: an s3fs instance reused from
+    # the cache would keep the session of the first, closed, event loop
+    async def _new_fs():
+        return bucket_mediatree.get_s3_filesystem()
+
+    assert asyncio.run(_new_fs()) is not asyncio.run(_new_fs())

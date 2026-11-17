@@ -3,15 +3,6 @@
 -- Une ligne par bulle d'un graphique à bulles : étiquette, abscisse, ordonnée, série, taille.
 -- SQL brut, sans variable : les paramètres sont les constantes du CTE parametres.
 --
--- Émission à fort taux de mésinformation : sur la période, au moins seuil cas validés par heure consacrée à
--- l'environnement (public.emission_jour : nb_cas / env_heures), et au moins env_heures_min heures d'environnement.
--- Rattachement des pubs aux émissions : advertising.pub_annonceur_emission_jour. Niveau annonceur : l'entreprise.
--- Pubs sans marque détectée écartées. Temps d'antenne, pas budget.
--- Secteurs gardés : les nb_secteurs premiers par temps de pub toutes chaînes confondues (généralistes et chaînes
--- d'info) ; points : les nb_points premières entreprises de chaque secteur par temps de pub sur les chaînes d'info.
--- Moyennes pondérées par le temps de pub, calculées sur toutes les entreprises du secteur (ou des chaînes d'info), pas
--- seulement les points gardés.
---
 -- Colonnes :
 --   etiquette : nom de l'entreprise ; vide pour les moyennes ;
 --   x : rang du secteur (1 = premier secteur) décalé de -largeur_secteur/2 à +largeur_secteur/2 selon la part de
@@ -21,9 +12,6 @@
 --     dans chaque secteur) ;
 --   taille : racine carrée des minutes de pub (surface de la bulle proportionnelle aux minutes) ; 1 pour les moyennes ;
 --   secteur, rang_secteur, pub_min : pour vérifier.
---
--- Plage analysée : un an glissant jusqu'au dernier jour de pub extrait (curated.publicite), jamais avant le
--- 29 septembre 2025 (début de l'analyse des publicités) ni après le 31 décembre 2026.
 WITH plage AS (
     SELECT GREATEST(DATE '2025-09-29', (m.fin - INTERVAL '1 year')::date + 1) AS debut, m.fin
     FROM (SELECT LEAST(MAX(jour), DATE '2026-12-31') AS fin FROM curated.publicite) m

@@ -10,7 +10,7 @@ Pourquoi ce chemin : Metabase n'écrit pas le nom des entreprises à côté des 
 
 1. Exécuter la requête sur la base Baromètre : dans Metabase (nouvelle question SQL sur la base Scaleway Postgres, sans l'enregistrer), avec le connecteur Metabase d'une session Claude (`execute_sql`, base 2), ou en `psql`. La requête n'a pas de variable Metabase : ses paramètres sont les constantes du CTE `parametres`.
 2. Remplacer tout l'onglet `donnees` par le résultat, en-têtes compris (colonnes `etiquette`, `x`, `part_proche_pct`, `serie`, `taille`, puis `secteur`, `rang_secteur`, `pub_min` pour vérifier).
-3. Vérifier : 9 secteurs, au plus 6 entreprises par secteur, une ligne « Moyenne du secteur » et une ligne « Moyenne des chaînes d'info » par secteur ; la valeur de « Moyenne des chaînes d'info » égale à celle de la question Metabase 2517.
+3. Vérifier : 9 secteurs, au plus 6 entreprises par secteur, une ligne « Moyenne du secteur » par secteur.
 4. Dans le Google Doc, cliquer sur « Mettre à jour » au-dessus du graphique. Un graphique Sheets collé dans un Doc reste lié mais ne se met pas à jour seul : la version du Doc ne change que quand on le décide.
 5. Noter la date du rafraîchissement dans la légende du graphique (la plage analysée bouge jusqu'au 31/12/2026, voir R1).
 
@@ -25,13 +25,13 @@ Graphique à bulles de Google Sheets (Insertion, Graphique, type « Graphique à
 | `etiquette` | ID, écrit à côté de la bulle | nom de l'entreprise ; vide pour les moyennes |
 | `x` | axe horizontal | numéro du secteur (1 = premier) : les bulles d'un secteur sont alignées verticalement |
 | `part_proche_pct` | axe vertical | part du temps de pub rattaché à une émission à fort taux, de 0 à 100 |
-| `serie` | série, donc couleur et légende | nom du secteur, « Moyenne du secteur », « Moyenne des chaînes d'info » |
+| `serie` | série, donc couleur et légende | nom du secteur, ou « Moyenne du secteur » |
 | `taille` | taille de la bulle | racine carrée des minutes de pub ; 1 pour les moyennes |
 
 Réglages :
 
 - Plage de données : colonnes A à E de l'onglet `donnees`, en-têtes en première ligne.
-- Couleurs des séries (comme dans Metabase, `decisions.md` § 3) : Automobile et transport `#509EE3`, Alimentation `#88BF4D`, Établissements financiers et assurance `#F2A86F`, Moyenne du secteur `#2E353B`, Moyenne des chaînes d'info `#949AAB` ; les autres secteurs en couleurs automatiques.
+- Couleurs des séries (comme dans Metabase, `decisions.md` § 3) : Automobile et transport `#509EE3`, Alimentation `#88BF4D`, Établissements financiers et assurance `#F2A86F`, Moyenne du secteur en noir `#000000` ; les autres secteurs en couleurs automatiques.
 - Axe horizontal : l'axe est numérique (Sheets n'accepte pas de catégorie en abscisse d'un graphique à bulles). Masquer ses étiquettes ou les laisser en numéros ; c'est la légende des couleurs qui dit quel secteur est où. Minimum 0,5, maximum 9,5.
 - Axe vertical : titre « Part du temps de pub autour d'émissions à 1 cas ou plus par heure d'environnement (%) », minimum 0.
 - Bulles : opacité autour de 50 % pour voir les étiquettes qui se chevauchent.

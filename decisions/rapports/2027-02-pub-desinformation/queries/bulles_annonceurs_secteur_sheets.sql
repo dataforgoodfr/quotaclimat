@@ -1,5 +1,5 @@
 -- Part du temps de pub de chaque entreprise annonceuse rattaché à une émission à fort taux de mésinformation, sur les
--- chaînes d'information en continu, rangée par secteur, avec la moyenne de chaque secteur et celle des chaînes d'info.
+-- chaînes d'information en continu, rangée par secteur, avec la moyenne de chaque secteur.
 -- Une ligne par bulle d'un graphique à bulles : étiquette, abscisse, ordonnée, série, taille.
 -- SQL brut, sans variable : les paramètres sont les constantes du CTE parametres.
 --
@@ -7,8 +7,7 @@
 --   etiquette : nom de l'entreprise ; vide pour les moyennes ;
 --   x : rang du secteur (1 = premier secteur) ; les bulles d'un même secteur sont alignées verticalement ;
 --   part_proche_pct : part du temps de pub rattaché à une émission à fort taux (de 0 à 100) ;
---   serie : nom du secteur pour les entreprises, « Moyenne du secteur », « Moyenne des chaînes d'info » (même valeur
---     dans chaque secteur) ;
+--   serie : nom du secteur pour les entreprises, « Moyenne du secteur » pour les moyennes ;
 --   taille : racine carrée des minutes de pub (surface de la bulle proportionnelle aux minutes) ; 1 pour les moyennes ;
 --   secteur, rang_secteur, pub_min : pour vérifier.
 WITH plage AS (
@@ -57,9 +56,6 @@ rang_secteurs AS (
     WHERE p.jour BETWEEN pl.debut AND pl.fin
     GROUP BY 1
 ),
-moyenne_type AS (
-    SELECT 100 * SUM(pub_secondes) FILTER (WHERE est_proche) / SUM(pub_secondes) AS part_pct FROM pub
-),
 secteurs AS (
     SELECT
         pu.secteur,
@@ -106,12 +102,5 @@ SELECT '', s.rang_secteur, ROUND(s.part_pct::numeric, 3), 'Moyenne du secteur', 
     ROUND(s.pub_min::numeric, 1)
 FROM secteurs s
 CROSS JOIN parametres pa
-WHERE s.rang_secteur <= pa.nb_secteurs
-UNION ALL
-SELECT '', s.rang_secteur, ROUND(m.part_pct::numeric, 3), 'Moyenne des chaînes d''info', 1, s.secteur, s.rang_secteur,
-    NULL
-FROM secteurs s
-CROSS JOIN parametres pa
-CROSS JOIN moyenne_type m
 WHERE s.rang_secteur <= pa.nb_secteurs
 ORDER BY 7, 4, 3

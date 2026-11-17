@@ -1,6 +1,6 @@
 # Windmill flows
 
-[Windmill](https://www.windmill.dev) runs on the orchestrator next to Kestra (deployment: `infrastructure/Readme.md`, "Orchestrator deployment"). The 21 Kestra flows of `infrastructure/kestra/flows/` have a Windmill copy in `infrastructure/windmill/`, with the same steps, inputs and secrets. This page covers how they are built and deployed. What each flow does is in [`kestra_flows.md`](kestra_flows.md): the Windmill flows run the same code.
+[Windmill](https://www.windmill.dev) runs on the orchestrator next to Kestra (deployment: `infrastructure/Readme.md`, "Orchestrator deployment"). The 22 Kestra flows of `infrastructure/kestra/flows/` have a Windmill copy in `infrastructure/windmill/`, with the same steps, inputs and secrets. This page covers how they are built and deployed. What each flow does is in [`kestra_flows.md`](kestra_flows.md): the Windmill flows run the same code.
 
 **Status:** Kestra still runs production on its schedules. The Windmill flows have **no schedule**: they are run by hand, to be tested before the cutover. Avoid starting a prod flow during Kestra's slots (00:30, 01:10, 03:00, 04:07, 12:30): the same job would run twice.
 
@@ -10,7 +10,7 @@ One workspace (`WINDMILL_WORKSPACE`), one folder per Kestra namespace:
 
 | Folder | Kestra namespace | Contents |
 |---|---|---|
-| `f/quotaclimat` | `quotaclimat` | `barometre`, `barometre_catchup`, `barometre_i18n`, `dbt`, `dbt_analytics`, `main_pipeline`, `metabase_sync` |
+| `f/quotaclimat` | `quotaclimat` | `barometre`, `barometre_catchup`, `barometre_i18n`, `dbt`, `dbt_analytics`, `main_pipeline`, `metabase_sync`, `report_export_data` |
 | `f/quotaclimat_dev` | `quotaclimat-dev` | `barometre`, `main_pipeline`, `alert_test`, `glitchtip_log_test` |
 | `f/rrs` | `rrs` | `extended_perimeter`, `rrs_climate`, `rrs_insecurity`, `rrs_pollution`, `pulsar_themes` |
 | `f/rrs_dev` | `rrs-dev` | same as `f/rrs` |

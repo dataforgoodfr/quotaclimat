@@ -687,24 +687,29 @@ def test_cas_de_mesinformation_emission(db_connection):
 
 
 def test_cas_theme(db_connection):
-    """Themes of the cases by keywords in the claim and the explanation: forte, moyenne or faible."""
+    """Themes of the cases by keywords in the claim only: forte (a strong keyword) or moyenne (weak ones only)."""
     with db_connection.cursor() as cur:
         cur.execute("""
-            INSERT INTO analytics.cas_de_mesinformation (task_aggregate_id, country, claims, explanations)
+            INSERT INTO analytics.cas_de_mesinformation (task_aggregate_id, country, claims, explanations,
+                                                         data_item_plaintext_whisper)
             VALUES
                 -- strong keyword in the claim, accents and plural
-                ('pytest_theme_fort', 'france', 'Les voitures électriques polluent plus que les thermiques', NULL),
-                -- strong keyword in the explanation only: the context of the debate
-                ('pytest_theme_contexte', 'france', 'Les ENR coûtent cher', 'Comme pour les véhicules électriques'),
+                ('pytest_theme_fort', 'france', 'Les voitures électriques polluent plus que les thermiques', NULL,
+                 NULL),
+                -- strong keyword in the explanation or the transcript only: the context of the debate, left out
+                ('pytest_theme_contexte', 'france', 'Les ENR coûtent cher', 'Comme pour les véhicules électriques',
+                 'les ENR, et la voiture électrique, coûtent cher'),
+                -- car alone, Crit'Air with a typographic apostrophe
+                ('pytest_theme_critair', 'france', 'Les véhicules Crit’Air 3 ne polluent pas', NULL, NULL),
                 -- weak keyword in the claim
-                ('pytest_theme_faible_affirmation', 'france', 'On ne sait pas recycler les batteries', NULL),
-                -- weak keyword in the explanation only
-                ('pytest_theme_faible_explication', 'france', 'Les ENR coûtent cher', 'stockage par batteries'),
+                ('pytest_theme_faible_affirmation', 'france', 'On ne sait pas recycler les batteries', NULL, NULL),
+                -- weak keyword in the explanation only: left out
+                ('pytest_theme_faible_explication', 'france', 'Les ENR coûtent cher', 'stockage par batteries', NULL),
                 -- VE: upper case only; "ve" inside a word does not count
-                ('pytest_theme_ve', 'france', 'Le VE est cher', NULL),
-                ('pytest_theme_rien', 'france', 'Le reve est nave', 'trouvé dans la cave'),
+                ('pytest_theme_ve', 'france', 'Le VE est cher', NULL, NULL),
+                ('pytest_theme_rien', 'france', 'Le reve est nave', 'trouvé dans la cave', NULL),
                 -- other countries left out
-                ('pytest_theme_belgique', 'belgium', 'Les voitures électriques polluent', NULL)
+                ('pytest_theme_belgique', 'belgium', 'Les voitures électriques polluent', NULL, NULL)
         """)
     db_connection.commit()
     try:
@@ -723,10 +728,9 @@ def test_cas_theme(db_connection):
         db_connection.commit()
         run_dbt_command(["run", "--select", "cas_theme"])
     assert rows == [
-        ("pytest_theme_contexte", "automobile", "moyenne", None, "voiture électrique"),
+        ("pytest_theme_critair", "automobile", "forte", "Crit'Air, voiture", None),
         ("pytest_theme_faible_affirmation", "automobile", "moyenne", "batterie", None),
-        ("pytest_theme_faible_explication", "automobile", "faible", None, "batterie"),
-        ("pytest_theme_fort", "automobile", "forte", "voiture électrique", None),
+        ("pytest_theme_fort", "automobile", "forte", "voiture, voiture électrique", None),
         ("pytest_theme_ve", "automobile", "moyenne", "VE", None),
     ]
 
@@ -1697,7 +1701,7 @@ def test_curated_cas_mesinformation(db_connection):
             WHERE chaine_id = 'sud-radio' AND jour = '2025-04-02'
         """)
         rows = cur.fetchall()
-    # 2025-04-02 09:10 UTC
+    # 2025-04-02 09:10 UTC; automobile: "les voitures crit'air 3" in the claim
     assert rows == [(
         datetime.datetime(2025, 4, 2, 11, 10), "Sud Radio", "France",
         "sud-radio|programme|Mettez-vous d'accord|false|2025-04-02", "invité", True, False, "non renseignée",

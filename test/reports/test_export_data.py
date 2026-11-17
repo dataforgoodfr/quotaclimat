@@ -24,7 +24,8 @@ EXAMPLE_CONFIG = {
             "type": "sheet",
             "spreadsheet": SPREADSHEET,
             "tabs": [
-                {"tab": "donnees", "query": "bulles.sql"},
+                # the chart sits in the same tab, next to the data: only A:H is replaced
+                {"tab": "donnees", "query": "bulles.sql", "columns": "A:H"},
                 {"tab": "copie", "query": "bulles.sql"},
                 {"tab": "secteurs", "query": "secteurs.sql"},
             ],
@@ -57,7 +58,7 @@ def test_load_config(tmp_path):
         export.SheetOutput(
             spreadsheet=SPREADSHEET,
             tabs=(
-                export.TabExport("donnees", "bulles.sql"),
+                export.TabExport("donnees", "bulles.sql", columns=(0, 8)),
                 export.TabExport("copie", "bulles.sql"),
                 export.TabExport("secteurs", "secteurs.sql"),
             ),
@@ -346,9 +347,9 @@ def test_build_requests_existing_new_and_small_tabs():
         },
     ]
     contents = {
-        "donnees": [["a"], [1]],
-        "petit": [["a", "b"], [1, 2], [3, 4]],
-        "nouveau": [["a"]],
+        "donnees": export.TabContent([["a"], [1]]),
+        "petit": export.TabContent([["a", "b"], [1, 2], [3, 4]]),
+        "nouveau": export.TabContent([["a"]]),
     }
     reqs = export.build_requests(existing, contents)
 
@@ -377,11 +378,57 @@ def test_build_requests_existing_new_and_small_tabs():
     assert len(reqs) == 7
 
 
+def test_build_requests_columns_only():
+    """With columns, only these columns are cleared (every row) and written: a chart or notes next to the
+    data stay as they are."""
+    existing = [
+        {
+            "sheetId": 7,
+            "title": "donnees",
+            "sheetType": "GRID",
+            "gridProperties": {"rowCount": 1000, "columnCount": 4},
+        }
+    ]
+    reqs = export.build_requests(
+        existing, {"donnees": export.TabContent([["a", "b"], [1, 2]], (2, 10))}
+    )
+    # the grid is enlarged to hold the columns C:J
+    assert reqs[0]["updateSheetProperties"]["properties"]["gridProperties"] == {
+        "rowCount": 1000,
+        "columnCount": 10,
+    }
+    assert reqs[1] == {
+        "updateCells": {
+            "range": {"sheetId": 7, "startColumnIndex": 2, "endColumnIndex": 10},
+            "fields": "userEnteredValue",
+        }
+    }
+    assert reqs[2]["updateCells"]["start"] == {
+        "sheetId": 7,
+        "rowIndex": 0,
+        "columnIndex": 2,
+    }
+
+
+@pytest.mark.parametrize(
+    "value, columns",
+    [(None, None), ("A:H", (0, 8)), ("C:C", (2, 3)), ("A:AB", (0, 28))],
+)
+def test_parse_columns(value, columns):
+    assert export.parse_columns(value, "tab") == columns
+
+
+@pytest.mark.parametrize("value", ["H:A", "A1:H10", "a:h", "A", 8, "A:AAA"])
+def test_parse_columns_refuses(value):
+    with pytest.raises(export.ExportError, match="columns"):
+        export.parse_columns(value, "tab")
+
+
 def test_build_requests_refuses_chart_sheet():
     with pytest.raises(export.ExportError, match="not a grid"):
         export.build_requests(
             [{"sheetId": 1, "title": "donnees", "sheetType": "OBJECT"}],
-            {"donnees": [["a"]]},
+            {"donnees": export.TabContent([["a"]])},
         )
 
 
@@ -506,6 +553,13 @@ def test_export_report_writes_all_tabs_in_one_request(tmp_path, monkeypatch, cap
         r["updateCells"] for r in body["requests"] if "rows" in r.get("updateCells", {})
     ]
     assert writes[0]["start"]["sheetId"] == 0  # existing tab donnees
+    # columns A:H of donnees only: the chart next to them is kept
+    assert {
+        "updateCells": {
+            "range": {"sheetId": 0, "startColumnIndex": 0, "endColumnIndex": 8},
+            "fields": "userEnteredValue",
+        }
+    } in body["requests"]
     assert writes[0]["rows"][0] == {
         "values": [
             {"userEnteredValue": {"stringValue": "etiquette"}},
@@ -639,3 +693,31 @@ def test_export_tab_values():
     )
     assert values[0] == ["Dernier export (heure de Paris)", "2026-11-17 10:05:00"]
     assert values[-1] == ["donnees", "queries/bulles.sql", 3]
+
+
+def test_export_report_refuses_query_wider_than_its_columns(tmp_path, caplog):
+    config = {
+        "outputs": [
+            {
+                "type": "sheet",
+                "spreadsheet": SPREADSHEET,
+                "tabs": [{"tab": "donnees", "query": "bulles.sql", "columns": "A:A"}],
+            }
+        ]
+    }
+    write_report(tmp_path, config)
+    session = FakeSession()
+    assert (
+        export.export_report(
+            REPORT,
+            reports_dir=tmp_path,
+            connect_db=lambda: FakeConnection(query_results()),
+            open_session=lambda: session,
+            folder_id="FOLDER_ID_123",
+            check_public=lambda spreadsheet: None,
+        )
+        is False
+    )
+    assert session.posts == []
+    assert "2 columns, more than the 1 of its range columns" in caplog.text
+    assert_no_data_logged(caplog)

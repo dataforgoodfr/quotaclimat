@@ -220,6 +220,19 @@ unsloth = ">=2026.6.1"
 mistralai = ">=2.5.0"
 pydantic = ">=2.11.9"
 
+# Advertising classification (s03_classification)
+[tool.poetry.group.advertising]
+optional = true
+
+[tool.poetry.group.advertising.dependencies]
+gspread = "^6.2.1"
+regex = ">=2026.6.28"
+tqdm = "^4.67.1"
+av = ">=18.1.0"
+jinja2 = "^3.1.6"
+pyyaml = "^6.0.3"
+pillow = "^12.1.0"
+
 [[tool.poetry.source]]
 name = "pytorch-cpu"
 url = "https://download.pytorch.org/whl/cpu"

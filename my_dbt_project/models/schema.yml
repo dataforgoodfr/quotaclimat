@@ -406,9 +406,10 @@ models:
         description: Identifier of the ad (advertising.ad.id).
       - name: tunnel_id
         description: >
-          Ad tunnel the occurrence belongs to (see ad_tunnels). NULL for OTHER fragments,
-          which are not part of tunnels.
+          Ad tunnel the occurrence belongs to (see ad_tunnels). Never NULL: an occurrence inserted by
+          the ad detection after ad_occurrence_tunnels was built is left out until the next build.
         tests:
+          - not_null
           - relationships:
               arguments:
                 to: ref('ad_tunnels')

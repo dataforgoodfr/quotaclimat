@@ -1,10 +1,8 @@
 # Rapport pub février 2027 : qui finance la désinformation climatique à la télévision ?
 
-- Responsable : 🔴 [nom de la personne responsable du rapport]
 - Statut : en cours, graphiques recréés dans Metabase, chiffres préliminaires (à faire vérifier par l'équipe pub et l'équipe mésinformation avant toute publication)
 - Publication prévue : février 2027
 - Tableau de bord Metabase : 228, « Rapport pub février 2027 : qui finance la désinformation climatique à la télévision ? », onglet « Rapport » ; questions dans la collection « 61. Publicité / 06. Rapport pub février 2027 » (id 536)
-- Rédaction : Google Doc du rapport 🔴 [nom ou emplacement du Google Doc dans le Drive]
 - Conventions communes aux rapports : [`../decisions.md`](../decisions.md) (dépôt public : aucun chiffre ici)
 
 ## 1. Objet et architecture

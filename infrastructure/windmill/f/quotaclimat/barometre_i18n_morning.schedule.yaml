@@ -1,0 +1,13 @@
+summary: Barometre of the other countries (04:07)
+description: Kestra trigger morning_schedule of quotaclimat/barometre-i18n.
+  Processes the countries of the flow's countries default. Runs with the flow's
+  default inputs, like Kestra. Cron with seconds first, Paris time.
+args: {}
+cron_version: v2
+enabled: true
+is_flow: true
+no_flow_overlap: false
+schedule: 0 7 4 * * *
+script_path: f/quotaclimat/barometre_i18n
+timezone: Europe/Paris
+ws_error_handler_muted: false

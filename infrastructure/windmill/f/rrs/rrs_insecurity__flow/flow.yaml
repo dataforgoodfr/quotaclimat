@@ -27,7 +27,7 @@ value:
               "START_DATE": flow_input.start_date ?? '',
               "END_DATE": flow_input.end_date ?? '',
               "DAYS_PRIOR": flow_input.days_back ?? 1,
-              "BUCKET_NAME": flow_input.source === 'extended' ? 'mediatree-extended-perimeter-prod' : 'mediatree',
+              "BUCKET_NAME": (flow_input.source ?? "barometre") === 'extended' ? 'mediatree-extended-perimeter-prod' : 'mediatree',
               "RRS_PG_DATABASE": "rrs",
               "RRS_PG_PORT": 18492,
               "SUBJECT": "insecurity"
@@ -36,8 +36,8 @@ value:
           type: javascript
           expr: |-
             ({
-              "BUCKET": flow_input.source === 'extended' ? 'f/secrets/RRS_SCW_ACCESS' : 'f/secrets/SCW_ACCESS',
-              "BUCKET_SECRET": flow_input.source === 'extended' ? 'f/secrets/RRS_SCW_SECRET' : 'f/secrets/SCW_SECRET',
+              "BUCKET": (flow_input.source ?? "barometre") === 'extended' ? 'f/secrets/RRS_SCW_ACCESS' : 'f/secrets/SCW_ACCESS',
+              "BUCKET_SECRET": (flow_input.source ?? "barometre") === 'extended' ? 'f/secrets/RRS_SCW_SECRET' : 'f/secrets/SCW_SECRET',
               "RRS_PG_HOST": "f/secrets/RRS_PG_HOST",
               "RRS_PG_USER": "f/secrets/RRS_PG_USER",
               "RRS_PG_PASSWORD": "f/secrets/RRS_PG_PASSWORD"
@@ -130,7 +130,7 @@ value:
               "PYTHONPATH": "/app",
               "START_DATE": flow_input.start_date ?? '',
               "END_DATE": flow_input.end_date ?? '',
-              "DAYS_PRIOR": flow_input.days_back ?? '',
+              "DAYS_PRIOR": (flow_input.days_back ?? 1),
               "RRS_PG_DATABASE": "rrs",
               "RRS_PG_PORT": 18492,
               "SPACY_MODEL": "fr_core_news_sm",
@@ -174,7 +174,7 @@ value:
           type: static
           value: true
     skip_if:
-      expr: '!(flow_input.run_clustering)'
+      expr: '!(flow_input.run_clustering ?? true)'
 schema:
   $schema: https://json-schema.org/draft/2020-12/schema
   type: object

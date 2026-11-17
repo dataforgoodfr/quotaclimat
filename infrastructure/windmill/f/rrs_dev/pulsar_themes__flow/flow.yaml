@@ -13,7 +13,7 @@ value:
       type: forloopflow
       iterator:
         type: javascript
-        expr: flow_input.searches
+        expr: (flow_input.searches ?? [{"name":"renewables","folder_id":"529","search_id":"201823","subject":"climate"}])
       skip_failures: false
       parallel: true
       modules:
@@ -37,12 +37,12 @@ value:
               expr: |-
                 ({
                   "PYTHONPATH": "/app",
-                  "PULSAR_RELEVANCE_MENTION_TAG_IDS": flow_input.relevance_mention_tag_ids,
+                  "PULSAR_RELEVANCE_MENTION_TAG_IDS": (flow_input.relevance_mention_tag_ids ?? []),
                   "PULSAR_FOLDER_ID": flow_input.iter.value.folder_id,
                   "PULSAR_SEARCH_ID": flow_input.iter.value.search_id,
                   "SUBJECT": flow_input.iter.value.subject,
-                  "PULSAR_TOP_N": flow_input.n_top_posts,
-                  "PULSAR_DAYS_BACK": flow_input.days_back,
+                  "PULSAR_TOP_N": (flow_input.n_top_posts ?? 30),
+                  "PULSAR_DAYS_BACK": (flow_input.days_back ?? 1),
                   "PULSAR_START_DATE": flow_input.start_date ?? '',
                   "PULSAR_END_DATE": flow_input.end_date ?? '',
                   "RRS_PG_PORT": 18047,

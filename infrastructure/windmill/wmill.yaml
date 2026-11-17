@@ -25,8 +25,9 @@ skipFolders: false
 skipWorkspaceDependencies: true
 skipDatatableMigrations: true
 
-# Flows are deployed without schedules for now: they are run by hand while Kestra keeps running prod.
-includeSchedules: false
+# Schedules (<name>.schedule.yaml next to the flows) are pushed like the flows: they replace the Kestra triggers,
+# disabled in infrastructure/kestra/flows/. Triggers other than schedules (HTTP, Kafka...) are not used.
+includeSchedules: true
 includeTriggers: false
 
 nonDottedPaths: true

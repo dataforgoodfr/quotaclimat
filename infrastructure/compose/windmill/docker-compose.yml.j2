@@ -45,6 +45,9 @@ services:
       - traefik.http.routers.windmill.entrypoints=websecure
       - traefik.http.routers.windmill.tls.certresolver=letsencrypt
       - traefik.http.services.windmill.loadbalancer.server.port=8000
+    # Logs offloaded by the workers (long jobs): the server reads them from here to show them in the UI
+    volumes:
+      - windmill-worker-logs:/tmp/windmill/logs
     healthcheck:
       test: ["CMD-SHELL", "curl -sf http://localhost:8000/api/version || exit 1"]
       interval: 30s

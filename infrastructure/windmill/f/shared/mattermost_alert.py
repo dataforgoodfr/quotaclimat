@@ -22,7 +22,12 @@ def main(flow_name: str, error: dict, webhooks_secret: str = "f/secrets/MATTERMO
     message = (error or {}).get("message") or ""
     text = f"{flow_name} failed at step `{step}`.\nRun: {run_url}"
     if message:
-        text += f"\nError: {message[:500]}"
+        # First line (e.g. "<image> exited with code 1"), then the end of the message: docker_run appends the
+        # last lines of the container's output, where the cause of the failure is.
+        first, _, rest = message.partition("\n")
+        text += f"\nError: {first[:300]}"
+        if rest.strip():
+            text += "\n```\n" + rest[-2000:] + "\n```"
     payload = json.dumps({"username": "Windmill", "text": text}).encode()
 
     webhooks = [url.strip() for url in wmill.get_variable(webhooks_secret).split(",") if url.strip()]

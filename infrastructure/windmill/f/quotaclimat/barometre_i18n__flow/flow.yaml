@@ -17,7 +17,7 @@ value:
       iterator:
         type: javascript
         expr: |-
-          flow_input.countries.map((code) => ({ code, ...({
+          (flow_input.countries ?? ["bel","bel-fla"]).map((code) => ({ code, ...({
             "bel": {
               "name": "belgium",
               "bucket": "safeguards-climate-belgium-prod",
@@ -72,7 +72,7 @@ value:
               expr: |-
                 ({
                   "API_TO_S3_CONCURRENCY": 10,
-                  "API_DATA_OVERWRITE": flow_input.api_data_overwrite ? '1' : '',
+                  "API_DATA_OVERWRITE": (flow_input.api_data_overwrite ?? false) ? '1' : '',
                   "BUCKET_NAME": "mediatree",
                   "COUNTRY": flow_input.iter.value.code,
                   "ENV": "prod",
@@ -83,7 +83,7 @@ value:
                   "MODIN_CPUS": 2,
                   "MODIN_ENGINE": "python",
                   "MODIN_MEMORY": 3000000000,
-                  "NUMBER_OF_PREVIOUS_DAYS": flow_input.days_back,
+                  "NUMBER_OF_PREVIOUS_DAYS": (flow_input.days_back ?? 1),
                   "OMP_NUM_THREADS": 3,
                   "PORT_HS": 5666,
                   "START_DATE": Math.floor((flow_input.start_date ? Date.parse(flow_input.start_date) : Date.now()) / 1000),
@@ -145,7 +145,7 @@ value:
                   "MODIN_CPUS": 2,
                   "MODIN_ENGINE": "ray",
                   "MODIN_MEMORY": 3000000000,
-                  "NUMBER_OF_PREVIOUS_DAYS": flow_input.days_back,
+                  "NUMBER_OF_PREVIOUS_DAYS": (flow_input.days_back ?? 1),
                   "POSTGRES_DB": "barometre",
                   "POSTGRES_PORT": 22737,
                   "RAY_COLOR_PREFIX": 1,
@@ -204,7 +204,7 @@ value:
                   "COUNTRY": flow_input.iter.value.name,
                   "ENV": "production",
                   "KEYWORDS_URL": "https://keywords.mediatree.fr/api/export/single",
-                  "LABEL_MISINFORMATION_OVERWRITE": flow_input.label_misinformation_overwrite ? '1' : '',
+                  "LABEL_MISINFORMATION_OVERWRITE": (flow_input.label_misinformation_overwrite ?? false) ? '1' : '',
                   "LABEL_STUDIO_PROJECT": flow_input.iter.value.label_studio_project,
                   "LABEL_STUDIO_PROJECT_ID": flow_input.iter.value.label_studio_project_id,
                   "LLM_PROVIDER": "mistral",
@@ -213,7 +213,7 @@ value:
                   "MEDIATREE_USER": "quotaclimat",
                   "MODEL_NAME": "mistral-small-2603",
                   "MODIN_MEMORY": 3000000000,
-                  "NUMBER_OF_PREVIOUS_DAYS": flow_input.days_back + 1,
+                  "NUMBER_OF_PREVIOUS_DAYS": (flow_input.days_back ?? 1) + 1,
                   "POSTGRES_DB": "barometre",
                   "POSTGRES_PORT": 22737,
                   "RAY_COLOR_PREFIX": 1,
@@ -284,13 +284,11 @@ schema:
         - deu
         - esp
         - pol
-      description: Countries to process. Defaults to all; untick all but one to run a single country.
+      description: Countries to process. Defaults to bel and bel-fla (deu, esp, pol paused); untick all but one to run
+        a single country.
       default:
       - bel
       - bel-fla
-      - deu
-      - esp
-      - pol
     api_data_overwrite:
       type: boolean
       description: 'Set API_DATA_OVERWRITE=1: fetch from Mediatree again and overwrite channel/days already on S3.'

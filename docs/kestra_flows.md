@@ -1,5 +1,7 @@
 # Kestra flows in detail
 
+**Production runs on Windmill**, which runs a copy of these flows with the same steps (`infrastructure/windmill/`, see [`windmill_flows.md`](windmill_flows.md)): the Kestra triggers listed below are disabled (`disabled: true`) and run at the same times as Windmill schedules. Kestra stays deployed for a rollback.
+
 This page explains, step by step, what each Kestra flow in `infrastructure/kestra/flows/` does, which code it runs and which technologies are involved. For the order in which the flows run, see the overview diagram in the root `README.md` ("Daily orchestration").
 
 **Baromètre (OME).** The baromètre measures how much TV and radio airtime covers environmental topics. The data comes from Mediatree's speech-to-text transcripts. Each day, for every channel, the ingest step calls the Mediatree API once per program slot of the schedule grid. It stores the transcripts as 2-minute chunks in gzip parquet on Scaleway S3.

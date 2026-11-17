@@ -9,6 +9,7 @@ the job arguments (stored in the database and shown in the UI) or in the logs.
 """
 
 import base64
+import collections
 import http.client
 import json
 import os
@@ -21,6 +22,10 @@ import wmill
 
 DOCKER_SOCKET = os.environ.get("DOCKER_SOCKET", "/var/run/docker.sock")
 API = "/v1.41"  # Docker Engine API 1.41 (Docker 20.10+), accepted by newer daemons
+# Last lines of the container's output kept for the error message, so the cause of a failure shows in the step
+# result and in the Mattermost alert, not only in the logs. Lines are cut at TAIL_LINE_CHARS characters.
+TAIL_LINES = 40
+TAIL_LINE_CHARS = 500
 
 
 class _UnixConnection(http.client.HTTPConnection):
@@ -110,28 +115,36 @@ def _pull(image, registry_auth):
 
 
 def _stream_logs(container_id, stdout_logs):
-    """Prints the container's output as it comes. Without a TTY, Docker multiplexes stdout and stderr:
-    each frame starts with 8 bytes, the stream (1 stdout, 2 stderr) then the size of the frame."""
+    """Prints the container's output as it comes and returns its last lines. Without a TTY, Docker multiplexes
+    stdout and stderr: each frame starts with 8 bytes, the stream (1 stdout, 2 stderr) then the size of the frame.
+    The returned tail holds both streams, stdout included when stdout_logs is false (the pipeline logs its errors
+    to stdout)."""
     query = urllib.parse.urlencode({"follow": 1, "stdout": 1, "stderr": 1})
     resp = _request("GET", f"/containers/{container_id}/logs?{query}", stream=True)
     pending = {1: b"", 2: b""}
+    tail = collections.deque(maxlen=TAIL_LINES)
+
+    def emit(kind, raw):
+        line = raw.decode(errors="replace")
+        tail.append(line[:TAIL_LINE_CHARS])
+        if kind == 2 or stdout_logs:
+            print(line, flush=True)
+
     while True:
         header = resp.read(8)
         if len(header) < 8:
             break
         kind = header[0]
         size = int.from_bytes(header[4:8], "big")
-        data = resp.read(size)
-        if kind == 1 and not stdout_logs:
-            continue
-        pending[kind] = pending.get(kind, b"") + data
+        pending[kind] = pending.get(kind, b"") + resp.read(size)
         *lines, pending[kind] = pending[kind].split(b"\n")
         for line in lines:
-            print(line.decode(errors="replace"), flush=True)
-    for rest in pending.values():
+            emit(kind, line)
+    for kind, rest in pending.items():
         if rest:
-            print(rest.decode(errors="replace"), flush=True)
+            emit(kind, rest)
     resp.close()
+    return tail
 
 
 def main(
@@ -208,11 +221,12 @@ def main(
     try:
         _request("POST", f"/containers/{container_id}/start", ok=(204, 304))
         print(f"Started {image} as {name}", flush=True)
-        _stream_logs(container_id, stdout_logs)
+        tail = _stream_logs(container_id, stdout_logs)
         status = _request("POST", f"/containers/{container_id}/wait")["StatusCode"]
     finally:
         remove()
 
     if status != 0:
-        raise RuntimeError(f"{image} exited with code {status}")
+        output = "\n".join(tail) if tail else "(no output)"
+        raise RuntimeError(f"{image} exited with code {status}. Last lines of its output:\n{output}")
     return {"image": image, "exit_code": status}

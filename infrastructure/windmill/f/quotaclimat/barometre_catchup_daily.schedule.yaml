@@ -1,0 +1,13 @@
+summary: Barometre catch-up of the last 7 days (03:00)
+description: Kestra trigger daily_schedule of quotaclimat/barometre-catchup.
+  Runs with the flow's default inputs, like Kestra. Cron with seconds first,
+  Paris time.
+args: {}
+cron_version: v2
+enabled: true
+is_flow: true
+no_flow_overlap: false
+schedule: 0 0 3 * * *
+script_path: f/quotaclimat/barometre_catchup
+timezone: Europe/Paris
+ws_error_handler_muted: false

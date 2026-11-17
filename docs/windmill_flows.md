@@ -1,8 +1,8 @@
 # Windmill flows
 
-[Windmill](https://www.windmill.dev) runs on the orchestrator next to Kestra (deployment: `infrastructure/Readme.md`, "Orchestrator deployment"). The 21 Kestra flows of `infrastructure/kestra/flows/` have a Windmill copy in `infrastructure/windmill/`, with the same steps, inputs and secrets. This page covers how they are built and deployed. What each flow does is in [`kestra_flows.md`](kestra_flows.md): the Windmill flows run the same code.
+[Windmill](https://www.windmill.dev) runs on the orchestrator next to Kestra (deployment: `infrastructure/Readme.md`, "Orchestrator deployment"). The 21 Kestra flows of `infrastructure/kestra/flows/` have a Windmill copy in `infrastructure/windmill/`, with the same steps, inputs and secrets. This page covers how they are built, scheduled and deployed. What each flow does is in [`kestra_flows.md`](kestra_flows.md): the Windmill flows run the same code.
 
-**Status:** Kestra still runs production on its schedules. The Windmill flows have **no schedule**: they are run by hand, to be tested before the cutover. Avoid starting a prod flow during Kestra's slots (00:30, 01:10, 03:00, 04:07, 12:30): the same job would run twice.
+**Status:** Windmill runs production: its [schedules](#schedules) replace the Kestra triggers, which are disabled (`disabled: true`) but kept for a rollback. Kestra and its flows stay deployed until they are removed.
 
 ## Layout
 
@@ -29,9 +29,9 @@ Flow names are the Kestra ids with `_` instead of `-` (`rrs/rrs-pollution` → `
 
 They need `WINDMILL_TOKEN` (a token of a **superadmin**, since SMTP is an instance setting: account settings → Tokens) and `WINDMILL_WORKSPACE` (the workspace **id**, e.g. `quotaclimat`, not its display name) in `.env.secrets`. The workspace is created once by hand in the UI.
 
-`wmill sync push` makes the workspace match the repository, **deletions included**, but only in the folders listed in `infrastructure/windmill/wmill.yaml` (`includes`). Variables, resources and schedules are left out of the sync. So:
+`wmill sync push` makes the workspace match the repository, **deletions included**, but only in the folders listed in `infrastructure/windmill/wmill.yaml` (`includes`). Flows, scripts and schedules are synced; variables and resources are left out. So:
 
-- never create or edit a flow **in the Windmill UI** in these folders: the next deploy overwrites or deletes it. Flows are created and changed in the repository (`infrastructure/windmill/f/...`), then deployed. The copy on the server (`/opt/services/windmill/workspace/`) is recreated at each deploy: do not edit it either. Outside these folders (e.g. a personal script under `u/<user>/`), the UI can be used freely;
+- never create or edit a flow or a schedule **in the Windmill UI** in these folders: the next deploy overwrites or deletes it. Flows are created and changed in the repository (`infrastructure/windmill/f/...`), then deployed. The copy on the server (`/opt/services/windmill/workspace/`) is recreated at each deploy: do not edit it either. Outside these folders (e.g. a personal script under `u/<user>/`), the UI can be used freely;
 - a second deploy with nothing changed reports `remote (...) <- local: 0 changes to apply`.
 
 ## From Kestra to Windmill
@@ -51,11 +51,32 @@ The flows were converted once from the Kestra files; they are now maintained by 
 | `concurrency: limit 1` (`dbt`) | `tag_override: dbt` on its steps (see [dbt](#dbt-one-run-at-a-time)) |
 | `logLevel: WARN` | `stdout_logs: false` (only stderr is kept) |
 | `Fail`, Python `Script` | inline Python steps (`rawscript`, `content: '!inline file.py'`) |
-| flow `inputs` | flow `schema` (same names and defaults) |
+| flow `inputs` | flow `schema` (same names and defaults), and `(flow_input.x ?? <default>)` where they are read (see below) |
+| `triggers:` `Schedule` | `<name>.schedule.yaml` next to the flow (see [Schedules](#schedules)) |
 
 **Arguments computed at run time.** A step argument is either `static` (fixed value) or `javascript` (an expression evaluated when the step starts, with `flow_input`, `results.<step_id>`, or `flow_input.iter.value` inside a loop). `env` and `secret_env` are one argument each: when one key depends on an input, the whole object is a JavaScript expression, fixed values included.
 
+**Default inputs.** Windmill applies a flow's input defaults only in the UI form. A run started by a schedule, by a parent flow (`type: flow` step) or by the API gets `null` for every input it does not pass. Kestra applied the defaults in all these cases. So every expression reading an input that has a default falls back to it: `(flow_input.run_clustering ?? true)`, `(flow_input.days_back ?? 1)`. Without it, `main_pipeline` would call `rrs_climate` with `run_clustering` null and silently skip the clustering. When you add an input with a default, or change a default, write it in the schema **and** in every `?? <default>` of the flow.
+
 **`barometre_i18n`.** The per-country settings (name, bucket, ...) are the table of the `i18n_loop` step's iterator, filtered on the `countries` input. Each country's credentials are keys of the JSON secret `I18N_COUNTRY_SECRETS` (`infrastructure/Readme.md`, "Per-country secret"), read with `f/secrets/I18N_COUNTRY_SECRETS#<code>.<key>`.
+
+## Schedules
+
+A schedule is a file `<name>.schedule.yaml` in the folder of its flow, pushed with the flows (`includeSchedules: true` in `wmill.yaml`). The cron has **six fields, seconds first** (`0 10 1 * * *` = 01:10:00), in the schedule's `timezone`. They run with empty `args`, so with the flows' defaults, as the Kestra triggers did.
+
+| Schedule | Flow | Time (Europe/Paris) | Kestra trigger |
+|---|---|---|---|
+| `f/rrs/pulsar_themes_daily` | `f/rrs/pulsar_themes` | 00:30 | `rrs/pulsar-themes` `daily_schedule` |
+| `f/quotaclimat/main_pipeline_morning` | `f/quotaclimat/main_pipeline` | 01:10 | `quotaclimat/main-pipeline` `morning_schedule` |
+| `f/quotaclimat/barometre_catchup_daily` | `f/quotaclimat/barometre_catchup` | 03:00 | `quotaclimat/barometre-catchup` `daily_schedule` |
+| `f/quotaclimat/barometre_i18n_morning` | `f/quotaclimat/barometre_i18n` | 04:07 | `quotaclimat/barometre-i18n` `morning_schedule` |
+| `f/quotaclimat/main_pipeline_afternoon` | `f/quotaclimat/main_pipeline` | 12:30 | `quotaclimat/main-pipeline` `afternoon_schedule` |
+
+The files hold every field the server stores (`cron_version`, `no_flow_overlap`, `ws_error_handler_muted`): with one missing, each deploy would rewrite the schedule. As with Kestra, a run starts even if the previous one of the same schedule is still running (`no_flow_overlap: false`). Schedules run as the owner of `WINDMILL_TOKEN`.
+
+To pause a schedule, set `enabled: false` in its file and deploy (a schedule disabled in the UI is enabled again by the next deploy). In the UI, **Schedules** lists them with their next and past runs.
+
+**Rolling back to Kestra:** set `enabled: false` in the five schedule files, `disabled: false` on the Kestra triggers (`infrastructure/kestra/flows/`), then `make tags=windmill ansible` and `make tags=kestra ansible`.
 
 ## Running a container
 
@@ -74,6 +95,8 @@ The flows were converted once from the Kestra files; they are now maintained by 
 | `stdout_logs` | `true` | `false` keeps only stderr (for jobs logging every row) |
 
 Secrets are read by the runner when the step starts: they never appear in the job's arguments (stored in the database and shown in the UI) nor in the logs. The container is named `windmill-<job id>`. Cancelling the step stops and removes it.
+
+When the container fails, the step's error ends with the last 40 lines of its output (both streams, stdout included even with `stdout_logs: false`, since the pipeline logs its errors to stdout). They show in the step result and in the Mattermost alert. The full output is in the step's logs. Windmill moves the logs of long jobs to files in the `windmill-worker-logs` volume, which the server mounts to show them.
 
 Jobs are stopped after `TIMEOUT` (`windmill_timeout_secs`, 6 h, `ansible/roles/windmill/defaults/main.yml`).
 
@@ -99,18 +122,18 @@ Values are changed the same way (edit `.env.secrets`, deploy): a value edited in
 
 ## Adding or changing a flow
 
-1. Edit or add the files under `infrastructure/windmill/f/...`. For a new folder, add its `folder.meta.yaml` and its line in `wmill.yaml` (`includes`).
+1. Edit or add the files under `infrastructure/windmill/f/...`. For a new folder, add its `folder.meta.yaml` and its line in `wmill.yaml` (`includes`). Read inputs with their default (`(flow_input.x ?? <default>)`, see [Default inputs](#from-kestra-to-windmill)).
 2. Check them: `npx windmill-cli@1.864.1 lint` from `infrastructure/windmill/` (same version as the server).
 3. When a Python script or inline step changes its imports, regenerate its `.lock` with `wmill generate-metadata` against a Windmill instance (a local one is enough: `docker run` of the same image), and commit it. Without it, the CLI warns about stale metadata.
 4. `make tags=windmill ansible`.
 
-Keep the Kestra flow in sync while Kestra runs production.
+Keep the Kestra flow in sync while Kestra is kept for a rollback.
 
 ## Running a flow by hand
 
-In the UI, open the flow, fill the inputs (defaults as in Kestra) and run it. Test in this order after a deploy:
+In the UI, open the flow, fill the inputs (defaults as in Kestra) and run it. A prod flow run by hand does real work on prod data: avoid the schedule times above. Test in this order after a deploy:
 
 1. `f/quotaclimat_dev/alert_test`: fails, and the alert reaches Mattermost (through `main_pipeline` with `test_alert=true`);
 2. `f/quotaclimat_dev/glitchtip_log_test`: its logs and error reach GlitchTip, filtered on its `run_id`;
 3. a dev flow running a container, e.g. `f/rrs_dev/rrs_climate` with `run_clustering=false`;
-4. `f/quotaclimat_dev/main_pipeline`, compared with the same Kestra dev run.
+4. `f/quotaclimat_dev/main_pipeline`.

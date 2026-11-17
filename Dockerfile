@@ -42,6 +42,7 @@ COPY alembic_factiva.ini ./alembic_factiva.ini
 COPY alembic_factiva/ ./alembic_factiva
 COPY alembic.ini ./alembic.ini
 COPY alembic/ ./alembic
+COPY decisions/rapports/ ./decisions/rapports
 COPY entrypoints/ ./entrypoints
 COPY i8n/ ./i8n
 COPY metabase/ ./metabase

@@ -1,0 +1,72 @@
+summary: quotaclimat/report-export-data
+description: |-
+  Exports the data of a report to Google Sheets: runs the SQL queries of the
+  report's queries/ folder on the barometre database (read-only user, read-only
+  transactions) and replaces each tab listed in its export_data.yml, plus a tab
+  _export with the date of the export. The report is the name of its folder
+  decisions/rapports/<AAAA-MM>-<sujet>/ (format of export_data.yml:
+  decisions/rapports/export_data.md). Runs by hand, from the quotaclimat_base
+  image built on main: the report's export_data.yml and queries must be merged
+  first. No row of the results is logged.
+value:
+  modules:
+  - id: export_report_data
+    summary: export report data
+    value:
+      type: script
+      path: f/shared/docker_run
+      input_transforms:
+        image:
+          type: static
+          value: rg.fr-par.scw.cloud/namespace-barometre/quotaclimat_base:latest
+        entrypoint:
+          type: javascript
+          expr: '["/bin/sh", "-c", `cd /app && python -m quotaclimat.reports.export_data ${flow_input.apply ? '''' : ''--check''}`]'
+        env:
+          type: javascript
+          expr: |-
+            ({
+              "REPORT_ID": flow_input.report,
+              "LOGLEVEL": "INFO",
+              "POSTGRES_DB": "barometre",
+              "POSTGRES_PORT": 22737
+            })
+        secret_env:
+          type: static
+          value:
+            POSTGRES_HOST: f/secrets/POSTGRES_HOST
+            POSTGRES_USER: f/secrets/RRS_BAROMETRE_READ_USER
+            POSTGRES_PASSWORD: f/secrets/RRS_BAROMETRE_READ_PASSWORD
+            REPORT_EXPORT_DRIVE_FOLDER: f/secrets/REPORT_EXPORT_DRIVE_FOLDER
+            GOOGLE_SHEETS_EDITOR_SERVICE_ACCOUNT_JSON: f/secrets/GOOGLE_SHEETS_EDITOR_SERVICE_ACCOUNT_JSON
+        registry:
+          type: static
+          value: rg.fr-par.scw.cloud/namespace-barometre
+        registry_password_secret:
+          type: static
+          value: f/secrets/SCW_SECRET
+        shm_size:
+          type: static
+          value: 64m
+        stdout_logs:
+          type: static
+          value: true
+schema:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  order:
+  - report
+  - apply
+  properties:
+    report:
+      type: string
+      description: Folder of the report in decisions/rapports/, e.g. 2027-02-pub-desinformation.
+      pattern: ^[0-9]{4}-(0[1-9]|1[0-2])-[a-z0-9]+(-[a-z0-9]+)*$
+    apply:
+      type: boolean
+      description: When false, runs the queries and checks the spreadsheets (found, not public) without writing
+        anything.
+      default: true
+  required:
+  - report
+  - apply

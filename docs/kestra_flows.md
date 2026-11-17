@@ -36,6 +36,7 @@ Each flow has its own diagram. Read it top to bottom: every horizontal lane is o
 | [`metabase-sync`](#metabase-sync) | `quotaclimat` | `main_quotaclimat_metabasesync.yaml` | `main-pipeline` step 9, or by hand |
 | [`dbt`](#dbt) | `quotaclimat` | `main_quotaclimat_dbt.yaml` | step 4 of `barometre` and `barometre-catchup`, `dbt-analytics` |
 | [`dbt-analytics`](#dbt-analytics) | `quotaclimat` | `main_quotaclimat_dbtanalytics.yaml` | by hand |
+| [`report-export-data`](#report-export-data) | `quotaclimat` | `main_quotaclimat_reportexportdata.yaml` | by hand |
 | [`barometre-catchup`](#barometre-catchup) | `quotaclimat` | `main_quotaclimat_barometrecatchup.yaml` | cron 03:00 |
 | [`barometre-i18n`](#barometre-i18n) | `quotaclimat` | `main_quotaclimat_barometrei18n.yaml` | cron 04:07 |
 | [`pulsar-themes`](#pulsar-themes) | `rrs` | `main_rrs_pulsarthemes.yml` | cron 00:30 |
@@ -198,6 +199,20 @@ Quick rebuild, by hand, of the tables read by the Metabase questions, for instan
 2. `metabase_sync`: [`metabase-sync`](#metabase-sync) with `apply=true`, `force=true`; its failure only marks the run as WARNING.
 
 It runs the `quotaclimat_base:latest` image, so the code must be merged and deployed first. Started during a `barometre` or `barometre-catchup` dbt run, its dbt step waits for the end of that run.
+
+## report-export-data
+
+Exports the data of a report to Google Sheets, by hand: runs the SQL queries of the report folder `decisions/rapports/<AAAA-MM>-<sujet>/queries/` and replaces the tabs listed in its `export_data.yml` (format and procedure, in French: [`decisions/rapports/export_data.md`](../decisions/rapports/export_data.md)). One `io.kestra.plugin.docker.Run` task: `python -m quotaclimat.reports.export_data` in the `quotaclimat_base` image, so the report's `export_data.yml` and queries must be merged to `main` first. (No diagram yet.)
+
+| Input | Default | Effect |
+|---|---|---|
+| `report` | (required) | Folder of the report in `decisions/rapports/`, e.g. `2027-02-pub-desinformation`. Checked by a `validator` regex, passed to the job in `REPORT_ID` (never in the command line); the job lists the reports having an `export_data.yml` when the folder is unknown |
+| `apply` | `true` | `false` (`--check`) runs the queries and checks the spreadsheets without writing anything |
+
+- **What happens:** for each spreadsheet of `export_data.yml`, the job finds it by exact name in the Drive folder `REPORT_EXPORT_DRIVE_FOLDER` and refuses it when it is readable without credentials (`ensure_not_public`, `quotaclimat/utils/google_sheets.py`, shared with the dbt reference data import). Then it runs its queries, each in a read-only transaction through a server-side cursor (a single `SELECT` per file, checked before), and replaces all its tabs in one `spreadsheets.batchUpdate` (all or nothing): values cleared then written from row 1, headers included, in the whole tab or only in the tab's `columns` (e.g. `A:H`, so that a chart or notes next to the data stay as they are), formats and charts kept, missing tabs created. Charts are never edited: a chart whose range is open-ended (`A1:E`) follows the number of rows. The tab `_export` gets the date of the export (Europe/Paris), the report, the pipeline version and the row count of each tab. A failing spreadsheet is left untouched and fails the run; the others are still exported.
+- **Logs:** only names (report, spreadsheet, tab, query file) and row counts. The results are unpublished monitoring data: no row is logged, errors are reduced to their type, SQLSTATE or HTTP status (Postgres and Google error messages can quote values), and Sentry is not initialized.
+- **Technologies:** Postgres (`psycopg2`), Google Drive and Sheets APIs with the editor service account `GOOGLE_SHEETS_EDITOR_SERVICE_ACCOUNT_JSON`, shared as editor on each export spreadsheet only.
+- **Reads:** `barometre` (any table its queries read), as `rrs-read-prod` (secrets `RRS_BAROMETRE_READ_USER`, `RRS_BAROMETRE_READ_PASSWORD`, `readonly` privilege). **Writes:** the tabs of the report's Google Sheets.
 
 ## extended-perimeter
 

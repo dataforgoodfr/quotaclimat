@@ -267,6 +267,19 @@ The `barometre-i18n` flow runs the misinformation job for every country on the V
 
 Build it once with `jq -n -c --arg ...` (so values are escaped), store it as one entry in the `Quotaclimat - Orchestrator/` collection, then `make sync-secrets` and `make tags=kestra ansible`. Check each code with `echo "$I18N_COUNTRY_SECRETS" | jq -e '.bel.bucket_access'` before deploying. Adding a country adds one key here, no playbook change. The key is already declared in `kestra_secrets` (`ansible/playbook.yml`); add `export I18N_COUNTRY_SECRETS=` to `.env.secrets.dist`.
 
+### Report export secrets (`report-export-data`)
+
+The flow `report-export-data` (`docs/kestra_flows.md`) writes the data of a report to Google Sheets. Besides secrets already provisioned (`POSTGRES_HOST`, `RRS_BAROMETRE_READ_USER`, `RRS_BAROMETRE_READ_PASSWORD`, `SCW_SECRET`), it needs two Kestra (and Windmill) secrets, declared in `kestra_secrets` (`ansible/playbook.yml`):
+
+| Secret | Value |
+|---|---|
+| `REPORT_EXPORT_DRIVE_FOLDER` | id of the Google Drive folder holding the report spreadsheets (last part of `https://drive.google.com/drive/folders/<id>`). A folder of its own, not the one of `EXTERNAL_SOURCES_DRIVE_FOLDER`: the read-only import account does not need the report data |
+| `GOOGLE_SHEETS_EDITOR_SERVICE_ACCOUNT_JSON` | JSON key (one line) of the Google service account that writes to Google Sheets, the one already used by the advertising jobs (`e01_brand_groups`, `e02_manual_corrections`). It needs no access to the folder: each export spreadsheet is shared with it as **editor**, one by one |
+
+Store them in the `Quotaclimat - Orchestrator/` collection, add `export REPORT_EXPORT_DRIVE_FOLDER=` and `export GOOGLE_SHEETS_EDITOR_SERVICE_ACCOUNT_JSON=` to `.env.secrets.dist`, then `make sync-secrets`, `make tags=kestra ansible` and `make tags=windmill ansible`.
+
+The database user is `rrs-read-<env>` (`readonly` privilege, `live/barometre/template/database.tf`), shared with RRS; the job also runs every query in a read-only transaction. A dedicated readonly user (e.g. `report-export-<env>`, added to `readonly_users` in `grants.tf` and to the dbt grants) would separate the two uses if needed.
+
 ## RRS: extended perimeter (Droit à l'info)
 
 On top of the regular `rrs` database, jobs and registry, the `rrs` target provisions a second, isolated set of resources for the "Droit à l'info" extended France perimeter (see the root [README's "Extended perimeter (Droit à l'info)" section](../README.md#extended-perimeter-droit-à-linfo) for the application-level `EXTENDED_PERIMETER` behaviour):

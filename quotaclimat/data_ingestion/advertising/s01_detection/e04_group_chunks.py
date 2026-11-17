@@ -6,6 +6,7 @@ pour comparer et regrouper les chunks identiques via distance-based scoring.
 """
 
 import logging
+import time
 from collections import defaultdict
 from dataclasses import asdict, dataclass
 from typing import Dict, List
@@ -15,6 +16,11 @@ import numpy as np
 from quotaclimat.data_ingestion.advertising.s01_detection.tools.common_objects import (
     Chunk,
     Fingerprint,
+)
+from quotaclimat.data_ingestion.advertising.s01_detection.tools.parallel import (
+    PackedFingerprints,
+    ordered_map,
+    worker_state,
 )
 from quotaclimat.data_ingestion.advertising.tools.fingerprint_tools.compare import (
     FingerprintsCompare,
@@ -46,9 +52,33 @@ class ChunkGroup:
         )
 
 
+# Chunks of the week handled by one task of the clustering
+CLUSTER_TASK_SIZE = 500
+
+
+def _cluster_task(bounds: tuple[int, int]) -> tuple[int, list[tuple[int, int]]]:
+    """
+    For the chunks i in [start, stop): candidates j > i found by the index, then compared.
+    Returns the number of candidate pairs and the similar ones.
+    """
+    fps, index, compare = worker_state()
+    start, stop = bounds
+    candidates = 0
+    similar = []
+    for i in range(start, stop):
+        fp_i = fps.get(i)
+        for j in sorted(index.get_similar_indices(fp_i)):
+            if j > i:
+                candidates += 1
+                if compare.is_similar(fp_i, fps.get(j)):
+                    similar.append((i, j))
+    return candidates, similar
+
+
 def _cluster(
     chunks: list[Chunk],
     compare: FingerprintsCompare,
+    num_workers: int = 1,
 ) -> Dict[int, List[int]]:
     """
     Group similar chunks using inverted index on pair sums + Union-Find.
@@ -56,6 +86,8 @@ def _cluster(
     Builds an inverted index of quantized pair sums (f1+f2+dt) to prune
     candidate pairs before running the full distance-based comparison.
     Only chunk pairs sharing >= min_matching_pairs bucket overlaps are compared.
+    The candidate search and the comparison run in num_workers processes, by
+    ranges of CLUSTER_TASK_SIZE chunks.
     Returns {group_id: [chunk indices]}.
     """
     n = len(chunks)
@@ -70,38 +102,38 @@ def _cluster(
     def union(x, y):
         parent[find(x)] = find(y)
 
-    # --- Inverted index on 3D pair keys to prune candidate pairs ---
-
-    # Step 1: build index over all chunks
-    fps = [
-        c.fingerprint for c in interactive_tqdm(chunks, desc="Indexation fingerprints")
-    ]
-    index = compare.build_similarity_index(fps)
-
-    # Step 2: for each chunk query the index to find candidates with j > i
-    candidates: set[tuple[int, int]] = set()
-    for i, fp in interactive_tqdm(enumerate(fps), desc="Recherche candidats", total=n):
-        for j in index.get_similar_indices(fp):
-            if j > i:
-                candidates.add((i, j))
-
+    # Step 1: build index over all chunks, packed to be given to the workers
+    started = time.monotonic()
+    fps = PackedFingerprints.pack([c.fingerprint for c in chunks])
+    index = compare.build_similarity_index([fps.get(i) for i in range(n)])
     logger.info(
-        f"Clustering {n} chunks — {len(candidates)} candidate pairs "
-        f"(pruned from {n * (n - 1) // 2} exhaustive)"
+        f"Clustering: index of the {n} chunks built in {time.monotonic() - started:.0f}s"
     )
 
-    # Step 4: full comparison on candidates only
+    # Step 2: for each chunk, candidates j > i from the index, compared to it
+    bounds = [
+        (start, min(start + CLUSTER_TASK_SIZE, n))
+        for start in range(0, n, CLUSTER_TASK_SIZE)
+    ]
+    tasks = [(task_bounds, task_bounds) for task_bounds in bounds]
+    progress = interactive_tqdm(total=len(tasks), desc="Comparaison fingerprints")
+    candidates = 0
     matches = 0
-    for i, j in interactive_tqdm(
-        candidates,
-        desc="Comparaison fingerprints",
-        total=len(candidates),
+    for _, (task_candidates, similar) in ordered_map(
+        _cluster_task, tasks, state=(fps, index, compare), num_workers=num_workers
     ):
-        if compare.is_similar(chunks[i].fingerprint, chunks[j].fingerprint):
+        candidates += task_candidates
+        for i, j in similar:
             union(i, j)
-            matches += 1
+        matches += len(similar)
+        progress.update(1)
+    progress.close()
 
-    logger.info(f"Clustering: {matches} similar pairs found")
+    logger.info(
+        f"Clustering {n} chunks on {num_workers} processes: {candidates} candidate "
+        f"pairs (pruned from {n * (n - 1) // 2} exhaustive), {matches} similar pairs "
+        f"found in {time.monotonic() - started:.0f}s"
+    )
 
     groups = defaultdict(list)
     for i in range(n):
@@ -110,12 +142,14 @@ def _cluster(
     return dict(groups)
 
 
-def group_chunks(source: List[Chunk], compare: FingerprintsCompare) -> list[ChunkGroup]:
+def group_chunks(
+    source: List[Chunk], compare: FingerprintsCompare, num_workers: int = 1
+) -> list[ChunkGroup]:
     # Filter out very short chunks
     chunks = [c for c in source if c.fingerprint.duration_sec >= 0.5]
     logger.info(f"{len(chunks)} chunks to group (out of {len(source)} unknown chunks)")
 
-    groups = _cluster(chunks, compare)
+    groups = _cluster(chunks, compare, num_workers=num_workers)
 
     report_groups: list[ChunkGroup] = []
     for member_idxs in groups.values():

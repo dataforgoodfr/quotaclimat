@@ -153,13 +153,15 @@ def _run_cover_check():
 
 
 def _process_week(channel: str, start_date: str):
+    # Worker processes of the CPU bound steps (audio processing, comparison of the
+    # fingerprints): one per CPU but one, left to the main process (downloads, database)
     num_workers = max(
         1,
-        (int(os.environ.get("AUDIO_WORKERS") or "0") or (_scaleway_cpu_numbers() - 2)),
+        (int(os.environ.get("AUDIO_WORKERS") or "0") or (_scaleway_cpu_numbers() - 1)),
     )
 
     logger.info(
-        f"Start processing of 1 week of {channel} starting from {start_date} on {num_workers} cpu"
+        f"Start processing of 1 week of {channel} starting from {start_date} on {num_workers} worker processes"
     )
 
     start_datetime = datetime.fromisoformat(start_date)

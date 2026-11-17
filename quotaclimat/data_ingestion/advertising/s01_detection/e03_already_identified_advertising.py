@@ -13,6 +13,7 @@ from quotaclimat.data_ingestion.advertising.tools.fingerprint_tools.compare impo
 )
 
 from .tools.common_objects import Chunk, Fingerprint, Fragment
+from .tools.parallel import PackedFingerprints, ordered_map, worker_state
 
 logger = logging.getLogger(__name__)
 
@@ -39,11 +40,32 @@ class AdChunkMatch:
     chunk_index: int  # index within that entry's "fingerprints" list
 
 
+def _compare_to_local_chunks(
+    fp_dicts: list[dict],
+) -> tuple[int, list[tuple[int, int]]]:
+    """
+    Task run in the workers: compares fingerprints of the database to the chunks of the week.
+    Returns the number of candidate chunks and the (index in fp_dicts, chunk index) similar.
+    """
+    local_fingerprints, local_index, compare = worker_state()
+    candidates = 0
+    found = []
+    for k, fp_dict in enumerate(fp_dicts):
+        db_fp = Fingerprint.from_dict(fp_dict)
+        local_candidates = local_index.get_similar_indices(db_fp)
+        candidates += len(local_candidates)
+        for local_idx in local_candidates:
+            if compare.is_similar(local_fingerprints.get(local_idx), db_fp):
+                found.append((k, local_idx))
+    return candidates, found
+
+
 async def run_chunk_identification(
     chunks: list[Chunk],
     params_hash: str,
     compare: FingerprintsCompare,
     reference_date: datetime,
+    num_workers: int = 1,
 ) -> tuple[list[Fragment], list[Chunk]]:
     """
     Identifie les chunks déjà connus (présents dans la DB) et les chunks inconnus.
@@ -62,6 +84,8 @@ async def run_chunk_identification(
         reference_date: début de la fenêtre traitée. Seules les Ad détectées depuis
             reference_date - KNOWN_AD_MAX_AGE (dernière occurrence non supprimée, toutes
             chaînes, ou première détection) sont recherchées.
+        num_workers: nombre de processus qui comparent les fingerprints de la DB aux
+            chunks (une tâche par page de CURSOR_BATCH_SIZE Ad).
 
     Returns:
         (known_chunks, unknown_chunks): chunks reconnus (avec leurs Ad correspondantes) et inconnus.
@@ -69,9 +93,11 @@ async def run_chunk_identification(
     # matches[local_idx] accumulates AdChunkMatch across all pages
     matches: dict[int, list[AdChunkMatch]] = defaultdict(list)
 
-    # Build inverted index over local chunks once — queried for each DB fingerprint
+    # Build inverted index over local chunks once — queried for each DB fingerprint —,
+    # and pack their fingerprints for the workers
     started = time.monotonic()
     local_index = compare.build_similarity_index([c.fingerprint for c in chunks])
+    local_fingerprints = PackedFingerprints.pack([c.fingerprint for c in chunks])
     logger.info(
         f"Chunks identification: index of the {len(chunks)} chunks of the week built "
         f"in {time.monotonic() - started:.0f}s"
@@ -95,22 +121,12 @@ async def run_chunk_identification(
         ),
     )
 
-    with get_db_session() as session:
-        total_ads = session.scalar(
-            select(func.count()).select_from(Ad).where(*searched_ads)
-        )
-        logger.info(
-            f"Chunks identification: comparing the chunks to the fingerprints of the "
-            f"{total_ads} ads of the database detected since {cutoff}"
-        )
-
-        # Only the columns used here: the transcript and the prediction of the ads are
-        # not read, and no ORM object is built for the hundreds of thousands of ads
-        for ads in session.execute(
-            select(Ad.id, Ad.duration_sec, Ad.fragment_type, Ad.chunks)
-            .where(*searched_ads)
-            .execution_options(yield_per=CURSOR_BATCH_SIZE)
-        ).partitions():
+    def tasks(partitions):
+        # One task per page of ads: their fingerprints with params_hash, without the
+        # peaks (not compared). The context kept here gives the ad of each fingerprint.
+        for ads in partitions:
+            keys = []
+            fp_dicts = []
             for ad in ads:
                 for entry_idx, chunk_entry in enumerate(ad.chunks or []):
                     if chunk_entry.get("hash") != params_hash:
@@ -118,23 +134,45 @@ async def run_chunk_identification(
                     for fp_idx, fp_dict in enumerate(
                         chunk_entry.get("fingerprints", [])
                     ):
-                        db_fp = Fingerprint.from_dict(fp_dict)
-                        total_db_fingerprints += 1
+                        keys.append((ad, entry_idx, fp_idx))
+                        fp_dicts.append(
+                            {k: v for k, v in fp_dict.items() if k != "peaks"}
+                        )
+            yield (len(ads), keys), fp_dicts
 
-                        candidates = local_index.get_similar_indices(db_fp)
-                        total_candidates += len(candidates)
-                        for local_idx in candidates:
-                            if compare.is_similar(chunks[local_idx].fingerprint, db_fp):
-                                total_matches += 1
-                                matches[local_idx].append(
-                                    AdChunkMatch(
-                                        ad=ad,
-                                        chunk_entry_index=entry_idx,
-                                        chunk_index=fp_idx,
-                                    )
-                                )
+    with get_db_session() as session:
+        total_ads = session.scalar(
+            select(func.count()).select_from(Ad).where(*searched_ads)
+        )
+        logger.info(
+            f"Chunks identification: comparing the chunks to the fingerprints of the "
+            f"{total_ads} ads of the database detected since {cutoff}, "
+            f"on {num_workers} processes"
+        )
 
-            compared_ads += len(ads)
+        # Only the columns used here: the transcript and the prediction of the ads are
+        # not read, and no ORM object is built for the hundreds of thousands of ads
+        partitions = session.execute(
+            select(Ad.id, Ad.duration_sec, Ad.fragment_type, Ad.chunks)
+            .where(*searched_ads)
+            .execution_options(yield_per=CURSOR_BATCH_SIZE)
+        ).partitions()
+        for (page_ads, keys), (page_candidates, found) in ordered_map(
+            _compare_to_local_chunks,
+            tasks(partitions),
+            state=(local_fingerprints, local_index, compare),
+            num_workers=num_workers,
+        ):
+            for k, local_idx in found:
+                ad, entry_idx, fp_idx = keys[k]
+                matches[local_idx].append(
+                    AdChunkMatch(ad=ad, chunk_entry_index=entry_idx, chunk_index=fp_idx)
+                )
+            compared_ads += page_ads
+            total_db_fingerprints += len(keys)
+            total_candidates += page_candidates
+            total_matches += len(found)
+
             if time.monotonic() - last_progress_log >= PROGRESS_LOG_INTERVAL_SEC:
                 last_progress_log = time.monotonic()
                 logger.info(

@@ -250,13 +250,15 @@ Only the 2-minutes files of the shows of the program grid (see "Program Metadata
 | `CHANNEL` | Processes this channel only, instead of `ROLLING_CHANNELS` |
 | `START_DATE` | Monday of the week to process, for every channel of the run (already processed or not). Empty: the oldest "Monday after the last week with occurrences" of the channels |
 | `MINIMAL_START_DATE` | Monday to start from for a channel without any occurrence. A channel added to `ROLLING_CHANNELS` starts from it: it is the only one to run until it has caught up with the others |
-| `AUDIO_WORKERS` | Number of processes (default: Scaleway CPUs minus 2) |
+| `AUDIO_WORKERS` | Number of worker processes of the CPU bound steps: audio processing, `chunk_identification` and `chunk_grouping` (default: Scaleway CPUs minus 1, the main process downloading the audio and reading the database) |
 
 The logs give the start and the duration of every step (`Step <name>: start`, `Step <name>: done in <n>s`): `audio_listing`, `audio_download_and_processing`, `chunk_identification`, `chunk_grouping`, `fragment_classification`, `clean_pre_existing_occurrences`, `database_storage`. `chunk_identification` compares the chunks of the week to the fingerprints of every ad of `advertising.ad`, so it grows with the table: it logs its progress every 30 seconds (ads compared out of the total, fingerprints, candidate and matching chunks).
 
 There is no default value: without channels, or without a start date for a channel that has no occurrence, the job fails before processing anything. When the week to process is not finished yet (less than 7 days ago), the job stops without doing anything, so a scheduled catch-up stops by itself.
 
 The chunks of the week are first compared with the ads already in `advertising.ad` (`e03_already_identified_advertising.py`). Only the ads detected less than 3 months before the Monday of the processed week are searched for (`KNOWN_AD_MAX_AGE`): first detection or last occurrence not deleted, on any channel. An older ad that is broadcast again is detected as a new ad.
+
+The comparisons of fingerprints of `chunk_identification` (a task per page of 1000 ads of the database) and `chunk_grouping` (a task per range of 500 chunks of the week, candidate search and comparison) run in the `AUDIO_WORKERS` processes (`s01_detection/tools/parallel.py`). The fingerprints of the week are given to them once, packed in numpy arrays (with the fork start method, the workers share them without copy). `fragment_classification` stays in one process: its merges of groups that follow each other (`Classification: merging <n> couples of groups` in the logs) only visit the fragments of the two groups.
 
 ### Explore postgres data using Metabase - a BI tool
 ```

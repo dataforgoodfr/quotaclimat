@@ -13,6 +13,8 @@
     reference tables are the ref_ome_* seeds, downloaded from the private Google Sheet
     before dbt runs (see my_dbt_project/external_sources.yml): where they are missing (e.g. extended perimeter),
     labels are left empty instead of failing the run.
+    Only the occurrences of ad_occurrence_tunnels (see the join below): an occurrence detected while dbt runs waits
+    for the next build.
     Programs before / after the tunnel of the occurrence (see ad_tunnel_programs): id in analytics.program
     (monitored programs, split into their emissions when known), label and gap.
     Index on occurrence_date for the queries on a period (Metabase). -#}
@@ -72,7 +74,10 @@ LEFT JOIN sector_ref  s  ON s.sector_code  = a.predicted_sector
 LEFT JOIN cat_ref     c  ON c.cat_code     = a.predicted_product_category
 LEFT JOIN channel_ref ch ON ch.channel_name = occ.channel_name
 LEFT JOIN {{ ref('ad_brands') }} br ON br.brand_key = {{ name_key('a.predicted_brand') }}
-LEFT JOIN {{ ref('ad_occurrence_tunnels') }} t ON t.occurrence_id = occ.id
+-- inner join: the occurrences read here and those of ad_occurrence_tunnels, built a few minutes earlier in the same
+-- run, differ when the ad detection inserts occurrences meanwhile. Those are left out until the next build, rather
+-- than kept without tunnel (no ecran_id, est_dans_programme nor lien_visualiseur in curated.publicite).
+JOIN {{ ref('ad_occurrence_tunnels') }} t ON t.occurrence_id = occ.id
 LEFT JOIN {{ ref('ad_occurrence_mesinfo') }} mi ON mi.occurrence_id = occ.id
 LEFT JOIN {{ ref('ad_tunnel_programs') }} tp ON tp.tunnel_id = t.tunnel_id
 -- final statuses: the classification gives a brand and a sector (see macros/final_prediction_statuses.sql),

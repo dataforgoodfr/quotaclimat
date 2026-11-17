@@ -33,6 +33,7 @@ Chaîne de données :
 | R10 Secteurs affichés | Les 9 premiers secteurs par temps de pub **toutes chaînes confondues** (généralistes et info), la même liste que le camembert de la partie 1.4, quel que soit le type de chaîne du graphique. On ne prend pas le classement propre aux chaînes d'info, pour garder la même liste de secteurs d'un graphique à l'autre. Dans chaque secteur : les 6 premières entreprises par temps de pub. | adoptée |
 | R11 Exposition des principaux annonceurs | Minutes de pub de l'annonceur rattachées à une émission à fort taux (R6), découpées par émission (les 8 premières nommées, les autres en « Autres émissions à fort taux »). Deux classements : par minutes exposées (sans la pub hors émissions à fort taux) et par minutes totales (avec, en gris, la pub hors de ces émissions). Chaînes d'info seules (`type_chaine`, défaut `info`). | adoptée |
 | R12 Agence média | Agence de la marque, sinon de son entreprise (Google Sheet `Inventaire_des_annonceurs`, via `ad_brand_agencies`) ; pour une entreprise, l'agence qui achète le plus de ses secondes. Affichée en une colonne : « Agence (Groupe) » quand elle est confirmée (pas de mention « confirmée », c'est le cas par défaut), « probable : Agence (Groupe) », « indice : Agence (Groupe) », « Agence inconnue » ; le groupe n'est pas répété quand il porte le nom de l'agence. | adoptée |
+| R13 Catégories de produit des trois premiers secteurs | Graphique à bulles Google Sheets de la partie 4.1 : les 3 premiers secteurs de R10 (même classement, toutes chaînes confondues), sur les chaînes d'info (R9) ; dans chaque secteur, les 8 premières catégories de produit par temps de pub, comme la question 2502 ; une catégorie inconnue prend le nom du secteur ; une bulle noire par secteur pour sa moyenne (R7). | adoptée |
 
 ### Abandonnées
 
@@ -47,8 +48,8 @@ Chaîne de données :
 - **Une couleur par secteur** dans le nuage de points de la partie 3 (la série est le nom du secteur). Couleurs fixées : Automobile et transport `#509EE3`, Alimentation `#88BF4D`, Établissements financiers et assurance `#F2A86F`, moyenne du secteur `#2E353B` (points noirs) ; les autres secteurs prennent les couleurs automatiques de Metabase. Gris clair `#DCDFE0` : pub hors émissions à fort taux ; gris `#949AAB` : « Autres émissions à fort taux ».
 - **Taille des bulles** : racine carrée des minutes de pub (`taille_point`). Le rayon est proportionnel à la valeur, la surface l'est donc aux minutes ; avec les minutes brutes, les plus gros annonceurs écrasaient les autres.
 - **Moyenne du type de chaîne** : dans Metabase, ligne d'objectif « Moyenne des chaînes d'info ». Metabase ne peut pas la lire dans une colonne : sa valeur est fixe dans les réglages de la question 2500 et doit être recopiée depuis la question 2517, affichée à côté, quand les données changent. Pas de moyenne des chaînes d'info dans le graphique Google Sheets (retirée le 17/11/2026) : seules les moyennes des secteurs, en noir.
-- **Noms des entreprises sur les bulles** : impossible dans Metabase (les étiquettes d'un nuage de points ne montrent que la valeur de l'axe vertical ; le nom n'est qu'au survol). Le graphique du rapport est donc refait dans Google Sheets (graphique à bulles, colonne d'étiquette), puis collé dans le Google Doc : [`google_sheets.md`](google_sheets.md).
-- **Rafraîchissement du Sheet à la demande**, pas de flux Kestra : la plage se fige au 31/12/2026, il ne reste que quelques rafraîchissements avant publication. Un flux (job, droits du compte de service sur le Sheet, maintenance) ne se justifie que si plusieurs graphiques du rapport suivent ce chemin. Pas de lien public Metabase lu par `IMPORTDATA` : il publierait sur internet des données de suivi non publiées.
+- **Noms des entreprises ou des catégories sur les bulles** : impossible dans Metabase (les étiquettes d'un nuage de points ne montrent que la valeur de l'axe vertical ; le nom n'est qu'au survol). Le graphique du rapport est donc refait dans Google Sheets (graphique à bulles, colonne d'étiquette), puis collé dans le Google Doc : [`google_sheets.md`](google_sheets.md).
+- **Rafraîchissement du Sheet** : à la main pour l'instant ([`google_sheets.md`](google_sheets.md)) ; un flow Kestra d'export des requêtes de `queries/` vers les Sheets, lancé à la main, est en cours de développement. Pas de lien public Metabase lu par `IMPORTDATA` : il publierait sur internet des données de suivi non publiées.
 
 ## 4. Carte des graphiques
 
@@ -74,6 +75,7 @@ Tableau de bord 228, dans l'ordre du plan. « Carte » : identifiant de la carte
 | 3 | Principaux annonceurs exposés et leurs agences média | 2504 | 3277 | R12, attribution 2358 | voir § 6 |
 | 3 | Part de CNews dans la pub achetée par chaque groupe d'agences | 2505 | 3278 | R12 | parmi BFM TV, CNews et LCI |
 | 4.1 | Catégories de produits à proximité de la mésinformation, généralistes et chaînes d'info | 2501, 2502 | 3282, 3283 | R6, R7 | trois premiers secteurs de chaque type de chaîne ; non revues depuis R9 et R10 |
+| 4.1 | Part exposée par catégorie de produit, trois premiers secteurs, chaînes d'info (graphique à bulles) | aucune (Google Sheets) | | R6, R7, R9, R13 | `queries/bulles_categories_secteur_sheets.sql`, onglet `categories` du Sheet |
 | 4.2 | Pubs automobiles à proximité d'une mésinformation sur l'automobile | 2506 | 3285 | R4 | seul thème de cas disponible |
 
 Les questions 2515 et 2516 partagent le même SQL : toute modification se reporte dans les deux. Leurs variables : `tri` (`mesinfo` ou `total`), `type_chaine` (`info`, `generalistes`, `toutes`), `seuil`, `nb_annonceurs` (15), `nb_emissions` (8), `hors_fort_taux` (`oui` ou `non`).
@@ -81,14 +83,14 @@ Les questions 2515 et 2516 partagent le même SQL : toute modification se report
 ## 5. Où vivent les requêtes
 
 - **Metabase fait référence** pour les questions du tableau de bord 228 : elles ne sont ni dans `metabase/` ni dans un `questions.yml`, le flow `metabase-sync` ne les touche pas. Chaque SQL commence par un en-tête en français (ce qu'il fait, variables, colonnes, plage) : le lire avant de modifier une question.
-- **`queries/`** : requêtes qui tournent hors de Metabase. Aujourd'hui `bulles_annonceurs_secteur_sheets.sql`, source du graphique à bulles Google Sheets ; elle reprend le calcul de la question 2500 : une modification de l'une se reporte dans l'autre.
+- **`queries/`** : requêtes qui tournent hors de Metabase, sources des graphiques à bulles Google Sheets. `bulles_annonceurs_secteur_sheets.sql` reprend le calcul de la question 2500 : une modification de l'une se reporte dans l'autre. `bulles_categories_secteur_sheets.sql` (R13) n'a pas d'équivalent exact dans Metabase.
 - À la publication : copier dans `queries/` le SQL des questions utilisées, pour figer la version publiée.
 
 ## 6. Limites et points à valider
 
 - Seuil R6 (1 cas par heure d'environnement, 0,5 h minimum) : 🔴 [validation de l'équipe mésinformation]
 - Tableau des agences (2504) : il classe encore les annonceurs par cas attribués (attribution 2358 abandonnée pour les graphiques), avec le même biais vers les émissions qui ont peu de pub. 🔴 [décider : garder ce classement ou reprendre celui de R11]
-- Partie 4.1 (2501, 2502) : pas encore alignée sur R9 et R10 (secteurs propres à chaque type de chaîne, points gris de moyenne du type de chaîne). 🔴 [décider si elle doit suivre la partie 3]
+- Partie 4.1 dans Metabase (2501, 2502) : pas encore alignée sur R9, R10 et R13 (secteurs propres à chaque type de chaîne, points gris de moyenne du type de chaîne), contrairement au graphique Google Sheets. 🔴 [décider si les questions Metabase doivent suivre]
 - Qualité des données pub, à signaler à l'équipe pub : certaines entreprises détectées sont des agences ou des intermédiaires plutôt que des annonceurs, une entreprise est nommée « null », certains rattachements de secteur sont douteux (une même entreprise dans deux secteurs, un assureur classé en boissons). Le classement des secteurs et des marques est automatique (LLM), corrigé à la main dans le Google Sheet `Corrections_publicites`.
 - Le nombre de cas dépend de l'effort d'annotation : une chaîne ou une émission plus annotée a mécaniquement plus de cas.
 - Proximité : une pub « autour » d'une émission (R4) ne dit pas que la pub a été diffusée pendant le passage mésinformant, ni le même jour que lui (R6 porte sur toute la plage).
@@ -97,4 +99,4 @@ Les questions 2515 et 2516 partagent le même SQL : toute modification se report
 ## 7. Historique
 
 - 16/11/2026 : partie 3 revue. Nuage des généralistes retiré (R9) ; une couleur par secteur, bulles en racine des minutes, ligne d'objectif et question 2517 ; secteurs limités à R10 ; attribution 2358 abandonnée pour les graphiques au profit de R11 (2515, 2516) ; colonne d'agence unique dans 2504 (R12).
-- 17/11/2026 : création de ce dossier ; requête du graphique à bulles pour Google Sheets.
+- 17/11/2026 : création de ce dossier ; requêtes des graphiques à bulles pour Google Sheets, par annonceur (partie 3) puis par catégorie de produit (partie 4.1, R13) ; bulles alignées par secteur, moyenne des chaînes d'info retirée des graphiques Sheets.

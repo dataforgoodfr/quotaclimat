@@ -699,6 +699,8 @@ def test_cas_theme(db_connection):
                 -- strong keyword in the explanation or the transcript only: the context of the debate, left out
                 ('pytest_theme_contexte', 'france', 'Les ENR coûtent cher', 'Comme pour les véhicules électriques',
                  'les ENR, et la voiture électrique, coûtent cher'),
+                -- car alone, Crit'Air with a typographic apostrophe
+                ('pytest_theme_critair', 'france', 'Les véhicules Crit’Air 3 ne polluent pas', NULL, NULL),
                 -- weak keyword in the claim
                 ('pytest_theme_faible_affirmation', 'france', 'On ne sait pas recycler les batteries', NULL, NULL),
                 -- weak keyword in the explanation only: left out
@@ -726,8 +728,9 @@ def test_cas_theme(db_connection):
         db_connection.commit()
         run_dbt_command(["run", "--select", "cas_theme"])
     assert rows == [
+        ("pytest_theme_critair", "automobile", "forte", "Crit'Air, voiture", None),
         ("pytest_theme_faible_affirmation", "automobile", "moyenne", "batterie", None),
-        ("pytest_theme_fort", "automobile", "forte", "voiture électrique", None),
+        ("pytest_theme_fort", "automobile", "forte", "voiture, voiture électrique", None),
         ("pytest_theme_ve", "automobile", "moyenne", "VE", None),
     ]
 
@@ -1698,11 +1701,11 @@ def test_curated_cas_mesinformation(db_connection):
             WHERE chaine_id = 'sud-radio' AND jour = '2025-04-02'
         """)
         rows = cur.fetchall()
-    # 2025-04-02 09:10 UTC; no theme: the keyword (ZFE) is in the explanation only, cas_theme reads the claim
+    # 2025-04-02 09:10 UTC; automobile: "les voitures crit'air 3" in the claim
     assert rows == [(
         datetime.datetime(2025, 4, 2, 11, 10), "Sud Radio", "France",
         "sud-radio|programme|Mettez-vous d'accord|false|2025-04-02", "invité", True, False, "non renseignée",
-        None, False,
+        "automobile", True,
     )]
 
 

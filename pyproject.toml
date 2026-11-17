@@ -122,6 +122,19 @@ mcp = "^1.28.1"
 griffe = "^2.1.0"
 tqdm = "^4.67.1"
 
+# Advertising classification (s03_classification)
+[tool.poetry.group.advertising]
+optional = true
+
+[tool.poetry.group.advertising.dependencies]
+gspread = "^6.2.1"
+regex = ">=2026.6.28"
+tqdm = "^4.67.1"
+av = ">=18.1.0"
+jinja2 = "^3.1.6"
+pyyaml = "^6.0.3"
+pillow = ">=10.0"
+
 # detect_misinformation/jobs/label_misinformation — misinformation labelling job
 # (image built with `poetry install --only misinformation`).
 [tool.poetry.group.misinformation]

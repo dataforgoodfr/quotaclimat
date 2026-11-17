@@ -616,6 +616,22 @@ docker compose exec testconsole bash
 #### Run belgium
 Only for belgian data using .csv
 
+The partner sends either weekly `.csv` files or, since October 2026, `.srt` files (one folder per channel, one file per day). The SRT files are first converted to the partner `.csv` layout, then processed like any other `.csv`.
+
+**Step 1 (only for `.srt` deliveries)**: put the delivery in `i8n/csa-belge/` (e.g. `i8n/csa-belge/tv Bel fr octobre 2026/<CHANNEL>/<YYYYMMDDHHMMSS>.srt`) and run from `i8n/`:
+```bash
+poetry run python3 srt-channel-to-csv.py "csa-belge/tv Bel fr octobre 2026"
+# only some channels:
+poetry run python3 srt-channel-to-csv.py "csa-belge/tv Bel fr octobre 2026" --channels ACTV BX1
+```
+- Every channel folder containing `.srt` files is converted. The file name is the start of the recording, the cue timestamps are offsets from it.
+- Rows are split by month half and written to `csa-belge/<year>/<month>/<1-14|15+>/<first day>_<last day>_<FileName>.csv` (existing files are overwritten), with no header and `;` as separator: `channel;program;DD/MM/YYYY HH:MM:SS;text`.
+- The srt folder name is mapped to the partner file name by `FILE_NAMES` in the script (e.g. `CANALC` → `Boukè`, `RTC` → `Qu4tre`, `RTL` → `RTLTVi`). A new channel keeps its folder name: add it to `FILE_NAMES` if the partner uses another name.
+- The first column is the folder name in upper case (`CanalZoom` → `CANALZOOM`).
+- The program column is empty (the srt does not contain it); `--program` sets one value for all channels.
+
+**Step 2**:
+
 Warning: this job is not automated as the process depending on getting the data is manual (emails), so we have to modify [the script here](https://github.com/dataforgoodfr/quotaclimat/blob/01e5ede5152d4113c68bcf994f13c7b2baa30dd6/i8n/srt-to-mediatree-format.py#L259-L262).
 ```
 docker compose up testconsole -d

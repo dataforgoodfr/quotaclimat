@@ -96,6 +96,8 @@ To pause a schedule, set `enabled: false` in its file and deploy (a schedule dis
 
 Secrets are read by the runner when the step starts: they never appear in the job's arguments (stored in the database and shown in the UI) nor in the logs. The container is named `windmill-<job id>`. Cancelling the step stops and removes it.
 
+When the container fails, the step's error ends with the last 40 lines of its output (both streams, stdout included even with `stdout_logs: false`, since the pipeline logs its errors to stdout). They show in the step result and in the Mattermost alert. The full output is in the step's logs. Windmill moves the logs of long jobs to files in the `windmill-worker-logs` volume, which the server mounts to show them.
+
 Jobs are stopped after `TIMEOUT` (`windmill_timeout_secs`, 6 h, `ansible/roles/windmill/defaults/main.yml`).
 
 ## dbt: one run at a time

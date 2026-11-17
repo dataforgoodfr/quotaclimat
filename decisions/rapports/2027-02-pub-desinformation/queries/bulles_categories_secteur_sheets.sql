@@ -1,27 +1,29 @@
 -- Rapport pub février 2027, partie 3 : données du graphique à bulles « Part du temps de pub autour d'émissions à fort
--- taux de mésinformation, par annonceur », pour Google Sheets (graphique à bulles avec le nom de chaque entreprise).
+-- taux de mésinformation, par catégorie de produit », pour Google Sheets (graphique à bulles avec le nom de chaque
+-- catégorie).
 -- Même calcul que la question Metabase 2500 (chaînes d'information en continu), mis en forme pour le graphique à bulles
 -- de Google Sheets : une colonne d'étiquette, une abscisse numérique, une ordonnée, une série (couleur), une taille.
--- Règles et choix : ../decisions.md (R1 à R11). Procédure Sheets et Docs : ../google_sheets.md.
+-- Règles et choix : ../decisions.md (R1 à R10, R13). Procédure Sheets et Docs : ../google_sheets.md.
 --
 -- Base : Baromètre (Scaleway Postgres, base Metabase 2). SQL brut, sans variable Metabase : les paramètres sont les
 -- constantes du CTE parametres, à modifier ici (et dans decisions.md si la règle change).
 --
 -- Émission à fort taux de mésinformation : sur la période, au moins seuil cas validés par heure consacrée à
 -- l'environnement (public.emission_jour : nb_cas / env_heures), et au moins env_heures_min heures d'environnement.
--- Rattachement des pubs aux émissions : advertising.pub_annonceur_emission_jour (règle de la question 2358). Niveau
--- annonceur : l'entreprise. Pubs sans marque détectée écartées. Temps d'antenne, pas budget.
+-- Rattachement des pubs aux émissions : advertising.pub_annonceur_emission_jour (règle de la question 2358). Bulle :
+-- une catégorie de produit, le nom du secteur quand elle est inconnue (comme la question 2502). Pubs sans marque
+-- détectée écartées. Temps d'antenne, pas budget.
 -- Secteurs gardés : les nb_secteurs premiers par temps de pub toutes chaînes confondues (généralistes et chaînes
--- d'info), comme le camembert de la partie 1.4 ; points : les nb_points premières entreprises de chaque secteur par
--- temps de pub sur les chaînes d'info. Moyennes pondérées par le temps de pub, calculées sur toutes les entreprises du
+-- d'info), comme le camembert de la partie 1.4 ; points : les nb_points premières catégories de chaque secteur par
+-- temps de pub sur les chaînes d'info. Moyennes pondérées par le temps de pub, calculées sur toutes les pubs du
 -- secteur (ou du type de chaîne), pas seulement les points affichés.
 --
 -- Colonnes, dans l'ordre attendu par le graphique à bulles de Google Sheets :
---   etiquette : nom de l'entreprise ; vide pour les moyennes (pas d'étiquette) ;
---   x : numéro du secteur (rang_secteur, 1 = premier secteur) décalé de -0,3 à +0,3 selon la part de l'entreprise,
+--   etiquette : nom de la catégorie ; vide pour les moyennes (pas d'étiquette) ;
+--   x : numéro du secteur (rang_secteur, 1 = premier secteur) décalé de -0,3 à +0,3 selon la part de la catégorie,
 --     pour écarter les étiquettes d'un même secteur ; les moyennes sont au centre (x = rang_secteur) ;
 --   part_proche_pct : part du temps de pub rattaché à une émission à fort taux (de 0 à 100) ;
---   serie : nom du secteur pour les entreprises (une couleur par secteur), « Moyenne du secteur », « Moyenne des
+--   serie : nom du secteur pour les catégories (une couleur par secteur), « Moyenne du secteur », « Moyenne des
 --     chaînes d'info » (même valeur dans chaque secteur : remplace la ligne d'objectif de Metabase) ;
 --   taille : racine carrée des minutes de pub (le rayon de la bulle est proportionnel à la valeur, la surface l'est
 --     donc aux minutes) ; 1 pour les moyennes.
@@ -56,7 +58,7 @@ emissions_fort_taux AS (
 pub AS (
     SELECT
         COALESCE(p.secteur, 'Secteur inconnu') AS secteur,
-        p.entreprise AS annonceur,
+        COALESCE(p.categorie, p.secteur) AS categorie,
         p.pub_secondes,
         ef.emission_cle IS NOT NULL AS est_proche
     FROM advertising.pub_annonceur_emission_jour p
@@ -90,32 +92,32 @@ secteurs AS (
     JOIN rang_secteurs r ON r.secteur = pu.secteur
     GROUP BY pu.secteur
 ),
-annonceurs AS (
+categories AS (
     SELECT
         secteur,
-        annonceur,
+        categorie,
         SUM(pub_secondes) / 60 AS pub_min,
         100 * COALESCE(SUM(pub_secondes) FILTER (WHERE est_proche), 0) / SUM(pub_secondes) AS part_pct,
-        ROW_NUMBER() OVER (PARTITION BY secteur ORDER BY SUM(pub_secondes) DESC, annonceur) AS rang
+        ROW_NUMBER() OVER (PARTITION BY secteur ORDER BY SUM(pub_secondes) DESC, categorie) AS rang
     FROM pub
-    WHERE annonceur IS NOT NULL
-    GROUP BY secteur, annonceur
+    WHERE categorie IS NOT NULL
+    GROUP BY secteur, categorie
 ),
 points AS (
     SELECT
         a.*,
         s.rang_secteur,
         -- position dans le secteur, de la plus faible part à la plus forte : les étiquettes s'étagent en diagonale
-        ROW_NUMBER() OVER (PARTITION BY a.secteur ORDER BY a.part_pct, a.annonceur) AS position,
+        ROW_NUMBER() OVER (PARTITION BY a.secteur ORDER BY a.part_pct, a.categorie) AS position,
         COUNT(*) OVER (PARTITION BY a.secteur) AS nb
-    FROM annonceurs a
+    FROM categories a
     JOIN secteurs s ON s.secteur = a.secteur
     CROSS JOIN parametres pa
     WHERE s.rang_secteur <= pa.nb_secteurs
       AND a.rang <= pa.nb_points
 )
 SELECT
-    p.annonceur AS etiquette,
+    p.categorie AS etiquette,
     ROUND((p.rang_secteur
         + CASE WHEN p.nb > 1 THEN pa.largeur_secteur * ((p.position - 1)::numeric / (p.nb - 1) - 0.5) ELSE 0 END
     )::numeric, 3) AS x,

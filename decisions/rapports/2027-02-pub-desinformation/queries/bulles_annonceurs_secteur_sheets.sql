@@ -5,8 +5,7 @@
 --
 -- Colonnes :
 --   etiquette : nom de l'entreprise ; vide pour les moyennes ;
---   x : rang du secteur (1 = premier secteur) décalé de -largeur_secteur/2 à +largeur_secteur/2 selon la part de
---     l'entreprise, pour écarter les étiquettes d'un même secteur ; les moyennes sont au centre (x = rang_secteur) ;
+--   x : rang du secteur (1 = premier secteur) ; les bulles d'un même secteur sont alignées verticalement ;
 --   part_proche_pct : part du temps de pub rattaché à une émission à fort taux (de 0 à 100) ;
 --   serie : nom du secteur pour les entreprises, « Moyenne du secteur », « Moyenne des chaînes d'info » (même valeur
 --     dans chaque secteur) ;
@@ -21,8 +20,7 @@ parametres AS (
         1::numeric AS seuil,
         0.5::numeric AS env_heures_min,
         9 AS nb_secteurs,
-        6 AS nb_points,
-        0.6::numeric AS largeur_secteur
+        6 AS nb_points
 ),
 -- émissions à fort taux sur la période
 emissions_fort_taux AS (
@@ -86,10 +84,7 @@ annonceurs AS (
 points AS (
     SELECT
         a.*,
-        s.rang_secteur,
-        -- position dans le secteur, de la plus faible part à la plus forte : les étiquettes s'étagent en diagonale
-        ROW_NUMBER() OVER (PARTITION BY a.secteur ORDER BY a.part_pct, a.annonceur) AS position,
-        COUNT(*) OVER (PARTITION BY a.secteur) AS nb
+        s.rang_secteur
     FROM annonceurs a
     JOIN secteurs s ON s.secteur = a.secteur
     CROSS JOIN parametres pa
@@ -98,9 +93,7 @@ points AS (
 )
 SELECT
     p.annonceur AS etiquette,
-    ROUND((p.rang_secteur
-        + CASE WHEN p.nb > 1 THEN pa.largeur_secteur * ((p.position - 1)::numeric / (p.nb - 1) - 0.5) ELSE 0 END
-    )::numeric, 3) AS x,
+    p.rang_secteur AS x,
     ROUND(p.part_pct::numeric, 3) AS part_proche_pct,
     p.secteur AS serie,
     ROUND(SQRT(p.pub_min)::numeric, 2) AS taille,
@@ -108,7 +101,6 @@ SELECT
     p.rang_secteur,
     ROUND(p.pub_min::numeric, 1) AS pub_min
 FROM points p
-CROSS JOIN parametres pa
 UNION ALL
 SELECT '', s.rang_secteur, ROUND(s.part_pct::numeric, 3), 'Moyenne du secteur', 1, s.secteur, s.rang_secteur,
     ROUND(s.pub_min::numeric, 1)
@@ -122,4 +114,4 @@ FROM secteurs s
 CROSS JOIN parametres pa
 CROSS JOIN moyenne_type m
 WHERE s.rang_secteur <= pa.nb_secteurs
-ORDER BY 7, 4, 2
+ORDER BY 7, 4, 3

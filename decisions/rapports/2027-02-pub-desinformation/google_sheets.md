@@ -23,7 +23,7 @@ Graphique à bulles de Google Sheets (Insertion, Graphique, type « Graphique à
 | Colonne | Rôle dans le graphique | Contenu |
 |---|---|---|
 | `etiquette` | ID, écrit à côté de la bulle | nom de l'entreprise ; vide pour les moyennes |
-| `x` | axe horizontal | numéro du secteur (1 = premier), décalé de -0,3 à +0,3 selon la part de l'entreprise, pour écarter les étiquettes |
+| `x` | axe horizontal | numéro du secteur (1 = premier) : les bulles d'un secteur sont alignées verticalement |
 | `part_proche_pct` | axe vertical | part du temps de pub rattaché à une émission à fort taux, de 0 à 100 |
 | `serie` | série, donc couleur et légende | nom du secteur, « Moyenne du secteur », « Moyenne des chaînes d'info » |
 | `taille` | taille de la bulle | racine carrée des minutes de pub ; 1 pour les moyennes |
@@ -35,7 +35,7 @@ Réglages :
 - Axe horizontal : l'axe est numérique (Sheets n'accepte pas de catégorie en abscisse d'un graphique à bulles). Masquer ses étiquettes ou les laisser en numéros ; c'est la légende des couleurs qui dit quel secteur est où. Minimum 0,5, maximum 9,5.
 - Axe vertical : titre « Part du temps de pub autour d'émissions à 1 cas ou plus par heure d'environnement (%) », minimum 0.
 - Bulles : opacité autour de 50 % pour voir les étiquettes qui se chevauchent.
-- Les étiquettes peuvent encore se chevaucher quand deux entreprises d'un même secteur ont des parts proches : élargir le graphique, ou augmenter `largeur_secteur` dans la requête (0,6 par défaut, au plus 0,8 pour ne pas empiéter sur le secteur voisin). Ne pas déplacer les points à la main : ils reviendraient au rafraîchissement suivant.
+- Les étiquettes se chevauchent quand deux entreprises d'un même secteur ont des parts proches : agrandir le graphique en hauteur. Ne pas déplacer les points à la main : ils reviendraient au rafraîchissement suivant.
 
 Puis copier le graphique et le coller dans le Google Doc en gardant le lien avec la feuille de calcul.
 

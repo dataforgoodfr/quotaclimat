@@ -12,10 +12,10 @@ outputs:
   - type: sheet                                   # seul type pour l'instant
     spreadsheet: 2027-02-pub-desinformation       # nom exact du Google Sheet dans le dossier d'export
     tabs:
-      - tab: donnees                              # onglet écrit à chaque export
+      - tab: part_temps_de_pub_prox_mesinfo_par_annonceurs   # onglet écrit à chaque export
         query: bulles_annonceurs_secteur_sheets.sql   # fichier de queries/
         columns: A:H                              # facultatif : seules ces colonnes sont remplacées
-      - tab: categories
+      - tab: part_temps_de_pub_prox_mesinfo_par_categ
         query: bulles_categories_secteur_sheets.sql
         columns: A:H
 ```

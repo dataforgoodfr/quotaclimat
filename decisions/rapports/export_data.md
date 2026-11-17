@@ -49,3 +49,32 @@ Les journaux ne contiennent que les noms (rapport, Sheet, onglets, requêtes) et
 6. **Plage du graphique** : le flow ne modifie pas les graphiques (l'API ne permet pas de les réécrire sans perdre les réglages faits à la main). Pour que le graphique suive le nombre de lignes, lui donner une plage ouverte, sans numéro de ligne de fin, par exemple `A1:E` au lieu de `A1:E73`. Les lignes vides sous les données sont effacées à chaque export. À vérifier une fois sur le graphique : il ne doit pas afficher de point vide.
 
 En local : `poetry run python -m quotaclimat.reports.export_data --report <dossier> [--check]`, avec les variables `POSTGRES_*`, `REPORT_EXPORT_DRIVE_FOLDER` et `GOOGLE_SHEETS_EDITOR_SERVICE_ACCOUNT_JSON`.
+
+## Rafraîchir les données d'un rapport
+
+Les requêtes de `queries/` font foi (voir [`decisions.md`](decisions.md)) : on ne colle pas à la main dans le Sheet un résultat obtenu dans Metabase.
+
+1. Si une requête a changé, la fusionner dans `main` et attendre la construction de l'image (le flow lit les requêtes de l'image).
+2. Lancer le flow `quotaclimat/report-export-data` avec `report` = nom du dossier du rapport.
+3. Dans le Sheet, vérifier l'onglet `_export` (date de l'export, nombre de lignes de chaque onglet), puis le contenu attendu de chaque graphique, décrit dans la carte des graphiques du `decisions.md` du rapport.
+4. Dans le Google Doc du rapport, cliquer sur « Mettre à jour » au-dessus de chaque graphique collé depuis le Sheet. Un graphique Sheets collé dans un Doc reste lié mais ne se met pas à jour seul : la version du Doc ne change que quand on le décide.
+5. Si la plage de dates analysée bouge encore, noter la date du rafraîchissement dans le sous-titre du graphique.
+
+## Construire un graphique à bulles (une fois)
+
+Metabase n'écrit pas de nom à côté des points d'un nuage de points : un graphique qui doit nommer ses bulles se fait dans Google Sheets (Insertion, Graphique, type « Graphique à bulles »). Il attend les colonnes dans cet ordre, que la requête doit produire :
+
+| Colonne | Rôle dans le graphique |
+|---|---|
+| 1 (par exemple `etiquette`) | ID, écrit à côté de la bulle ; vide pour un point sans nom (une moyenne) |
+| 2 (`x`) | axe horizontal, numérique (Sheets n'accepte pas de catégorie en abscisse d'un graphique à bulles) |
+| 3 | axe vertical |
+| 4 (`serie`) | série, donc couleur et légende |
+| 5 (`taille`) | taille de la bulle ; une racine carrée de la mesure rend la surface proportionnelle à la mesure |
+
+Les colonnes suivantes ne servent qu'à vérifier.
+
+- Plage de données : les cinq premières colonnes de l'onglet, en-têtes en première ligne, en plage ouverte (`A1:E`, voir ci-dessus).
+- Les couleurs des séries et les axes se règlent dans l'éditeur de graphique (l'API ne les règle pas pour un graphique à bulles) ; les couleurs retenues sont dans le `decisions.md` du rapport.
+- Ne jamais déplacer un point à la main : il reviendrait à l'export suivant. Si des étiquettes se chevauchent, agrandir le graphique.
+- Copier le graphique et le coller dans le Google Doc en gardant le lien avec la feuille de calcul.

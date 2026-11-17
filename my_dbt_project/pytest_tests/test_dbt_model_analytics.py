@@ -1698,11 +1698,11 @@ def test_curated_cas_mesinformation(db_connection):
             WHERE chaine_id = 'sud-radio' AND jour = '2025-04-02'
         """)
         rows = cur.fetchall()
-    # 2025-04-02 09:10 UTC
+    # 2025-04-02 09:10 UTC; no theme: the keyword (ZFE) is in the explanation only, cas_theme reads the claim
     assert rows == [(
         datetime.datetime(2025, 4, 2, 11, 10), "Sud Radio", "France",
         "sud-radio|programme|Mettez-vous d'accord|false|2025-04-02", "invité", True, False, "non renseignée",
-        "automobile", True,
+        None, False,
     )]
 
 

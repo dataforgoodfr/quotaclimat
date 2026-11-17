@@ -434,11 +434,94 @@ class FragmentsClassifier:
                         f"Not merging group {group_id} with group {most_followed_group_id} because it is followed in {following_groups_count[most_followed_group_id]} cases out of {following_groups_count[less_followed_group_id] + following_groups_count[most_followed_group_id]}"
                     )
 
-        for group_id_to_merge, group_id_to_merge_with in groups_to_merge:
-            fragments = self._merge_groups(
-                fragments, group_id_to_merge, group_id_to_merge_with
+        logger.info(
+            f"Classification: merging {len(groups_to_merge)} couples of groups whose "
+            f"fragments follow each other"
+        )
+        return self._apply_merges(fragments, groups_to_merge)
+
+    def _apply_merges(
+        self, fragments: list[Fragment], groups_to_merge: list[tuple[str, str]]
+    ) -> list[Fragment]:
+        """Result of _merge_groups applied for each couple of groups_to_merge, in order.
+
+        _merge_groups goes through every fragment: called once per couple, it made the
+        classification quadratic (thousands of couples on a week of a news channel). Here,
+        the fragments are linked to the next one (merging removes the second fragment) and
+        listed by group, so each merge only visits the fragments of its two groups.
+        """
+        if not groups_to_merge:
+            return fragments
+
+        n = len(fragments)
+        items: list[Fragment | None] = list(fragments)
+        next_slot = list(range(1, n + 1))  # n: no next fragment
+        slots_of_group: dict[str, list[int]] = defaultdict(list)  # in sequence order
+        for slot, fragment in enumerate(items):
+            if fragment.group_id is not None:
+                slots_of_group[fragment.group_id].append(slot)
+
+        def merge_with_next(slot: int, group_id: str) -> None:
+            following = next_slot[slot]
+            fragment, next_fragment = items[slot], items[following]
+            items[slot] = Fragment(
+                start_sec=fragment.start_sec,
+                end_sec=next_fragment.end_sec,
+                channel=fragment.channel,
+                classification=higher_classification(
+                    fragment.classification, next_fragment.classification
+                ),
+                group_id=group_id,
+                chunks=fragment.chunks + next_fragment.chunks,
             )
-        return fragments
+            items[following] = None
+            next_slot[slot] = next_slot[following]
+
+        def next_is_in_group(slot: int, group_id: str) -> bool:
+            following = next_slot[slot]
+            return following < n and items[following].group_id == group_id
+
+        for group_id_to_merge, group_id_to_merge_with in groups_to_merge:
+            if group_id_to_merge == group_id_to_merge_with:
+                # Consecutive fragments of the group merged two by two, from the first one
+                kept = []
+                merged_slots = set()
+                for slot in slots_of_group[group_id_to_merge]:
+                    if slot in merged_slots:
+                        continue
+                    if next_is_in_group(slot, group_id_to_merge):
+                        merged_slots.add(next_slot[slot])
+                        merge_with_next(slot, group_id_to_merge)
+                    kept.append(slot)
+                slots_of_group[group_id_to_merge] = kept
+                continue
+
+            merged = []
+            not_merged = []
+            absorbed = set()
+            for slot in slots_of_group[group_id_to_merge]:
+                if next_is_in_group(slot, group_id_to_merge_with):
+                    absorbed.add(next_slot[slot])
+                    merge_with_next(slot, group_id_to_merge_with)
+                    merged.append(slot)
+                else:
+                    not_merged.append(slot)
+            for slot in slots_of_group[group_id_to_merge_with]:
+                if slot not in absorbed:
+                    # Not merged with previous one; clear group_id to avoid future incoherence
+                    fragment = items[slot]
+                    items[slot] = Fragment(
+                        start_sec=fragment.start_sec,
+                        end_sec=fragment.end_sec,
+                        channel=fragment.channel,
+                        classification=fragment.classification,
+                        group_id=None,
+                        chunks=fragment.chunks,
+                    )
+            slots_of_group[group_id_to_merge] = not_merged
+            slots_of_group[group_id_to_merge_with] = merged
+
+        return [fragment for fragment in items if fragment is not None]
 
     def _get_group_repartition_following(
         self, fragments: list[Fragment], fragment_indexes: list[int]

@@ -157,12 +157,15 @@ async def processor(
             params_hash=fingerprint_hash,
             compare=fingerprints_compare,
             reference_date=start_date,
+            num_workers=num_workers,
         )
 
     #### Chunk grouping
 
     with timings.measure("chunk_grouping"):
-        groups = group_chunks(unknown_chunks, compare=fingerprints_compare)
+        groups = group_chunks(
+            unknown_chunks, compare=fingerprints_compare, num_workers=num_workers
+        )
 
     #### Fragment classification
 

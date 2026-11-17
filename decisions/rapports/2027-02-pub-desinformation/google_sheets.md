@@ -2,8 +2,8 @@
 
 Pourquoi ce chemin : Metabase n'écrit pas le nom des entreprises à côté des bulles d'un nuage de points ([`decisions.md`](decisions.md), § 3). Le graphique du rapport est donc fait dans Google Sheets, avec les données de [`queries/bulles_annonceurs_secteur_sheets.sql`](queries/bulles_annonceurs_secteur_sheets.sql), puis collé dans le Google Doc du rapport. La question Metabase 2500 reste la référence pour explorer (variables, survol).
 
-- Google Sheet : 🔴 [nom ou emplacement du Sheet dans le Drive]
-- Onglet des données : `donnees` (remplacé à chaque rafraîchissement, ne rien y écrire à la main) ; le graphique est dans un autre onglet.
+- Google Sheet : `2027-02-pub-desinformation` (le nom du dossier du rapport).
+- Onglet des données : `donnees` (remplacé à chaque rafraîchissement, ne rien y écrire à la main) ; le graphique à bulles est dans l'onglet `graphique`.
 - Partage : restreint à l'équipe. Les données sont des résultats de suivi non publiés (charte IA) ; pas de lien public.
 
 ## Rafraîchir les données

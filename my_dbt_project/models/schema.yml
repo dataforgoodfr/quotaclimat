@@ -930,8 +930,9 @@ models:
   - name: cas_theme
     description: >
       In the analytics schema. Themes of the validated misinformation cases of the French channels, found by
-      keywords (versioned in the model) in the claim and the explanation of the annotator. One row per case and
-      theme with at least one keyword. A shortlist to review by hand before any external use.
+      keywords (seed mesinfo_theme_mots_cles) in the claim written by the annotator only, not in the explanation
+      nor the transcript, which often speak of something else. One row per case and theme with at least one
+      keyword in the claim. A shortlist to review by hand before any external use.
     columns:
       - name: task_aggregate_id
         description: Label Studio task of the case (cas_de_mesinformation.task_aggregate_id).
@@ -946,17 +947,19 @@ models:
                 values: ['automobile']
       - name: pertinence
         description: >
-          forte (strong keyword in the claim), moyenne (strong keyword in the explanation only, or weak keyword in
-          the claim), faible (weak keyword in the explanation only).
+          forte (strong keyword in the claim), moyenne (weak keywords only in the claim). faible is no longer
+          given (it was a weak keyword in the explanation only).
         tests:
           - not_null
           - accepted_values:
               arguments:
-                values: ['forte', 'moyenne', 'faible']
+                values: ['forte', 'moyenne']
       - name: mots_cles_affirmation
         description: Keywords found in the claim.
       - name: mots_cles_explication
-        description: Keywords found in the explanation.
+        description: >
+          Always NULL: the explanation is no longer read. Kept so that the queries reading the column do not
+          break.
 
   - name: dbt_objects
     description: >

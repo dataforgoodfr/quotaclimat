@@ -26,10 +26,12 @@
 --           trop peu d'heures (1 cas en 6 min d'environnement donne 10 cas par heure) et l'émission est écartée de
 --           tout le calcul, pub comprise
 --   theme_cas type Texte, facultatif (vide : tous les cas) : ne compter que les cas de ce thème
---          (analytics.cas_theme, ex. automobile), rattachés à leur émission par analytics.cas_de_mesinformation
+--          (analytics.cas_theme, ex. automobile : mots-clés trouvés dans l'affirmation du cas seulement),
+--          rattachés à leur émission par analytics.cas_de_mesinformation
 --   pertinence_min type Texte, facultatif (faible si vide), faible, moyenne ou forte (liste déroulante) : avec
---          theme_cas, pertinence minimale des cas du thème (faible : tous, moyenne : moyenne et forte, forte :
---          forte seulement ; une autre valeur ne renvoie rien)
+--          theme_cas, pertinence minimale des cas du thème (forte : un mot-clé fort dans l'affirmation, moyenne :
+--          seulement des mots-clés faibles ; faible ou moyenne : tous les cas du thème, forte : forte seulement ;
+--          une autre valeur ne renvoie rien)
 --   secteur, categorie type Filtre de champ sur Advertising > Pub Annonceur Emission Jour > Secteur / Categorie,
 --          sélection multiple, facultatifs (vides : pas de filtre) : n'afficher que les annonceurs qui ont de la pub
 --          dans ces secteurs / catégories (ex. Automobile, Voiture électrique). Le filtre ne choisit que les lignes

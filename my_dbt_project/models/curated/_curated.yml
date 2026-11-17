@@ -356,7 +356,7 @@ models:
       Une ligne = un cas de mésinformation sur le climat ou l'environnement, détecté automatiquement dans une transcription puis validé par un annotateur de l'Observatoire.
       Période : depuis mai 2023. Pays : France et pays partenaires (`pays`) ; l'émission et les thèmes ne sont connus que pour les chaînes françaises.
       Usage : compter les cas (une ligne = un cas) par chaîne, émission, mois, locuteur ou thème ; lire les affirmations et leurs explications. Pour un taux de mésinformation, rapporter le nombre de cas au temps suivi ou au temps environnement de `curated.emission_jour`.
-      Pièges : un cas est un extrait de 2 minutes, pas une émission entière. Le nombre de cas dépend aussi de l'effort d'annotation : seuls les extraits signalés par le modèle de détection puis relus sont comptés, ce n'est pas un recensement exhaustif. Les thèmes sont trouvés par mots-clés dans l'affirmation et l'explication : un cas peut avoir un thème sans en parler vraiment (pertinence faible), à vérifier avant de citer un exemple. La transcription automatique peut contenir des erreurs : citer l'extrait audio ou vidéo, pas la transcription. Quelques chaînes suivies n'ont pas de grille de programmes (ZDF en Allemagne, La Une en Belgique) : leurs cas sont bien là, avec `chaine_nom` et `pays`, mais leur `chaine_id` n'est pas dans `curated.chaine`. Une jointure interne avec `curated.chaine` les perd : joindre avec LEFT JOIN, ou compter sans jointure.
+      Pièges : un cas est un extrait de 2 minutes, pas une émission entière. Le nombre de cas dépend aussi de l'effort d'annotation : seuls les extraits signalés par le modèle de détection puis relus sont comptés, ce n'est pas un recensement exhaustif. Les thèmes sont trouvés par mots-clés dans l'affirmation seulement (ni l'explication ni la transcription, qui parlent souvent d'autre chose) : un cas peut encore avoir un thème sans en parler vraiment, à vérifier avant de citer un exemple. La transcription automatique peut contenir des erreurs : citer l'extrait audio ou vidéo, pas la transcription. Quelques chaînes suivies n'ont pas de grille de programmes (ZDF en Allemagne, La Une en Belgique) : leurs cas sont bien là, avec `chaine_nom` et `pays`, mais leur `chaine_id` n'est pas dans `curated.chaine`. Une jointure interne avec `curated.chaine` les perd : joindre avec LEFT JOIN, ou compter sans jointure.
       Source : annotations Label Studio (cas dont la première annotation conclut à une mésinformation, sans désaccord), table analytics.cas_de_mesinformation ; thèmes : analytics.cas_theme.
     config:
       meta:
@@ -582,7 +582,7 @@ models:
       - name: themes
         data_type: text
         description: >-
-          Thèmes du cas trouvés par mots-clés dans l'affirmation et l'explication, séparés par des virgules (aujourd'hui : automobile). Chaînes françaises seulement ; vide sans thème. Pour compter par thème, utiliser les colonnes `est_theme_...`.
+          Thèmes du cas trouvés par mots-clés dans l'affirmation, séparés par des virgules (aujourd'hui : automobile). Chaînes françaises seulement ; vide sans thème. Pour compter par thème, utiliser les colonnes `est_theme_...`.
         config:
           meta:
             libelle: Thèmes
@@ -590,7 +590,7 @@ models:
       - name: est_theme_automobile
         data_type: boolean
         description: >-
-          Vrai quand un mot-clé du thème automobile (voiture électrique, moteur thermique, interdiction 2035...) figure dans l'affirmation ou l'explication, quelle que soit sa force.
+          Vrai quand un mot-clé du thème automobile (voiture électrique, moteur thermique, interdiction 2035...) figure dans l'affirmation, quelle que soit sa force.
         config:
           meta:
             libelle: Thème automobile

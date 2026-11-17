@@ -299,8 +299,8 @@ Les questions Metabase, les tableaux de bord et les analyses des équipes lisent
 
 ## Rapports
 
-- Un rapport qui s'appuie sur les données a son dossier `decisions/rapports/<AAAA-MM>-<sujet>/` : lire d'abord `decisions/rapports/decisions.md` (conventions), puis le `decisions.md` du rapport (règles numérotées, carte des graphiques et des questions Metabase).
-- Avant de modifier une question Metabase d'un rapport, vérifier dans la carte des graphiques les autres questions et requêtes de `queries/` qui appliquent la même règle, et les modifier ensemble.
+- Un rapport qui s'appuie sur les données a son dossier `decisions/rapports/<AAAA-MM>-<sujet>/` : lire d'abord `decisions/rapports/decisions.md` (conventions), puis le `decisions.md` du rapport (règles numérotées, carte des graphiques).
+- Les requêtes de `queries/` font foi ; Metabase ne sert qu'à l'exploration. Une règle modifiée se reporte dans toutes les requêtes de `queries/` qui l'appliquent (colonne « Règles » de la carte des graphiques).
 - Le dépôt est public : aucun chiffre ni résultat non publié dans ces fichiers.
 - Ne modifier aucun `decisions.md` sans consigne explicite dans ce sens.
 

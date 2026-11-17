@@ -1,6 +1,6 @@
 # Graphiques à bulles dans Google Sheets
 
-Pourquoi ce chemin : Metabase n'écrit pas de nom à côté des bulles d'un nuage de points ([`decisions.md`](decisions.md), § 3). Les graphiques à bulles du rapport sont donc faits dans Google Sheets, avec les données des requêtes de [`queries/`](queries/), puis collés dans le Google Doc du rapport. Les questions Metabase restent la référence pour explorer (variables, survol).
+Pourquoi ce chemin : Metabase n'écrit pas de nom à côté des bulles d'un nuage de points ([`decisions.md`](decisions.md), § 3). Les graphiques à bulles du rapport sont donc faits dans Google Sheets, avec les données des requêtes de [`queries/`](queries/), puis collés dans le Google Doc du rapport. Les requêtes de `queries/` font foi ; Metabase ne sert qu'à l'exploration.
 
 - Google Sheet : `2027-02-pub-desinformation` (le nom du dossier du rapport).
 - Un onglet par graphique : les données en colonnes A à H (remplacées à chaque rafraîchissement, ne rien y écrire à la main), le graphique à côté, dans le même onglet.
@@ -8,7 +8,7 @@ Pourquoi ce chemin : Metabase n'écrit pas de nom à côté des bulles d'un nuag
 
 | Onglet | Requête | Graphique | Contenu attendu |
 |---|---|---|---|
-| `part_temps_de_pub_prox_mesinfo_par_annonceurs` | [`queries/bulles_annonceurs_secteur_sheets.sql`](queries/bulles_annonceurs_secteur_sheets.sql) | Part exposée par annonceur (partie 3, question Metabase 2500) | 9 secteurs, au plus 6 entreprises par secteur, une ligne « Moyenne du secteur » par secteur |
+| `part_temps_de_pub_prox_mesinfo_par_annonceurs` | [`queries/bulles_annonceurs_secteur_sheets.sql`](queries/bulles_annonceurs_secteur_sheets.sql) | Part exposée par annonceur (partie 3) | 9 secteurs, au plus 6 entreprises par secteur, une ligne « Moyenne du secteur » par secteur |
 | `part_temps_de_pub_prox_mesinfo_par_categ` | [`queries/bulles_categories_secteur_sheets.sql`](queries/bulles_categories_secteur_sheets.sql) | Part exposée par catégorie de produit (partie 4.1, R13) | 3 secteurs, au plus 8 catégories par secteur, une ligne « Moyenne du secteur » par secteur |
 
 ## Rafraîchir les données
@@ -36,7 +36,7 @@ Graphique à bulles de Google Sheets (Insertion, Graphique, type « Graphique à
 Réglages (l'API ne règle ni les couleurs par série ni les axes d'un graphique à bulles : à faire dans l'éditeur) :
 
 - Plage de données : colonnes A à E de l'onglet, en-têtes en première ligne.
-- Couleurs des séries (comme dans Metabase, `decisions.md` § 3) : Automobile et transport `#509EE3`, Alimentation `#88BF4D`, Établissements financiers et assurance `#F2A86F`, Moyenne du secteur en noir `#000000` ; les autres secteurs en couleurs automatiques.
+- Couleurs des séries (`decisions.md` § 3) : Automobile et transport `#509EE3`, Alimentation `#88BF4D`, Établissements financiers et assurance `#F2A86F`, Moyenne du secteur en noir `#000000` ; les autres secteurs en couleurs automatiques.
 - Axe horizontal : l'axe est numérique (Sheets n'accepte pas de catégorie en abscisse d'un graphique à bulles). Masquer ses étiquettes ou les laisser en numéros ; c'est la légende des couleurs qui dit quel secteur est où. Minimum 0,5, maximum le nombre de secteurs + 0,5.
 - Axe vertical : titre « Part du temps de pub autour d'émissions à 1 cas ou plus par heure d'environnement (%) », minimum 0.
 - Bulles : opacité autour de 80 %, police des étiquettes 16.

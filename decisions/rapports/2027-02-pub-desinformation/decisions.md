@@ -9,7 +9,7 @@
 
 ## 1. Objet et architecture
 
-Le rapport décrit quels annonceurs financent, par leur publicité, les émissions de télévision où l'OMÉ relève de la mésinformation climatique. Le plan du rapport a été écrit avant les données ; le tableau de bord 228 reprend ce plan section par section, recrée chaque graphique avec nos données et dit, dans un encadré 🚫, ce qui n'est pas reproductible.
+Le rapport décrit quels annonceurs financent, par leur publicité, les émissions de télévision où l'OMÉ relève de la mésinformation climatique.
 
 Chaîne de données :
 

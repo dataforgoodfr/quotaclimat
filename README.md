@@ -231,22 +231,30 @@ COVER_CHECK_ONLY=true START_DATE=2026-10-12 poetry run python quotaclimat/data_i
 The same summary is written in the text report of a normal detection run.
 
 ### Run the advertising detection
-`entrypoints/ad_s01_run_detection.sh` (Scaleway job `ad_s01_run_detection`) processes one week (Monday to Sunday, Paris time) of one channel per run. Only the 2-minutes files of the shows of the program grid (see "Program Metadata table") (with the same margins as the cover check) are downloaded and analysed: files of the bucket outside the program are skipped, missing ones are reported in the text report. The job's disk is 1 GB while a week of audio weighs several GB (up to ~7 GB for a 24h news channel): files are downloaded, split in chunks and deleted by batches of 100 (`DOWNLOAD_BATCH_SIZE` in `e00_download_audio.py`).
+`entrypoints/ad_s01_run_detection.sh` (Scaleway job `ad_s01_run_detection`) processes one week (Monday to Sunday, Paris time) of every channel that needs it, one channel after the other, then stops:
+
+1. it reads the date of the last occurrence of every channel of `ROLLING_CHANNELS` in `advertising.ad_occurrence` and logs a summary (`State of the channels`): last occurrence and next week to process (the Monday after it) of each channel;
+2. the week to process is the oldest of these next weeks;
+3. the channels to run are the ones whose next week is this one (the others have already been processed on it);
+4. these channels are processed one by one, in the order of `ROLLING_CHANNELS`. A channel that fails does not stop the others: the job fails at the end, and the next run takes this channel again (it is still on the oldest week). The same goes for a run stopped by the job's timeout. The logs end with the status and the duration of every channel (`Result of the week of ...`).
+
+So each run moves the late channels one week forward, and once every channel is on the same week, each run processes one week of all of them. The job's timeout has to cover a week of every channel.
+
+A week in which a channel gets no occurrence at all (no file in Mediatree's bucket, for instance) does not move its last occurrence: the next runs take the same week of this channel again, and the other channels wait. Run the following week by hand for this channel (`CHANNEL`, `START_DATE`) to get out of it.
+
+Only the 2-minutes files of the shows of the program grid (see "Program Metadata table") (with the same margins as the cover check) are downloaded and analysed: files of the bucket outside the program are skipped, missing ones are reported in the text report. The job's disk is 1 GB while a week of audio weighs several GB (up to ~7 GB for a 24h news channel): files are downloaded, split in chunks and deleted by batches of 100 (`DOWNLOAD_BATCH_SIZE` in `e00_download_audio.py`). When a run processes several channels, the local caches (`.cache`: chunks, reports, audio) are deleted after each channel.
 
 | Variable | Purpose |
 |---|---|
-| `CHANNEL` | Channel to process. Empty: taken from `SCHEDULED_ROLLING_CHANNELS`, then `ROLLING_CHANNELS` |
-| `SCHEDULED_ROLLING_CHANNELS` | Channels the job's cron goes through, e.g. `tf1,itele,arte`: the n-th run of a cron's hours runs the n-th channel. Needs `SCHEDULED_ROLLING_CHANNELS_CRON` |
-| `SCHEDULED_ROLLING_CHANNELS_CRON` | The job's cron, e.g. `*/30 1-6 * * *` (every 30 minutes) or `55 7-18 * * *` (every hour at minute 55). It must have one of these two exact shapes, its weekday can be a number or `*` (every day). Several crons are separated by `;` (`15 8-12 * * *;15 20-23 * * *`): each one goes through the whole list. Starting with `-` disables the rotation |
-| `SCHEDULED_ROLLING_CHANNELS_TIMEZONE` | Time zone of the job's cron (default `Europe/Paris`): the cron hours are read in it, not in the container's UTC |
-| `ROLLING_CHANNELS` | `tf1,france2`: rotation of the channels over 2 hours (see `run.py`) |
-| `START_DATE` | Monday of the week to process. Empty: the Monday after the last week with occurrences of the channel in `advertising.ad_occurrence` |
-| `MINIMAL_START_DATE` | Monday to start from for a channel without any occurrence |
+| `ROLLING_CHANNELS` | Channels of the job, e.g. `tf1,itele,arte` |
+| `CHANNEL` | Processes this channel only, instead of `ROLLING_CHANNELS` |
+| `START_DATE` | Monday of the week to process, for every channel of the run (already processed or not). Empty: the oldest "Monday after the last week with occurrences" of the channels |
+| `MINIMAL_START_DATE` | Monday to start from for a channel without any occurrence. A channel added to `ROLLING_CHANNELS` starts from it: it is the only one to run until it has caught up with the others |
 | `AUDIO_WORKERS` | Number of processes (default: Scaleway CPUs minus 2) |
 
 The logs give the start and the duration of every step (`Step <name>: start`, `Step <name>: done in <n>s`): `audio_listing`, `audio_download_and_processing`, `chunk_identification`, `chunk_grouping`, `fragment_classification`, `clean_pre_existing_occurrences`, `database_storage`. `chunk_identification` compares the chunks of the week to the fingerprints of every ad of `advertising.ad`, so it grows with the table: it logs its progress every 30 seconds (ads compared out of the total, fingerprints, candidate and matching chunks).
 
-There is no default value: without a channel or a start date the job fails. When the week to process is not finished yet (less than 7 days ago), the job stops without doing anything, so a scheduled catch-up stops by itself.
+There is no default value: without channels, or without a start date for a channel that has no occurrence, the job fails before processing anything. When the week to process is not finished yet (less than 7 days ago), the job stops without doing anything, so a scheduled catch-up stops by itself.
 
 The chunks of the week are first compared with the ads already in `advertising.ad` (`e03_already_identified_advertising.py`). Only the ads detected less than 3 months before the Monday of the processed week are searched for (`KNOWN_AD_MAX_AGE`): first detection or last occurrence not deleted, on any channel. An older ad that is broadcast again is detected as a new ad.
 

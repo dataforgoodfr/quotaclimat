@@ -1,35 +1,29 @@
--- Rapport pub février 2027, partie 3 : données du graphique à bulles « Part du temps de pub autour d'émissions à fort
--- taux de mésinformation, par annonceur », pour Google Sheets (graphique à bulles avec le nom de chaque entreprise).
--- Même calcul que la question Metabase 2500 (chaînes d'information en continu), mis en forme pour le graphique à bulles
--- de Google Sheets : une colonne d'étiquette, une abscisse numérique, une ordonnée, une série (couleur), une taille.
--- Règles et choix : ../decisions.md (R1 à R11). Procédure Sheets et Docs : ../google_sheets.md.
---
--- Base : Baromètre (Scaleway Postgres, base Metabase 2). SQL brut, sans variable Metabase : les paramètres sont les
--- constantes du CTE parametres, à modifier ici (et dans decisions.md si la règle change).
+-- Part du temps de pub de chaque entreprise annonceuse rattaché à une émission à fort taux de mésinformation, sur les
+-- chaînes d'information en continu, rangée par secteur, avec la moyenne de chaque secteur et celle des chaînes d'info.
+-- Une ligne par bulle d'un graphique à bulles : étiquette, abscisse, ordonnée, série, taille.
+-- SQL brut, sans variable : les paramètres sont les constantes du CTE parametres.
 --
 -- Émission à fort taux de mésinformation : sur la période, au moins seuil cas validés par heure consacrée à
 -- l'environnement (public.emission_jour : nb_cas / env_heures), et au moins env_heures_min heures d'environnement.
--- Rattachement des pubs aux émissions : advertising.pub_annonceur_emission_jour (règle de la question 2358). Niveau
--- annonceur : l'entreprise. Pubs sans marque détectée écartées. Temps d'antenne, pas budget.
+-- Rattachement des pubs aux émissions : advertising.pub_annonceur_emission_jour. Niveau annonceur : l'entreprise.
+-- Pubs sans marque détectée écartées. Temps d'antenne, pas budget.
 -- Secteurs gardés : les nb_secteurs premiers par temps de pub toutes chaînes confondues (généralistes et chaînes
--- d'info), comme le camembert de la partie 1.4 ; points : les nb_points premières entreprises de chaque secteur par
--- temps de pub sur les chaînes d'info. Moyennes pondérées par le temps de pub, calculées sur toutes les entreprises du
--- secteur (ou du type de chaîne), pas seulement les points affichés.
+-- d'info) ; points : les nb_points premières entreprises de chaque secteur par temps de pub sur les chaînes d'info.
+-- Moyennes pondérées par le temps de pub, calculées sur toutes les entreprises du secteur (ou des chaînes d'info), pas
+-- seulement les points gardés.
 --
--- Colonnes, dans l'ordre attendu par le graphique à bulles de Google Sheets :
---   etiquette : nom de l'entreprise ; vide pour les moyennes (pas d'étiquette) ;
---   x : numéro du secteur (rang_secteur, 1 = premier secteur) décalé de -0,3 à +0,3 selon la part de l'entreprise,
---     pour écarter les étiquettes d'un même secteur ; les moyennes sont au centre (x = rang_secteur) ;
+-- Colonnes :
+--   etiquette : nom de l'entreprise ; vide pour les moyennes ;
+--   x : rang du secteur (1 = premier secteur) décalé de -largeur_secteur/2 à +largeur_secteur/2 selon la part de
+--     l'entreprise, pour écarter les étiquettes d'un même secteur ; les moyennes sont au centre (x = rang_secteur) ;
 --   part_proche_pct : part du temps de pub rattaché à une émission à fort taux (de 0 à 100) ;
---   serie : nom du secteur pour les entreprises (une couleur par secteur), « Moyenne du secteur », « Moyenne des
---     chaînes d'info » (même valeur dans chaque secteur : remplace la ligne d'objectif de Metabase) ;
---   taille : racine carrée des minutes de pub (le rayon de la bulle est proportionnel à la valeur, la surface l'est
---     donc aux minutes) ; 1 pour les moyennes.
--- Colonnes suivantes (hors graphique, pour vérifier) : secteur, rang_secteur, pub_min.
+--   serie : nom du secteur pour les entreprises, « Moyenne du secteur », « Moyenne des chaînes d'info » (même valeur
+--     dans chaque secteur) ;
+--   taille : racine carrée des minutes de pub (surface de la bulle proportionnelle aux minutes) ; 1 pour les moyennes ;
+--   secteur, rang_secteur, pub_min : pour vérifier.
 --
--- Plage analysée, la même pour tout le rapport : un an glissant jusqu'au dernier jour de pub extrait
--- (curated.publicite), jamais avant le 29 septembre 2025 (début de l'analyse des publicités) ni après le
--- 31 décembre 2026 (à partir de 2027 : toute l'année 2026).
+-- Plage analysée : un an glissant jusqu'au dernier jour de pub extrait (curated.publicite), jamais avant le
+-- 29 septembre 2025 (début de l'analyse des publicités) ni après le 31 décembre 2026.
 WITH plage AS (
     SELECT GREATEST(DATE '2025-09-29', (m.fin - INTERVAL '1 year')::date + 1) AS debut, m.fin
     FROM (SELECT LEAST(MAX(jour), DATE '2026-12-31') AS fin FROM curated.publicite) m

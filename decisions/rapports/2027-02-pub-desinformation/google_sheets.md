@@ -31,7 +31,7 @@ Graphique à bulles de Google Sheets (Insertion, Graphique, type « Graphique à
 | `x` | axe horizontal | numéro du secteur (1 = premier) : les bulles d'un secteur sont alignées verticalement |
 | `part_proche_pct` | axe vertical | part du temps de pub rattaché à une émission à fort taux, de 0 à 100 |
 | `serie` | série, donc couleur et légende | nom du secteur, ou « Moyenne du secteur » |
-| `taille` | taille de la bulle | racine carrée des minutes de pub ; 2 pour les moyennes |
+| `taille` | taille de la bulle | racine carrée des minutes de pub ; 4 pour les moyennes |
 
 Réglages (l'API ne règle ni les couleurs par série ni les axes d'un graphique à bulles : à faire dans l'éditeur) :
 

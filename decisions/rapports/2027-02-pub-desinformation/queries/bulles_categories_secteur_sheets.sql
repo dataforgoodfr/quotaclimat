@@ -9,7 +9,7 @@
 --   x : rang du secteur (1 = premier secteur) ; les bulles d'un même secteur sont alignées verticalement ;
 --   part_proche_pct : part du temps de pub rattaché à une émission à fort taux (de 0 à 100) ;
 --   serie : nom du secteur pour les catégories, « Moyenne du secteur » pour les moyennes ;
---   taille : racine carrée des minutes de pub (surface de la bulle proportionnelle aux minutes) ; 2 pour les moyennes ;
+--   taille : racine carrée des minutes de pub (surface de la bulle proportionnelle aux minutes) ; 4 pour les moyennes ;
 --   secteur, rang_secteur, pub_min : pour vérifier.
 WITH plage AS (
     SELECT GREATEST(DATE '2025-09-29', (m.fin - INTERVAL '1 year')::date + 1) AS debut, m.fin
@@ -98,7 +98,7 @@ SELECT
     ROUND(p.pub_min::numeric, 1) AS pub_min
 FROM points p
 UNION ALL
-SELECT '', s.rang_secteur, ROUND(s.part_pct::numeric, 3), 'Moyenne du secteur', 2, s.secteur, s.rang_secteur,
+SELECT '', s.rang_secteur, ROUND(s.part_pct::numeric, 3), 'Moyenne du secteur', 4, s.secteur, s.rang_secteur,
     ROUND(s.pub_min::numeric, 1)
 FROM secteurs s
 CROSS JOIN parametres pa

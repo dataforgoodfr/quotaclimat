@@ -1,5 +1,6 @@
 """Export the data of a report to Google Sheets: runs the SQL queries of the report on the barometre database and
-writes each result to a tab of a Google Sheet, replacing the whole tab (headers included).
+writes each result to a tab of a Google Sheet, replacing the whole tab, or only its columns given in
+export_data.yml (e.g. A:H, a chart next to them being kept), headers included.
 
 Run by hand by the Kestra flow quotaclimat/report-export-data (infrastructure/kestra/flows/
 main_quotaclimat_reportexportdata.yaml):
@@ -59,6 +60,7 @@ QUERIES_DIR = "queries"
 # <AAAA-MM>-<sujet>: 2027-02-pub-desinformation
 REPORT_ID_PATTERN = re.compile(r"^[0-9]{4}-(0[1-9]|1[0-2])-[a-z0-9]+(-[a-z0-9]+)*$")
 QUERY_FILE_PATTERN = re.compile(r"^[A-Za-z0-9_-]+\.sql$")
+COLUMNS_PATTERN = re.compile(r"^([A-Z]{1,2}):([A-Z]{1,2})$")
 OUTPUT_TYPES = {"sheet"}
 CREDENTIALS_ENV = "GOOGLE_SHEETS_EDITOR_SERVICE_ACCOUNT_JSON"
 FOLDER_ENV = "REPORT_EXPORT_DRIVE_FOLDER"
@@ -86,6 +88,16 @@ class ExportError(Exception):
 class TabExport:
     tab: str
     query: str  # file name in queries/
+    # columns written, 0-based, end excluded: None = the whole tab; (0, 8) = A:H, the other columns untouched
+    columns: tuple[int, int] | None = None
+
+
+@dataclass(frozen=True)
+class TabContent:
+    """Values of a tab, header first, written from the first column of columns (A when None)."""
+
+    values: list[list]
+    columns: tuple[int, int] | None = None
 
 
 @dataclass(frozen=True)
@@ -127,6 +139,25 @@ def available_reports(reports_dir: Path = REPORTS_DIR) -> list[str]:
 def _require(condition: bool, message: str) -> None:
     if not condition:
         raise ExportError(message)
+
+
+def column_index(letters: str) -> int:
+    """A -> 0, Z -> 25, AA -> 26."""
+    index = 0
+    for letter in letters:
+        index = index * 26 + ord(letter) - ord("A") + 1
+    return index - 1
+
+
+def parse_columns(value: object, where: str) -> tuple[int, int] | None:
+    """'A:H' -> (0, 8): columns written by the export, the other ones left as they are."""
+    if value is None:
+        return None
+    match = COLUMNS_PATTERN.match(value) if isinstance(value, str) else None
+    _require(match is not None, f"{where}: columns must be a range of columns like A:H")
+    start, end = column_index(match.group(1)), column_index(match.group(2))
+    _require(start <= end, f"{where}: columns {value}: first column after the last one")
+    return start, end + 1
 
 
 def _check_keys(item: dict, allowed: set[str], where: str) -> None:
@@ -180,7 +211,7 @@ def parse_config(report: str, config: object, queries_dir: Path) -> ExportConfig
                 isinstance(tab_config, dict),
                 f"{output_where}: each tab must be a mapping with tab and query",
             )
-            _check_keys(tab_config, {"tab", "query"}, f"{output_where}, tab")
+            _check_keys(tab_config, {"tab", "query", "columns"}, f"{output_where}, tab")
             tab, query = tab_config.get("tab"), tab_config.get("query")
             _require(
                 isinstance(tab, str)
@@ -200,7 +231,10 @@ def parse_config(report: str, config: object, queries_dir: Path) -> ExportConfig
                 (queries_dir / query).is_file(),
                 f"{output_where}, tab {tab!r}: {QUERIES_DIR}/{query} not found",
             )
-            tabs.append(TabExport(tab=tab, query=query))
+            columns = parse_columns(
+                tab_config.get("columns"), f"{output_where}, tab {tab!r}"
+            )
+            tabs.append(TabExport(tab=tab, query=query, columns=columns))
 
         names = [t.tab for t in tabs]
         _require(
@@ -381,16 +415,22 @@ def export_tab_values(
     ]
 
 
-def build_requests(existing: list[dict], contents: dict[str, list[list]]) -> list[dict]:
-    """spreadsheets.batchUpdate requests replacing the content of each tab ({tab: rows, header first}): a
-    missing tab is added, a tab too small is enlarged (never shrunk: charts may point beyond), then all its
-    values are cleared (formats and charts kept) and the new ones written from A1."""
+def build_requests(existing: list[dict], contents: dict[str, TabContent]) -> list[dict]:
+    """spreadsheets.batchUpdate requests replacing the content of each tab: a missing tab is added, a tab too
+    small is enlarged (never shrunk: charts may point beyond), then its values are cleared, in every row of
+    its columns (all of them when columns is None), and the new ones written from row 1. Formats, charts and
+    the values of the other columns are kept."""
     by_title = {p["title"]: p for p in existing}
     used_ids = {p["sheetId"] for p in existing}
     requests_ = []
-    for tab, values in contents.items():
+    for tab, content in contents.items():
+        values = content.values
+        start_column, end_column = content.columns or (0, None)
         n_rows = len(values)
-        n_columns = max((len(row) for row in values), default=1)
+        n_columns = max(
+            start_column + max((len(row) for row in values), default=1),
+            end_column or 0,
+        )
         properties = by_title.get(tab)
         if properties is None:
             sheet_id = random.randint(1, 2**31 - 1)
@@ -439,7 +479,15 @@ def build_requests(existing: list[dict], contents: dict[str, list[list]]) -> lis
             requests_.append(
                 {
                     "updateCells": {
-                        "range": {"sheetId": sheet_id},
+                        "range": (
+                            {"sheetId": sheet_id}
+                            if content.columns is None
+                            else {
+                                "sheetId": sheet_id,
+                                "startColumnIndex": start_column,
+                                "endColumnIndex": end_column,
+                            }
+                        ),
                         "fields": "userEnteredValue",
                     }
                 }
@@ -447,7 +495,11 @@ def build_requests(existing: list[dict], contents: dict[str, list[list]]) -> lis
         requests_.append(
             {
                 "updateCells": {
-                    "start": {"sheetId": sheet_id, "rowIndex": 0, "columnIndex": 0},
+                    "start": {
+                        "sheetId": sheet_id,
+                        "rowIndex": 0,
+                        "columnIndex": start_column,
+                    },
                     "rows": _rows(values),
                     "fields": "userEnteredValue",
                 }
@@ -486,7 +538,7 @@ class ReportSheet:
         response.raise_for_status()
         return [s["properties"] for s in response.json().get("sheets", [])]
 
-    def replace_tabs(self, contents: dict[str, list[list]]) -> None:
+    def replace_tabs(self, contents: dict[str, TabContent]) -> None:
         """Replaces the content of the tabs in one batchUpdate: Google applies all the requests or none."""
         response = self.session.post(
             f"{SHEETS_API_URL}/{self.spreadsheet_id}:batchUpdate",
@@ -534,7 +586,7 @@ def export_output(
     logger.info("%s: spreadsheet found, not public", label)
 
     results: dict[str, QueryResult] = {}
-    contents: dict[str, list[list]] = {}
+    contents: dict[str, TabContent] = {}
     counts = []
     for tab in output.tabs:
         if tab.query not in results:
@@ -547,9 +599,14 @@ def export_output(
         values = tab_values(result)
         try:
             check_size(values)
+            if tab.columns and len(result.columns) > tab.columns[1] - tab.columns[0]:
+                raise ExportError(
+                    f"{len(result.columns)} columns, more than the "
+                    f"{tab.columns[1] - tab.columns[0]} of its range columns"
+                )
         except ExportError as e:
             raise ExportError(f"tab {tab.tab!r}: {e}") from None
-        contents[tab.tab] = values
+        contents[tab.tab] = TabContent(values, tab.columns)
         counts.append((tab.tab, tab.query, len(result.rows)))
         logger.info(
             "%s: query %s -> %s rows, %s columns for the tab %r",
@@ -559,8 +616,8 @@ def export_output(
             len(result.columns),
             tab.tab,
         )
-    contents[EXPORT_TAB] = export_tab_values(
-        config.report, now(), pipeline_version(), counts
+    contents[EXPORT_TAB] = TabContent(
+        export_tab_values(config.report, now(), pipeline_version(), counts)
     )
 
     if not apply:

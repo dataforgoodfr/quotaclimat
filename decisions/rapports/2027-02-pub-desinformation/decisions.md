@@ -75,7 +75,7 @@ Tableau de bord 228, dans l'ordre du plan. « Carte » : identifiant de la carte
 | 3 | Principaux annonceurs exposés et leurs agences média | 2504 | 3277 | R12, attribution 2358 | voir § 6 |
 | 3 | Part de CNews dans la pub achetée par chaque groupe d'agences | 2505 | 3278 | R12 | parmi BFM TV, CNews et LCI |
 | 4.1 | Catégories de produits à proximité de la mésinformation, généralistes et chaînes d'info | 2501, 2502 | 3282, 3283 | R6, R7 | trois premiers secteurs de chaque type de chaîne ; non revues depuis R9 et R10 |
-| 4.1 | Part exposée par catégorie de produit, trois premiers secteurs, chaînes d'info (graphique à bulles) | aucune (Google Sheets) | | R6, R7, R9, R13 | `queries/bulles_categories_secteur_sheets.sql`, onglet `categories` du Sheet |
+| 4.1 | Part exposée par catégorie de produit, trois premiers secteurs, chaînes d'info (graphique à bulles) | aucune (Google Sheets) | | R6, R7, R9, R13 | `queries/bulles_categories_secteur_sheets.sql`, onglet `part_temps_de_pub_prox_mesinfo_par_categ` du Sheet |
 | 4.2 | Pubs automobiles à proximité d'une mésinformation sur l'automobile | 2506 | 3285 | R4 | seul thème de cas disponible |
 
 Les questions 2515 et 2516 partagent le même SQL : toute modification se reporte dans les deux. Leurs variables : `tri` (`mesinfo` ou `total`), `type_chaine` (`info`, `generalistes`, `toutes`), `seuil`, `nb_annonceurs` (15), `nb_emissions` (8), `hors_fort_taux` (`oui` ou `non`).

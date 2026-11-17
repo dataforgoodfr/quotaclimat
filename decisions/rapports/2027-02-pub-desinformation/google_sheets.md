@@ -8,8 +8,8 @@ Pourquoi ce chemin : Metabase n'écrit pas de nom à côté des bulles d'un nuag
 
 | Onglet | Requête | Graphique | Contenu attendu |
 |---|---|---|---|
-| `donnees` | [`queries/bulles_annonceurs_secteur_sheets.sql`](queries/bulles_annonceurs_secteur_sheets.sql) | Part exposée par annonceur (partie 3, question Metabase 2500) | 9 secteurs, au plus 6 entreprises par secteur, une ligne « Moyenne du secteur » par secteur |
-| `categories` | [`queries/bulles_categories_secteur_sheets.sql`](queries/bulles_categories_secteur_sheets.sql) | Part exposée par catégorie de produit (partie 4.1, R13) | 3 secteurs, au plus 8 catégories par secteur, une ligne « Moyenne du secteur » par secteur |
+| `part_temps_de_pub_prox_mesinfo_par_annonceurs` | [`queries/bulles_annonceurs_secteur_sheets.sql`](queries/bulles_annonceurs_secteur_sheets.sql) | Part exposée par annonceur (partie 3, question Metabase 2500) | 9 secteurs, au plus 6 entreprises par secteur, une ligne « Moyenne du secteur » par secteur |
+| `part_temps_de_pub_prox_mesinfo_par_categ` | [`queries/bulles_categories_secteur_sheets.sql`](queries/bulles_categories_secteur_sheets.sql) | Part exposée par catégorie de produit (partie 4.1, R13) | 3 secteurs, au plus 8 catégories par secteur, une ligne « Moyenne du secteur » par secteur |
 
 ## Rafraîchir les données
 
@@ -31,7 +31,7 @@ Graphique à bulles de Google Sheets (Insertion, Graphique, type « Graphique à
 | `x` | axe horizontal | numéro du secteur (1 = premier) : les bulles d'un secteur sont alignées verticalement |
 | `part_proche_pct` | axe vertical | part du temps de pub rattaché à une émission à fort taux, de 0 à 100 |
 | `serie` | série, donc couleur et légende | nom du secteur, ou « Moyenne du secteur » |
-| `taille` | taille de la bulle | racine carrée des minutes de pub ; 1 pour les moyennes |
+| `taille` | taille de la bulle | racine carrée des minutes de pub ; 2 pour les moyennes |
 
 Réglages (l'API ne règle ni les couleurs par série ni les axes d'un graphique à bulles : à faire dans l'éditeur) :
 

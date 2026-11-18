@@ -8,6 +8,8 @@ Two modes:
     Any other is rewritten as on a first match, so e4_classify_subcat and e5_canonicalise_brand pick it up again when the dictionary
     doesn't decide.
     Then run e5_canonicalise_brand with RECANONICALISE=1, so the brands reset here are compared with all the others.
+    Not the ads classified in s04_consolidation: corrected by hand, or merged ads (classified on the whole
+    transcript of their pieces, which a later dictionary change does not reach).
 
 DRY_RUN=1 runs everything, then rolls back the writes.
 
@@ -19,7 +21,7 @@ import os
 from collections import Counter
 
 import tqdm
-from sqlalchemy import Select, select, update
+from sqlalchemy import Select, and_, or_, select, update
 
 from postgres.schemas.advertising.models import Ad
 from quotaclimat.data_ingestion.advertising.s03_classification.sector_and_brand.reference_data import (
@@ -28,6 +30,9 @@ from quotaclimat.data_ingestion.advertising.s03_classification.sector_and_brand.
 from quotaclimat.data_ingestion.advertising.s03_classification.utils import (
     database,
     stage_version_stamp,
+)
+from quotaclimat.data_ingestion.advertising.tools.prediction_status import (
+    INHERITED_METHOD,
 )
 from quotaclimat.utils.logger import getLogger
 
@@ -51,10 +56,23 @@ ANSWER_FIELDS = ("method", "sector_code", "subcat_code", "matched_brand")
 
 
 def select_ads(limit: int | None, full_rerun: bool) -> Select:
-    statuses = ("ad_type_done", *MATCHED_STATUSES) if full_rerun else ("ad_type_done",)
+    # Including the ads corrected by hand to another content type, which get not_ad.
+    to_match = Ad.prediction_status == "ad_type_done"
+    if full_rerun:
+        to_match = or_(
+            to_match,
+            and_(
+                Ad.prediction_status.in_(MATCHED_STATUSES),
+                database.NOT_CORRECTED_BY_HAND,
+                or_(
+                    Ad.prediction_method.is_(None),
+                    Ad.prediction_method.not_like(f"{INHERITED_METHOD}%"),
+                ),
+            ),
+        )
     stmt = (
         select(Ad.id, Ad.prediction, Ad.prediction_status, Ad.transcript)
-        .where(Ad.prediction_status.in_(statuses))
+        .where(to_match)
         .where(database.IN_POOL)
         .order_by(Ad.first_detection_date.desc())
     )

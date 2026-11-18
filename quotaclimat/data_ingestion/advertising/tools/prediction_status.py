@@ -43,6 +43,10 @@ NON_FINAL_PREDICTION_STATUSES = (
 # left out of the analyses. None at the moment.
 LEGACY_PREDICTION_STATUSES: tuple[str, ...] = ()
 
+# prediction_method of the ads classified in s04_consolidation, which the classification stages leave alone:
+MANUAL_METHOD = "manual"
+INHERITED_METHOD = "merge_inherited"
+
 # Content types of the classification (e1_classify_ad), written as the fragment_type of the ad
 CONTENT_TYPES = ("AD", "BUMPER", "CHANNEL_PROMO", "SPONSORSHIP", "OTHER")
 # fragment_type of an advertising

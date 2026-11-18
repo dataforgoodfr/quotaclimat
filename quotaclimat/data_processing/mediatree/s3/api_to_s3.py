@@ -113,6 +113,8 @@ def parse_reponse_subtitle(response_sub, channel = None, channel_program = "", c
             new_df["channel.title"] = new_df["channel"].apply(lambda x: x["title"])
             new_df["channel.radio"] = new_df["channel"].apply(lambda x: x["radio"])
             new_df.drop("channel", axis=1, inplace=True)
+            # raw API fields that have no column in the keywords table (would break the PG upsert)
+            new_df.drop(columns=["type", "index"], inplace=True, errors="ignore")
 
             logging.debug("Schema from API before formatting :\n%s", new_df.dtypes)
             pd.set_option('display.max_columns', None)

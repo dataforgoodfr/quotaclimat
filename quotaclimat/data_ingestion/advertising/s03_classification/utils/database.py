@@ -1,11 +1,28 @@
+import os
 from collections.abc import Iterable, Iterator
+from datetime import datetime
 from itertools import islice
 
-from sqlalchemy import Executable, Select
+from sqlalchemy import Executable, Select, and_, exists
 
 from postgres.database_connection import connect_to_db
+from postgres.schemas.advertising.models import Ad, Ad_Occurrence
 
 engine = connect_to_db(use_custom_json_serializer=True)
+
+# The ads every stage handles: not soft deleted (s04_consolidation), and broadcast since
+# CLASSIFICATION_START_DATE (at least one occurrence on or after it).
+CLASSIFICATION_START_DATE = datetime.fromisoformat(
+    os.environ.get("CLASSIFICATION_START_DATE") or "2026-01-01"
+)
+IN_POOL = and_(
+    Ad.deleted_at.is_(None),
+    exists().where(
+        Ad_Occurrence.ad_id == Ad.id,
+        Ad_Occurrence.deleted_at.is_(None),
+        Ad_Occurrence.occurrence_date >= CLASSIFICATION_START_DATE,
+    ),
+)
 
 
 def load_row(statement: Select) -> dict:

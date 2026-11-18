@@ -38,6 +38,7 @@ def select_pending(limit: int | None, rerun: bool) -> list[str]:
     stmt = (
         select(Ad.id)
         .where(Ad.fragment_type == "AD")
+        .where(database.IN_POOL)
         .order_by(Ad.first_detection_date.desc())
     )
     if not rerun:

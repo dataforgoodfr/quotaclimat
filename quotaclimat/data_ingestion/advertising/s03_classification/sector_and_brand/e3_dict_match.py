@@ -55,6 +55,7 @@ def select_ads(limit: int | None, full_rerun: bool) -> Select:
     stmt = (
         select(Ad.id, Ad.prediction, Ad.prediction_status, Ad.transcript)
         .where(Ad.prediction_status.in_(statuses))
+        .where(database.IN_POOL)
         .order_by(Ad.first_detection_date.desc())
     )
     if limit:

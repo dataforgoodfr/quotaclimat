@@ -6,7 +6,7 @@ Classifies the ads detected and exported by s01/s02 (videos in the advertising b
 - `sector_and_brand/`: what is advertised (content type, sector, sub-category, brand), with the brand dictionary deciding whenever it knows the brand. Each stage, the statuses and the reference data are described in [sector_and_brand/README.md](sector_and_brand/README.md).
 - `environmental_content/`: work in progress.
 
-Every stage only picks up the rows in its input state, so re-running is safe and resumes after an interruption. Each result records a stamp (stage, model, sampling settings, prompt/taxonomy/dictionary versions, `run_id`) to trace it back to its inputs.
+Every stage handles the same pool of ads: not soft deleted (`s04_consolidation`), and broadcast since `CLASSIFICATION_START_DATE` (at least one occurrence on or after it). Among them, it only picks up the rows in its input state, so re-running is safe and resumes after an interruption. Each result records a stamp (stage, model, sampling settings, prompt/taxonomy/dictionary versions, `run_id`) to trace it back to its inputs.
 
 ## Stages
 
@@ -42,6 +42,7 @@ The code reads `os.environ`, like the other advertising stages. For manual runs,
 | Variable | Used by |
 |---|---|
 | `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_HOST`, `POSTGRES_PORT` | every stage (`connect_to_db`) |
+| `CLASSIFICATION_START_DATE` (default `2026-01-01`) | every stage; only the ads with an occurrence on or after this date. The others keep what they already have |
 | `BUCKET`, `BUCKET_SECRET`, `ADVERTISING_BUCKET_NAME`, `ADVERTISING_BUCKET_REGION` (default `fr-par`) | stages reading videos (presigned URLs, or the video itself for ASR and OCR) |
 | `ASR_API_URL`, `ASR_API_TOKEN`, `ASR_MODEL_NAME` | `transcription.audio.asr` |
 | `ASR_LANGUAGE` (optional, e.g. `fr`) | same; the language of the audio. Unset: the model detects it for each ad |

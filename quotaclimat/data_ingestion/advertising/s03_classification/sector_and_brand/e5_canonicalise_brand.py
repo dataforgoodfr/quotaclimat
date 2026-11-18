@@ -115,6 +115,7 @@ def select_ads(recanonicalise: bool) -> list[dict]:
         select(Ad.id, Ad.prediction, Ad.predicted_sector, Ad.ocr_transcript)
         .where(Ad.prediction_status.is_not(None))
         .where(func.json_typeof(Ad.prediction) == "array")
+        .where(database.IN_POOL)
         .order_by(Ad.id)
     )
     if not recanonicalise:

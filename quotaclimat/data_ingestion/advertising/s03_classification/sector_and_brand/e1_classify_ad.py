@@ -37,6 +37,7 @@ def select_pending(limit: int | None, channel: str | None = None) -> list[str]:
         select(Ad.id)
         .where(Ad.prediction_status.is_(None))
         .where(Ad.fragment_type != "no_data")
+        .where(database.IN_POOL)
         .order_by(Ad.first_detection_date.desc())
     )
     if channel:

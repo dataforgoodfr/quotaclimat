@@ -49,6 +49,7 @@ def mark_no_sector_found() -> int:
     stmt = (
         update(Ad)
         .where(Ad.prediction_status.in_(PENDING_STATUSES))
+        .where(database.IN_POOL)
         .where(
             or_(
                 Ad.predicted_sector.is_(None),
@@ -65,6 +66,7 @@ def select_pending(limit: int | None) -> list[str]:
     stmt = (
         select(Ad.id)
         .where(Ad.prediction_status.in_(PENDING_STATUSES))
+        .where(database.IN_POOL)
         .order_by(Ad.first_detection_date.desc())
     )
     if limit:

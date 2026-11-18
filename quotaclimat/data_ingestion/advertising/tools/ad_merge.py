@@ -45,6 +45,7 @@ from quotaclimat.data_ingestion.advertising.tools import brand_dictionary
 from quotaclimat.data_ingestion.advertising.tools.prediction_status import (
     AD_CONTENT_TYPE,
     FINAL_PREDICTION_STATUSES,
+    INHERITED_METHOD,
     SUBCATEGORY_PENDING_STATUSES,
 )
 
@@ -52,8 +53,6 @@ MERGE_STATUS_ACTIVE = "active"
 MERGE_STATUS_REVERTED = "reverted"
 ROLE_PIECE = "piece"
 ROLE_ABSORBED = "absorbed"
-# prediction_method and prediction stage of a merged ad classified like its pieces
-INHERITED_METHOD = "merge_inherited"
 # why the classification of the pieces is not inherited (logged by inherit_classification_of_merges)
 INHERITED = "inherited"
 INHERITED_FROM_DICTIONARY = "inherited_from_dictionary"

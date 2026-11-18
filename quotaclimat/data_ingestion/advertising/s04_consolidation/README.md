@@ -194,7 +194,11 @@ What changes in `advertising.ad`, depending on the ad:
 
 - **an advertising already classified** (`fragment_type` `AD`, final `prediction_status`, see
   `tools/prediction_status.py`): the given values replace `predicted_brand`, `predicted_sector`,
-  `predicted_product_category`; `prediction_method` becomes `manual`, `prediction_status` stays;
+  `predicted_product_category`; `prediction_method` becomes `manual`, `prediction_status` stays. An ad still
+  waiting for its sub-category (`dict_miss`, `dict_tier2_no_kw`, `dict_tier3_no_kw`) is only in this case when
+  the correction gives the category: its `prediction_status` becomes `subcat_done`. Without a category, it is an
+  advertising not classified (last case), so that the sub-category stage chooses its category from the corrected
+  brand and sector;
 - **another content type** (`type_contenu` other than `AD`): the ad becomes like a content the classification
   found not to be an advertising. `fragment_type` and the `content_type` of its `ad_type` prediction take the
   content type, `prediction_status` becomes `ad_type_done` (the dictionary stage then sets `not_ad`, as for
@@ -209,13 +213,19 @@ What changes in `advertising.ad`, depending on the ad:
   to the classification at the dictionary stage (`prediction_status = ad_type_done`), with the corrected brand and
   sector in its `ad_type` prediction. The dictionary, then the sub-category stage, give its sector and category,
   like for any ad: a given category is ignored (warning). Without sector and without a brand of the dictionary,
-  the sub-category stage has no sector (warning).
+  the sub-category stage has no sector (warning). Its `prediction_method` is emptied, as the classification
+  stages decide.
+
+The classification stages (`s03_classification/sector_and_brand`) never rewrite an ad whose `prediction_method`
+is `manual`.
 
 The values before the correction (`fragment_type`, `prediction_status`, `prediction_method`, `predicted_*`) are
 written in `valeurs_precedentes`, and in `advertising.ad.prediction`, in an entry
 `{"stage": "manual_correction", "previous": ..., "corrected": ..., "source": {spreadsheet, tab, row}, "at": ...}`
-kept by the classification stages. The other steps treat a corrected ad like the others: the canonicalisation of
-the brands (`RECANONICALIZE_EXISTING=1`) passes on its brand too.
+kept by the classification stages. The other steps (dbt, `s05_enrichment`) treat a corrected ad like the others.
+The canonicalisation of the brands (`e5_canonicalise_brand`, even with `RECANONICALISE=1`) leaves the brand of an
+ad corrected by hand as it is; an ad sent back to the classification, without `prediction_method`, gets its
+spelling from it like any other.
 
 ### New ad from occurrences (`nouvelle_ad`)
 

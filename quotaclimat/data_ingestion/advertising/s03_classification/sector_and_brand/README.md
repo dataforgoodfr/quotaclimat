@@ -52,7 +52,7 @@ No model. It looks up the brand read by `e1_classify_ad` in the [dictionary](#re
 - **Brands are compared as keys**: lowercase, without accents, punctuation or spaces, `œ`/`æ` spelled out and subscripts as digits (`advertising/tools/normalize.py`). So `Coca-Cola`, `coca cola` and `COCACOLA` are the same brand. An alias (`alias_marque`) is matched as the brand itself.
 - **Writes** `prediction_status` and `prediction_method` = the status above; `predicted_sector` (the dictionary's, or the one of `e1_classify_ad` for `dict_tier3_no_kw` and `dict_miss`); `predicted_product_category` when the dictionary decides it; `predicted_brand` = the dictionary's spelling, except for `dict_tier3_no_kw` and `dict_miss`, left to `e5_canonicalise_brand`.
 - `dict_tier2_no_kw`, `dict_tier3_no_kw` and `dict_miss` go to `e4_classify_subcat` for their sub-category.
-- **`FULL_RERUN=1`**: after a dictionary change, reruns it over every ad of the pool it already matched, and the new ones. An ad whose dictionary answer (method, sector, sub-category, brand) didn't change is left as it is, with its sub-category and brand. Any other is rewritten as on a first match, so `e4_classify_subcat` and `e5_canonicalise_brand` pick it up again when the dictionary doesn't decide. The log counts the changes (`dict_tier3 -> dict_miss`...).
+- **`FULL_RERUN=1`**: after a dictionary change, reruns it over every ad of the pool it already matched, and the new ones. An ad whose dictionary answer (method, sector, sub-category, brand) didn't change is left as it is, with its sub-category and brand. Any other is rewritten as on a first match, so `e4_classify_subcat` and `e5_canonicalise_brand` pick it up again when the dictionary doesn't decide. The log counts the changes (`dict_tier3 -> dict_miss`...). Left out: the ads corrected by hand (`prediction_method` `manual`) and the merged ads (`merge_inherited...`), classified in `s04_consolidation`; a dictionary change does not reach the merged ads.
 - **`DRY_RUN=1`** runs everything, then rolls the writes back.
 
 ### `e4_classify_subcat`: sub-category
@@ -71,7 +71,7 @@ No model. It looks up the brand read by `e1_classify_ad` in the [dictionary](#re
 
 ### `e5_canonicalise_brand`: one spelling per brand
 
-- **Selects** the ads with a brand read by `e1_classify_ad` that the dictionary didn't spell (not `dict_tier1`, `dict_tier2`, `dict_tier2_no_kw`, `dict_tier3`) and no `predicted_brand`. With **`RECANONICALISE=1`**, all of them, whatever their `predicted_brand`. Only the ads of the pool are compared: a brand only broadcast before `CLASSIFICATION_START_DATE` is neither in the review tabs nor counted for a group's spelling. Use it after a dictionary change (and `FULL_RERUN`), new verdicts or a threshold change: without it, only the new brands are compared, and only among themselves.
+- **Selects** the ads with a brand read by `e1_classify_ad` that the dictionary didn't spell (not `dict_tier1`, `dict_tier2`, `dict_tier2_no_kw`, `dict_tier3`) and no `predicted_brand`. With **`RECANONICALISE=1`**, all of them, whatever their `predicted_brand`. Never the ads corrected by hand (`prediction_method` `manual`): their brand, or their lack of one, is the reviewer's. Only the ads of the pool are compared: a brand only broadcast before `CLASSIFICATION_START_DATE` is neither in the review tabs nor counted for a group's spelling. Use it after a dictionary change (and `FULL_RERUN`), new verdicts or a threshold change: without it, only the new brands are compared, and only among themselves.
 - **The spelling of each brand key**, in order:
   1. **The dictionary's**, when the key is close to a dictionary brand or alias (score ≥ 92, at most 2 letters apart in length), or when that brand is read on screen by the OCR and the key is recognisably it (≥ 70; ≥ 86 for a dictionary name of 5 letters or fewer).
   2. **Otherwise, the clustering**: a key merges into the closest brand already kept that shares a sector with it (score ≥ 88; ≥ 92 for a key of 5 letters or fewer, where one letter matters more). The shared sector keeps Orange the telecom company apart from an orange juice.
@@ -128,7 +128,7 @@ Every value of `prediction_status`. They are declared in `advertising/tools/pred
 | `dict_tier2_no_kw` | `e3_dict_match` | the dictionary gives the sector and the brand, no keyword decides the sub-category | `e4_classify_subcat` | yes |
 | `dict_tier3_no_kw` | `e3_dict_match` | a brand of several sectors, no keyword decides; the sector of `e1_classify_ad` is kept | `e4_classify_subcat` | yes |
 | `dict_miss` | `e3_dict_match` | brand not in the dictionary; the sector of `e1_classify_ad` is kept | `e4_classify_subcat` | yes |
-| `subcat_done` | `e4_classify_subcat` | sub-category given by the model | | yes |
+| `subcat_done` | `e4_classify_subcat`, `s04_consolidation` (manual correction) | sub-category given by the model, or by hand to an ad waiting for it | | yes |
 | `subcat_parse_error` | `e4_classify_subcat` | invalid answer, kept for inspection | | no |
 | `no_sector_found` | `e4_classify_subcat` | no sector, or a sector without sub-categories in the taxonomy | | no |
 | `merge_inherited` | `s04_consolidation`, merge of split ads | a merged ad with the classification its pieces agree on, or else the one of the pieces covering the longest duration (`tools/ad_merge.py`); not processed by the stages | | yes |
@@ -136,7 +136,9 @@ Every value of `prediction_status`. They are declared in `advertising/tools/pred
 
 `dict_tier2_no_kw`, `dict_tier3_no_kw` and `dict_miss` are final although `e4_classify_subcat` still processes them: they already have their sector, and it only adds the sub-category. `e3_dict_match` with `FULL_RERUN=1` can send an ad at another status back to `e4_classify_subcat`, when the dictionary's answer for it changed. `e5_canonicalise_brand` doesn't change the status.
 
-The merge of split ads also writes `dict_tier1`, `dict_tier2` and `dict_tier3`: a merged ad whose pieces disagree gets the dictionary's decision on their whole transcript, with `prediction_method` `merge_inherited+<status>`. A final status is shown in the analyses only for an advertising (`fragment_type` `AD`): a manual correction can change the content type of a classified ad, or send an ad back to `e3_dict_match` (`ad_type_done`), see `s04_consolidation/README.md` (`e02_manual_corrections`); its `prediction_method` is then `manual`.
+The merge of split ads also writes `dict_tier1`, `dict_tier2` and `dict_tier3`: a merged ad whose pieces disagree gets the dictionary's decision on their whole transcript, with `prediction_method` `merge_inherited+<status>`. A final status is shown in the analyses only for an advertising (`fragment_type` `AD`): a manual correction can change the content type of a classified ad, see `s04_consolidation/README.md` (`e02_manual_corrections`).
+
+The stages never rewrite an ad corrected by hand (`prediction_method` `manual`): a corrected advertising keeps its status (`subcat_done` when the correction gives the sub-category of an ad waiting for it), a content corrected to another type only goes through `e3_dict_match` to get `not_ad`. An ad that a correction sends back to the classification (`ad_type_done`, with the corrected brand and sector in its `ad_type` prediction) has no `prediction_method`, and is processed like any other.
 
 **`prediction_status` vs `prediction_method`**
 

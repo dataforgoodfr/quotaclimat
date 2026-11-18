@@ -7,6 +7,9 @@ from sqlalchemy import Executable, Select, and_, exists
 
 from postgres.database_connection import connect_to_db
 from postgres.schemas.advertising.models import Ad, Ad_Occurrence
+from quotaclimat.data_ingestion.advertising.tools.prediction_status import (
+    MANUAL_METHOD,
+)
 
 engine = connect_to_db(use_custom_json_serializer=True)
 
@@ -23,6 +26,8 @@ IN_POOL = and_(
         Ad_Occurrence.occurrence_date >= CLASSIFICATION_START_DATE,
     ),
 )
+# Ads corrected by hand (s04_consolidation/e02_manual_corrections): no stage rewrites them.
+NOT_CORRECTED_BY_HAND = Ad.prediction_method.is_distinct_from(MANUAL_METHOD)
 
 
 def load_row(statement: Select) -> dict:

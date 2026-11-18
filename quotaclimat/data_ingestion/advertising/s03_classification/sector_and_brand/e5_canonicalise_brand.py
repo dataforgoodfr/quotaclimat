@@ -14,6 +14,7 @@ to a dictionary entry that weren't merged (likely dictionary gaps).
 
 RECANONICALISE=1 redoes every brand not spelled by the dictionary, so that new verdicts
 and threshold changes apply to past ads too. SHEET_REVIEW=0 runs without the sheet.
+The ads corrected by hand (s04_consolidation/e02_manual_corrections) keep their brand, or their lack of one.
 
 Run with ``python -m quotaclimat.data_ingestion.advertising.s03_classification.sector_and_brand.e5_canonicalise_brand``.
 """
@@ -116,6 +117,7 @@ def select_ads(recanonicalise: bool) -> list[dict]:
         .where(Ad.prediction_status.is_not(None))
         .where(func.json_typeof(Ad.prediction) == "array")
         .where(database.IN_POOL)
+        .where(database.NOT_CORRECTED_BY_HAND)
         .order_by(Ad.id)
     )
     if not recanonicalise:

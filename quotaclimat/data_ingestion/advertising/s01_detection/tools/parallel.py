@@ -8,9 +8,11 @@ workers do not touch their memory pages, and a pickled copy (spawn) stays small,
 Python objects of the tens of thousands of chunks of a week weigh about a gigabyte.
 """
 
+import gc
 from collections import deque
 from collections.abc import Callable, Iterable, Iterator
 from concurrent.futures import ProcessPoolExecutor
+from contextlib import contextmanager
 from dataclasses import dataclass
 from typing import Any
 
@@ -19,6 +21,26 @@ import numpy as np
 from .common_objects import Fingerprint
 
 _state: Any = None
+
+
+@contextmanager
+def frozen_gc() -> Iterator[None]:
+    """
+    Wrap the creation and the life of a pool of forked workers.
+
+    A forked worker shares the memory pages of the main process until it writes in them.
+    The garbage collector of a worker writes in the header of every Python object it
+    inherited (the tens of thousands of chunks of the week, about a gigabyte) as soon as
+    it does a full collection: each worker then gets its own copy of these pages.
+    gc.freeze() puts the objects existing at the fork out of reach of the collector, of
+    the workers as of the main process, until the pool is closed.
+    """
+    gc.collect()
+    gc.freeze()
+    try:
+        yield
+    finally:
+        gc.unfreeze()
 
 
 def _set_state(state: Any) -> None:
@@ -58,7 +80,7 @@ def ordered_map(
         return
 
     max_in_flight = max_in_flight or 4 * num_workers
-    with ProcessPoolExecutor(
+    with frozen_gc(), ProcessPoolExecutor(
         max_workers=num_workers, initializer=_set_state, initargs=(state,)
     ) as executor:
         pending = deque()
@@ -82,9 +104,13 @@ class PackedFingerprints:
     peaks. get(i) gives back a Fingerprint whose pairs are a numpy array.
     """
 
-    features: np.ndarray  # (n, 4) float64: duration_sec, energy_mean, spectral_centroid, zcr_mean
+    features: (
+        np.ndarray
+    )  # (n, 4) float64: duration_sec, energy_mean, spectral_centroid, zcr_mean
     pairs: np.ndarray  # (total number of pairs, 4) int32
-    offsets: np.ndarray  # (n + 1,) int64: pairs of fingerprint i = pairs[offsets[i]:offsets[i + 1]]
+    offsets: (
+        np.ndarray
+    )  # (n + 1,) int64: pairs of fingerprint i = pairs[offsets[i]:offsets[i + 1]]
 
     @classmethod
     def pack(cls, fingerprints: list[Fingerprint]) -> "PackedFingerprints":

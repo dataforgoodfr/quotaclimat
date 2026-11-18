@@ -32,9 +32,6 @@ from datetime import UTC, datetime, timedelta
 from sqlalchemy.orm import Session
 
 from postgres.database_connection import connect_to_db
-from quotaclimat.data_ingestion.advertising.s03_classification.dictionary.matcher import (
-    BrandDictionary,
-)
 from quotaclimat.data_ingestion.advertising.s04_consolidation.e01_merge_split_ads.detect import (
     SplitBroadcast,
     build_sequences,
@@ -42,6 +39,7 @@ from quotaclimat.data_ingestion.advertising.s04_consolidation.e01_merge_split_ad
     group_by_source_ads,
     merged_duration_sec,
 )
+from quotaclimat.data_ingestion.advertising.tools import brand_dictionary
 from quotaclimat.data_ingestion.advertising.tools.ad_merge import (
     INHERITED,
     INHERITED_FROM_DICTIONARY,
@@ -63,7 +61,7 @@ def create_group_ad(
     broadcasts: list[SplitBroadcast],
     short_sec: float,
     gap_max_sec: float,
-    dictionary: BrandDictionary | None = None,
+    dictionary: brand_dictionary.Tiers | None = None,
 ) -> str:
     """Create the merged ad of source_ad_ids, with the context of its detection. Returns its id."""
     return create_merged_ad(
@@ -90,7 +88,7 @@ def process_window(
     short_sec: float,
     gap_max_sec: float,
     dry_run: bool,
-    dictionary: BrandDictionary | None = None,
+    dictionary: brand_dictionary.Tiers | None = None,
 ) -> int:
     with engine.connect() as connection:
         pairs = fetch_pairs(connection, date_start, date_end, short_sec, gap_max_sec)
@@ -154,7 +152,7 @@ def process_window(
 
 
 def inherit_classifications(
-    engine, dry_run: bool, dictionary: BrandDictionary | None = None
+    engine, dry_run: bool, dictionary: brand_dictionary.Tiers | None = None
 ) -> int:
     """The merged ads not classified take the classification of their source ads when they agree, or the
     one of the brand dictionary on their whole transcript, or the one of the pieces covering the longest

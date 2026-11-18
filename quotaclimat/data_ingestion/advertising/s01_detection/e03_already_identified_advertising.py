@@ -24,7 +24,7 @@ CURSOR_BATCH_SIZE = 1000
 PROGRESS_LOG_INTERVAL_SEC = 30
 
 # fragment_type of the ads: "advertising" from the detection, then the content type of the
-# classification (s03_classification/pipeline/e02_classify_ad.py), "AD" for an advertising
+# classification (s03_classification/sector_and_brand/e1_classify_ad.py), "AD" for an advertising
 ADVERTISING_FRAGMENT_TYPES = {"advertising", "AD"}
 
 # Only the ads detected (on any channel) less than this before the start of the processed

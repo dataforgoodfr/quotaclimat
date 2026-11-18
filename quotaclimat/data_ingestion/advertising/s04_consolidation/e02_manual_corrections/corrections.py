@@ -15,7 +15,6 @@ import hashlib
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
-from typing import get_args
 
 from sqlalchemy import or_, select, update
 from sqlalchemy.dialects.postgresql import insert
@@ -26,11 +25,9 @@ from postgres.schemas.advertising.models import (
     Ad_Merge,
     Ad_Occurrence,
 )
-from quotaclimat.data_ingestion.advertising.s03_classification.ad_classification_schema import (
-    ContentType,
-)
-from quotaclimat.data_ingestion.advertising.s03_classification.prediction_status import (
+from quotaclimat.data_ingestion.advertising.tools.prediction_status import (
     AD_CONTENT_TYPE,
+    CONTENT_TYPES,
     FINAL_PREDICTION_STATUSES,
 )
 from quotaclimat.data_ingestion.advertising.s04_consolidation.e02_manual_corrections.references import (
@@ -52,8 +49,7 @@ MANUAL_METHOD = "manual"
 MANUAL_STAGE = "manual_correction"
 # entry of advertising.ad.prediction of an ad merged by hand into another (soft deleted)
 MANUAL_FUSION_STAGE = "manual_fusion"
-CONTENT_TYPES = get_args(ContentType)
-# input status of the dictionary stage (s03_classification/pipeline/e03_dict_match.py)
+# input status of the dictionary stage (s03_classification/sector_and_brand/e3_dict_match.py)
 DICT_MATCH_INPUT_STATUS = "ad_type_done"
 # fragment_type of a new ad, the same as the detection: exported and classified by the next steps
 NEW_AD_FRAGMENT_TYPE = "advertising"

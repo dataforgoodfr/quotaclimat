@@ -106,6 +106,8 @@ poetry run python -m quotaclimat.data_ingestion.advertising.s03_classification.s
 
 A new snapshot is only written when the content changed.
 
+The rules of the dictionary and how an ad is matched against them are in `advertising/tools/brand_dictionary.py`, shared with the merge of split ads (`s04_consolidation`), which reads the same tabs from their copy in the database (`advertising.ref_ome_marques_type_*`).
+
 - **`alias_marque`** lists other names of the brand seen in ads (misheard spellings, short forms), separated by `;`: an ad under an alias is matched as the brand itself, with its spelling, sector and sub-category. Variants that differ only by case, accents, punctuation or spaces are already matched without an alias. The sync fails when an alias is another brand's name or the alias of two brands.
 - **`mots_clés_produit`** (types 2 and 3, separated by `;`) are looked for in the product name read by `e1_classify_ad`, and in the transcript only when it found no product. When several keywords match, the one with the most words wins, then the longest; when the most specific ones lead to different sub-categories, none decides.
 
@@ -113,26 +115,28 @@ A new snapshot is only written when the content changed.
 
 ## Statuses
 
-Every value of `prediction_status` written by these stages:
+Every value of `prediction_status`. They are declared in `advertising/tools/prediction_status.py`: `FINAL_PREDICTION_STATUSES`, the ads whose brand and sector are shown in the analyses (`analytics.publicites`, through the dbt var `final_prediction_statuses`, see `my_dbt_project/README.md`, and the screenshots of `s05_enrichment/e02_screenshots`), and `NON_FINAL_PREDICTION_STATUSES`, left out of them. `test/advertising_classification/test_prediction_status.py` reads the code of the advertising package and fails when a status written or read is in neither list, when a declared status is never used, or when the dbt var differs from the Python list: a new status goes into one of the lists, and into this table.
 
-| Status | Set by | Meaning | Then |
-|---|---|---|---|
-| `NULL` | | not classified yet | `e1_classify_ad` |
-| `ad_type_done` | `e1_classify_ad` | an advertising, with its sector | `e3_dict_match` |
-| `not_ad` | `e1_classify_ad` | not an advertising (`fragment_type` `BUMPER`, `CHANNEL_PROMO`, `SPONSORSHIP`, `OTHER`) | final |
-| `ad_type_parse_error` | `e1_classify_ad` | invalid answer, kept for inspection | final |
-| `video_decode_error` | `e1_classify_ad`, `e4_classify_subcat` | the server couldn't read the video | final |
-| `dict_tier1`, `dict_tier2`, `dict_tier3` | `e3_dict_match` | the dictionary decides the sector and the sub-category | final |
-| `dict_tier2_no_kw` | `e3_dict_match` | the dictionary gives the sector and the brand, no keyword decides the sub-category | `e4_classify_subcat` |
-| `dict_tier3_no_kw` | `e3_dict_match` | a brand of several sectors, no keyword decides; the sector of `e1_classify_ad` is kept | `e4_classify_subcat` |
-| `dict_miss` | `e3_dict_match` | brand not in the dictionary; the sector of `e1_classify_ad` is kept | `e4_classify_subcat` |
-| `subcat_done` | `e4_classify_subcat` | sub-category given by the model | final |
-| `subcat_parse_error` | `e4_classify_subcat` | invalid answer, kept for inspection | final |
-| `no_sector_found` | `e4_classify_subcat` | no sector, or a sector without sub-categories in the taxonomy | final |
+| Status | Set by | Meaning | Next | Final |
+|---|---|---|---|---|
+| `NULL` | | not classified yet | `e1_classify_ad` | no |
+| `ad_type_done` | `e1_classify_ad` | an advertising, with its sector | `e3_dict_match` | no |
+| `not_ad` | `e1_classify_ad`, `e3_dict_match` | not an advertising (`fragment_type` `BUMPER`, `CHANNEL_PROMO`, `SPONSORSHIP`, `OTHER`) | | no |
+| `ad_type_parse_error` | `e1_classify_ad` | invalid answer, kept for inspection | | no |
+| `video_decode_error` | `e1_classify_ad`, `e4_classify_subcat` | the server couldn't read the video | | no |
+| `dict_tier1`, `dict_tier2`, `dict_tier3` | `e3_dict_match` | the dictionary decides the sector and the sub-category | | yes |
+| `dict_tier2_no_kw` | `e3_dict_match` | the dictionary gives the sector and the brand, no keyword decides the sub-category | `e4_classify_subcat` | yes |
+| `dict_tier3_no_kw` | `e3_dict_match` | a brand of several sectors, no keyword decides; the sector of `e1_classify_ad` is kept | `e4_classify_subcat` | yes |
+| `dict_miss` | `e3_dict_match` | brand not in the dictionary; the sector of `e1_classify_ad` is kept | `e4_classify_subcat` | yes |
+| `subcat_done` | `e4_classify_subcat` | sub-category given by the model | | yes |
+| `subcat_parse_error` | `e4_classify_subcat` | invalid answer, kept for inspection | | no |
+| `no_sector_found` | `e4_classify_subcat` | no sector, or a sector without sub-categories in the taxonomy | | no |
+| `merge_inherited` | `s04_consolidation`, merge of split ads | a merged ad with the classification its pieces agree on, or else the one of the pieces covering the longest duration (`tools/ad_merge.py`); not processed by the stages | | yes |
+| `no_data` | an earlier version of the sub-category stage | the video was missing | `e3_dict_match` with `FULL_RERUN=1` | no |
 
-`e3_dict_match` with `FULL_RERUN=1` can send an ad at a final status back to `e4_classify_subcat`, when the dictionary's answer for it changed. `e5_canonicalise_brand` doesn't change the status. The database can also hold statuses written outside this folder (e.g. `merge_inherited`, from the merge of split ads).
+`dict_tier2_no_kw`, `dict_tier3_no_kw` and `dict_miss` are final although `e4_classify_subcat` still processes them: they already have their sector, and it only adds the sub-category. `e3_dict_match` with `FULL_RERUN=1` can send an ad at another status back to `e4_classify_subcat`, when the dictionary's answer for it changed. `e5_canonicalise_brand` doesn't change the status.
 
-`analytics.publicites` keeps the ads at `dict_tier1`, `dict_tier2`, `dict_tier3`, `dict_tier2_no_kw`, `dict_tier3_no_kw`, `dict_miss` and `subcat_done`: the last three already have their sector before `e4_classify_subcat` adds the sub-category.
+The merge of split ads also writes `dict_tier1`, `dict_tier2` and `dict_tier3`: a merged ad whose pieces disagree gets the dictionary's decision on their whole transcript, with `prediction_method` `merge_inherited+<status>`. A final status is shown in the analyses only for an advertising (`fragment_type` `AD`): a manual correction can change the content type of a classified ad, or send an ad back to `e3_dict_match` (`ad_type_done`), see `s04_consolidation/README.md` (`e02_manual_corrections`); its `prediction_method` is then `manual`.
 
 **`prediction_status` vs `prediction_method`**
 

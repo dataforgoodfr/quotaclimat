@@ -6,8 +6,11 @@ from quotaclimat.data_ingestion.advertising.s03_classification.utils.schema_base
     MODEL_CONFIG,
     SHORT_TEXT,
 )
+from quotaclimat.data_ingestion.advertising.tools.prediction_status import (
+    CONTENT_TYPES,
+)
 
-ContentType = Literal["AD", "BUMPER", "CHANNEL_PROMO", "SPONSORSHIP", "OTHER"]
+ContentType = Literal[CONTENT_TYPES]
 Confidence = Literal["HIGH", "MEDIUM", "LOW"]
 AdSubject = Literal["PRODUCT", "GENERAL"]
 

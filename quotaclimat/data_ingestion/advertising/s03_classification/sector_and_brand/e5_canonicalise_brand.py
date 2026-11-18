@@ -34,12 +34,12 @@ from quotaclimat.data_ingestion.advertising.s03_classification.sector_and_brand.
     brand_overrides,
     dictionary,
 )
-from quotaclimat.data_ingestion.advertising.s03_classification.sector_and_brand.reference_data.dictionary import (
-    brand_key,
-)
 from quotaclimat.data_ingestion.advertising.s03_classification.utils import (
     database,
     stage_version_stamp,
+)
+from quotaclimat.data_ingestion.advertising.tools.brand_dictionary import (
+    brand_key,
 )
 from quotaclimat.data_ingestion.advertising.tools.normalize import (
     normalize,

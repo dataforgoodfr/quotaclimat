@@ -17,6 +17,9 @@ from quotaclimat.data_ingestion.advertising.s03_classification.sector_and_brand.
     dictionary,
     sheets,
 )
+from quotaclimat.data_ingestion.advertising.tools.brand_dictionary import (
+    brand_key,
+)
 
 OVERRIDES_TAB = "brand_overrides"
 AUDIT_TABS = {
@@ -38,7 +41,7 @@ OVERRIDE_COLUMNS = [
 
 
 def pair(a: object, b: object) -> frozenset[str] | None:
-    keys = frozenset((dictionary.brand_key(str(a)), dictionary.brand_key(str(b))))
+    keys = frozenset((brand_key(str(a)), brand_key(str(b))))
     return keys if len(keys) == 2 and all(keys) else None
 
 

@@ -110,6 +110,7 @@ def refresh_finals(
     stmt = (
         select(*AD_COLUMNS, Ad.environmental_content_final)
         .where(Ad.environmental_content_prediction.is_not(None))
+        .where(database.IN_POOL)
         .order_by(Ad.first_detection_date.desc())
     )
     if sectors:

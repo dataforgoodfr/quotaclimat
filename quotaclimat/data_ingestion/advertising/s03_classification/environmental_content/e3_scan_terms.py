@@ -44,6 +44,7 @@ def select_ads(sectors: Sequence[str] | None) -> Select:
         )
         .where(Ad.fragment_type == "AD")
         .where(or_(Ad.transcript.is_not(None), Ad.ocr_transcript.is_not(None)))
+        .where(database.IN_POOL)
     )
     if sectors:
         stmt = stmt.where(Ad.predicted_sector.in_(sectors))

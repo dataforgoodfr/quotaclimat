@@ -1,7 +1,7 @@
 """Add ocr_transcript column to ad
 
 Revision ID: c5e7a9b1d3f2
-Revises: f4a8c2e6d1b3
+Revises: a7c3e9f1b2d4
 Create Date: 2026-10-27
 
 """
@@ -13,7 +13,7 @@ import sqlalchemy as sa
 from alembic import op
 
 revision: str = "c5e7a9b1d3f2"
-down_revision: Union[str, None] = "f4a8c2e6d1b3"
+down_revision: Union[str, None] = "a7c3e9f1b2d4"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

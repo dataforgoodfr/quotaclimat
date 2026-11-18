@@ -4,7 +4,7 @@ Five stages that tell what each ad advertises: its content type, sector, sub-cat
 
 The pipeline combines a rules-based dictionary lookup and a vision LLM. The dictionary is the source of truth when it knows the brand; the model fills in the gaps for unknown brands and ambiguous cases.
 
-Each stage selects the ads by their `prediction_status`, processes them, and writes a new status that is either final or picked up by a downstream stage. How a stage runs, the environment variables and the installation: [../README.md](../README.md).
+Each stage selects the ads of the pool (not soft deleted, broadcast since `CLASSIFICATION_START_DATE`, see [../README.md](../README.md)) by their `prediction_status`, processes them, and writes a new status that is either final or picked up by a downstream stage. How a stage runs, the environment variables and the installation: [../README.md](../README.md).
 
 ## Stages
 
@@ -52,7 +52,7 @@ No model. It looks up the brand read by `e1_classify_ad` in the [dictionary](#re
 - **Brands are compared as keys**: lowercase, without accents, punctuation or spaces, `œ`/`æ` spelled out and subscripts as digits (`advertising/tools/normalize.py`). So `Coca-Cola`, `coca cola` and `COCACOLA` are the same brand. An alias (`alias_marque`) is matched as the brand itself.
 - **Writes** `prediction_status` and `prediction_method` = the status above; `predicted_sector` (the dictionary's, or the one of `e1_classify_ad` for `dict_tier3_no_kw` and `dict_miss`); `predicted_product_category` when the dictionary decides it; `predicted_brand` = the dictionary's spelling, except for `dict_tier3_no_kw` and `dict_miss`, left to `e5_canonicalise_brand`.
 - `dict_tier2_no_kw`, `dict_tier3_no_kw` and `dict_miss` go to `e4_classify_subcat` for their sub-category.
-- **`FULL_RERUN=1`**: after a dictionary change, reruns it over every ad it already matched, and the new ones. An ad whose dictionary answer (method, sector, sub-category, brand) didn't change is left as it is, with its sub-category and brand. Any other is rewritten as on a first match, so `e4_classify_subcat` and `e5_canonicalise_brand` pick it up again when the dictionary doesn't decide. The log counts the changes (`dict_tier3 -> dict_miss`...).
+- **`FULL_RERUN=1`**: after a dictionary change, reruns it over every ad of the pool it already matched, and the new ones. An ad whose dictionary answer (method, sector, sub-category, brand) didn't change is left as it is, with its sub-category and brand. Any other is rewritten as on a first match, so `e4_classify_subcat` and `e5_canonicalise_brand` pick it up again when the dictionary doesn't decide. The log counts the changes (`dict_tier3 -> dict_miss`...).
 - **`DRY_RUN=1`** runs everything, then rolls the writes back.
 
 ### `e4_classify_subcat`: sub-category
@@ -71,7 +71,7 @@ No model. It looks up the brand read by `e1_classify_ad` in the [dictionary](#re
 
 ### `e5_canonicalise_brand`: one spelling per brand
 
-- **Selects** the ads with a brand read by `e1_classify_ad` that the dictionary didn't spell (not `dict_tier1`, `dict_tier2`, `dict_tier2_no_kw`, `dict_tier3`) and no `predicted_brand`. With **`RECANONICALISE=1`**, all of them, whatever their `predicted_brand`. Use it after a dictionary change (and `FULL_RERUN`), new verdicts or a threshold change: without it, only the new brands are compared, and only among themselves.
+- **Selects** the ads with a brand read by `e1_classify_ad` that the dictionary didn't spell (not `dict_tier1`, `dict_tier2`, `dict_tier2_no_kw`, `dict_tier3`) and no `predicted_brand`. With **`RECANONICALISE=1`**, all of them, whatever their `predicted_brand`. Only the ads of the pool are compared: a brand only broadcast before `CLASSIFICATION_START_DATE` is neither in the review tabs nor counted for a group's spelling. Use it after a dictionary change (and `FULL_RERUN`), new verdicts or a threshold change: without it, only the new brands are compared, and only among themselves.
 - **The spelling of each brand key**, in order:
   1. **The dictionary's**, when the key is close to a dictionary brand or alias (score ≥ 92, at most 2 letters apart in length), or when that brand is read on screen by the OCR and the key is recognisably it (≥ 70; ≥ 86 for a dictionary name of 5 letters or fewer).
   2. **Otherwise, the clustering**: a key merges into the closest brand already kept that shares a sector with it (score ≥ 88; ≥ 92 for a key of 5 letters or fewer, where one letter matters more). The shared sector keeps Orange the telecom company apart from an orange juice.

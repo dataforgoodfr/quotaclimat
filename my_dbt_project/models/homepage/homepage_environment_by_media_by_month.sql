@@ -1,5 +1,6 @@
 {{ config(
     materialized='incremental'
+    ,incremental_strategy='delete+insert'
     ,unique_key=['start','channel_title']
   )
 }}
@@ -149,6 +150,8 @@ WITH grouped_data AS (
                   )
                 )
             WHERE "public"."keywords"."country" = 'france' AND  "Program Metadata - Channel Name"."country" = 'france'
+            -- a month is the average of its weekly shares: the window starts on the first Monday of a month
+            AND {{ in_window('"public"."keywords"."start"', align='month') }}
             ) AS "source"
         
   GROUP BY

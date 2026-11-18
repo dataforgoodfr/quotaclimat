@@ -1,5 +1,6 @@
 {{ config(
     materialized='incremental'
+    ,incremental_strategy='delete+insert'
     ,unique_key=['id']
   )
 }}
@@ -14,6 +15,7 @@ with clean_keywords AS (
         "public"."keywords"
 	 WHERE
         "public"."keywords"."start" >= '2025-01-01'
+		AND {{ in_window('"public"."keywords"."start"') }}
 		AND "public"."keywords"."number_of_keywords" > 0
 		AND "public"."keywords"."country" = 'france'
 		AND "public"."keywords"."channel_title" <> 'C8'
@@ -112,6 +114,7 @@ FROM
 INNER JOIN distinct_kw ON distinct_kw.distinct_id = "public"."keywords".id
 WHERE
   "public"."keywords"."start" >= '2025-01-01'
+  AND {{ in_window('"public"."keywords"."start"') }}
   AND "public"."keywords"."number_of_keywords" > 0
   AND "public"."keywords"."country" = 'france'
   AND "public"."keywords"."channel_title" <> 'C8'

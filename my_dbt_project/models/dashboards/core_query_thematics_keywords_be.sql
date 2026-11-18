@@ -1,5 +1,6 @@
 {{ config(
     materialized='incremental',
+    incremental_strategy='delete+insert',
     unique_key=['week','channel_title'],
     on_schema_change='append_new_columns'
   )
@@ -12,22 +13,30 @@ WITH grid_channels AS (
     ]) AS channel_name
 ),
 
-channel_map AS (
-    SELECT channel_name, MAX(channel_title) AS channel_title
+-- ===== a single read of the Belgian keywords (the slow part of this model is the disk), over the window =====
+-- kw_scoped, channel_map and jours_captes below all derive from it
+kw_base AS MATERIALIZED (
+    SELECT channel_name, channel_title, channel_program, channel_program_type, start, country,
+           keywords_with_timestamp
     FROM "public"."keywords"
     WHERE country = 'belgium'
+      AND {{ in_window('start') }}
+),
+
+channel_map AS (
+    SELECT channel_name, MAX(channel_title) AS channel_title
+    FROM kw_base
     GROUP BY channel_name
 ),
 
 kw_scoped AS (
     SELECT k.*
-    FROM "public"."keywords" k
-    WHERE k.country = 'belgium'
-      AND k.channel_name IN (SELECT channel_name FROM grid_channels)
+    FROM kw_base k
+    WHERE k.channel_name IN (SELECT channel_name FROM grid_channels)
       AND EXISTS (
           SELECT 1 FROM "public"."program_metadata" pm
-          WHERE pm.country       = 'belgium'
-            AND pm.channel_name  = k.channel_name
+          WHERE pm.country      = 'belgium'
+            AND pm.channel_name = k.channel_name
             AND pm.channel_program = k.channel_program
             AND COALESCE(pm.channel_program_type,'') = COALESCE(k.channel_program_type,'')
             AND COALESCE(NULLIF(((EXTRACT(DOW FROM k.start)::int + 1 + 6) % 7), 0), 7) = pm.weekday
@@ -36,9 +45,8 @@ kw_scoped AS (
       )
     UNION ALL
     SELECT k.*
-    FROM "public"."keywords" k
-    WHERE k.country = 'belgium'
-      AND k.channel_name NOT IN (SELECT channel_name FROM grid_channels)
+    FROM kw_base k
+    WHERE k.channel_name NOT IN (SELECT channel_name FROM grid_channels)
 ),
 
 kw_chunks_daily AS (
@@ -50,14 +58,14 @@ tm_daily AS (
     SELECT channel_name, CAST(start AS date) AS day, SUM(duration_minutes) AS duration_minutes
     FROM "public"."time_monitored"
     WHERE country = 'belgium'
+      AND {{ in_window('start') }}
     GROUP BY 1, 2
 ),
 
 -- ===== garde-fou + durée théorique =====
 jours_captes AS (
     SELECT channel_name, CAST(start AS date) AS day
-    FROM "public"."keywords"
-    WHERE country = 'belgium'
+    FROM kw_base
     GROUP BY 1, 2
 ),
 theorique_daily AS (

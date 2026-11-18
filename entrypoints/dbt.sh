@@ -2,7 +2,7 @@
 
 # Usage: dbt.sh [analytics] [full-refresh]
 # Without argument: all the models, the incremental ones (models/dashboards, models/homepage) recompute only the last
-# DBT_LOOKBACK_WEEKS weeks (8 by default, see my_dbt_project/macros/incremental_window.sql).
+# DBT_LOOKBACK_WEEKS weeks (1 by default: from the Monday of the previous week, see my_dbt_project/macros/incremental_window.sql).
 # With "analytics": leaves out the models of models/dashboards and models/homepage (computed from the whole
 # public.keywords table, the long part of the run), which keep their last build. The other models (the tables read
 # by the Metabase questions) are rebuilt as in a full run. Flow dbt-analytics.
@@ -26,7 +26,7 @@ fi
 if [[ ${#full_refresh[@]} -gt 0 ]]; then
     echo "full refresh of the incremental models"
 fi
-lookback_vars="{dashboards_lookback_weeks: ${DBT_LOOKBACK_WEEKS:-8}}"
+lookback_vars="{dashboards_lookback_weeks: ${DBT_LOOKBACK_WEEKS:-1}}"
 
 echo "ingest labelstudio data into barometre database"
 poetry run python -m quotaclimat.data_ingestion.labelstudio.ingest_labelstudio

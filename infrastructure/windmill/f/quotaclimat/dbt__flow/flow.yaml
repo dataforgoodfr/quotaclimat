@@ -10,7 +10,7 @@ description: |-
   long part, computed from the whole keywords table) are left out and keep their
   last build.
   The incremental models of models/dashboards and models/homepage recompute only
-  the last weeks (8 by default). With full_refresh they are rebuilt from the whole
+  the last weeks (1 by default: from the Monday of the previous week). With full_refresh they are rebuilt from the whole
   keywords table (dbt.sh does it by itself on the first day of each month).
 value:
   modules:

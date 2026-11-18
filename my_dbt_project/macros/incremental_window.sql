@@ -3,7 +3,7 @@
 
   These models aggregate public.keywords by week (or by month for the homepage). Read from the whole table at every
   run they cost ~20 minutes each (mostly disk reads), so an incremental run only recomputes the last
-  `dashboards_lookback_weeks` weeks (var, 8 by default) and replaces the rows of those weeks (delete+insert on the
+  `dashboards_lookback_weeks` weeks (var, 1 by default: from the Monday of the previous week) and replaces the rows of those weeks (delete+insert on the
   unique_key of the model). Older weeks keep their last build.
 
   The window always starts on a Monday (the weeks are complete, so the sums and the shares are right), or, with
@@ -20,7 +20,7 @@
 #}
 
 {% macro window_start(align='week') %}
-  {%- set weeks = var('dashboards_lookback_weeks', 8) | int -%}
+  {%- set weeks = var('dashboards_lookback_weeks', 1) | int -%}
   {%- if align == 'month' -%}
     date_trunc('week', date_trunc('month', date_trunc('week', now() - make_interval(weeks => {{ weeks }}))) + interval '6 days')
   {%- else -%}

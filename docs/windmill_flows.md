@@ -106,7 +106,7 @@ Kestra's `concurrency` limit is an Enterprise feature in Windmill. The steps of 
 
 The queue is per step, not per run: for two runs A and B started together, the order can be A `dbt.sh`, B `dbt.sh`, A `curated.sh`, B `curated.sh`. Two dbt containers never overlap, which is what matters (they drop and rebuild the same tables).
 
-Inputs of `f/quotaclimat/dbt` (default `false`, applied with `?? false`): `only_analytics` runs `dbt.sh analytics` and `full_refresh` runs `dbt.sh full-refresh`. By default the incremental models of `models/dashboards` and `models/homepage` recompute only the last 8 weeks (env `DBT_LOOKBACK_WEEKS`); `full_refresh` rebuilds them from the whole `keywords` table (about 35 minutes), as `dbt.sh` does by itself on the first day of each month. See [`kestra_flows.md`](kestra_flows.md#4-dbt_run_transformations-models).
+Inputs of `f/quotaclimat/dbt` (default `false`, applied with `?? false`): `only_analytics` runs `dbt.sh analytics` and `full_refresh` runs `dbt.sh full-refresh`. By default the incremental models of `models/dashboards` and `models/homepage` recompute only the weeks since the Monday of the previous week (env `DBT_LOOKBACK_WEEKS`); `full_refresh` rebuilds them from the whole `keywords` table (about 35 minutes), as `dbt.sh` does by itself on the first day of each month. See [`kestra_flows.md`](kestra_flows.md#4-dbt_run_transformations-models).
 
 ## Secrets
 

@@ -41,7 +41,13 @@ def _mediatree_channels(channel: str) -> list[str]:
 
 
 def get_s3_filesystem(**kwargs) -> s3fs.S3FileSystem:
-    """`kwargs` go to `s3fs.S3FileSystem` (e.g. `asynchronous`, `skip_instance_cache`)."""
+    """`kwargs` go to `s3fs.S3FileSystem` (e.g. `asynchronous`, `skip_instance_cache`).
+
+    The instance cache is skipped by default: a cached instance keeps the aiohttp
+    session of the event loop it was first used in, so the next `asyncio.run` of the
+    same process (the next channel of a detection run) fails with "Event loop is closed".
+    """
+    kwargs.setdefault("skip_instance_cache", True)
     return s3fs.S3FileSystem(
         key=ACCESS_KEY,
         secret=SECRET_KEY,

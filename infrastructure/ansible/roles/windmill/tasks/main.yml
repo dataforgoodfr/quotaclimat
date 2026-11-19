@@ -36,6 +36,20 @@
   until: windmill_health.rc == 0
   changed_when: false
 
+# Traefik routes to the server only once its Docker health check passes (up to 30 s after a
+# recreation): until then the public URL answers 404, and the API calls below would fail.
+- name: Wait for Windmill to be reachable at its public URL
+  uri:
+    url: "https://{{ windmill_domain }}/api/version"
+    return_content: false
+  register: windmill_public
+  retries: 30
+  delay: 5
+  until: windmill_public.status == 200
+  delegate_to: localhost
+  become: false
+  changed_when: false
+
 # API calls to the public URL: run from the machine running Ansible, without SSH or sudo
 # (one call per secret: through SSH + sudo, a single slow sudo prompt fails the run)
 - name: Sync the secrets

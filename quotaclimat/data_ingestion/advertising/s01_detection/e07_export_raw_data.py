@@ -8,6 +8,7 @@ from urllib.parse import quote
 import boto3
 
 from .tools.common_objects import Chunk, Fragment
+from .tools.memory import MemoryPeak
 from .tools.visualizer.weekly_viewer import generate_weekly_viewer
 
 logger = logging.getLogger(__name__)
@@ -41,14 +42,21 @@ class Timer:
         self.key = key
 
     def __enter__(self):
-        # Logged so that the job's logs show which step is running, and for how long
-        logger.info(f"Step {self.key}: start")
+        # Logged so that the job's logs show which step is running, for how long, and
+        # the memory it took (to find the step that brings the job near its limit)
+        self.memory = MemoryPeak()
+        self.memory.__enter__()
+        logger.info(f"Step {self.key}: start (memory: {self.memory.summary()})")
         self.t0 = time.monotonic()
 
     def __exit__(self, exc_type, exc_value, exc_traceback):
         self.timings[self.key] = time.monotonic() - self.t0
+        self.memory.__exit__(exc_type, exc_value, exc_traceback)
         outcome = "done" if exc_type is None else f"failed ({exc_type.__name__})"
-        logger.info(f"Step {self.key}: {outcome} in {self.timings[self.key]:.0f}s")
+        logger.info(
+            f"Step {self.key}: {outcome} in {self.timings[self.key]:.0f}s "
+            f"(memory peak: {self.memory.summary()})"
+        )
 
 
 class TimingCollector:

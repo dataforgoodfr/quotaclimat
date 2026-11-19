@@ -1,24 +1,40 @@
 import asyncio
 import logging
 import math
+import multiprocessing
 import os
+import shutil
 import sys
-from datetime import date, datetime, timedelta, timezone
+import time
+from datetime import date, datetime, timedelta
 
 from sentry_sdk.crons import monitor
-from sqlalchemy import desc, select
+from sqlalchemy import func, select
 
 from postgres.database_connection import get_db_session
 from postgres.schemas.advertising.models import Ad_Occurrence
+from quotaclimat.data_ingestion.advertising.s01_detection.e00_download_audio import (
+    AUDIO_DIR,
+)
 from quotaclimat.data_ingestion.advertising.s01_detection.e01_check_partition_cover import (
     check_bucket_cover,
     tz_paris,
 )
 from quotaclimat.data_ingestion.advertising.s01_detection.processor import processor
-from quotaclimat.data_ingestion.advertising.s01_detection.tools.scheduled_rolling_channels import (
-    get_scheduled_rolling_channel,
+from quotaclimat.data_ingestion.advertising.s01_detection.tools.cache import (
+    GLOBAL_CACHE_FOLDER,
 )
-from quotaclimat.utils.logger import getLogger
+from quotaclimat.data_ingestion.advertising.s01_detection.tools.memory import (
+    memory_summary,
+)
+from quotaclimat.data_ingestion.advertising.s01_detection.tools.rolling_channels import (
+    channel_statuses,
+    format_summary,
+    is_week_finished,
+    parse_channels,
+    plan_week,
+)
+from quotaclimat.utils.logger import getLogger, set_log_prefix
 from quotaclimat.utils.sentry import sentry_init
 
 logger = logging.getLogger(__name__)
@@ -27,29 +43,133 @@ logger = logging.getLogger(__name__)
 METABASE_RESULT_QUESTION = os.environ.get("METABASE_RESULT_QUESTION")
 
 
-def _get_next_start_date_from_db(channel: str) -> str | None:
-    """Monday (Paris) of the week following the last week processed for this channel."""
+def _get_last_occurrences_from_db(channels: list[str]) -> dict[str, datetime]:
+    """Date (naive UTC) of the last occurrence of each channel that has some."""
     with get_db_session() as session:
-        last_occurrence = session.scalars(
-            select(Ad_Occurrence)
-            .where(Ad_Occurrence.channel_name == channel)
-            .order_by(desc(Ad_Occurrence.occurrence_date))
-            .limit(1)
-        ).first()
+        rows = session.execute(
+            select(Ad_Occurrence.channel_name, func.max(Ad_Occurrence.occurrence_date))
+            .where(Ad_Occurrence.channel_name.in_(channels))
+            .group_by(Ad_Occurrence.channel_name)
+        ).all()
+    return {channel: last_occurrence for channel, last_occurrence in rows}
 
-    if last_occurrence is None:
-        return None
 
-    # occurrence_date is a naive UTC datetime (datetime.fromtimestamp in a UTC container).
-    # The last occurrences of a week can fall on the Monday after it (a Sunday show
-    # crossing midnight, plus its margin): going back 12 hours puts them in their week.
-    last_occurrence_paris = last_occurrence.occurrence_date.replace(
-        tzinfo=timezone.utc
-    ).astimezone(tz_paris) - timedelta(hours=12)
-    last_monday = last_occurrence_paris.date() - timedelta(
-        days=last_occurrence_paris.weekday()
+def _clean_local_files():
+    # The job's disk cannot hold the chunks of several channels: between two channels,
+    # drop the caches and the audio files a failed channel may have left
+    for folder in {GLOBAL_CACHE_FOLDER, AUDIO_DIR}:
+        shutil.rmtree(folder, ignore_errors=True)
+
+
+def _run_in_subprocess(target, *args) -> bool:
+    """Run target(*args) in a new Python process (spawn), True if it succeeded.
+
+    Python does not give back to the system the memory of the objects it freed: after a
+    channel, the main process keeps the memory of the biggest week processed so far, and
+    the worker processes forked from it inherit it. A new process per channel starts
+    each channel from an empty memory. The child logs its own errors.
+    """
+    process = multiprocessing.get_context("spawn").Process(target=target, args=args)
+    process.start()
+    process.join()
+    if process.exitcode != 0:
+        # Negative: killed by this signal (-9: SIGKILL, from the system when out of memory)
+        logger.error(f"The process of {args} ended with exit code {process.exitcode}")
+    return process.exitcode == 0
+
+
+def _process_week_in_subprocess(channel: str, start_date: str):
+    # Entry point of the process of one channel: logs and Sentry are set up again
+    getLogger(prefix=channel)
+    sentry_init()
+    try:
+        _process_week(channel, start_date)
+    except Exception:
+        logger.exception(f"Detection failed for {channel} on the week of {start_date}")
+        sys.exit(1)
+
+
+def _format_duration(seconds: float) -> str:
+    minutes = int(seconds // 60)
+    return f"{minutes // 60}h{minutes % 60:02d}"
+
+
+def _run_detection():
+    # One run processes one week of every channel that needs it, one by one, then stops:
+    # - channels: CHANNEL (a single one) or ROLLING_CHANNELS=tf1,france2,arte
+    # - week: START_DATE, or the oldest "Monday after the last occurrence" of these channels
+    # - only the channels not processed yet on this week are run
+    channels = parse_channels(
+        os.environ.get("CHANNEL") or os.environ.get("ROLLING_CHANNELS")
     )
-    return (last_monday + timedelta(days=7)).isoformat()
+    assert channels, (
+        "Need channels to run the detection process: CHANNEL or ROLLING_CHANNELS "
+        "(SCHEDULED_ROLLING_CHANNELS is not read anymore)"
+    )
+
+    forced_start_date = os.environ.get("START_DATE")
+    minimal_start_date = os.environ.get("MINIMAL_START_DATE")
+
+    statuses = channel_statuses(
+        channels,
+        _get_last_occurrences_from_db(channels),
+        date.fromisoformat(minimal_start_date) if minimal_start_date else None,
+    )
+    week, channels_to_run = plan_week(
+        statuses,
+        date.fromisoformat(forced_start_date) if forced_start_date else None,
+    )
+    logger.info(format_summary(statuses, week, channels_to_run))
+
+    assert week.weekday() == 0, f"start_date {week} is not a Monday"
+    if not is_week_finished(week, datetime.now(tz=tz_paris).date()):
+        # Catching up is over: the week is not finished yet
+        logger.info(f"Week of {week} not finished yet, nothing to process")
+        return
+
+    results = []
+    for index, channel in enumerate(channels_to_run):
+        logger.info(
+            f"Channel {index + 1}/{len(channels_to_run)}: {channel}, week of {week}"
+        )
+        started = time.monotonic()
+        # Every log line of this channel (worker processes included) starts with it
+        set_log_prefix(channel)
+        try:
+            if len(channels_to_run) > 1:
+                # Each channel in its own process, to start it from an empty memory
+                succeeded = _run_in_subprocess(
+                    _process_week_in_subprocess, channel, week.isoformat()
+                )
+            else:
+                _process_week(channel, week.isoformat())
+                succeeded = True
+        except Exception:
+            logger.exception(f"Detection failed for {channel} on the week of {week}")
+            succeeded = False
+        finally:
+            set_log_prefix(None)
+        # A failed channel does not stop the others, the job fails at the end
+        status = "done" if succeeded else "FAILED"
+        results.append((channel, status, time.monotonic() - started))
+        if len(channels_to_run) > 1:
+            _clean_local_files()
+        logger.info(f"After {channel}, memory: {memory_summary()}")
+
+    logger.info(
+        "\n".join(
+            [f"Result of the week of {week}:"]
+            + [
+                f"  {channel}: {status} in {_format_duration(duration)}"
+                for channel, status, duration in results
+            ]
+        )
+    )
+    failed = [channel for channel, status, _ in results if status == "FAILED"]
+    if failed:
+        raise RuntimeError(
+            f"Detection failed for {', '.join(failed)} on the week of {week}"
+        )
 
 
 def _scaleway_cpu_numbers() -> int:
@@ -77,13 +197,15 @@ def _run_cover_check():
 
 
 def _process_week(channel: str, start_date: str):
+    # Worker processes of the CPU bound steps (audio processing, comparison of the
+    # fingerprints): one per CPU but one, left to the main process (downloads, database)
     num_workers = max(
         1,
-        (int(os.environ.get("AUDIO_WORKERS") or "0") or (_scaleway_cpu_numbers() - 2)),
+        (int(os.environ.get("AUDIO_WORKERS") or "0") or (_scaleway_cpu_numbers() - 1)),
     )
 
     logger.info(
-        f"Start processing of 1 week of {channel} starting from {start_date} on {num_workers} cpu"
+        f"Start processing of 1 week of {channel} starting from {start_date} on {num_workers} worker processes"
     )
 
     start_datetime = datetime.fromisoformat(start_date)
@@ -120,45 +242,4 @@ if __name__ == "__main__":
         getLogger()
         sentry_init()
 
-        channel = os.environ.get("CHANNEL")
-        if not channel:
-            channel = get_scheduled_rolling_channel()
-        if not channel:
-            # This feature allow rotating on channels by specifying ROLLING_CHANNELS=bfmtv,arte
-            # By specifying a cron that run x times every two hour ("*/y * * * *" with y=120/x), the rotation will execute each channel one time every two hours (the maximum duratio nof the cron)
-            # If it is not easy to split the two hours exactly (for instance 3 channels), just leave blank channels it will just raise an error (but make sure to put the correct number of channels)
-            rolling_channels = [
-                c.strip() for c in os.environ.get("ROLLING_CHANNELS", "").split(",")
-            ]
-            max_hour_duration = 2
-            if any(rolling_channels):
-                now = datetime.now()
-                total_minutes = (now.hour % max_hour_duration) * 60 + now.minute
-                rolling_index = (
-                    total_minutes * len(rolling_channels) // (60 * max_hour_duration)
-                )
-                channel = rolling_channels[rolling_index]
-        assert channel, (
-            "Need a channel to run the detection process: "
-            "CHANNEL, SCHEDULED_ROLLING_CHANNELS (with SCHEDULED_ROLLING_CHANNELS_CRON) or ROLLING_CHANNELS"
-        )
-
-        start_date = os.environ.get("START_DATE")
-        if not start_date:
-            start_date = _get_next_start_date_from_db(channel)
-        if not start_date:
-            start_date = os.environ.get("MINIMAL_START_DATE")
-        assert start_date, (
-            "Need a start date to run the detection process: START_DATE, "
-            "or MINIMAL_START_DATE for a channel without any occurrence in the database"
-        )
-
-        start_monday = date.fromisoformat(start_date)
-        assert start_monday.weekday() == 0, f"start_date {start_date} is not a Monday"
-        if start_monday > datetime.now(tz=tz_paris).date() - timedelta(days=7):
-            # Catching up is over for this channel: the week is not finished yet
-            logger.info(
-                f"Week of {start_date} not finished yet for {channel}, nothing to process"
-            )
-        else:
-            _process_week(channel, start_date)
+        _run_detection()

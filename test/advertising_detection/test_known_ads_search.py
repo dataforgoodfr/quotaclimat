@@ -76,10 +76,16 @@ def add_ad(engine, ad_id, deleted=False, first_detection_date=T0, occurrences=()
         session.commit()
 
 
-def identify():
+def identify(num_workers=1):
     chunk = Chunk(start_sec=0.0, end_sec=10.0, channel="tf1", fingerprint=FINGERPRINT)
     return asyncio.run(
-        run_chunk_identification([chunk], HASH, EverythingMatches(), reference_date=T0)
+        run_chunk_identification(
+            [chunk],
+            HASH,
+            EverythingMatches(),
+            reference_date=T0,
+            num_workers=num_workers,
+        )
     )
 
 
@@ -121,3 +127,10 @@ def test_ad_first_detected_recently_is_matched(engine):
     add_ad(engine, "new", first_detection_date=T0 - timedelta(days=1))
     known, _ = identify()
     assert [f.group_id for f in known] == ["new"]
+
+
+def test_comparison_in_worker_processes(engine):
+    add_ad(engine, "deleted", deleted=True)
+    add_ad(engine, "live")
+    known, unknown = identify(num_workers=2)
+    assert [f.group_id for f in known] == ["live"] and unknown == []

@@ -51,6 +51,8 @@ triggers:
     type: io.kestra.plugin.core.trigger.Schedule
     cron: "30 00 * * *"
     timezone: Europe/Paris
+    # Replaced by a Windmill schedule (infrastructure/windmill, docs/windmill_flows.md): set to false to roll back
+    disabled: true
 
 tasks:
   - id: per_search

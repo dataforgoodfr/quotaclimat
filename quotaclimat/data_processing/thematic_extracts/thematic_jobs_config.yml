@@ -128,3 +128,69 @@ inondations:
         - crues centennales
         - coulée de boue
         - coulées de boue
+
+## Analyse : decisions/analyses_thematiques/2026-11-cop31/decisions.md
+## Audiovisuel uniquement : pas de clé `presse` (le job thematic_articles ne doit pas être lancé sur cette entrée).
+## Fenêtres : une semaine avant l'ouverture officielle, une semaine après la clôture effective (fin exclue ci-dessous).
+## COP31 : fin provisoire calée sur une clôture le 20/11/2026. Si la clôture glisse, corriger `end` et relancer en MODE=reset.
+
+cop_climat:
+  periodes:
+    france:
+      - id: 202411_cop29_bakou
+        start: 2024-11-04
+        end: 2024-12-02
+      - id: 202511_cop30_belem
+        start: 2025-11-03
+        end: 2025-11-30
+      - id: 202611_cop31_antalya
+        start: 2026-11-02
+        end: 2026-11-28
+    # Belgique : COP31 seulement, pas de données belges avant 2026.
+    belgiumfr:
+      - id: 202611_cop31_antalya
+        start: 2026-11-02
+        end: 2026-11-28
+    belgiumnl:
+      - id: 202611_cop31_antalya
+        start: 2026-11-02
+        end: 2026-11-28
+  keywords:
+    french:
+      audiovisuel:
+        - cop28
+        - cop29
+        - cop30
+        - cop31
+        - cop32
+        - cop33
+        - cop 31
+        - cop 32
+        - cop 33
+        - cop vingt-huit
+        - cop vingt-neuf
+        - cop trente
+        - cop trente et un
+        - cop trente deux
+        - cop trente trois
+        - conférence des parties
+        - conférence des nations unies sur le climat
+        - conférence des nations unies sur les changements climatiques
+        - conférence climat
+    dutch:
+      audiovisuel:
+        - cop28
+        - cop29
+        - cop30
+        - cop31
+        - cop32
+        - cop33
+        - cop 28
+        - cop 29
+        - cop 30
+        - cop 31
+        - cop 32
+        - cop 33
+        - klimaattop
+        - klimaatconferentie
+        - vn-klimaatconferentie

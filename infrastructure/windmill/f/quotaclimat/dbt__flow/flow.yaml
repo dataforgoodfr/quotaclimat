@@ -22,7 +22,7 @@ value:
           value: rg.fr-par.scw.cloud/namespace-barometre/quotaclimat_base:latest
         entrypoint:
           type: javascript
-          expr: '["/bin/sh", "-c", `cd /app && /app/entrypoints/dbt.sh ${flow_input.only_analytics ? ''analytics'' : ''''}`]'
+          expr: '["/bin/sh", "-c", `cd /app && /app/entrypoints/dbt.sh ${(flow_input.only_analytics ?? false) ? ''analytics'' : ''''}`]'
         env:
           type: static
           value:

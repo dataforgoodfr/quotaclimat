@@ -26,6 +26,12 @@ _KEY_WEIGHTS = np.array([1 << (2 * _KEY_BITS), 1 << _KEY_BITS, 1], dtype=np.int6
 _NEIGHBOR_CODE_OFFSETS = np.array(_ADJ_3D, dtype=np.int64) @ _KEY_WEIGHTS
 
 
+def _pairs(fp: Fingerprint):
+    """Pairs of a fingerprint: a list of tuples, or a numpy array (PackedFingerprints of the
+    detection workers), whose truth value cannot be tested with `or`."""
+    return fp.pairs if fp.pairs is not None else ()
+
+
 class FingerprintsIndex:
     """
     Inverted index of quantized pair keys, for candidate lookup by fingerprint similarity.
@@ -74,8 +80,8 @@ class FingerprintsIndex:
         codes_per_fp: list[np.ndarray] = []
         positions: list[int] = []
         for i, fp in enumerate(fingerprints):
-            pairs = fp.pairs or []
-            if not pairs:
+            pairs = _pairs(fp)
+            if not len(pairs):
                 continue
             codes_per_fp.append(np.unique(self._pair_codes(pairs)))
             positions.append(i)
@@ -112,8 +118,8 @@ class FingerprintsIndex:
         Keeping per-pair duplicates in the query ensures that k matching pairs
         always yield a count >= k (no false negatives).
         """
-        pairs = query_fp.pairs or []
-        if not pairs or not len(self._codes):
+        pairs = _pairs(query_fp)
+        if not len(pairs) or not len(self._codes):
             return set()
         threshold = (
             min_matching_pairs
@@ -206,16 +212,16 @@ class FingerprintsCompare:
         Every pair of A is compared to every pair of B at once (a fingerprint has a few
         dozen pairs): the detection scores hundreds of thousands of fingerprint couples.
         """
-        pairs_a_raw = fp_a.pairs or []
-        pairs_b_raw = fp_b.pairs or []
+        pairs_a_raw = _pairs(fp_a)
+        pairs_b_raw = _pairs(fp_b)
         if (
             len(pairs_a_raw) < self.min_matching_pairs
             or len(pairs_b_raw) < self.min_matching_pairs
         ):
             return 0.0
 
-        pairs_a = np.array(pairs_a_raw, dtype=np.int32)  # (Na, 4): f1, f2, dt, t_offset
-        pairs_b = np.array(pairs_b_raw, dtype=np.int32)  # (Nb, 4)
+        pairs_a = np.asarray(pairs_a_raw, dtype=np.int32)  # (Na, 4): f1, f2, dt, t_offset
+        pairs_b = np.asarray(pairs_b_raw, dtype=np.int32)  # (Nb, 4)
 
         # B sorted by the sum of its first 3 dims: between pairs of B at the same
         # distance of a pair of A, the first one in this order is the one matched
@@ -275,8 +281,8 @@ class FingerprintsCompare:
             )
             SELECT max(n) FROM buckets  -- best_count
         """
-        pairs_a_raw = fp_a.pairs or []
-        pairs_b_raw = fp_b.pairs or []
+        pairs_a_raw = _pairs(fp_a)
+        pairs_b_raw = _pairs(fp_b)
         if (
             len(pairs_a_raw) < self.min_matching_pairs
             or len(pairs_b_raw) < self.min_matching_pairs

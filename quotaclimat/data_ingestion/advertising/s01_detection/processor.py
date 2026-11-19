@@ -25,6 +25,7 @@ from .e06_export_classification import (
 from .e07_export_raw_data import Report, TimingCollector, export_chunks_to_s3
 from .tools.cache import LocalCache
 from .tools.common_objects import Chunk
+from .tools.parallel import frozen_gc
 
 logger = logging.getLogger(__name__)
 
@@ -109,7 +110,7 @@ async def processor(
             worker = partial(
                 process_audio, cache=chunk_cache, chunk_creator=chunk_creator
             )
-            with ProcessPoolExecutor(max_workers=num_workers) as executor:
+            with frozen_gc(), ProcessPoolExecutor(max_workers=num_workers) as executor:
                 for i in range(0, len(chunks_creator_jobs), DOWNLOAD_BATCH_SIZE):
                     batch = chunks_creator_jobs[i : i + DOWNLOAD_BATCH_SIZE]
                     to_compute = [
@@ -157,12 +158,15 @@ async def processor(
             params_hash=fingerprint_hash,
             compare=fingerprints_compare,
             reference_date=start_date,
+            num_workers=num_workers,
         )
 
     #### Chunk grouping
 
     with timings.measure("chunk_grouping"):
-        groups = group_chunks(unknown_chunks, compare=fingerprints_compare)
+        groups = group_chunks(
+            unknown_chunks, compare=fingerprints_compare, num_workers=num_workers
+        )
 
     #### Fragment classification
 
@@ -207,12 +211,10 @@ async def processor(
             chunks=chunks,
         )
 
-        print(
-            f"""Reports generated:
+        print(f"""Reports generated:
             HTML: {reports.html_report_path.absolute()}
             Text: {reports.text_report_path.absolute()}
-        """
-        )
+        """)
 
         if report_folder:
             reports.save_to_s3(report_folder)

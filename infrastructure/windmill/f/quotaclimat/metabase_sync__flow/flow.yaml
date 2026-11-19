@@ -20,8 +20,8 @@ value:
           value: rg.fr-par.scw.cloud/namespace-barometre/quotaclimat_base:latest
         entrypoint:
           type: javascript
-          expr: '["/bin/sh", "-c", `cd /app && python -m quotaclimat.metabase.sync_questions ${flow_input.apply ? ''--apply''
-            : ''''} ${flow_input.force ? ''--force'' : ''''}`]'
+          expr: '["/bin/sh", "-c", `cd /app && python -m quotaclimat.metabase.sync_questions ${(flow_input.apply ?? true) ? ''--apply''
+            : ''''} ${(flow_input.force ?? true) ? ''--force'' : ''''}`]'
         env:
           type: static
           value: {}

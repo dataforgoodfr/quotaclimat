@@ -28,9 +28,9 @@ value:
               "PYTHONPATH": "/app",
               "START_DATE": flow_input.start_date ?? '',
               "END_DATE": flow_input.end_date ?? '',
-              "BUCKET_NAME": flow_input.source === 'extended' ? 'mediatree-extended-perimeter-dev' : 'mediatree',
-              "POSTGRES_DB": flow_input.source === 'extended' ? 'extended-perimeter' : 'barometre',
-              "POSTGRES_PORT": flow_input.source === 'extended' ? 18047 : 22737,
+              "BUCKET_NAME": (flow_input.source ?? "barometre") === 'extended' ? 'mediatree-extended-perimeter-dev' : 'mediatree',
+              "POSTGRES_DB": (flow_input.source ?? "barometre") === 'extended' ? 'extended-perimeter' : 'barometre',
+              "POSTGRES_PORT": (flow_input.source ?? "barometre") === 'extended' ? 18047 : 22737,
               "RRS_PG_DATABASE": "rrs",
               "RRS_PG_PORT": 18047,
               "SUBJECT": "environmental_health"
@@ -39,7 +39,7 @@ value:
           type: javascript
           expr: |-
             ({
-              "POSTGRES_HOST": flow_input.source === 'extended' ? 'f/secrets/RRS_PG_HOST_DEV' : 'f/secrets/POSTGRES_HOST',
+              "POSTGRES_HOST": (flow_input.source ?? "barometre") === 'extended' ? 'f/secrets/RRS_PG_HOST_DEV' : 'f/secrets/POSTGRES_HOST',
               "POSTGRES_USER": "f/secrets/RRS_BAROMETRE_READ_USER_DEV",
               "POSTGRES_PASSWORD": "f/secrets/RRS_BAROMETRE_READ_PASSWORD_DEV",
               "RRS_PG_HOST": "f/secrets/RRS_PG_HOST_DEV",
@@ -98,7 +98,7 @@ value:
           type: static
           value: true
     skip_if:
-      expr: '!(flow_input.run_detect_misinformation_rag)'
+      expr: '!(flow_input.run_detect_misinformation_rag ?? true)'
   - id: detect_misinformation_rag
     summary: detect misinformation rag
     value:
@@ -157,7 +157,7 @@ value:
           type: static
           value: true
     skip_if:
-      expr: '!(flow_input.run_detect_misinformation_rag)'
+      expr: '!(flow_input.run_detect_misinformation_rag ?? true)'
   - id: clustering
     summary: clustering
     value:
@@ -224,7 +224,7 @@ value:
           type: static
           value: true
     skip_if:
-      expr: '!(flow_input.run_clustering)'
+      expr: '!(flow_input.run_clustering ?? true)'
 schema:
   $schema: https://json-schema.org/draft/2020-12/schema
   type: object

@@ -231,24 +231,34 @@ COVER_CHECK_ONLY=true START_DATE=2026-10-12 poetry run python quotaclimat/data_i
 The same summary is written in the text report of a normal detection run.
 
 ### Run the advertising detection
-`entrypoints/ad_s01_run_detection.sh` (Scaleway job `ad_s01_run_detection`) processes one week (Monday to Sunday, Paris time) of one channel per run. Only the 2-minutes files of the shows of the program grid (see "Program Metadata table") (with the same margins as the cover check) are downloaded and analysed: files of the bucket outside the program are skipped, missing ones are reported in the text report. The job's disk is 1 GB while a week of audio weighs several GB (up to ~7 GB for a 24h news channel): files are downloaded, split in chunks and deleted by batches of 100 (`DOWNLOAD_BATCH_SIZE` in `e00_download_audio.py`).
+`entrypoints/ad_s01_run_detection.sh` (Scaleway job `ad_s01_run_detection`) processes one week (Monday to Sunday, Paris time) of every channel that needs it, one channel after the other, then stops:
+
+1. it reads the date of the last occurrence of every channel of `ROLLING_CHANNELS` in `advertising.ad_occurrence` and logs a summary (`State of the channels`): last occurrence and next week to process (the Monday after it) of each channel;
+2. the week to process is the oldest of these next weeks;
+3. the channels to run are the ones whose next week is this one (the others have already been processed on it);
+4. these channels are processed one by one, in the order of `ROLLING_CHANNELS`. A channel that fails does not stop the others: the job fails at the end, and the next run takes this channel again (it is still on the oldest week). The same goes for a run stopped by the job's timeout. The logs end with the status and the duration of every channel (`Result of the week of ...`).
+
+So each run moves the late channels one week forward, and once every channel is on the same week, each run processes one week of all of them. The job's timeout has to cover a week of every channel.
+
+A week in which a channel gets no occurrence at all (no file in Mediatree's bucket, for instance) does not move its last occurrence: the next runs take the same week of this channel again, and the other channels wait. Run the following week by hand for this channel (`CHANNEL`, `START_DATE`) to get out of it.
+
+Only the 2-minutes files of the shows of the program grid (see "Program Metadata table") (with the same margins as the cover check) are downloaded and analysed: files of the bucket outside the program are skipped, missing ones are reported in the text report. The job's disk is 1 GB while a week of audio weighs several GB (up to ~7 GB for a 24h news channel): files are downloaded, split in chunks and deleted by batches of 100 (`DOWNLOAD_BATCH_SIZE` in `e00_download_audio.py`). When a run processes several channels, each channel runs in its own Python process (`_run_in_subprocess` of `run.py`, spawn): Python does not give back to the system the memory of the objects it freed, so without it the memory of the job rose from channel to channel. A channel whose process fails (exit code in the logs, `-9` when it is killed) is marked `FAILED` and the next channels still run. The local caches (`.cache`: chunks, reports, audio) are deleted after each channel.
 
 | Variable | Purpose |
 |---|---|
-| `CHANNEL` | Channel to process. Empty: taken from `SCHEDULED_ROLLING_CHANNELS`, then `ROLLING_CHANNELS` |
-| `SCHEDULED_ROLLING_CHANNELS` | Channels the job's cron goes through, e.g. `tf1,itele,arte`: the n-th run of a cron's hours runs the n-th channel. Needs `SCHEDULED_ROLLING_CHANNELS_CRON` |
-| `SCHEDULED_ROLLING_CHANNELS_CRON` | The job's cron, e.g. `*/30 1-6 * * *` (every 30 minutes) or `55 7-18 * * *` (every hour at minute 55). It must have one of these two exact shapes, its weekday can be a number or `*` (every day). Several crons are separated by `;` (`15 8-12 * * *;15 20-23 * * *`): each one goes through the whole list. Starting with `-` disables the rotation |
-| `SCHEDULED_ROLLING_CHANNELS_TIMEZONE` | Time zone of the job's cron (default `Europe/Paris`): the cron hours are read in it, not in the container's UTC |
-| `ROLLING_CHANNELS` | `tf1,france2`: rotation of the channels over 2 hours (see `run.py`) |
-| `START_DATE` | Monday of the week to process. Empty: the Monday after the last week with occurrences of the channel in `advertising.ad_occurrence` |
-| `MINIMAL_START_DATE` | Monday to start from for a channel without any occurrence |
-| `AUDIO_WORKERS` | Number of processes (default: Scaleway CPUs minus 2) |
+| `ROLLING_CHANNELS` | Channels of the job, e.g. `tf1,itele,arte` |
+| `CHANNEL` | Processes this channel only, instead of `ROLLING_CHANNELS` |
+| `START_DATE` | Monday of the week to process, for every channel of the run (already processed or not). Empty: the oldest "Monday after the last week with occurrences" of the channels |
+| `MINIMAL_START_DATE` | Monday to start from for a channel without any occurrence. A channel added to `ROLLING_CHANNELS` starts from it: it is the only one to run until it has caught up with the others |
+| `AUDIO_WORKERS` | Number of worker processes of the CPU bound steps: audio processing, `chunk_identification` and `chunk_grouping` (default: Scaleway CPUs minus 1, the main process downloading the audio and reading the database) |
 
-The logs give the start and the duration of every step (`Step <name>: start`, `Step <name>: done in <n>s`): `audio_listing`, `audio_download_and_processing`, `chunk_identification`, `chunk_grouping`, `fragment_classification`, `clean_pre_existing_occurrences`, `database_storage`. `chunk_identification` compares the chunks of the week to the fingerprints of every ad of `advertising.ad`, so it grows with the table: it logs its progress every 30 seconds (ads compared out of the total, fingerprints, candidate and matching chunks).
+Every log line of a channel starts with its name (`tf1 | INFO - ...`, `set_log_prefix` of `quotaclimat/utils/logger.py`, worker processes included). The logs give the start and the duration of every step (`Step <name>: start`, `Step <name>: done in <n>s`): `audio_listing`, `audio_download_and_processing`, `chunk_identification`, `chunk_grouping`, `fragment_classification`, `clean_pre_existing_occurrences`, `database_storage`. The start of a step gives the memory used, its end the peak during the step (sampled every 5 seconds, `s01_detection/tools/memory.py`): `job` is the memory of the container (cgroup, page cache included), the one compared to the job's limit, `main process` the resident memory of the process of the channel (without its workers). `After <channel>, memory: ...` gives the memory of the job once the process of the channel has ended. `chunk_identification` compares the chunks of the week to the fingerprints of every ad of `advertising.ad`, so it grows with the table: it logs its progress every 30 seconds (ads compared out of the total, fingerprints, candidate and matching chunks).
 
-There is no default value: without a channel or a start date the job fails. When the week to process is not finished yet (less than 7 days ago), the job stops without doing anything, so a scheduled catch-up stops by itself.
+There is no default value: without channels, or without a start date for a channel that has no occurrence, the job fails before processing anything. When the week to process is not finished yet (less than 7 days ago), the job stops without doing anything, so a scheduled catch-up stops by itself.
 
 The chunks of the week are first compared with the ads already in `advertising.ad` (`e03_already_identified_advertising.py`). Only the ads detected less than 3 months before the Monday of the processed week are searched for (`KNOWN_AD_MAX_AGE`): first detection or last occurrence not deleted, on any channel. An older ad that is broadcast again is detected as a new ad.
+
+The comparisons of fingerprints of `chunk_identification` (a task per page of 1000 ads of the database) and `chunk_grouping` (a task per range of 500 chunks of the week, candidate search and comparison) run in the `AUDIO_WORKERS` processes (`s01_detection/tools/parallel.py`). The fingerprints of the week are given to them once, packed in numpy arrays (with the fork start method, the workers share them without copy). The garbage collector is frozen (`gc.freeze()`, `frozen_gc` of `parallel.py`) while a pool of workers lives, the audio processing pool included: otherwise the full collections of each worker write in the Python objects inherited from the main process (the chunks of the week), and each worker gets its own copy of them. `fragment_classification` stays in one process: its merges of groups that follow each other (`Classification: merging <n> couples of groups` in the logs) only visit the fragments of the two groups.
 
 ### Explore postgres data using Metabase - a BI tool
 ```
@@ -301,6 +311,9 @@ Learn [more here.](https://www.scaleway.com/en/docs/tutorials/use-container-regi
 With Sentry or [GlitchTip](https://glitchtip.com) (Sentry-compatible, hosted on the orchestrator, see `infrastructure/Readme.md`), with env variable `SENTRY_DSN`. The jobs call `sentry_init()` (`quotaclimat/utils/sentry.py`), which tags events and logs with `country` (`COUNTRY`), `service` (`SERVICE_NAME`, or the name of the entry script) and sets `environment` from `ENV`.
 
 Learn more here : https://docs.sentry.io/platforms/python/configuration/options/
+
+### Log format
+The jobs that call `getLogger()` (`quotaclimat/utils/logger.py`) write `LEVEL - file.py:line | message`, without the time: Scaleway Cockpit and Kestra already put it in front of each line. The level stays in the line because Cockpit reads it from there (a line without it shows as `UNK`). `LOG_TIME=true` puts the time back, to run a script locally. `set_log_prefix("tf1")` (or `getLogger(prefix="tf1")`) starts every following line with `tf1 | `, `set_log_prefix(None)` removes it.
 
 ### Send logs to Sentry
 By setting `SENTRY_LOGGING` to `"true"` we can send the job logs (`INFO` and above) to sentry or GlitchTip (as Scaleway Cockpit is not always reliable). The Kestra flows `barometre`, `barometre-catchup` and `barometre-i18n` (and the dev one) set it.
@@ -615,6 +628,22 @@ docker compose exec testconsole bash
 ```
 #### Run belgium
 Only for belgian data using .csv
+
+The partner sends either weekly `.csv` files or, since October 2026, `.srt` files (one folder per channel, one file per day). The SRT files are first converted to the partner `.csv` layout, then processed like any other `.csv`.
+
+**Step 1 (only for `.srt` deliveries)**: put the delivery in `i8n/csa-belge/` (e.g. `i8n/csa-belge/tv Bel fr octobre 2026/<CHANNEL>/<YYYYMMDDHHMMSS>.srt`) and run from `i8n/`:
+```bash
+poetry run python3 srt-channel-to-csv.py "csa-belge/tv Bel fr octobre 2026"
+# only some channels:
+poetry run python3 srt-channel-to-csv.py "csa-belge/tv Bel fr octobre 2026" --channels ACTV BX1
+```
+- Every channel folder containing `.srt` files is converted. The file name is the start of the recording, the cue timestamps are offsets from it.
+- Rows are split by month half and written to `csa-belge/<year>/<month>/<1-14|15+>/<first day>_<last day>_<FileName>.csv` (existing files are overwritten), with no header and `;` as separator: `channel;program;DD/MM/YYYY HH:MM:SS;text`.
+- The srt folder name is mapped to the partner file name by `FILE_NAMES` in the script (e.g. `CANALC` → `Boukè`, `RTC` → `Qu4tre`, `RTL` → `RTLTVi`). A new channel keeps its folder name: add it to `FILE_NAMES` if the partner uses another name.
+- The first column is the folder name in upper case (`CanalZoom` → `CANALZOOM`).
+- The program column is empty (the srt does not contain it); `--program` sets one value for all channels.
+
+**Step 2**:
 
 Warning: this job is not automated as the process depending on getting the data is manual (emails), so we have to modify [the script here](https://github.com/dataforgoodfr/quotaclimat/blob/01e5ede5152d4113c68bcf994f13c7b2baa30dd6/i8n/srt-to-mediatree-format.py#L259-L262).
 ```

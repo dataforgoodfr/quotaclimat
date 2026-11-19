@@ -30,13 +30,13 @@ value:
         input_transforms:
           country:
             type: javascript
-            expr: flow_input.country
+            expr: (flow_input.country ?? "test")
           send_logs:
             type: javascript
-            expr: flow_input.send_logs
+            expr: (flow_input.send_logs ?? true)
           service:
             type: javascript
-            expr: flow_input.service
+            expr: (flow_input.service ?? "glitchtip-log-test")
         lock: '!inline send_test_logs_and_error.lock'
         language: python3
       timeout:

@@ -13,7 +13,7 @@ value:
       path: f/quotaclimat_dev/alert_test
       input_transforms: {}
     skip_if:
-      expr: '!(flow_input.test_alert)'
+      expr: '!(flow_input.test_alert ?? false)'
   - id: extended_perimeter
     summary: extended perimeter
     value:
@@ -22,12 +22,12 @@ value:
       input_transforms:
         days_back:
           type: javascript
-          expr: flow_input.days_back
+          expr: (flow_input.days_back ?? 1)
         start_date:
           type: javascript
           expr: '(flow_input.start_date ? String(flow_input.start_date).slice(0, 10) : new Date().toISOString().slice(0, 10))'
     skip_if:
-      expr: '!(flow_input.with_rrs)'
+      expr: '!(flow_input.with_rrs ?? true)'
   - id: rrs_climate_extended
     summary: rrs climate extended
     value:
@@ -41,7 +41,7 @@ value:
           type: static
           value: false
     skip_if:
-      expr: '!(flow_input.with_rrs)'
+      expr: '!(flow_input.with_rrs ?? true)'
   - id: rrs_insecurity_extended
     summary: rrs insecurity extended
     value:
@@ -55,7 +55,7 @@ value:
           type: static
           value: false
     skip_if:
-      expr: '!(flow_input.with_rrs)'
+      expr: '!(flow_input.with_rrs ?? true)'
   - id: rrs_pollution_extended
     summary: rrs pollution extended
     value:
@@ -72,7 +72,7 @@ value:
           type: static
           value: false
     skip_if:
-      expr: '!(flow_input.with_rrs)'
+      expr: '!(flow_input.with_rrs ?? true)'
   - id: barometre
     summary: barometre
     value:
@@ -81,7 +81,7 @@ value:
       input_transforms:
         days_back:
           type: javascript
-          expr: flow_input.days_back
+          expr: (flow_input.days_back ?? 1)
         start_date:
           type: javascript
           expr: '(flow_input.start_date ? String(flow_input.start_date).slice(0, 10) : new Date().toISOString().slice(0, 10))'
@@ -92,7 +92,7 @@ value:
       path: f/rrs_dev/rrs_climate
       input_transforms: {}
     skip_if:
-      expr: '!(flow_input.with_rrs)'
+      expr: '!(flow_input.with_rrs ?? true)'
   - id: rrs_insecurity
     summary: rrs insecurity
     value:
@@ -100,7 +100,7 @@ value:
       path: f/rrs_dev/rrs_insecurity
       input_transforms: {}
     skip_if:
-      expr: '!(flow_input.with_rrs)'
+      expr: '!(flow_input.with_rrs ?? true)'
   - id: rrs_pollution
     summary: rrs pollution
     value:
@@ -108,7 +108,7 @@ value:
       path: f/rrs_dev/rrs_pollution
       input_transforms: {}
     skip_if:
-      expr: '!(flow_input.with_rrs)'
+      expr: '!(flow_input.with_rrs ?? true)'
   failure_module:
     id: failure
     summary: Post the failure to Mattermost

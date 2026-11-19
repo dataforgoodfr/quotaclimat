@@ -30,13 +30,15 @@ Both read `POSTGRES_HOST`/`POSTGRES_PORT`/`POSTGRES_USER`/`POSTGRES_PASSWORD`/`P
 ## Models
 
 ### `homepage/`
-`homepage_environment_by_media_by_month`: materialized as a `view` (set in `dbt_project.yml`), aggregated monthly environmental coverage percentage by channel.
+`homepage_environment_by_media_by_month`: aggregated monthly environmental coverage percentage by channel. Incremental like the `dashboards/` models, with a window starting on the first Monday of a month (a month is the average of its whole weekly shares).
 
 ### `dashboards/`
 The core queries feeding Metabase dashboards. All are `materialized='incremental'` (most with `on_schema_change='append_new_columns'`), each keyed to avoid duplicate rows on re-run (`unique_key`):
 * `core_query_environmental_shares` / `core_query_environmental_shares_i8n` / `core_query_environmental_shares_be`: % of airtime dedicated to environmental topics (climate/biodiversity/resources), by week and channel, for France / other countries / Belgium respectively. The `_be` (and `_i8n`) variants compute the denominator (`sum_duration_minutes`) differently depending on whether a channel has an editorial grid in `program_metadata` (`has_grid`): in-perimeter captured minutes if it does, full `time_monitored` otherwise - see `models/schema.yml` for the full column documentation, including the `sum_time_monitored`/`sum_monitored_in_perimeter_min` control columns.
 * `core_query_thematics_keywords` / `core_query_thematics_keywords_i8n` / `core_query_thematics_keywords_be`: keyword-level occurrence counts by week, channel, theme and category, sharing the same denominator logic as the environmental shares queries above.
 * `thematic_query_ocean`: ocean-specific thematic keyword query.
+
+These models read the whole `public.keywords` table, which is slow (mostly disk reads: ~35 minutes in total on the production instance). An incremental run therefore recomputes only the last `dashboards_lookback_weeks` weeks (var, 1 by default: from the Monday of the previous week; `DBT_LOOKBACK_WEEKS` in `entrypoints/dbt.sh`) and replaces the rows of those weeks (`incremental_strategy='delete+insert'` on the `unique_key`), through the macro `in_window()` of `macros/incremental_window.sql`. The window always starts on a Monday so that weeks are complete. Older weeks keep their last build, so rebuild the models in full (`dbt run --full-refresh`, `dbt.sh full-refresh`, or the `full_refresh` input of the `dbt` flow) after keywords of past weeks were reprocessed beyond the window, a change of the program grid for past weeks, or a change of a model's columns. `dbt.sh` also does it on the first day of each month. A segment reprocessed inside the window is replaced; one that no longer matches (`thematic_query_ocean`) or a channel title that disappears from a week can leave a stale row until the next full refresh. The `_be` models read the Belgian keywords once (`kw_base`), instead of three times.
 
 ### `analytics/`
 Intermediate/pre-aggregated tables (used by dashboards, or directly as a faster source for Metabase - see the root README's "Analytics" section), built with `dbt run --target analytics`:

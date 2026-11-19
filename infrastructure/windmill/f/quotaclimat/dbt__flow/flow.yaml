@@ -9,6 +9,9 @@ description: |-
   With only_analytics, the models of models/dashboards and models/homepage (the
   long part, computed from the whole keywords table) are left out and keep their
   last build.
+  The incremental models of models/dashboards and models/homepage recompute only
+  the last weeks (1 by default: from the Monday of the previous week). With full_refresh they are rebuilt from the whole
+  keywords table (dbt.sh does it by itself on the first day of each month).
 value:
   modules:
   - id: dbt_run_transformations
@@ -22,7 +25,7 @@ value:
           value: rg.fr-par.scw.cloud/namespace-barometre/quotaclimat_base:latest
         entrypoint:
           type: javascript
-          expr: '["/bin/sh", "-c", `cd /app && /app/entrypoints/dbt.sh ${(flow_input.only_analytics ?? false) ? ''analytics'' : ''''}`]'
+          expr: '["/bin/sh", "-c", `cd /app && /app/entrypoints/dbt.sh ${(flow_input.only_analytics ?? false) ? ''analytics'' : ''''} ${(flow_input.full_refresh ?? false) ? ''full-refresh'' : ''''}`]'
         env:
           type: static
           value:
@@ -114,10 +117,15 @@ schema:
   type: object
   order:
   - only_analytics
+  - full_refresh
   properties:
     only_analytics:
       type: boolean
       description: When true, leaves out the models of models/dashboards and models/homepage (dbt.sh analytics).
+      default: false
+    full_refresh:
+      type: boolean
+      description: When true, rebuilds the incremental models of models/dashboards and models/homepage from the whole keywords table (about 35 minutes), instead of the last weeks only.
       default: false
   required:
   - only_analytics

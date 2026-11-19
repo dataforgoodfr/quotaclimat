@@ -3,6 +3,7 @@
    from being deleted if a run ever rebuilds only part of the data (e.g. with is_incremental()). #}
 {{ config(
     materialized='incremental'
+    ,incremental_strategy='delete+insert'
     ,unique_key=['start','channel_title','country']
   )
 }}
@@ -202,6 +203,7 @@ FROM
             ON "public"."keywords"."channel_name" = "time_monitored"."channel_name"
             AND "public"."keywords"."country" = "time_monitored"."country"
             AND DATE("public"."keywords"."start") = DATE("time_monitored"."start")
+        WHERE {{ in_window('"public"."keywords"."start"') }}
       ) AS "source"
    
 GROUP BY

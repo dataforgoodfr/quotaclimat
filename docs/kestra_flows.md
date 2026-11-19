@@ -160,7 +160,7 @@ The main OME pipeline for France (`COUNTRY=fra`): it fetches yesterday's TV/radi
 - **What happens**, in order:
   1. `quotaclimat.data_ingestion.labelstudio.ingest_labelstudio` copies Label Studio tasks and annotations from the `labelstudio` DB into `barometre` (`labelstudio_task_aggregate`, `labelstudio_task_completion_aggregate`).
   2. `quotaclimat.data_ingestion.external_sources.download_external_sources` downloads the reference spreadsheets listed in `my_dbt_project/external_sources.yml` from the Drive folder in `EXTERNAL_SOURCES_DRIVE_FOLDER`, using the service account in `GOOGLE_SHEETS_SERVICE_ACCOUNT_JSON`. Spreadsheets readable without credentials are refused. Then `dbt seed` and `dbt test` load and check them.
-  3. `dbt run --full-refresh` builds the core models. The analytics tables and the advertising models are excluded here.
+  3. `dbt run` builds the core models. The analytics tables and the advertising models are excluded here. The incremental models of `models/dashboards` and `models/homepage` recompute only the last `DBT_LOOKBACK_WEEKS` weeks (1 by default: from the Monday of the previous week, `macros/incremental_window.sql`) and replace the rows of those weeks; with `--full-refresh` (input `full_refresh`, or automatically on the first day of each month) they are rebuilt from the whole `keywords` table, about 35 minutes. Rebuild in full after a replay of old days beyond the window, a change of the program grid or of a model.
   4. `dbt run --target analytics` builds `task_global_completion` and `environmental_shares_with_desinfo_counts`.
   5. A last `dbt run` builds the advertising models, `cas_de_mesinformation` and `publicites`, which read the analytics tables.
 - **Technologies:** dbt (Postgres adapter), Google Drive and Sheets APIs, SQLAlchemy.
@@ -191,6 +191,7 @@ Runs the dbt models of the `barometre` database, then the `curated` schema: [`ba
 | Input | Default | Effect |
 |---|---|---|
 | `only_analytics` | `false` | `true` runs `dbt.sh analytics`: the models of `models/dashboards` and `models/homepage` (the long part, computed from the whole `keywords` table) are left out and keep their last build |
+| `full_refresh` | `false` | `true` runs `dbt.sh full-refresh`: the incremental models of `models/dashboards` and `models/homepage` are rebuilt from the whole `keywords` table instead of the last weeks (`dbt.sh` also does it on the first day of each month) |
 
 ## dbt-analytics
 

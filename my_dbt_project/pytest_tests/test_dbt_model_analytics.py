@@ -760,7 +760,7 @@ def test_emission_jour_environment(db_connection):
         """, {"program": programs[0][0]})
     db_connection.commit()
     try:
-        run_dbt_command(["run", "--select", "emission_jour"])
+        run_dbt_command(["run", "--select", "emission_jour", "--full-refresh"])  # older keyword segments: full refresh
         with db_connection.cursor() as cur:
             cur.execute("""
                 SELECT emission_cle, env_heures
@@ -772,7 +772,7 @@ def test_emission_jour_environment(db_connection):
         with db_connection.cursor() as cur:
             cur.execute("DELETE FROM public.keywords WHERE id LIKE 'pytest_env_%'")
         db_connection.commit()
-        run_dbt_command(["run", "--select", "emission_jour"])
+        run_dbt_command(["run", "--select", "emission_jour", "--full-refresh"])  # older keyword segments: full refresh
     # in seconds
     assert env == {
         "bfmtv|émission|BFM Première|false": 180,
@@ -794,7 +794,7 @@ def test_emission_jour_themes_legacy_segments_and_capture(db_connection):
         """)
     db_connection.commit()
     try:
-        run_dbt_command(["run", "--select", "emission_jour"])
+        run_dbt_command(["run", "--select", "emission_jour", "--full-refresh"])  # older keyword segments: full refresh
         with db_connection.cursor() as cur:
             cur.execute("""
                 SELECT env_heures, climat_heures, biodiversite_heures, climat_constat_heures, ressources_heures,
@@ -812,7 +812,7 @@ def test_emission_jour_themes_legacy_segments_and_capture(db_connection):
         with db_connection.cursor() as cur:
             cur.execute("DELETE FROM public.keywords WHERE id = 'pytest_env_legacy'")
         db_connection.commit()
-        run_dbt_command(["run", "--select", "emission_jour"])
+        run_dbt_command(["run", "--select", "emission_jour", "--full-refresh"])  # older keyword segments: full refresh
     # in seconds; the subjects of a 20 s window do not add up to the environment
     assert [round(float(v) * 3600) for v in row[:5]] == [80, 60, 40, 20, 0]
     assert row[5] is True

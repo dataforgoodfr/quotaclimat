@@ -72,7 +72,9 @@ LEFT JOIN sector_ref  s  ON s.sector_code  = a.predicted_sector
 LEFT JOIN cat_ref     c  ON c.cat_code     = a.predicted_product_category
 LEFT JOIN channel_ref ch ON ch.channel_name = occ.channel_name
 LEFT JOIN {{ ref('ad_brands') }} br ON br.brand_key = {{ name_key('a.predicted_brand') }}
-LEFT JOIN {{ ref('ad_occurrence_tunnels') }} t ON t.occurrence_id = occ.id
+-- inner join: the ad detection keeps inserting occurrences while dbt runs, so an occurrence inserted after
+-- ad_occurrence_tunnels was built would have no tunnel (nor tunnel programs). It is left out until the next build.
+JOIN {{ ref('ad_occurrence_tunnels') }} t ON t.occurrence_id = occ.id
 LEFT JOIN {{ ref('ad_occurrence_mesinfo') }} mi ON mi.occurrence_id = occ.id
 LEFT JOIN {{ ref('ad_tunnel_programs') }} tp ON tp.tunnel_id = t.tunnel_id
 -- final statuses: the classification gives a brand and a sector (see macros/final_prediction_statuses.sql),

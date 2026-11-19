@@ -167,6 +167,7 @@ Each README below is the authoritative source for its area — read it instead o
 | `detect_misinformation/labelstudio/README.md` | Label Studio interfaces (XML) of the misinformation review projects (all countries / France), how to deploy them, tag names read by dbt |
 | `docs/data_tiers.md` | Data tiers (raw / syndicated / curated): which schema and table belongs to which tier, sources → raw, dbt lineage, curated tables, how to regenerate the Archify diagrams |
 | `docs/kestra_flows.md` | Every production Kestra flow step by step: what code runs, what it reads/writes, which technologies are involved, plus where Kestra itself is hosted (shared Elastic Metal orchestrator, see `infrastructure/Readme.md`) |
+| `decisions/rapports/decisions.md` | Conventions of the report folders (`decisions/rapports/<AAAA-MM>-<sujet>/`): decisions markdown (calculation rules, presentation choices, remarks, chart map), authoritative SQL in `queries/` (Metabase is only for exploration), public repo so no unpublished figures |
 | `docs/windmill_flows.md` | Windmill flows running production (`infrastructure/windmill/`): folders, Ansible deploy (secrets sync, `wmill sync push`), schedules and Kestra rollback, default inputs (`?? <default>`), Kestra → Windmill mapping, `f/shared/docker_run` arguments, dbt worker, adding a flow or secret. Keep a Kestra flow change mirrored there |
 
 ## Keeping docs in sync when opening a PR
@@ -295,6 +296,13 @@ Les questions Metabase, les tableaux de bord et les analyses des équipes lisent
 
 - **Méthode commune** : lire d'abord le chapeau de `decisions/analyses_thematiques/decisions.md` (démarche, conventions Metabase, modèle pour une nouvelle analyse).
 - **Exemple** : la dernière analyse, `decisions/analyses_thematiques/2026-10-inondations/decisions.md`.
+- Ne modifier aucun `decisions.md` sans consigne explicite dans ce sens.
+
+## Rapports
+
+- Un rapport qui s'appuie sur les données a son dossier `decisions/rapports/<AAAA-MM>-<sujet>/` : lire d'abord `decisions/rapports/decisions.md` (conventions), puis le `decisions.md` du rapport (règles de calcul, remarques, carte des graphiques).
+- Les requêtes de `queries/` font foi ; Metabase ne sert qu'à l'exploration. Une règle modifiée se reporte dans toutes les requêtes de `queries/` qui l'appliquent.
+- Le dépôt est public : aucun chiffre ni résultat non publié dans ces fichiers.
 - Ne modifier aucun `decisions.md` sans consigne explicite dans ce sens.
 
 ## Tests

@@ -33,7 +33,7 @@ Chaîne de données :
 
 ## 3. Présentation
 
-- **Une couleur par secteur** dans les graphiques à bulles (la série est le nom du secteur) : Automobile et transport `#509EE3`, Alimentation `#88BF4D`, Établissements financiers et assurance `#F2A86F`, moyenne du secteur en noir ; les autres secteurs en couleurs automatiques. Barres d'exposition des annonceurs : gris clair `#DCDFE0` pour la pub hors émissions à fort taux, gris `#949AAB` pour « Autres émissions à fort taux ».
+- **Couleurs** : une couleur par secteur dans les graphiques à bulles (la série est le nom du secteur), moyenne du secteur en noir ; codes dans [`metabase/couleurs.yml`](../../../metabase/couleurs.yml), groupes `secteurs_publicite` et `exposition_annonceurs`.
 - **Taille des bulles** : racine carrée des minutes de pub (la surface est proportionnelle aux minutes) ; taille fixe 4 pour les moyennes de secteur.
 - **Bulles alignées** : toutes les bulles d'un secteur ont la même abscisse (le rang du secteur).
 - **Noms sur les bulles** : Metabase ne sait pas les écrire (nom au survol seulement), d'où les graphiques à bulles dans Google Sheets.

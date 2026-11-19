@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import math
+import multiprocessing
 import os
 import shutil
 import sys
@@ -22,6 +23,9 @@ from quotaclimat.data_ingestion.advertising.s01_detection.e01_check_partition_co
 from quotaclimat.data_ingestion.advertising.s01_detection.processor import processor
 from quotaclimat.data_ingestion.advertising.s01_detection.tools.cache import (
     GLOBAL_CACHE_FOLDER,
+)
+from quotaclimat.data_ingestion.advertising.s01_detection.tools.memory import (
+    memory_summary,
 )
 from quotaclimat.data_ingestion.advertising.s01_detection.tools.rolling_channels import (
     channel_statuses,
@@ -55,6 +59,34 @@ def _clean_local_files():
     # drop the caches and the audio files a failed channel may have left
     for folder in {GLOBAL_CACHE_FOLDER, AUDIO_DIR}:
         shutil.rmtree(folder, ignore_errors=True)
+
+
+def _run_in_subprocess(target, *args) -> bool:
+    """Run target(*args) in a new Python process (spawn), True if it succeeded.
+
+    Python does not give back to the system the memory of the objects it freed: after a
+    channel, the main process keeps the memory of the biggest week processed so far, and
+    the worker processes forked from it inherit it. A new process per channel starts
+    each channel from an empty memory. The child logs its own errors.
+    """
+    process = multiprocessing.get_context("spawn").Process(target=target, args=args)
+    process.start()
+    process.join()
+    if process.exitcode != 0:
+        # Negative: killed by this signal (-9: SIGKILL, from the system when out of memory)
+        logger.error(f"The process of {args} ended with exit code {process.exitcode}")
+    return process.exitcode == 0
+
+
+def _process_week_in_subprocess(channel: str, start_date: str):
+    # Entry point of the process of one channel: logs and Sentry are set up again
+    getLogger(prefix=channel)
+    sentry_init()
+    try:
+        _process_week(channel, start_date)
+    except Exception:
+        logger.exception(f"Detection failed for {channel} on the week of {start_date}")
+        sys.exit(1)
 
 
 def _format_duration(seconds: float) -> str:
@@ -104,17 +136,25 @@ def _run_detection():
         # Every log line of this channel (worker processes included) starts with it
         set_log_prefix(channel)
         try:
-            _process_week(channel, week.isoformat())
-            status = "done"
+            if len(channels_to_run) > 1:
+                # Each channel in its own process, to start it from an empty memory
+                succeeded = _run_in_subprocess(
+                    _process_week_in_subprocess, channel, week.isoformat()
+                )
+            else:
+                _process_week(channel, week.isoformat())
+                succeeded = True
         except Exception:
-            # The other channels still run, the job fails at the end
             logger.exception(f"Detection failed for {channel} on the week of {week}")
-            status = "FAILED"
+            succeeded = False
         finally:
             set_log_prefix(None)
+        # A failed channel does not stop the others, the job fails at the end
+        status = "done" if succeeded else "FAILED"
         results.append((channel, status, time.monotonic() - started))
         if len(channels_to_run) > 1:
             _clean_local_files()
+        logger.info(f"After {channel}, memory: {memory_summary()}")
 
     logger.info(
         "\n".join(

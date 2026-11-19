@@ -28,6 +28,7 @@ resource "scaleway_job_definition" "main" {
     "LABEL_STUDIO_PROJECT"    = each.value.labelstudio_project
     "LABEL_STUDIO_PROJECT_ID" = each.value.labelstudio_project_id
     "LABEL_STUDIO_URL"        = "https://${scaleway_container.labelstudio_container[each.key].domain_name}"
+    "LLM_CONCURRENCY"       = "10"
     "LLM_PROVIDER"            = each.value.llm_provider
     "LOGLEVEL"                = "INFO"
     "MEDIATREE_AUTH_URL"      = "https://keywords.mediatree.fr/api/auth/token/"

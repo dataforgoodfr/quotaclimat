@@ -251,8 +251,10 @@ class MistralSinglePromptPipeline(Pipeline):
         )
         return chat_response.choices[0].message.content
 
-    async def _async_complete(self, messages, temperature: float) -> str:
-        chat_response = await self._client.chat.complete_async(
+    async def _async_complete(
+        self, messages, temperature: float, client: Optional[Mistral] = None
+    ) -> str:
+        chat_response = await (client or self._client).chat.complete_async(
             model=self._model,
             messages=messages,
             response_format=self._response_format,
@@ -285,21 +287,34 @@ class MistralSinglePromptPipeline(Pipeline):
         self,
         input_data: PipelineInput,
         semaphore: asyncio.Semaphore = asyncio.Semaphore(1),
+        client: Optional[Mistral] = None,
     ):
         messages = self._build_messages(input_data.transcript)
-        async with semaphore:
-            content = await self._async_complete(messages, temperature=0.05)
-        output, ok = parse_structured_response(content, id=input_data.id)
-        if not ok:
-            # Likely a degenerate repetition loop cut off by `stop`. A single
-            # retry at a higher temperature rarely re-enters the same loop.
+        try:
             async with semaphore:
-                content = await self._async_complete(messages, temperature=0.3)
+                content = await self._async_complete(
+                    messages, temperature=0.05, client=client
+                )
             output, ok = parse_structured_response(content, id=input_data.id)
+            if not ok:
+                # Likely a degenerate repetition loop cut off by `stop`. A single
+                # retry at a higher temperature rarely re-enters the same loop.
+                async with semaphore:
+                    content = await self._async_complete(
+                        messages, temperature=0.3, client=client
+                    )
+                output, ok = parse_structured_response(content, id=input_data.id)
+        except Exception as e:
+            # One failing transcript must not cancel the whole batch
+            logging.error(f"Error calling Mistral for id {input_data.id}: {e}")
+            output = PipelineOutput(score=0, reason="empty", id=input_data.id)
         return input_data.id, output
 
     async def _async_batch_process(self, input_data: List[PipelineInput]):
         semaphore = asyncio.Semaphore(self.semaphore_limit)
+        # Fresh client per asyncio.run(): an async httpx client is bound to the
+        # event loop it was first used in, which is closed after each batch.
+        client = Mistral(api_key=self._api_key)
         return await asyncio.gather(
             *[
                 self._async_process(
@@ -307,6 +322,7 @@ class MistralSinglePromptPipeline(Pipeline):
                         transcript=input.transcript, id=input.id if input.id else idx
                     ),
                     semaphore,
+                    client,
                 )
                 for idx, input in enumerate(input_data)
             ]
@@ -376,14 +392,19 @@ class SinglePromptPipeline(Pipeline):
     ):
         prompt = self._system_prompt + f" '''{input_data.transcript}'''"
         messages = [{"role": "user", "content": prompt}]
-        async with semaphore:
-            response = await async_client.chat.completions.create(
-                model=self._model,
-                messages=messages,
-                temperature=0,
-            )
-        result = response.choices[0].message.content.strip()
-        return input_data.id, parse_response(result, input_data.id)
+        try:
+            async with semaphore:
+                response = await async_client.chat.completions.create(
+                    model=self._model,
+                    messages=messages,
+                    temperature=0,
+                )
+            result = response.choices[0].message.content.strip()
+            return input_data.id, parse_response(result, input_data.id)
+        except Exception as e:
+            # One failing transcript must not cancel the whole batch
+            logging.error(f"Error calling OpenAI for id {input_data.id}: {e}")
+            return input_data.id, PipelineOutput(score=0, reason="empty", id=input_data.id)
 
     def process(self, input_data: PipelineInput) -> int:
         prompt = self._system_prompt + f" '''{input_data.transcript}'''"

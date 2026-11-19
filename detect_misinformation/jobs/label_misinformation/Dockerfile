@@ -1,7 +1,6 @@
 # Build context: repository root
 #   docker build -f detect_misinformation/jobs/label_misinformation/Dockerfile .
 # Dependencies come from the `misinformation` Poetry group of the root pyproject.toml.
-# The shadow service adds the `rrs` group (CPU torch + transformers): --build-arg POETRY_GROUPS=misinformation,rrs
 FROM python:3.12.10 AS builder
 
 ARG POETRY_GROUPS=misinformation

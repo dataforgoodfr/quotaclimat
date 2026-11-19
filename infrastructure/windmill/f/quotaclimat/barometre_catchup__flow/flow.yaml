@@ -160,6 +160,7 @@ value:
               "LOGLEVEL": "INFO",
               "MEDIATREE_AUTH_URL": "https://keywords.mediatree.fr/api/auth/token/",
               "MEDIATREE_USER": "quotaclimat",
+              "LLM_CONCURRENCY": 10,
               "LLM_PROVIDER": "mistral",
               "MODEL_NAME": "mistral-small-2603",
               "MODIN_MEMORY": 3000000000,

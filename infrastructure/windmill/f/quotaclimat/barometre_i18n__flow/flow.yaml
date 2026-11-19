@@ -207,6 +207,7 @@ value:
                   "LABEL_MISINFORMATION_OVERWRITE": (flow_input.label_misinformation_overwrite ?? false) ? '1' : '',
                   "LABEL_STUDIO_PROJECT": flow_input.iter.value.label_studio_project,
                   "LABEL_STUDIO_PROJECT_ID": flow_input.iter.value.label_studio_project_id,
+                  "LLM_CONCURRENCY": 10,
                   "LLM_PROVIDER": "mistral",
                   "LOGLEVEL": "INFO",
                   "MEDIATREE_AUTH_URL": "https://keywords.mediatree.fr/api/auth/token/",

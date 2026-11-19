@@ -261,7 +261,7 @@ captation AS (
     SELECT DISTINCT channel_name, start::date AS jour
     FROM {{ source('public', 'time_monitored') }}
     WHERE country = 'france' AND duration_minutes > 0
-      AND start >= '{{ recompute_from }}'::date
+      AND start::date >= '{{ recompute_from }}'::date
     UNION
     SELECT DISTINCT channel_name, jour_paris
     FROM segments

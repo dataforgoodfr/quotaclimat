@@ -197,6 +197,7 @@ tasks:
           LABEL_MISINFORMATION_OVERWRITE: "{{ inputs.label_misinformation_overwrite ? '1' : '' }}"
           LABEL_STUDIO_PROJECT: "{{ vars.countries[taskrun.value].label_studio_project }}"
           LABEL_STUDIO_PROJECT_ID: "{{ vars.countries[taskrun.value].label_studio_project_id }}"
+          LLM_CONCURRENCY: "10"
           LLM_PROVIDER: mistral
           LOGLEVEL: INFO
           MEDIATREE_AUTH_URL: https://keywords.mediatree.fr/api/auth/token/

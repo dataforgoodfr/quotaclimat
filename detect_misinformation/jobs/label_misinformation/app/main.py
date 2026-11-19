@@ -49,38 +49,33 @@ def get_channels(country):
     return channels
 
 
-def extract_model_result(transcript, pipeline: Pipeline):
-    try:
-        result = pipeline.process(PipelineInput(transcript=transcript))
-
-        return {"model_result": result.score, "model_reason": result.reason}
-    except:
-        return {"model_result": 0, "model_reason": "empty"}
-
-
 def detect_misinformation(
     df_news: pd.DataFrame,
     pipeline: Pipeline,
     min_misinformation_score: int = 10,
     model_name: str = "",
 ) -> pd.DataFrame:
-    """Execute the pipeline on a dataframe and filters on min_score"""
+    """Execute the pipeline on a dataframe and filters on min_score.
+
+    The pipeline must be built with use_async=True so that the transcripts
+    are sent concurrently (bounded by its semaphore_limit) instead of one by one.
+    A failing transcript gets a score of 0 and the reason "empty".
+    """
+    transcripts = df_news["plaintext"].tolist()
+    inputs = [
+        PipelineInput(transcript=transcript, id=str(idx))
+        for idx, transcript in enumerate(transcripts)
+    ]
     try:
-        df_news["model_result"] = df_news["plaintext"].apply(
-            lambda transcript: extract_model_result(transcript, pipeline)
-        )
-        df_news["model_reason"] = df_news["model_result"].apply(
-            lambda x: x["model_reason"]
-        )
-        df_news["model_result"] = df_news["model_result"].apply(
-            lambda x: x["model_result"]
-        )
-        df_news["model_name"] = model_name
-        df_news["prompt_version"] = pipeline.prompt_version
-        df_news["pipeline_version"] = pipeline.version
+        outputs = pipeline.batch_process(inputs)
     except Exception as e:
-        logging.error(f"Error during apply: {e}")
+        logging.error(f"Error during batch processing: {e}")
         raise
+    df_news["model_result"] = [output.score for output in outputs]
+    df_news["model_reason"] = [output.reason for output in outputs]
+    df_news["model_name"] = model_name
+    df_news["prompt_version"] = pipeline.prompt_version
+    df_news["pipeline_version"] = pipeline.version
     logging.info(f"model_result Examples : {df_news.head(10)}")
 
     if pipeline.binary:
@@ -114,6 +109,8 @@ def main(country: Country):
     bucket_output_folder = os.getenv("BUCKET_OUTPUT_FOLDER", "")
     min_misinformation_score = int(os.getenv("MIN_MISINFORMATION_SCORE", 10))
     llm_provider = os.getenv("LLM_PROVIDER", "mistral").lower()
+    # max number of LLM requests in flight at the same time
+    llm_concurrency = int(os.getenv("LLM_CONCURRENCY", 10))
 
     mediatree_check_secrets()
 
@@ -136,6 +133,8 @@ def main(country: Country):
                 model_name=model_name,
                 api_key=get_secret_docker("OPENAI_API_KEY"),
                 prompt=PROMPTS["0.0.1"],
+                use_async=True,
+                semaphore_limit=llm_concurrency,
             )
         else:
             pipeline = MistralSinglePromptPipeline(
@@ -143,6 +142,8 @@ def main(country: Country):
                 api_key=get_secret_docker("MISTRAL_API_KEY"),
                 language=country.language,
                 prompt=PROMPTS[country.prompt_version],
+                use_async=True,
+                semaphore_limit=llm_concurrency,
             )
 
         date_range = get_date_range(date_env, minus_days=number_of_previous_days)

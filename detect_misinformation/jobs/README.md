@@ -4,7 +4,7 @@ Two jobs, migrated from the `climateguard` repository:
 
 | Job | What it does | Poetry group (root `pyproject.toml`) |
 |---|---|---|
-| `label_misinformation/` | Labels misinformation in TV/radio transcripts with an LLM and pushes the extracts to Label Studio | `misinformation` (the `shadow` service adds `rrs` for CPU torch + transformers) |
+| `label_misinformation/` | Labels misinformation in TV/radio transcripts with an LLM and pushes the extracts to Label Studio | `misinformation` |
 | `get_audio_video/` | Collects German audio/video for annotation (GCS, Google Drive, Label Studio) | `germany-audio-video-collector` |
 
 ## Dependencies and images
@@ -61,6 +61,7 @@ docker compose exec testconsole bash
 The app config is setup via environment variables, here is an exhaustive list of the required environment variables needed:
 
 * "LLM_PROVIDER" - which pipeline/API to run misinformation detection with: `mistral` (default) or `openai`. See "LLM provider" below.
+* "LLM_CONCURRENCY" - max number of LLM requests in flight at the same time for one channel (default `10`). The transcripts of a channel are sent concurrently, a failing one gets score 0 and reason `empty`. Lower it if the provider returns rate-limit errors.
 * "MODEL_NAME" - the model used for the selected LLM_PROVIDER (e.g. `mistral-small-2603` for mistral, `gpt-4o-mini` for openai)
 * "MODEL_NAME_BRAZIL" - same as MODEL_NAME, but for the brazil country
 * "PROMPT_VERSION" - overrides the prompt version used by the mistral pipeline (see `app/prompts/prompts.py`). Defaults to the per-country value in `app/country.py` (the prompt translated into the country's language, e.g. `"0.1.0-nl"` for belgium-flanders). Only applies when LLM_PROVIDER=mistral; the openai pipeline always uses prompt version `"0.0.1"`.

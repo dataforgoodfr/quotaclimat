@@ -1778,6 +1778,53 @@ def test_fixture_seeds_disabled_in_production():
     assert "seeds/fixtures/keywords.csv" in test_seeds
 
 
+def test_emission_jour_incremental(db_connection):
+    """An incremental run recomputes the days whose cases changed and leaves the older days as they are;
+    a full refresh gives back the table of the first build (run last: rebuilds the model)."""
+    # end the transaction left open by the previous SELECTs: its lock on the table would block dbt
+    db_connection.rollback()
+    query = "SELECT * FROM public.emission_jour ORDER BY emission_cle, jour"
+    with db_connection.cursor() as cur:
+        cur.execute(query)
+        full = cur.fetchall()
+        cur.execute("SELECT emission_cle, jour, nb_cas FROM public.emission_jour WHERE nb_cas > 0 ORDER BY jour LIMIT 1")
+        cas_cle, cas_jour, nb_cas = cur.fetchone()
+        cur.execute("SELECT emission_cle, jour FROM public.emission_jour WHERE jour < %s ORDER BY jour LIMIT 1", (cas_jour,))
+        ancien_cle, ancien_jour = cur.fetchone()
+        # an older day changed by hand (kept by the incremental run), a case lost on a later day (recomputed)
+        cur.execute(
+            "UPDATE public.emission_jour SET env_heures = -1 WHERE emission_cle = %s AND jour = %s",
+            (ancien_cle, ancien_jour),
+        )
+        cur.execute(
+            "UPDATE public.emission_jour SET nb_cas = 0 WHERE emission_cle = %s AND jour = %s",
+            (cas_cle, cas_jour),
+        )
+    db_connection.commit()
+
+    run_dbt_command(["run", "--select", "emission_jour"])
+    with db_connection.cursor() as cur:
+        cur.execute(
+            "SELECT env_heures FROM public.emission_jour WHERE emission_cle = %s AND jour = %s",
+            (ancien_cle, ancien_jour),
+        )
+        assert cur.fetchone()[0] == -1
+        cur.execute(
+            "SELECT nb_cas FROM public.emission_jour WHERE emission_cle = %s AND jour = %s",
+            (cas_cle, cas_jour),
+        )
+        assert cur.fetchone()[0] == nb_cas
+        cur.execute("SELECT COUNT(*) FROM public.emission_jour")
+        assert cur.fetchone()[0] == len(full)
+    db_connection.rollback()
+
+    run_dbt_command(["run", "--select", "emission_jour", "--full-refresh"])
+    with db_connection.cursor() as cur:
+        cur.execute(query)
+        assert cur.fetchall() == full
+    db_connection.rollback()
+
+
 def test_publicites_start_date(db_connection):
     """Occurrences before ad_analysis_start_date are excluded (run last: rebuilds the model)."""
     # end the transaction left open by the previous SELECTs: its lock on the table would block dbt

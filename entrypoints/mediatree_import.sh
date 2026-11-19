@@ -26,6 +26,7 @@ poetry run dbt run --full-refresh \
   --exclude path:models/advertising \
   --exclude cas_de_mesinformation \
   --exclude publicites \
+  --exclude emission_jour \
   --exclude path:models/curated
 
 echo "apply dbt models to build the analytics tables (task_global_completion in 'analytics', environmental_shares_with_desinfo_counts in 'public')."
@@ -38,6 +39,9 @@ poetry run dbt run --full-refresh \
   --select path:models/advertising \
   --select cas_de_mesinformation \
   --select publicites
+
+echo "apply emission_jour (incremental: the last days and the days whose cases changed, see entrypoints/dbt.sh)"
+poetry run dbt run --select emission_jour
 
 echo "build and test the curated tables, last: they read the tables above"
 ./entrypoints/curated.sh

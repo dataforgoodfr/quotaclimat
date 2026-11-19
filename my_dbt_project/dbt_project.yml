@@ -36,6 +36,13 @@ on-run-end:
 # files using the `{{ config(...) }}` macro.
 models:
   my_dbt_project:
+    # memory of each sort / hash of the dbt queries: the database default (work_mem, 12 MB in prod, see
+    # infrastructure/live/barometre/template/database.tf) is sized for its 200 connections and makes the large
+    # models (ad_occurrence_tunnels, publicites, emission_jour...) spill to disk. SET LOCAL: the transaction of
+    # the model only, the other connections keep the default. Prod node db-dev-l (8 GB): 4 dbt threads x a few
+    # sorts / hashes each stay within the memory left by shared_buffers.
+    +pre-hook:
+      - "SET LOCAL work_mem = '{{ var('dbt_work_mem', '128MB') }}'"
     # Config indicated by + and applies to all files under models/example/
     analytics:
       +grants: &analytics_grants

@@ -10,6 +10,9 @@
 -- An ad tunnel is a sequence of consecutive ads on a channel, where each ad starts
 -- at most {{ tolerance_sec }} seconds after the end of all the previous ads of the tunnel.
 -- Overlapping ads (starting before the previous one ends) stay in the same tunnel.
+-- Occurrences from the day before ad_analysis_start_date only: the tunnels are read by analytics.publicites
+-- (from ad_analysis_start_date), the older occurrences would only cost time. The day before gives the tunnels
+-- crossing the start date their real start (tunnel_id).
 WITH occ AS (
     SELECT
         o.id AS occurrence_id,
@@ -20,6 +23,7 @@ WITH occ AS (
     JOIN {{ source('advertising', 'ad') }} a ON a.id = o.ad_id
     WHERE a.fragment_type != 'OTHER'
       AND o.deleted_at IS NULL
+      AND o.occurrence_date >= '{{ var("ad_analysis_start_date", "2025-09-29") }}'::timestamp - interval '1 day'
 ),
 flagged AS (
     SELECT

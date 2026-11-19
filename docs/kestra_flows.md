@@ -197,7 +197,7 @@ Runs the dbt models of the `barometre` database, then the `curated` schema: [`ba
 
 Quick rebuild, by hand, of the tables read by the Metabase questions, for instance after a change of an analytics or advertising model, or of a reference Google Sheet. Two subflows:
 
-1. `dbt_analytics`: [`dbt`](#dbt) with `only_analytics=true`. Same steps as a full run (Label Studio ingestion, seeds, analytics and advertising models, then the `curated` schema and its documentation in Metabase), without the dashboards and homepage models. `emission_jour` is still rebuilt, and reads the whole `public.keywords` table.
+1. `dbt_analytics`: [`dbt`](#dbt) with `only_analytics=true`. Same steps as a full run (Label Studio ingestion, seeds, analytics and advertising models, then the `curated` schema and its documentation in Metabase), without the dashboards and homepage models. `emission_jour` is incremental (the last 15 days and the days whose cases changed, see `my_dbt_project/README.md`), in this flow as in a full run.
 2. `metabase_sync`: [`metabase-sync`](#metabase-sync) with `apply=true`, `force=true`; its failure only marks the run as WARNING.
 
 It runs the `quotaclimat_base:latest` image, so the code must be merged and deployed first. Started during a `barometre` or `barometre-catchup` dbt run, its dbt step waits for the end of that run.

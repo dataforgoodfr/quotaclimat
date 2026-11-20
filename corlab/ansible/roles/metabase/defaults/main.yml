@@ -1,0 +1,6 @@
+---
+metabase_service_dir: /opt/services/metabase
+# Same tag as the local docker-compose.yml; pin an exact version (e.g. v0.xx.y) to avoid
+# unplanned upgrades, since the role pulls the image on every run.
+metabase_version: latest
+metabase_java_opts: "-Xmx2g"

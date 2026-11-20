@@ -1,0 +1,51 @@
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "100m"
+    max-file: "3"
+
+services:
+  metabase:
+    image: metabase/metabase:{{ metabase_version }}
+    container_name: metabase
+    restart: unless-stopped
+    logging: *default-logging
+    environment:
+      MB_DB_TYPE: postgres
+      MB_DB_HOST: postgres
+      MB_DB_PORT: "5432"
+      MB_DB_DBNAME: "{{ metabase_db_name }}"
+      MB_DB_USER: "{{ metabase_db_user }}"
+      MB_DB_PASS: "{{ metabase_db_password }}"
+      MB_SITE_URL: "https://{{ metabase_domain }}"
+      JAVA_TIMEZONE: Europe/Paris
+      JAVA_OPTS: "{{ metabase_java_opts }}"
+    # Loopback only (Docker bypasses UFW for published ports); public access goes through Traefik
+    ports:
+      - "127.0.0.1:4300:3000"
+    networks:
+      - traefik-public
+      - corlab-internal
+    security_opt:
+      - no-new-privileges:true
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=traefik-public
+      - "traefik.http.routers.metabase.rule=Host(`{{ metabase_domain }}`)"
+      - traefik.http.routers.metabase.entrypoints=websecure
+      - traefik.http.routers.metabase.tls.certresolver=letsencrypt
+      - traefik.http.services.metabase.loadbalancer.server.port=3000
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:3000/api/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 120s
+
+networks:
+  traefik-public:
+    name: traefik-public
+    external: true
+  corlab-internal:
+    name: corlab-internal
+    external: true

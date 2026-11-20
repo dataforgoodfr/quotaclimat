@@ -3,5 +3,6 @@ display_name: shared
 owners:
   - g/Admins
 extra_perms:
+  g/Admins: true
   g/Devs: true
   g/Operators: false

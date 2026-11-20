@@ -11,9 +11,8 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 from thefuzz import fuzz, process
 
-from quotaclimat.data_ingestion.advertising.s03_classification.dictionary.normalize import (
-    normalize,
-    nospace,
+from quotaclimat.data_ingestion.advertising.tools.brand_dictionary import (
+    brand_key,
 )
 
 # brands of the dictionary: tiers 1 and 2 give one sector to a brand, tier 3 several
@@ -24,11 +23,6 @@ DICTIONARY_TABLES = (
 )
 SIMILAR_BRAND_SCORE = 85
 MAX_SIMILAR_BRANDS = 3
-
-
-def brand_key(name: str | None) -> str:
-    """Key of a brand, the same as the dictionary (s03_classification/dictionary/matcher.py)."""
-    return nospace(normalize(name))
 
 
 @dataclass

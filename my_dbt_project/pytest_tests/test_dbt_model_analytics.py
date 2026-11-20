@@ -10,8 +10,14 @@ import pytest
 import yaml
 
 from my_dbt_project.pytest_tests.test_dbt_model_homepage import run_dbt_command
-from quotaclimat.data_ingestion.advertising.s03_classification.dictionary.normalize import normalize, nospace
-from quotaclimat.data_ingestion.external_sources.download_external_sources import SEEDS_DIR, download_source
+from quotaclimat.data_ingestion.advertising.tools.normalize import (
+    normalize,
+    nospace,
+)
+from quotaclimat.data_ingestion.external_sources.download_external_sources import (
+    SEEDS_DIR,
+    download_source,
+)
 from quotaclimat.metabase.questions import load_queries, read_query, render
 
 
@@ -1205,6 +1211,7 @@ def test_brand_inventory_loaded_as_text(db_connection):
         "L’Oréal Paris", "L'OREAL  PARIS", "Cœur de Lion", "CŒUR DE LION", "Škoda", "Coca-Cola®",
         "Leclerc — E.Leclerc", "Kronenbourg 1664", "Ça c'est Paris !", "Bière_Æther", "Größe",
         "Øresund", "Mc Donald's™", "Intermarché\u00a0", "« Franprix »", "Łódź", "3M", "élan 50€", "",
+        "CO₂ Neutre", "Œnobiol", "Mæsk",
     ],
 )
 def test_name_key_matches_python(db_connection, name):
@@ -1318,7 +1325,9 @@ def test_external_source_without_folder_is_skipped(tmp_path, monkeypatch):
 
 
 def test_download_external_sources_removes_previous_seeds(tmp_path, monkeypatch):
-    from quotaclimat.data_ingestion.external_sources import download_external_sources as downloader
+    from quotaclimat.data_ingestion.external_sources import (
+        download_external_sources as downloader,
+    )
 
     monkeypatch.delenv("EXTERNAL_SOURCES_DRIVE_FOLDER", raising=False)
     (tmp_path / "ref_ome_old_tab.csv").write_text("a\nb\n")
@@ -1359,7 +1368,9 @@ class FakeResponse:
 
 def test_fetch_google_sheet_api_calls(monkeypatch):
     """Checks the Drive / Sheets API requests with a fake authorized session."""
-    from quotaclimat.data_ingestion.external_sources import download_external_sources as loader
+    from quotaclimat.data_ingestion.external_sources import (
+        download_external_sources as loader,
+    )
 
     calls = []
 
@@ -1395,7 +1406,9 @@ def test_fetch_google_sheet_api_calls(monkeypatch):
 
 
 def test_fetch_google_sheet_requires_exactly_one_file(monkeypatch):
-    from quotaclimat.data_ingestion.external_sources import download_external_sources as loader
+    from quotaclimat.data_ingestion.external_sources import (
+        download_external_sources as loader,
+    )
 
     class FakeSession:
         def get(self, url, params, timeout):
@@ -1407,7 +1420,9 @@ def test_fetch_google_sheet_requires_exactly_one_file(monkeypatch):
 
 
 def test_get_session_requires_credentials(monkeypatch):
-    from quotaclimat.data_ingestion.external_sources import download_external_sources as loader
+    from quotaclimat.data_ingestion.external_sources import (
+        download_external_sources as loader,
+    )
 
     monkeypatch.delenv(loader.CREDENTIALS_ENV, raising=False)
     with pytest.raises(loader.ExternalSourceError, match="no Google service account credentials"):
@@ -1434,7 +1449,9 @@ class FakeAnonymousResponse:
     ],
 )
 def test_ensure_not_public_accepts_private_spreadsheet(status, headers):
-    from quotaclimat.data_ingestion.external_sources.download_external_sources import ensure_not_public
+    from quotaclimat.data_ingestion.external_sources.download_external_sources import (
+        ensure_not_public,
+    )
 
     calls = []
 

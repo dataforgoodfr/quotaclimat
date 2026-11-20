@@ -86,7 +86,7 @@ retries the errors. The rows of soft deleted occurrences stay.
   `OCCURRENCES_FROM` keeps only the occurrences broadcast from a date (e.g. `2025-09-29`, start of the ad
   analysis), and only the ads broadcast since then, whatever their detection date.
 - Only the classified ads and their occurrences by default: the final statuses of the classification
-  (`FINAL_PREDICTION_STATUSES` of `s03_classification/prediction_status.py`, same list as
+  (`FINAL_PREDICTION_STATUSES` of `tools/prediction_status.py`, same list as
   `analytics.publicites`), the others have no metadata to check.
 - Every occurrence that is not soft deleted.
 

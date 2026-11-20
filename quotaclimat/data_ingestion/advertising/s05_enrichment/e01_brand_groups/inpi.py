@@ -10,13 +10,16 @@ import logging
 import os
 import re
 import time
-from collections import Counter
 import xml.etree.ElementTree as ET  # responses of the INPI API only (expat refuses entity expansion attacks)
+from collections import Counter
 from dataclasses import dataclass, field
 
 import requests
 
-from quotaclimat.data_ingestion.advertising.s03_classification.dictionary.normalize import normalize, nospace
+from quotaclimat.data_ingestion.advertising.tools.normalize import (
+    normalize,
+    nospace,
+)
 
 API_URL = "https://api-gateway.inpi.fr/services/apidiffusion/api/marques"
 # login of the API gateway (checked with curl): GET AUTHENTICATE_URL sets the XSRF-TOKEN cookie (with a

@@ -15,7 +15,6 @@ import hashlib
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
-from typing import get_args
 
 from sqlalchemy import or_, select, update
 from sqlalchemy.dialects.postgresql import insert
@@ -26,12 +25,12 @@ from postgres.schemas.advertising.models import (
     Ad_Merge,
     Ad_Occurrence,
 )
-from quotaclimat.data_ingestion.advertising.s03_classification.ad_classification_schema import (
-    ContentType,
-)
-from quotaclimat.data_ingestion.advertising.s03_classification.prediction_status import (
+from quotaclimat.data_ingestion.advertising.tools.prediction_status import (
     AD_CONTENT_TYPE,
+    CONTENT_TYPES,
     FINAL_PREDICTION_STATUSES,
+    MANUAL_METHOD,
+    SUBCATEGORY_PENDING_STATUSES,
 )
 from quotaclimat.data_ingestion.advertising.s04_consolidation.e02_manual_corrections.references import (
     References,
@@ -46,15 +45,14 @@ from quotaclimat.data_ingestion.advertising.tools.ad_merge import (
 RESULT_APPLIED = "appliqué"
 RESULT_WARNING = "avertissement"
 RESULT_ERROR = "erreur"
-# prediction_method of an ad corrected by hand
-MANUAL_METHOD = "manual"
 # entry of advertising.ad.prediction keeping the values before the correction
 MANUAL_STAGE = "manual_correction"
 # entry of advertising.ad.prediction of an ad merged by hand into another (soft deleted)
 MANUAL_FUSION_STAGE = "manual_fusion"
-CONTENT_TYPES = get_args(ContentType)
-# input status of the dictionary stage (s03_classification/pipeline/e03_dict_match.py)
+# input status of the dictionary stage (s03_classification/sector_and_brand/e3_dict_match.py)
 DICT_MATCH_INPUT_STATUS = "ad_type_done"
+# status of an ad with its sub-category, the one of e4_classify_subcat, no stage selects it any more
+SUBCATEGORY_DONE_STATUS = "subcat_done"
 # fragment_type of a new ad, the same as the detection: exported and classified by the next steps
 NEW_AD_FRAGMENT_TYPE = "advertising"
 # occurrences of ads of durations further apart than this get a warning when they move to one ad
@@ -184,13 +182,15 @@ def correct_ad(
     """Correct an ad. Returns the outcome and the values before the correction (None on an error).
 
     - an advertising (content type AD) already classified (final status): the given values replace the
-      predicted ones, prediction_method becomes "manual";
+      predicted ones, prediction_method becomes "manual" and the classification stages no longer change it.
+      An ad waiting for its sub-category (SUBCATEGORY_PENDING_STATUSES) is only classified when the
+      correction gives the category: its status becomes subcat_done, else it is not classified (next case);
     - an advertising not classified (another content type corrected to AD, no sector found...): it goes back
       to the classification at the dictionary stage (status ad_type_done) with the corrected brand and sector
       in its ad_type prediction; the dictionary, then the sub-category stage, give its sector and category;
     - another content type (BUMPER, OTHER...): the ad becomes like a content the classification found not to
       be an advertising: content type in fragment_type and in its ad_type prediction, status ad_type_done (the
-      dictionary stage skips it), no brand, sector nor category. It leaves the analyses, even the queries
+      dictionary stage then sets not_ad), no brand, sector nor category. It leaves the analyses, even the queries
       reading advertising.ad without filtering on fragment_type, and the screenshots of new occurrences.
       Corrected back to AD, it goes back to the classification (case above).
     The values before the correction are kept in advertising.ad.prediction (stage "manual_correction").
@@ -237,7 +237,9 @@ def correct_ad(
         ad.predicted_sector = None
         ad.predicted_product_category = None
         ad.prediction_method = MANUAL_METHOD
-    elif ad.prediction_status in FINAL_PREDICTION_STATUSES:
+    elif ad.prediction_status in FINAL_PREDICTION_STATUSES and (
+        correction.category or ad.prediction_status not in SUBCATEGORY_PENDING_STATUSES
+    ):
         _check_references(correction, ad, references, outcome)
         ad.fragment_type = AD_CONTENT_TYPE
         if correction.brand:
@@ -246,6 +248,8 @@ def correct_ad(
             ad.predicted_sector = correction.sector
         if correction.category:
             ad.predicted_product_category = correction.category
+        if ad.prediction_status in SUBCATEGORY_PENDING_STATUSES:
+            ad.prediction_status = SUBCATEGORY_DONE_STATUS
         ad.prediction_method = MANUAL_METHOD
     else:
         _check_references(correction, ad, references, outcome)

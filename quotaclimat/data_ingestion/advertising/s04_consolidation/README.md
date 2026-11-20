@@ -328,8 +328,15 @@ How the 400k ads are compared without comparing every pair:
   the whole ad: the pairs of its chunks one after the other, shifted by the start of their chunk, so that two copies
   split differently in chunks still match.
 
-Output: the pairs with `score_min` >= `--min-score` are grouped (connected components of the pairs), and every ad
-of a group gets its own row (a group of 2 ads has 2 rows), never two ads mixed on one row:
+Output: the pairs with `score_min` >= `--min-score` are grouped, and every ad of a group is at most
+`--group-duration-tol` seconds (default 1) away from the duration of the target of its group. The connected
+components of the pairs are not enough: each pair is within `--duration-tol`, but the pairs chain the durations
+(2 s, 3 s... 11 s ads of a brand end up in one component). Each component is split again: the target is chosen among
+the ads left (as `target_ad_id` below), its group is the ads left linked to it through pairs of ads at most
+`--group-duration-tol` away from the target, and so on with the ads left. A target left alone (its matches already in
+other groups) is dropped, and the log gives the number of ads of the pairs left out of the groups. Only the pairs
+inside a group are kept in the matching columns. A negative `--group-duration-tol` keeps the plain connected
+components. Every ad of a group gets its own row (a group of 2 ads has 2 rows), never two ads mixed on one row:
 
 - the CSV (`--output`), to check the groups by hand: `group_id` (smallest ad id of the group), `group_size`,
   `mosaique` (URL of the mosaic of the ad, `advertising.ad_screenshot`), `mosaique_image` (left empty, for an image

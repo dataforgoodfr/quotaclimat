@@ -553,3 +553,67 @@ def test_run_on_database(connection, tmp_path):
     assert result[0]["match_score_min"] > 0.9
     assert result[0]["match_acoustique_compatible"] is True
     assert result[1]["lien_sauvegarde_match"].endswith("/files/ads/dup-1/")
+
+
+def test_group_rows_split_groups_chained_over_durations():
+    # a chain of matches 2 s - 2.8 s - 3.6 s - 4.4 s - 11 s: each pair within 1 s... except the
+    # last one, but the chain must not put 2 s and 4.4 s ads in one group
+    ads = {}
+    for ad_id, duration, nb_occurrences in [
+        ("a", 2.0, 1),
+        ("b", 2.8, 9),
+        ("c", 3.6, 1),
+        ("d", 4.4, 5),
+        ("e", 10.6, 1),
+        ("f", 11.0, 1),
+    ]:
+        ads[ad_id] = ad_print(ad_id, [])
+        ads[ad_id].duration_sec = duration
+        ads[ad_id].meta["nb_occurrences"] = nb_occurrences
+    pair = lambda x, y: fd.DuplicatePair(
+        ads[x], ads[y], 10, 0.9, 0.9, True
+    )  # noqa: E731
+    pairs = [
+        pair("a", "b"),
+        pair("b", "c"),
+        pair("c", "d"),
+        pair("d", "e"),
+        pair("e", "f"),
+    ]
+
+    # plain connected components: one group of 6
+    assert {row["group_size"] for row in fd.group_rows(pairs)} == {6}
+
+    rows = {row["ad_id"]: row for row in fd.group_rows(pairs, group_duration_tol=1.0)}
+    # b, the most broadcast, is the first target: a and c are at most 1 s away
+    assert {ad_id for ad_id, row in rows.items() if row["target_ad_id"] == "b"} == {
+        "a",
+        "b",
+        "c",
+    }
+    # then d: its only match left, e, is 6.2 s away, d is dropped; then e with f
+    assert "d" not in rows
+    assert rows["e"]["group_id"] == rows["f"]["group_id"] == "e"
+    for row in rows.values():
+        target = ads[row["target_ad_id"]]
+        assert abs(row["duration_sec"] - target.duration_sec) <= 1.0
+    # matches only inside the group: c no longer lists d
+    assert rows["c"]["matches"] == "b:0.9"
+    assert rows["c"]["nb_matches"] == 1
+
+
+def test_duration_groups_keeps_ads_linked_through_a_member():
+    # a - b - c, all within 1 s of the target b... c reached through a only
+    ads = {x: ad_print(x, []) for x in "abc"}
+    ads["a"].duration_sec, ads["b"].duration_sec, ads["c"].duration_sec = (
+        10.5,
+        10.0,
+        11.0,
+    )
+    ads["b"].meta["nb_occurrences"] = 3
+    pair = lambda x, y: fd.DuplicatePair(
+        ads[x], ads[y], 10, 0.9, 0.9, True
+    )  # noqa: E731
+    groups, targets = fd.duration_groups([pair("a", "b"), pair("a", "c")], 1.0)
+    assert groups == {"a": ("a", 3), "b": ("a", 3), "c": ("a", 3)}
+    assert targets == {"a": "b"}

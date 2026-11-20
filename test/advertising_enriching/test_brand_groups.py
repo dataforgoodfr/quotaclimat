@@ -1352,3 +1352,85 @@ def test_run_uniformize_writes_the_cells_and_the_note():
     _, _, body = session.appended[0]
     assert [d["range"] for d in body["data"]] == ["'Marques'!C3", "'Marques'!D3", "'Marques'!E3"]
     assert body["data"][2]["values"][0][0].startswith(f"job {TODAY.isoformat()} : valeurs de l'entreprise Free")
+
+
+def test_airtime_by_brand_adds_spellings():
+    from quotaclimat.data_ingestion.advertising.s05_enrichment.e01_brand_groups.airtime import airtime_by_brand
+
+    assert airtime_by_brand([("Free", 60), ("FREE", 30.0), ("Dior", None), (None, 10), ("", 5)]) == {
+        name_key("Free"): 90.0,
+        name_key("Dior"): 0.0,
+    }
+
+
+def test_airtime_updates_only_changed_rows():
+    from quotaclimat.data_ingestion.advertising.s05_enrichment.e01_brand_groups.airtime import airtime_updates
+
+    inventory = [
+        {"marque": "Free", "temps_antenne_min": "1,5"},  # same value, French decimal separator
+        {"marque": "Dior", "temps_antenne_min": "3"},
+        {"marque": "Never broadcast", "temps_antenne_min": ""},
+        {"marque": "", "temps_antenne_min": "7"},  # no brand: left as it is
+        {"marque": "Acme", "temps_antenne_min": "0"},
+    ]
+    seconds = {name_key("Free"): 90.0, name_key("Dior"): 125.0}
+    assert airtime_updates(inventory, seconds) == [
+        (1, "Dior", {"temps_antenne_min": ("3", 2.1)}),
+        (2, "Never broadcast", {"temps_antenne_min": ("", 0)}),
+    ]
+
+
+class FakeConnection:
+    def __init__(self, rows):
+        self.rows = rows
+        self.params = None
+
+    def execute(self, query, params=None):
+        self.params = params
+        rows = self.rows
+
+        class Result:
+            def all(self):
+                return rows
+
+        return Result()
+
+
+def test_update_airtime_writes_the_column():
+    from quotaclimat.data_ingestion.advertising.s05_enrichment.e01_brand_groups.airtime import update_airtime
+
+    session = FakeSheetsSession({"Marques": [
+        ["marque", "entreprise", "temps_antenne_min"],
+        ["Free", "Free", "1"],
+        ["Dior", "Christian Dior Couture", "2"],
+    ]})
+    sheet = BrandInventorySheet(session, "SHEET_ID")
+    connection = FakeConnection([("FREE", 600), ("Dior", 120)])
+    assert update_airtime(sheet, connection, date(2026, 1, 1), date(2026, 12, 31), dry_run=True) == 0
+    assert session.appended == []
+    assert update_airtime(sheet, connection, date(2026, 1, 1), date(2026, 12, 31)) == 1
+    assert connection.params == {"start": date(2026, 1, 1), "end": date(2026, 12, 31)}
+    _, _, body = session.appended[0]
+    assert body == {"valueInputOption": "RAW", "data": [{"range": "'Marques'!C2", "values": [[10]]}]}
+
+
+def test_update_airtime_needs_the_column():
+    import pytest
+
+    from quotaclimat.data_ingestion.advertising.s05_enrichment.e01_brand_groups.airtime import update_airtime
+
+    sheet = BrandInventorySheet(FakeSheetsSession({"Marques": [["marque"], ["Free"]]}), "SHEET_ID")
+    with pytest.raises(RuntimeError, match="temps_antenne_min"):
+        update_airtime(sheet, FakeConnection([]), date(2026, 1, 1), date(2026, 12, 31))
+
+
+def test_parse_args_airtime():
+    import pytest
+
+    args = run_module.parse_args(["--airtime-only", "--airtime-start", "2026-01-01", "--airtime-end", "2026-12-31"])
+    assert (args.airtime_only, args.airtime_start, args.airtime_end) == (True, date(2026, 1, 1), date(2026, 12, 31))
+    assert run_module.parse_args([]).airtime_start is None
+    for argv in (["--airtime-only"], ["--airtime-start", "2026-01-01"],
+                 ["--airtime-start", "2026-12-31", "--airtime-end", "2026-01-01"]):
+        with pytest.raises(SystemExit):
+            run_module.parse_args(argv)

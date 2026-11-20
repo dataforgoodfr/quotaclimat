@@ -1,6 +1,6 @@
 # Stage 5 (enriching), step 1: brand company and ultimate parent company proposals
 
-Scaleway job (`entrypoints/ad_s05e01_brand_groups_enrichment.sh`; the technical names keep "brand groups"). For each broadcast brand missing from the tab `Marques` of the `Inventaire_des_marques` Google Sheet, it proposes the company that sells under the brand and its ultimate parent company, each with the country, SIREN and department of its head office, and appends the row to the tab. A human checks and corrects it afterwards, directly in the sheet. The dbt model `ad_brands` reads it at the next dbt run. The job then gives the rows of the same company the same values, the highest row of the tab winning (see [Uniformization of the rows of a company](#uniformization-of-the-rows-of-a-company)). With `BRAND_GROUPS_COMPLETE_ROWS=true`, it then fills the empty cells of the rows already in the tab (see [Completion of the rows of the tab](#completion-of-the-rows-of-the-tab)).
+Scaleway job (`entrypoints/ad_s05e01_brand_groups_enrichment.sh`; the technical names keep "brand groups"). For each broadcast brand missing from the tab `Marques` of the `Inventaire_des_marques` Google Sheet, it proposes the company that sells under the brand and its ultimate parent company, each with the country, SIREN and department of its head office, and appends the row to the tab. A human checks and corrects it afterwards, directly in the sheet. The dbt model `ad_brands` reads it at the next dbt run. The job then gives the rows of the same company the same values, the highest row of the tab winning (see [Uniformization of the rows of a company](#uniformization-of-the-rows-of-a-company)). With `BRAND_GROUPS_COMPLETE_ROWS=true`, it then fills the empty cells of the rows already in the tab (see [Completion of the rows of the tab](#completion-of-the-rows-of-the-tab)). With the options `--airtime-start` and `--airtime-end`, it writes the air time of every brand of the tab in that period, to review the brands by decreasing air time (see [Air time of the brands](#air-time-of-the-brands)).
 
 ## The tab `Marques`
 
@@ -15,6 +15,7 @@ Scaleway job (`entrypoints/ad_s05e01_brand_groups_enrichment.sh`; the technical 
 | `smu_pays`, `smu_siren`, `smu_departement` | country, SIREN and department of the head office of the ultimate parent company, like the three columns of the company |
 | `actionnaire_maj_ultime` | ultimate majority shareholder (e.g. a family holding), filled in by a human only |
 | `e_statut`, `smu_statut`, `amu_statut` | status of `entreprise`, `societe_mere_ultime` and `actionnaire_maj_ultime`: `vérifié`, `non vérifié` or `à vérifier` |
+| `temps_antenne_min` | air time of the brand in minutes over the period given to the job, written and overwritten by the job only (see [Air time of the brands](#air-time-of-the-brands)); needed only with `--airtime-start` |
 | `commentaires` | how the job filled the row (holder and its SIREN, trademark, LEI, GLEIF and Wikidata answers) |
 
 dbt uses each value unless its status is `à vérifier`. The job writes `e_statut = non vérifié` (used) and `smu_statut = à vérifier` (not used until a human checks it) for an ultimate parent it found. When it finds nothing (no trademark, no ultimate parent), it leaves the value and its status empty.
@@ -51,6 +52,20 @@ With `BRAND_GROUPS_COMPLETE_ROWS=true` (on a manual run of the Scaleway job, for
 5. `smu_departement`: API Recherche d'entreprises.
 
 INPI is never called, so the step spends none of its quota. The values are written at the end of the step, after reading the tab again: a row whose brand moved or a cell filled in by a human in the meantime is left as it is. The step stops after `BRAND_GROUPS_COMPLETE_MAX_REQUESTS` registry requests (about one second each), the next rows being completed on the next run. Run it with `BRAND_GROUPS_MAX_BRANDS=0` to complete the rows without proposing new brands. Each completed row is in the logs; with `BRAND_GROUPS_DRY_RUN=true`, nothing is written, the cells to fill are printed between two markers.
+
+## Air time of the brands
+
+With `--airtime-start YYYY-MM-DD --airtime-end YYYY-MM-DD` (days of Paris, both included), after the other steps, the job writes in the column `temps_antenne_min` of each row with a brand the air time of the brand over the period (`airtime.py`): the sum of `analytics.publicites.duration_sec` of the occurrences whose predicted brand has the same `name_key` as the brand of the row (as dbt matches them in `ad_brands`), in minutes with one decimal, `0` for a brand not broadcast in the period. Sort the tab (or a filter view) on this column to review the most broadcast brands first.
+
+The column must exist in the tab (the job stops otherwise). Its cells are **overwritten** on every run, only when the value changes: do not type anything in it. As for the uniformization, the tab is read again just before writing, and a row whose brand moved or whose cell was edited in the meantime is left as it is. No API is called, only the database. With `BRAND_GROUPS_DRY_RUN=true`, nothing is written, the changes are printed between two markers.
+
+`--airtime-only` writes the air time and nothing else (no INPI, no registry, no uniformization): for a Scaleway cron of its own at a lower frequency, since a cron changes the command of the job, not its env. Command of such a cron, for 2026:
+
+```bash
+./entrypoints/ad_s05e01_brand_groups_enrichment.sh --airtime-only --airtime-start 2026-01-01 --airtime-end 2026-12-31
+```
+
+The period is not written in the sheet: change it in the cron command, and tell the reviewers.
 
 ## Env
 

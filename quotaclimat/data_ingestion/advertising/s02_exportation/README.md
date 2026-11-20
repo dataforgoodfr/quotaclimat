@@ -16,6 +16,37 @@ Exports the detected ads (audio/video saved in the advertising bucket, `ads/<ad_
 | Variable | Default | Purpose |
 |---|---|---|
 | `SCREENSHOT_ON_EXPORT` | `true` | Makes the screenshot mosaic of each exported ad from its local video, see `s05_enrichment/e02_screenshots/README.md` (Sources). |
+| `EXPORT_MERGED_ADS` | `false` | `false`: the ads that are not merged ads. `true`: only the merged ads of an active merge, see below. |
+| `START_DATE`, `END_DATE` | unset | Window on the first detection of the ads (Paris time). A merged ad has the first detection of its oldest source ad. |
+
+### Merged ads (`EXPORT_MERGED_ADS=true`)
+
+A merged ad (`advertising.ad_merge`, see `s04_consolidation/README.md`) is a new ad: nothing is in the
+advertising bucket for it until it is exported. A run with `EXPORT_MERGED_ADS=false` (default) leaves out
+every merged ad, whatever the status of its merge; a run with `EXPORT_MERGED_ADS=true` takes only the
+merged ads of an active merge, without video or with a too small mp4, like the default run does for the
+other ads. Schedule both runs: a merged ad is only exported by the second one.
+
+For each merged ad (`merged_ads.py`):
+
+1. its video is cut from the mediatree archives of its most recent occurrence, like any ad;
+2. when these archives are no longer in the mediatree bucket, it is rebuilt from the videos of the ads it
+   was merged from (`ads/<source_ad_id>/raw.mp4`), placed as they were broadcast in the most recent
+   occurrence of the merged ad that still has its journal rows (`advertising.ad_merge_occurrence`): the
+   pieces, and the short segments absorbed between them. The time covered by no source video (gap
+   between two pieces, absorbed segment without video) is black and silent. Without journal rows
+   (deleted by a reprocessing of the detection), the pieces are put end to end. The video lasts the
+   duration of the merged ad, cut or padded with black at the end, with the export margin
+   (`MARGIN_ON_MEDIA_EXPORT`) of black before and after; the mp3 is made from it. The margin of each
+   source video is found from its duration, like the screenshots job does (`export_margin_sec`);
+3. a source ad without video that is itself a merged ad is rebuilt the same way, recursively (its video
+   is only used for this rebuild, not saved). A piece that has no video and can't be rebuilt makes the
+   rebuild fail: the merged ad stays in the missing ads of the log, and the next run tries again.
+
+Limits: a rebuilt video is made of the videos of the pieces, cut from other broadcasts than the one of
+the layout; where two pieces overlap (up to 1 s, see `e01_merge_split_ads`), the second one starts where
+the first one ends. The log says for each rebuilt ad its layout (`journal` with the occurrence, or
+`end_to_end`), and the progress counts `rebuilt` apart from `uploaded`.
 
 ## `recompute_saved_chunks` env vars
 

@@ -9,19 +9,27 @@ from zoneinfo import ZoneInfo
 
 import s3fs
 from sentry_sdk.crons import monitor
-from sqlalchemy import func, select, update
+from sqlalchemy import exists, func, select, update
 from sqlalchemy.orm import aliased
 
 from postgres.database_connection import get_db_session
-from postgres.schemas.advertising.models import Ad, Ad_Occurrence
+from postgres.schemas.advertising.models import Ad, Ad_Merge, Ad_Occurrence
 from quotaclimat.data_ingestion.advertising.s02_exportation.ad_bucket import (
     ad_media_s3_key,
     ad_prefix_in_bucket,
+)
+from quotaclimat.data_ingestion.advertising.s02_exportation.merged_ads import (
+    mp4_to_mp3,
+    plan_merged_ad,
+    render_merged_ad,
 )
 from quotaclimat.data_ingestion.advertising.s05_enrichment.e02_screenshots.run import (
     ScreenshotResult,
     save_results,
     screenshot_ad_from_video,
+)
+from quotaclimat.data_ingestion.advertising.tools.ad_merge import (
+    MERGE_STATUS_ACTIVE,
 )
 from quotaclimat.data_ingestion.advertising.tools.interactive_tqdm import (
     interactive_tqdm,
@@ -51,6 +59,16 @@ MARGIN_ON_MEDIA_EXPORT = timedelta(
 # Mosaic of the frames of every exported ad (s05_enrichment/e02_screenshots), made from the local
 # raw.mp4 before it is deleted: no download, and the margin is the one just applied.
 SCREENSHOT_ON_EXPORT = os.environ.get("SCREENSHOT_ON_EXPORT", "true").lower() in (
+    "1",
+    "true",
+    "yes",
+)
+
+# false (default): the ads that are not merged ads. true: only the merged ads of an active merge
+# (advertising.ad_merge, s04_consolidation): cut from mediatree like the others when the archives of
+# their most recent occurrence are still there, rebuilt from the videos of their source ads otherwise
+# (see merged_ads.py).
+EXPORT_MERGED_ADS = os.environ.get("EXPORT_MERGED_ADS", "false").lower() in (
     "1",
     "true",
     "yes",
@@ -100,12 +118,29 @@ async def get_raw_mp4_size_in_s3(ad_id: str, fs: s3fs.S3FileSystem) -> int | Non
         return None
 
 
-def _base_ads_query(start_date: datetime | None, end_date: datetime | None):
+def _base_ads_query(
+    start_date: datetime | None,
+    end_date: datetime | None,
+    merged_ads: bool = False,
+):
     base_query = (
         select(Ad, Ad_Occurrence)
         .join(Ad_Occurrence, Ad_Occurrence.ad_id == Ad.id)
         .where(Ad.deleted_at.is_(None))
     )
+    if merged_ads:
+        base_query = base_query.where(
+            exists(
+                select(1)
+                .where(Ad_Merge.merged_ad_id == Ad.id)
+                .where(Ad_Merge.status == MERGE_STATUS_ACTIVE)
+            )
+        )
+    else:
+        # a merged ad, whatever the status of its merge, is left to EXPORT_MERGED_ADS=true
+        base_query = base_query.where(
+            ~exists(select(1).where(Ad_Merge.merged_ad_id == Ad.id))
+        )
 
     if start_date:
         base_query = base_query.where(Ad.first_detection_date >= start_date)
@@ -120,23 +155,30 @@ def _base_ads_query(start_date: datetime | None, end_date: datetime | None):
 
 
 def count_ads_since(
-    session, start_date: datetime | None, end_date: datetime | None
+    session,
+    start_date: datetime | None,
+    end_date: datetime | None,
+    merged_ads: bool = False,
 ) -> int:
     result = session.execute(
         select(func.count()).select_from(
-            _base_ads_query(start_date, end_date).subquery()
+            _base_ads_query(start_date, end_date, merged_ads).subquery()
         )
     )
     return result.scalar()
 
 
-def _grouped_ads_query(start_date: datetime | None, end_date: datetime | None):
+def _grouped_ads_query(
+    start_date: datetime | None,
+    end_date: datetime | None,
+    merged_ads: bool = False,
+):
     """Same rows as `_base_ads_query`, but read back out of its DISTINCT ON result so
     they can be ordered by channel/date -- Postgres requires DISTINCT ON's own ORDER BY
     to start with the distinct-on expression (Ad.id here), so this order has to be
     applied on top of it rather than combined into the same query.
     """
-    inner = _base_ads_query(start_date, end_date).subquery()
+    inner = _base_ads_query(start_date, end_date, merged_ads).subquery()
     ad_alias = aliased(Ad, inner)
     occurrence_alias = aliased(Ad_Occurrence, inner)
     return select(ad_alias, occurrence_alias).order_by(
@@ -145,7 +187,11 @@ def _grouped_ads_query(start_date: datetime | None, end_date: datetime | None):
 
 
 def iter_ads_by_channel_day(
-    session, start_date: datetime | None, end_date: datetime | None, page_size: int
+    session,
+    start_date: datetime | None,
+    end_date: datetime | None,
+    page_size: int,
+    merged_ads: bool = False,
 ):
     """Stream (Ad, Ad_Occurrence) rows from Postgres via a server-side cursor, ordered
     by channel and occurrence date, yielding one (channel, day) group -- where day is
@@ -154,7 +200,7 @@ def iter_ads_by_channel_day(
     rather than every ad inside the start and end dates.
     """
     result = session.execute(
-        _grouped_ads_query(start_date, end_date),
+        _grouped_ads_query(start_date, end_date, merged_ads),
         execution_options={"stream_results": True},
     )
 
@@ -222,6 +268,50 @@ async def _export_ad(
     return screenshot
 
 
+async def _rebuild_merged_ad(
+    ad: Ad,
+    plan_merged,
+    local_dir: str,
+    fs: s3fs.S3FileSystem,
+) -> ScreenshotResult | None:
+    """Rebuild the mp4 of a merged ad from the videos of its source ads (merged_ads.py), with the
+    usual export margin, make its mp3 from it, and upload both like _export_ad.
+
+    plan_merged(ad_id) reads the plan in the database (synchronous: no other task uses its session
+    meanwhile). Raises RebuildError when the video can't be rebuilt.
+    """
+    plan = plan_merged(ad.id)
+    work_dir = tempfile.mkdtemp(dir=local_dir, prefix=f"rebuild_{ad.id}_")
+    try:
+        mp4_path = os.path.join(work_dir, f"{ad.id}.mp4")
+        mp3_path = os.path.join(work_dir, f"{ad.id}.mp3")
+        rebuilt = await render_merged_ad(
+            fs,
+            plan,
+            mp4_path,
+            work_dir,
+            MARGIN_ON_MEDIA_EXPORT.total_seconds(),
+        )
+        await mp4_to_mp3(mp4_path, mp3_path)
+        for media_format, local_path in (("mp3", mp3_path), ("mp4", mp4_path)):
+            await fs._put_file(
+                local_path,
+                ad_media_s3_key(ad.id, media_format),
+                StorageClass="ONEZONE_IA",
+            )
+        logger.info(
+            f"Rebuilt merged ad {ad.id} from its sources ({plan.layout} layout"
+            + (f", occurrence {plan.occurrence_id}" if plan.occurrence_id else "")
+            + (f", source merged ads rebuilt too: {rebuilt}" if rebuilt else "")
+            + ")"
+        )
+        if SCREENSHOT_ON_EXPORT:
+            return await _screenshot_exported_ad(ad, mp4_path, work_dir, fs)
+        return None
+    finally:
+        shutil.rmtree(work_dir, ignore_errors=True)
+
+
 async def _screenshot_exported_ad(
     ad: Ad,
     video_path: str,
@@ -259,10 +349,14 @@ async def _process_group(
     missing_ads: list,
     reset_no_data_ads: list,
     screenshots: list,
+    plan_merged=None,
 ) -> None:
     """Check, download and export every ad in one (channel, day) group. Groups are
     independent of each other (own local_dir, own downloaded parts), so this is meant
     to be run concurrently across groups by the caller.
+
+    With plan_merged (EXPORT_MERGED_ADS), an ad whose mediatree archives are missing is
+    rebuilt from the videos of its source ads instead (see _rebuild_merged_ad).
     """
     group_start = time.monotonic()
 
@@ -317,20 +411,35 @@ async def _process_group(
             logger.error(
                 f"Failed to download mediatree archives for {channel}/{day}: {e}"
             )
-            for ad, _, _, _ in needs_export:
-                missing_ads.append(ad.id)
-                progress.count("error")
-                progress.update(1)
-            return
+            if plan_merged is None:
+                for ad, _, _, _ in needs_export:
+                    missing_ads.append(ad.id)
+                    progress.count("error")
+                    progress.update(1)
+                return
+            # merged ads: every one is rebuilt from its sources below
+            parts = {}
         download_elapsed = time.monotonic() - download_start
 
         async def _limited_export(ad, occurrence, from_date, to_date):
             async with semaphore:
                 try:
-                    screenshot = await _export_ad(
-                        ad, occurrence, from_date, to_date, parts, local_dir, fs
-                    )
-                    progress.count("uploaded")
+                    try:
+                        screenshot = await _export_ad(
+                            ad, occurrence, from_date, to_date, parts, local_dir, fs
+                        )
+                        progress.count("uploaded")
+                    except Exception as e:
+                        if plan_merged is None:
+                            raise
+                        logger.info(
+                            f"Merged ad {ad.id} not cut from mediatree ({e}), "
+                            "rebuilding it from its sources"
+                        )
+                        screenshot = await _rebuild_merged_ad(
+                            ad, plan_merged, local_dir, fs
+                        )
+                        progress.count("rebuilt")
                     if screenshot is not None:
                         screenshots.append(screenshot)
                     if ad.fragment_type == "no_data":
@@ -380,6 +489,9 @@ def _save_screenshots(session, screenshots: list[ScreenshotResult]) -> None:
 
 async def run(start_date: datetime | None, end_date: datetime | None):
     session = get_db_session()
+    # Reads the plans of the merged ads to rebuild (EXPORT_MERGED_ADS): neither the streaming cursor
+    # of `session` nor the commits of `write_session` must get in the way.
+    plan_session = get_db_session() if EXPORT_MERGED_ADS else None
     # Another session to save the screenshots of each group: a commit on `session` would close
     # the streaming cursor of iter_ads_by_channel_day.
     write_session = get_db_session()
@@ -390,8 +502,16 @@ async def run(start_date: datetime | None, end_date: datetime | None):
     screenshot_statuses = []
 
     try:
-        total = count_ads_since(session, start_date, end_date)
-        logger.info(f"Found {total} ads from {start_date} to {end_date}")
+        total = count_ads_since(session, start_date, end_date, EXPORT_MERGED_ADS)
+        logger.info(
+            f"Found {total} {'merged ' if EXPORT_MERGED_ADS else ''}ads "
+            f"from {start_date} to {end_date}"
+        )
+        plan_merged = (
+            (lambda ad_id: plan_merged_ad(plan_session, ad_id))
+            if EXPORT_MERGED_ADS
+            else None
+        )
 
         semaphore = asyncio.Semaphore(MAX_CONCURRENT_EXPORTS)
         group_semaphore = asyncio.Semaphore(MAX_CONCURRENT_GROUPS)
@@ -411,6 +531,7 @@ async def run(start_date: datetime | None, end_date: datetime | None):
                     missing_ads,
                     reset_no_data_ads,
                     screenshots,
+                    plan_merged,
                 )
             finally:
                 _save_screenshots(write_session, screenshots)
@@ -419,7 +540,7 @@ async def run(start_date: datetime | None, end_date: datetime | None):
 
         tasks = []
         for (channel, day), ads in iter_ads_by_channel_day(
-            session, start_date, end_date, PAGE_SIZE
+            session, start_date, end_date, PAGE_SIZE, EXPORT_MERGED_ADS
         ):
             # Acquired here rather than inside _bounded_group, so this loop -- and the
             # streaming DB cursor behind iter_ads_by_channel_day -- pauses until a slot
@@ -458,6 +579,8 @@ async def run(start_date: datetime | None, end_date: datetime | None):
         logger.info(f"Finished, here are the {len(missing_ads)} missing ads")
         logger.info(",".join(missing_ads))
         write_session.close()
+        if plan_session is not None:
+            plan_session.close()
         session.close()
 
 

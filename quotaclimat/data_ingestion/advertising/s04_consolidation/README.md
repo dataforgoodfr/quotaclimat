@@ -18,7 +18,9 @@ ads (automatic or manual). They only add to the session, the caller commits:
   detection recognises it when the pieces are broadcast together. It takes the classification of the source
   ads when they agree, or the one of the brand dictionary on their whole transcript, or the one of the
   pieces covering the longest duration (`inherit_classification`, see below); otherwise it has no prediction, and the exportation and
-  classification steps process it like a new ad. Idempotent (stable id from the source
+  classification steps process it like a new ad. Its video is exported by the exportation run with
+  `EXPORT_MERGED_ADS=true`, rebuilt from the videos of the source ads when its mediatree archives are gone
+  (see `s02_exportation/README.md`). Idempotent (stable id from the source
   ads). A merge reverted by `revert_merge` raises `MergeRevertedError` unless `reactivate_reverted=True`:
   the automatic script never redoes a merge a human judged wrong.
 - `inherit_classification(session, merged_ad_id, source_ads, dictionary=None)`: when every source ad is an

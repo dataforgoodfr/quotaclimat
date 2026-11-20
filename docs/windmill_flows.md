@@ -32,6 +32,7 @@ They need `WINDMILL_TOKEN` (a token of a **superadmin**, since SMTP is an instan
 `wmill sync push` makes the workspace match the repository, **deletions included**, but only in the folders listed in `infrastructure/windmill/wmill.yaml` (`includes`). Flows, scripts and schedules are synced; variables and resources are left out. So:
 
 - never create or edit a flow or a schedule **in the Windmill UI** in these folders: the next deploy overwrites or deletes it. Flows are created and changed in the repository (`infrastructure/windmill/f/...`), then deployed. The copy on the server (`/opt/services/windmill/workspace/`) is recreated at each deploy: do not edit it either. Outside these folders (e.g. a personal script under `u/<user>/`), the UI can be used freely;
+- the access to each folder is set by group in its `folder.meta.yaml` and pushed with the flows (`skipFolders: false`): `g/Admins` is in `owners` (admin), `g/Devs` has write (`extra_perms: true`) and `g/Operators` is viewer (`extra_perms: false`). The three groups must exist in the workspace before the deploy (names are case-sensitive); a permission changed by hand in the UI is overwritten at the next deploy;
 - a second deploy with nothing changed reports `remote (...) <- local: 0 changes to apply`.
 
 ## From Kestra to Windmill
@@ -124,7 +125,7 @@ Values are changed the same way (edit `.env.secrets`, deploy): a value edited in
 
 ## Adding or changing a flow
 
-1. Edit or add the files under `infrastructure/windmill/f/...`. For a new folder, add its `folder.meta.yaml` and its line in `wmill.yaml` (`includes`). Read inputs with their default (`(flow_input.x ?? <default>)`, see [Default inputs](#from-kestra-to-windmill)).
+1. Edit or add the files under `infrastructure/windmill/f/...`. For a new folder, add its `folder.meta.yaml` (with the same `owners`/`extra_perms` as the other folders) and its line in `wmill.yaml` (`includes`). Read inputs with their default (`(flow_input.x ?? <default>)`, see [Default inputs](#from-kestra-to-windmill)).
 2. Check them: `npx windmill-cli@1.864.1 lint` from `infrastructure/windmill/` (same version as the server).
 3. When a Python script or inline step changes its imports, regenerate its `.lock` with `wmill generate-metadata` against a Windmill instance (a local one is enough: `docker run` of the same image), and commit it. Without it, the CLI warns about stale metadata.
 4. `make tags=windmill ansible`.

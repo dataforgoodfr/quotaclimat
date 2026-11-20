@@ -1,0 +1,15 @@
+---
+- name: restart sshd
+  systemd:
+    name: ssh
+    state: restarted
+
+- name: restart fail2ban
+  systemd:
+    name: fail2ban
+    state: restarted
+
+- name: restart docker
+  systemd:
+    name: docker
+    state: restarted

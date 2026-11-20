@@ -1,0 +1,64 @@
+---
+- name: Provision corlab server (Traefik + Postgres + Metabase)
+  hosts: corlab
+  remote_user: "{{ lookup('env', 'CORLAB_SSH_USER') | default('ubuntu', true) }}"
+  become: true
+
+  vars:
+    # Account created and used for the deployment (sudo + docker). Defaults to the login
+    # user; set CORLAB_DEPLOY_USER to create a different one when first logging in as
+    # root or another existing admin account (CORLAB_SSH_USER).
+    deploy_user: "{{ lookup('env', 'CORLAB_DEPLOY_USER') | default(lookup('env', 'CORLAB_SSH_USER') | default('ubuntu', true), true) }}"
+    deploy_user_password: "{{ lookup('env', 'CORLAB_DEPLOY_USER_PASSWORD') }}"
+
+    acme_email: "{{ lookup('env', 'ACME_EMAIL') }}"
+
+    # Domains (DNS A records must point to the server before the first run)
+    traefik_domain: "{{ lookup('env', 'CORLAB_TRAEFIK_DOMAIN') }}"
+    metabase_domain: "{{ lookup('env', 'CORLAB_METABASE_DOMAIN') }}"
+
+    # Traefik dashboard basic auth (htpasswd, `$` doubled)
+    traefik_dashboard_auth: "{{ lookup('env', 'CORLAB_TRAEFIK_DASHBOARD_AUTH') }}"
+
+    # Postgres (superuser of the instance, owner of the barometre database)
+    postgres_user: "{{ lookup('env', 'CORLAB_PG_USER') }}"
+    postgres_password: "{{ lookup('env', 'CORLAB_PG_PASSWORD') }}"
+    barometre_db_name: "{{ lookup('env', 'CORLAB_BAROMETRE_DB') | default('barometre', true) }}"
+
+    # Metabase application database (separate database and role on the same instance)
+    metabase_db_name: metabase
+    metabase_db_user: metabase
+    metabase_db_password: "{{ lookup('env', 'CORLAB_METABASE_DB_PASSWORD') }}"
+
+  pre_tasks:
+    - name: Check the required variables are set
+      ansible.builtin.assert:
+        that:
+          - lookup('env', 'CORLAB_HOST_IP') | length > 0
+          - lookup('env', 'CORLAB_SSH_PASSWORD') | length > 0
+          - acme_email | length > 0
+          - traefik_domain | length > 0
+          - metabase_domain | length > 0
+          - traefik_dashboard_auth | length > 0
+          - postgres_user | length > 0
+          - postgres_password | length > 0
+          - metabase_db_password | length > 0
+        fail_msg: "Missing variable(s): fill corlab/.env (see corlab/README.md)"
+      tags: [always]
+
+  roles:
+    - role: user
+      tags: [user]
+    - role: ssh-keys
+      tags: [ssh-keys]
+    - role: common
+      tags: [common]
+    - role: traefik
+      tags: [traefik]
+    - role: postgres
+      tags: [postgres]
+    - role: metabase
+      tags: [metabase]
+    # Not part of a default run (see the role): `make migrate`
+    - role: migrations
+      tags: [migrate, never]

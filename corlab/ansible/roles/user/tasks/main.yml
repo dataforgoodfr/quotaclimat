@@ -1,0 +1,17 @@
+---
+# Creates the account that owns the deployment (sudo + docker). Idempotent: an existing
+# user is kept, only its groups and shell are enforced. The `docker` group does not exist
+# yet at this point (Docker is installed by the `common` role, which adds the user to it).
+- name: Ensure the deploy user exists with sudo rights
+  ansible.builtin.user:
+    name: "{{ deploy_user }}"
+    shell: /bin/bash
+    groups: sudo
+    append: true
+    create_home: true
+    state: present
+    # Only set when CORLAB_DEPLOY_USER_PASSWORD is given (needs passlib on the controller)
+    password: "{{ deploy_user_password | password_hash('sha512') if deploy_user_password | length > 0 else omit }}"
+    update_password: on_create
+  when: deploy_user != 'root'
+  no_log: true

@@ -1,0 +1,71 @@
+---
+# Applies alembic/ (repo root) to the barometre database. `alembic upgrade head` is
+# idempotent, so the role can be re-run after each new migration (`make migrate`).
+# It is tagged `never` in the playbook: it only runs when asked for explicitly.
+
+- name: Install rsync (needed by synchronize)
+  apt:
+    name: rsync
+    state: present
+
+- name: Create migrations build directory
+  file:
+    path: "{{ migrations_dir }}/src"
+    state: directory
+    mode: "0755"
+
+# Only what alembic/env.py and the migrations import
+- name: Sync the alembic project and the code it imports
+  ansible.posix.synchronize:
+    src: "{{ repo_root }}/"
+    dest: "{{ migrations_dir }}/src/"
+    delete: true
+    recursive: true
+    rsync_opts:
+      - "--exclude=__pycache__"
+      - "--exclude=*.pyc"
+      - "--include=pyproject.toml"
+      - "--include=poetry.lock"
+      - "--include=alembic.ini"
+      - "--include=alembic/***"
+      - "--include=postgres/***"
+      - "--include=quotaclimat/***"
+      - "--exclude=/*"
+
+- name: Copy the migrations Dockerfile
+  copy:
+    src: "{{ playbook_dir }}/../migrations/Dockerfile"
+    dest: "{{ migrations_dir }}/src/Dockerfile"
+    mode: "0644"
+
+- name: Build the migrations image
+  community.docker.docker_image:
+    name: "{{ migrations_image }}"
+    source: build
+    force_source: true
+    build:
+      path: "{{ migrations_dir }}/src"
+      dockerfile: Dockerfile
+
+- name: Run alembic upgrade head on the barometre database
+  community.docker.docker_container:
+    name: corlab-alembic
+    image: "{{ migrations_image }}"
+    command: alembic upgrade head
+    networks:
+      - name: corlab-internal
+    env:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: "5432"
+      POSTGRES_USER: "{{ postgres_user }}"
+      POSTGRES_PASSWORD: "{{ postgres_password }}"
+      POSTGRES_DB: "{{ barometre_db_name }}"
+    detach: false
+    cleanup: true
+    auto_remove: false
+  register: alembic_run
+  no_log: true
+
+- name: Show the alembic output
+  ansible.builtin.debug:
+    msg: "{{ alembic_run.container.Output | default('') }}"

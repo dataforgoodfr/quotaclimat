@@ -4,7 +4,8 @@ on this spreadsheet only.
 
 New rows are appended; in the rows already there, only empty cells are filled (fill_empty_cells), except
 for the uniformization of the rows of a company (replace_cells, uniformize.py), which overwrites the values of
-a lower row with the ones of the highest row of the company.
+a lower row with the ones of the highest row of the company, and for the air time of the brands (replace_cells,
+airtime.py), computed by the job.
 """
 
 import logging
@@ -131,11 +132,13 @@ class BrandInventorySheet:
         self._batch_update(data)
         return len(data)
 
-    def replace_cells(self, tab: str, updates: list[tuple[int, str, dict[str, tuple[str, str]]]]) -> int:
+    def replace_cells(
+        self, tab: str, updates: list[tuple[int, str, dict[str, tuple[str, object]]]], action: str = "uniformized"
+    ) -> int:
         """Overwrites cells (index of the row as given by read, its brand, {column: (value read, new value)}),
         a row only when it still has this brand and all its cells to overwrite still hold the values read (the
         tab is read again just before: a row edited by a human during the run is left as it is, logged).
-        Returns the number of cells written."""
+        Returns the number of cells written; action names the step in the logs."""
         rows = self._values(tab)
         if not rows or not updates:
             return 0
@@ -151,12 +154,14 @@ class BrandInventorySheet:
             line = index + 2
             current = rows[index + 1] if index + 1 < len(rows) else []
             if cell(current, header.index("marque")) != brand.strip():
-                logging.warning("Tab %s, line %s: no longer the brand %s, not uniformized", tab, line, brand)
+                logging.warning("Tab %s, line %s: no longer the brand %s, not %s", tab, line, brand, action)
                 continue
             cells = {column: values for column, values in cells.items() if column in header}
             edited = [c for c, (read, _) in cells.items() if cell(current, header.index(c)) != read]
             if edited:
-                logging.warning("Tab %s, line %s (%s): %s edited during the run, not uniformized", tab, line, brand, edited)
+                logging.warning(
+                    "Tab %s, line %s (%s): %s edited during the run, not %s", tab, line, brand, edited, action
+                )
                 continue
             data.extend(
                 {"range": f"{_quote(tab)}!{column_letter(header.index(column) + 1)}{line}", "values": [[new]]}

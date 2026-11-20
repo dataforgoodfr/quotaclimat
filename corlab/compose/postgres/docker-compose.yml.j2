@@ -1,0 +1,41 @@
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "100m"
+    max-file: "3"
+
+services:
+  postgres:
+    image: postgres:{{ postgres_version }}
+    container_name: postgres
+    restart: unless-stopped
+    logging: *default-logging
+    # max_locks_per_transaction: same value as the production barometre instance
+    command: ["postgres", "-c", "max_locks_per_transaction=512"]
+    environment:
+      POSTGRES_USER: "{{ postgres_user }}"
+      POSTGRES_PASSWORD: "{{ postgres_password }}"
+      POSTGRES_DB: "{{ barometre_db_name }}"
+      TZ: Europe/Paris
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    # Loopback only: reachable through `ssh -L` (make tunnel), never from the internet
+    ports:
+      - "127.0.0.1:6436:5432"
+    networks:
+      - corlab-internal
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres-data:
+
+networks:
+  corlab-internal:
+    name: corlab-internal
+    external: true

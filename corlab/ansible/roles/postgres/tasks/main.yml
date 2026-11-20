@@ -1,0 +1,61 @@
+---
+- name: Create the internal Docker network shared by Postgres, Metabase and the migrations
+  community.docker.docker_network:
+    name: corlab-internal
+    state: present
+
+- name: Create postgres directory
+  file:
+    path: "{{ postgres_service_dir }}"
+    state: directory
+    mode: "0755"
+
+# Mode 0600: the file embeds the superuser password
+- name: Template postgres docker-compose
+  template:
+    src: "{{ playbook_dir }}/../compose/postgres/docker-compose.yml.j2"
+    dest: "{{ postgres_service_dir }}/docker-compose.yml"
+    mode: "0600"
+
+- name: Start postgres
+  community.docker.docker_compose_v2:
+    project_src: "{{ postgres_service_dir }}"
+    state: present
+    pull: always
+
+- name: Wait for postgres to be ready
+  community.docker.docker_container_exec:
+    container: postgres
+    argv: [pg_isready, -U, "{{ postgres_user }}", -d, "{{ barometre_db_name }}"]
+  register: pg_ready
+  until: pg_ready.rc == 0
+  retries: 30
+  delay: 5
+  changed_when: false
+
+# Idempotent: barometre is normally created by POSTGRES_DB on the first start, the
+# guards also cover a volume initialised without it. The metabase role/database are
+# not created by the image, and the password is re-synced on every run.
+- name: Ensure the barometre and metabase databases and the metabase role exist
+  community.docker.docker_container_exec:
+    container: postgres
+    env:
+      MB_PW: "{{ metabase_db_password }}"
+      BAROMETRE_DB: "{{ barometre_db_name }}"
+    argv:
+      - sh
+      - -c
+      - |
+        psql -U "$POSTGRES_USER" -d postgres -v ON_ERROR_STOP=1 \
+          -v pw="$MB_PW" -v barometre="$BAROMETRE_DB" \
+          -v mbrole="{{ metabase_db_user }}" -v mbdb="{{ metabase_db_name }}" <<'SQL'
+        SELECT format('CREATE ROLE %I LOGIN', :'mbrole')
+          WHERE NOT EXISTS (SELECT FROM pg_roles WHERE rolname = :'mbrole') \gexec
+        SELECT format('ALTER ROLE %I PASSWORD %L', :'mbrole', :'pw') \gexec
+        SELECT format('CREATE DATABASE %I OWNER %I', :'mbdb', :'mbrole')
+          WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = :'mbdb') \gexec
+        SELECT format('CREATE DATABASE %I', :'barometre')
+          WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = :'barometre') \gexec
+        SQL
+  no_log: true
+  changed_when: false

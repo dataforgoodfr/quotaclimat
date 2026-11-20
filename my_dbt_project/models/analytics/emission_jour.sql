@@ -47,6 +47,12 @@
     this model. -#}
 
 {% set start_date = var('emission_jour_start_date', '2023-01-01') %}
+{#- recompute_from: first day rebuilt by this run. Full refresh or first build: start_date (every day).
+    Incremental run: computed by a query run before the model (run_query), then written into the SQL below as a
+    plain date (a literal keeps the partition pruning of public.keywords): the earliest of
+    - the start of the window of the dashboards models (Monday of the previous week by default),
+    - the oldest day where the number of cases of an emission in cas_de_mesinformation differs from nb_cas in the
+      current table (a case validated, removed or moved since the last run). -#}
 {% set recompute_from = start_date %}
 {% if execute and is_incremental() %}
     {% set recompute_query %}

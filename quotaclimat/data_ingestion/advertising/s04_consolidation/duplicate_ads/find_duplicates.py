@@ -18,8 +18,10 @@ How it works:
 6. Score: FingerprintsCompare._score of the detection (s01_detection/processor.py tolerances) on the two
    whole-ad fingerprints: share of the pairs of the smaller ad found in the other at a consistent time
    offset (score_min), also given relative to the bigger ad (score_max).
-7. The pairs with score_min >= --min-score are grouped (connected components): a group_id gathers
-   the ads linked by these pairs. Output, one row per ad of a group (an ad of a group of 2 has its
+7. The pairs with score_min >= --min-score are grouped: a group_id gathers the ads linked by these
+   pairs, all of them at most --group-duration-tol (1 s) away from the duration of the target of
+   the group (duration_groups: the connected components chain the durations, 2 s, 3 s... 11 s, and
+   are split again around their targets). Output, one row per ad of a group (an ad of a group of 2 has its
    own row, as the other one): the CSV with the mosaic and data of the ad, the target proposed for
    a merge of its group (choose_target, first row of the group), its duration and Mediatree link,
    the mosaics of the pieces of a merged ad (one column each), whether it matches chunk by chunk as the detection (chunks_coherent),
@@ -284,6 +286,63 @@ def connected_groups(pairs: list[DuplicatePair]) -> dict[str, tuple[str, int]]:
     return {ad_id: (root, len(ids)) for root, ids in members.items() for ad_id in ids}
 
 
+def duration_groups(
+    pairs: list[DuplicatePair], duration_tol: float
+) -> tuple[dict[str, tuple[str, int]], dict[str, str]]:
+    """Groups whose ads all have a duration at most duration_tol away from the target of the group,
+    as (ad id -> (group id, group size), group id -> target ad id).
+
+    The connected components of the pairs chain the ads: each pair is within the duration window
+    of the finder, but a 2 s and an 11 s ad end up in the same component through the durations
+    between them. Each component is split again, while it has ads left:
+    1. the target is chosen among the ads left (choose_target);
+    2. its group is the ads left connected to it through pairs whose two ads are at most
+       duration_tol away from the target's duration.
+    A target left alone (its matches already in other groups) is dropped. The group id is the
+    smallest ad id of the group."""
+    ads: dict[str, AdPrint] = {}
+    neighbours: dict[str, set[str]] = defaultdict(set)
+    for pair in pairs:
+        if pair.ad_a.id == pair.ad_b.id:
+            continue
+        ads[pair.ad_a.id], ads[pair.ad_b.id] = pair.ad_a, pair.ad_b
+        neighbours[pair.ad_a.id].add(pair.ad_b.id)
+        neighbours[pair.ad_b.id].add(pair.ad_a.id)
+
+    components: dict[str, list[str]] = defaultdict(list)
+    for ad_id, (root, _) in connected_groups(
+        [p for p in pairs if p.ad_a.id != p.ad_b.id]
+    ).items():
+        components[root].append(ad_id)
+
+    groups: dict[str, tuple[str, int]] = {}
+    targets: dict[str, str] = {}
+    for component in components.values():
+        remaining = set(component)
+        while remaining:
+            target = choose_target([ads[ad_id] for ad_id in sorted(remaining)])
+            allowed = {
+                ad_id
+                for ad_id in remaining
+                if abs(ads[ad_id].duration_sec - target.duration_sec)
+                <= duration_tol + 1e-9
+            }
+            members, todo = {target.id}, [target.id]
+            while todo:
+                for other in neighbours[todo.pop()] & allowed:
+                    if other not in members:
+                        members.add(other)
+                        todo.append(other)
+            remaining -= members
+            if len(members) < 2:
+                continue
+            group_id = min(members)
+            targets[group_id] = target.id
+            for ad_id in members:
+                groups[ad_id] = (group_id, len(members))
+    return groups, targets
+
+
 def ads_query(args: argparse.Namespace):
     """Ads having a chunk entry with the hash, by increasing duration, with their live occurrences,
     their brand (the canonical one, or else the raw brand of the LLM, like the merge of the split
@@ -478,17 +537,33 @@ def chunks_coherent(compare: FingerprintsCompare, ad_a: AdPrint, ad_b: AdPrint) 
 
 
 def group_rows(
-    pairs: list[DuplicatePair], compare: FingerprintsCompare | None = None
+    pairs: list[DuplicatePair],
+    compare: FingerprintsCompare | None = None,
+    group_duration_tol: float | None = None,
 ) -> list[dict]:
     """One row per ad of a group, sorted by group (biggest first), the target of the group first
-    (choose_target, in target_ad_id on every row of the group), then by occurrences. Matching columns: the
+    (choose_target, in target_ad_id on every row of the group), then by occurrences. Without
+    group_duration_tol, the groups are the connected components of the pairs; with it, they are
+    split so that every ad of a group is at most group_duration_tol seconds away from the target
+    (duration_groups), and only the pairs inside a group are kept. Matching columns: the
     number of ads of the group it matches directly, its best match (highest score_min) with its
     scores, and every direct match as "ad_id:score_min" separated by spaces. Plus the
     MULTIBRAND_COLUMNS: a group is multi-brand when its ads have at least two different brands
     (brand_key, the ads without brand not counted). With compare: chunk_coherent (one of its direct
     matches at least is chunk-coherent, see chunks_coherent) and chunk_coherent_target (with the
     target of the group, empty on the target's own row)."""
-    groups = connected_groups(pairs)
+    targets: dict[str, str] | None = None
+    if group_duration_tol is None:
+        groups = connected_groups(pairs)
+    else:
+        groups, targets = duration_groups(pairs, group_duration_tol)
+        pairs = [
+            p
+            for p in pairs
+            if p.ad_a.id in groups
+            and p.ad_b.id in groups
+            and groups[p.ad_a.id][0] == groups[p.ad_b.id][0]
+        ]
     ads: dict[str, AdPrint] = {}
     matches: dict[str, list[tuple[DuplicatePair, AdPrint]]] = defaultdict(list)
     for pair in pairs:
@@ -505,9 +580,11 @@ def group_rows(
     group_ads: dict[str, list[AdPrint]] = defaultdict(list)
     for ad_id, ad in ads.items():
         group_ads[groups[ad_id][0]].append(ad)
-    targets = {
-        group_id: choose_target(members).id for group_id, members in group_ads.items()
-    }
+    if targets is None:
+        targets = {
+            group_id: choose_target(members).id
+            for group_id, members in group_ads.items()
+        }
 
     rows = []
     for ad_id, ad in ads.items():
@@ -1049,7 +1126,20 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="no Mediatree link for a last occurrence older than this (default 365, as "
         "curated.publicite)",
     )
-    parser.add_argument("--duration-tol", type=float, default=1.0)
+    parser.add_argument(
+        "--duration-tol",
+        type=float,
+        default=1.0,
+        help="pairs: an ad is compared only with the ads at most this shorter (default 1 s)",
+    )
+    parser.add_argument(
+        "--group-duration-tol",
+        type=float,
+        default=1.0,
+        help="groups: every ad of a group is at most this many seconds away from the target of "
+        "the group, so that pairs chained over durations (2 s, 3 s... 11 s) are not one group "
+        "(default 1 s; a negative value keeps the plain connected components)",
+    )
     parser.add_argument("--index-pairs", type=int, default=60)
     parser.add_argument("--min-shared-keys", type=int, default=10)
     parser.add_argument("--max-posting", type=int, default=5000)
@@ -1092,7 +1182,17 @@ def main(argv: list[str] | None = None) -> None:
     engine = connect_to_db()
     with engine.connect() as connection:
         pairs = run(connection, args)
-        rows = group_rows(pairs, args.compare)
+        group_duration_tol = (
+            args.group_duration_tol if args.group_duration_tol >= 0 else None
+        )
+        rows = group_rows(pairs, args.compare, group_duration_tol)
+        grouped = {row["ad_id"] for row in rows}
+        paired = {p.ad_a.id for p in pairs} | {p.ad_b.id for p in pairs}
+        if len(paired) > len(grouped):
+            logger.info(
+                f"{len(paired) - len(grouped)} ads of the pairs left out of the groups: "
+                f"no match at most {args.group_duration_tol} s away from a target"
+            )
         if args.screenshots:
             ad_ids = screenshot_ad_ids(connection, rows)
     if args.screenshots:

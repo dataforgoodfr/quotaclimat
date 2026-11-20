@@ -37,14 +37,16 @@
       whose airtime would count as 0 % environment.
     Days from emission_jour_start_date (dbt var) to today (Paris).
     Incremental (delete+insert by day): a run recomputes whole days from recompute_from, the oldest of
-    - today - emission_jour_lookback_days (dbt var, 15 days): late keyword segments and time_monitored minutes,
+    - the start of the window of the dashboards models (window_start() of macros/incremental_window.sql, var
+      dashboards_lookback_weeks: from the Monday of the previous week by default): late keyword segments and
+      time_monitored minutes,
     - the oldest day whose number of cases per emission differs from the table: cases validated or changed in
       Label Studio long after their broadcast (analytics.cas_de_mesinformation is rebuilt at each run).
-    Older days keep their values: --full-refresh after a change of the grid (channel_program.py, Programmes
-    Google Sheet), a reprocessing of older keywords (UPDATE) or a change of this model. -#}
+    Older days keep their values: full refresh (dbt.sh full-refresh, first day of each month) after a change of the
+    grid (channel_program.py, Programmes Google Sheet), a reprocessing of older keywords (UPDATE) or a change of
+    this model. -#}
 
 {% set start_date = var('emission_jour_start_date', '2023-01-01') %}
-{% set lookback_days = var('emission_jour_lookback_days', 15) %}
 {% set recompute_from = start_date %}
 {% if execute and is_incremental() %}
     {% set recompute_query %}
@@ -69,7 +71,7 @@
         -- LEAST ignores NULL (no case changed); never before start_date
         SELECT GREATEST(
             LEAST(
-                (now() AT TIME ZONE 'Europe/Paris')::date - {{ lookback_days }},
+                ({{ window_start() }})::date,
                 (SELECT jour FROM jour_cas_change)
             ),
             '{{ start_date }}'::date

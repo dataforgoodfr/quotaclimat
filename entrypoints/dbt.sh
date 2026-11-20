@@ -67,14 +67,9 @@ poetry run dbt run --full-refresh \
 --select pub_annonceur_emission_jour \
 --select cas_theme
 
-# incremental: the last days and the days whose cases changed (see the model), after cas_de_mesinformation.
-# EMISSION_JOUR_FULL_REFRESH=true rebuilds every day (after a change of the grid, of the model or a reprocessing
-# of older keywords)
-echo "apply emission_jour (incremental, full refresh: ${EMISSION_JOUR_FULL_REFRESH:-false})"
-if [[ "${EMISSION_JOUR_FULL_REFRESH:-false}" == "true" ]]; then
-    poetry run dbt run --full-refresh --select emission_jour
-else
-    poetry run dbt run --select emission_jour
-fi
+# incremental like models/dashboards: the days of the same window (DBT_LOOKBACK_WEEKS) and the days whose cases changed
+# (see the model), after cas_de_mesinformation; rebuilt in full with "full-refresh" and on the first day of each month
+echo "apply emission_jour (incremental)"
+poetry run dbt run "${full_refresh[@]}" --vars "$lookback_vars" --select emission_jour
 
 # the curated tables (models/curated) are built after this script by entrypoints/curated.sh, in its own Kestra task

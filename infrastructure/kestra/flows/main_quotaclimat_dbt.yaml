@@ -30,7 +30,7 @@ inputs:
   - id: full_refresh
     type: BOOLEAN
     defaults: false
-    description: "When true, rebuilds the incremental models of models/dashboards and models/homepage from the whole keywords table (about 35 minutes), instead of the last weeks only."
+    description: "When true, rebuilds the incremental models of models/dashboards, models/homepage and emission_jour from the whole keywords table (about 35 minutes), instead of the last weeks only."
 
 tasks:
   - id: dbt_run_transformations

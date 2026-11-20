@@ -40,7 +40,7 @@ poetry run dbt run --full-refresh \
   --select cas_de_mesinformation \
   --select publicites
 
-echo "apply emission_jour (incremental: the last days and the days whose cases changed, see entrypoints/dbt.sh)"
+echo "apply emission_jour (incremental: the window of the dashboards models and the days whose cases changed, see entrypoints/dbt.sh)"
 poetry run dbt run --select emission_jour
 
 echo "build and test the curated tables, last: they read the tables above"

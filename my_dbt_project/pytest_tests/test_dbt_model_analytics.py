@@ -760,7 +760,7 @@ def test_emission_jour_environment(db_connection):
         """, {"program": programs[0][0]})
     db_connection.commit()
     try:
-        run_dbt_command(["run", "--select", "emission_jour"])
+        run_dbt_command(["run", "--select", "emission_jour", "--full-refresh"])  # older keyword segments: full refresh
         with db_connection.cursor() as cur:
             cur.execute("""
                 SELECT emission_cle, env_heures
@@ -772,7 +772,7 @@ def test_emission_jour_environment(db_connection):
         with db_connection.cursor() as cur:
             cur.execute("DELETE FROM public.keywords WHERE id LIKE 'pytest_env_%'")
         db_connection.commit()
-        run_dbt_command(["run", "--select", "emission_jour"])
+        run_dbt_command(["run", "--select", "emission_jour", "--full-refresh"])  # older keyword segments: full refresh
     # in seconds
     assert env == {
         "bfmtv|émission|BFM Première|false": 180,
@@ -794,7 +794,7 @@ def test_emission_jour_themes_legacy_segments_and_capture(db_connection):
         """)
     db_connection.commit()
     try:
-        run_dbt_command(["run", "--select", "emission_jour"])
+        run_dbt_command(["run", "--select", "emission_jour", "--full-refresh"])  # older keyword segments: full refresh
         with db_connection.cursor() as cur:
             cur.execute("""
                 SELECT env_heures, climat_heures, biodiversite_heures, climat_constat_heures, ressources_heures,
@@ -812,7 +812,7 @@ def test_emission_jour_themes_legacy_segments_and_capture(db_connection):
         with db_connection.cursor() as cur:
             cur.execute("DELETE FROM public.keywords WHERE id = 'pytest_env_legacy'")
         db_connection.commit()
-        run_dbt_command(["run", "--select", "emission_jour"])
+        run_dbt_command(["run", "--select", "emission_jour", "--full-refresh"])  # older keyword segments: full refresh
     # in seconds; the subjects of a 20 s window do not add up to the environment
     assert [round(float(v) * 3600) for v in row[:5]] == [80, 60, 40, 20, 0]
     assert row[5] is True
@@ -1776,6 +1776,53 @@ def test_fixture_seeds_disabled_in_production():
 
     test_seeds = list_enabled_seeds(DBT_ENABLE_FIXTURE_SEEDS="true")
     assert "seeds/fixtures/keywords.csv" in test_seeds
+
+
+def test_emission_jour_incremental(db_connection):
+    """An incremental run recomputes the days whose cases changed and leaves the older days as they are;
+    a full refresh gives back the table of the first build (run last: rebuilds the model)."""
+    # end the transaction left open by the previous SELECTs: its lock on the table would block dbt
+    db_connection.rollback()
+    query = "SELECT * FROM public.emission_jour ORDER BY emission_cle, jour"
+    with db_connection.cursor() as cur:
+        cur.execute(query)
+        full = cur.fetchall()
+        cur.execute("SELECT emission_cle, jour, nb_cas FROM public.emission_jour WHERE nb_cas > 0 ORDER BY jour LIMIT 1")
+        cas_cle, cas_jour, nb_cas = cur.fetchone()
+        cur.execute("SELECT emission_cle, jour FROM public.emission_jour WHERE jour < %s ORDER BY jour LIMIT 1", (cas_jour,))
+        ancien_cle, ancien_jour = cur.fetchone()
+        # an older day changed by hand (kept by the incremental run), a case lost on a later day (recomputed)
+        cur.execute(
+            "UPDATE public.emission_jour SET env_heures = -1 WHERE emission_cle = %s AND jour = %s",
+            (ancien_cle, ancien_jour),
+        )
+        cur.execute(
+            "UPDATE public.emission_jour SET nb_cas = 0 WHERE emission_cle = %s AND jour = %s",
+            (cas_cle, cas_jour),
+        )
+    db_connection.commit()
+
+    run_dbt_command(["run", "--select", "emission_jour"])
+    with db_connection.cursor() as cur:
+        cur.execute(
+            "SELECT env_heures FROM public.emission_jour WHERE emission_cle = %s AND jour = %s",
+            (ancien_cle, ancien_jour),
+        )
+        assert cur.fetchone()[0] == -1
+        cur.execute(
+            "SELECT nb_cas FROM public.emission_jour WHERE emission_cle = %s AND jour = %s",
+            (cas_cle, cas_jour),
+        )
+        assert cur.fetchone()[0] == nb_cas
+        cur.execute("SELECT COUNT(*) FROM public.emission_jour")
+        assert cur.fetchone()[0] == len(full)
+    db_connection.rollback()
+
+    run_dbt_command(["run", "--select", "emission_jour", "--full-refresh"])
+    with db_connection.cursor() as cur:
+        cur.execute(query)
+        assert cur.fetchall() == full
+    db_connection.rollback()
 
 
 def test_publicites_start_date(db_connection):

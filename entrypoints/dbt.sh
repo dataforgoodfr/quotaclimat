@@ -59,13 +59,17 @@ poetry run dbt run --full-refresh --target analytics \
 --select task_global_completion \
 --select environmental_shares_with_desinfo_counts
 
-echo "apply advertising dbt models and the analytics tables built on them (publicites, cas_de_mesinformation), after the analytics tables they read (misinformation distance), then the daily aggregates built on them (emission_jour, pub_annonceur_emission_jour) and the themes of the cases (cas_theme)"
+echo "apply advertising dbt models and the analytics tables built on them (publicites, cas_de_mesinformation), after the analytics tables they read (misinformation distance), then the daily aggregates built on them (pub_annonceur_emission_jour) and the themes of the cases (cas_theme)"
 poetry run dbt run --full-refresh \
 --select path:models/advertising \
 --select cas_de_mesinformation \
 --select publicites \
---select emission_jour \
 --select pub_annonceur_emission_jour \
 --select cas_theme
+
+# incremental like models/dashboards: the days of the same window (DBT_LOOKBACK_WEEKS) and the days whose cases changed
+# (see the model), after cas_de_mesinformation; rebuilt in full with "full-refresh" and on the first day of each month
+echo "apply emission_jour (incremental)"
+poetry run dbt run "${full_refresh[@]}" --vars "$lookback_vars" --select emission_jour
 
 # the curated tables (models/curated) are built after this script by entrypoints/curated.sh, in its own Kestra task

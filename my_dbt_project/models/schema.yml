@@ -625,7 +625,8 @@ models:
       One row per non-OTHER, non-deleted ad occurrence with the ad tunnel it belongs to.
       An ad tunnel is a sequence of consecutive fragments on a channel, where each one starts
       at most ad_tunnel_tolerance_sec (default 5) seconds after the end of the previous ones;
-      overlapping fragments stay in the same tunnel.
+      overlapping fragments stay in the same tunnel. Occurrences from the day before
+      ad_analysis_start_date (dbt var, default 2025-09-29, UTC) only, the period of analytics.publicites.
     columns:
       - name: occurrence_id
         description: Identifier of the occurrence (advertising.ad_occurrence.id).
@@ -789,7 +790,11 @@ models:
       Keyword segments go to their ingestion program (keywords.program_metadata_id, like the dashboards), then
       to its row on the air, the closest one within the ingestion margins [start - 6 min, end + 6 min[;
       misinformation cases are matched on time with the same margins. Days from emission_jour_start_date (dbt
-      var, default 2023-01-01) to today.
+      var, default 2023-01-01) to today. Incremental: a run recomputes the days of the window of the dashboards models
+      (dashboards_lookback_weeks, from the Monday of the previous week by default), and back to the oldest day
+      whose number of cases changed in cas_de_mesinformation; older days keep their values. Rebuilt in full with
+      the dashboards models (dbt.sh full-refresh, first day of each month), needed after a change of the grid
+      (channel_program.py, Programmes Google Sheet) or a reprocessing of older keywords.
     columns:
       - name: emission_cle
         description: "channel_name|type|nom|rediffusion, the key of the emission (also in pub_annonceur_emission_jour)."

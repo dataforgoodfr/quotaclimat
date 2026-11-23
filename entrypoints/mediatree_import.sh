@@ -25,6 +25,8 @@ poetry run dbt run --full-refresh \
   --exclude environmental_shares_with_desinfo_counts \
   --exclude path:models/advertising \
   --exclude cas_de_mesinformation \
+  --exclude cas_affirmation_cible \
+  --exclude cas_categorie_visee \
   --exclude publicites \
   --exclude emission_jour \
   --exclude path:models/curated
@@ -37,6 +39,8 @@ poetry run dbt run --full-refresh --target analytics \
 echo "apply advertising dbt models and the analytics tables built on them (publicites, cas_de_mesinformation), after the analytics tables they read (misinformation distance)"
 poetry run dbt run --full-refresh \
   --select path:models/advertising \
+  --select cas_affirmation_cible \
+  --select cas_categorie_visee \
   --select cas_de_mesinformation \
   --select publicites
 

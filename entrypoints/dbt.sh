@@ -48,6 +48,8 @@ poetry run dbt run "${full_refresh[@]}" --vars "$lookback_vars" "${skip_dashboar
 --exclude environmental_shares_with_desinfo_counts \
 --exclude path:models/advertising \
 --exclude cas_de_mesinformation \
+--exclude cas_affirmation_cible \
+--exclude cas_categorie_visee \
 --exclude publicites \
 --exclude emission_jour \
 --exclude pub_annonceur_emission_jour \
@@ -62,6 +64,8 @@ poetry run dbt run --full-refresh --target analytics \
 echo "apply advertising dbt models and the analytics tables built on them (publicites, cas_de_mesinformation), after the analytics tables they read (misinformation distance), then the daily aggregates built on them (pub_annonceur_emission_jour) and the themes of the cases (cas_theme)"
 poetry run dbt run --full-refresh \
 --select path:models/advertising \
+--select cas_affirmation_cible \
+--select cas_categorie_visee \
 --select cas_de_mesinformation \
 --select publicites \
 --select pub_annonceur_emission_jour \

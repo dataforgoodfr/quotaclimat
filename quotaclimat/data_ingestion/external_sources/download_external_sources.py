@@ -200,6 +200,24 @@ def rows_to_csv_rows(rows: list[list[str]]) -> list[list[str]]:
     return [names] + [[r[i] for i in kept] for r in body]
 
 
+def select_columns(csv_rows: list[list[str]], columns: dict[str, str]) -> list[list[str]]:
+    """Keeps only the configured columns of a tab, renamed: {header in the sheet: column name}, in the
+    order of the config. The other columns (long texts, computed columns...) are left out. A configured
+    header missing from the tab is an error: the table is left unchanged rather than loaded without it."""
+    header = csv_rows[0]
+    missing = [name for name in columns if name not in header]
+    if missing:
+        raise ExternalSourceError(f"configured columns {missing} not found, got {header}")
+    names = list(columns.values())
+    if len(set(names)) != len(names):
+        raise ExternalSourceError(f"duplicated column names {names}")
+    indexes = [header.index(name) for name in columns]
+    body = [kept for kept in ([row[i] for i in indexes] for row in csv_rows[1:]) if any(kept)]
+    if not body:
+        raise ExternalSourceError("no rows in the configured columns")
+    return [names] + body
+
+
 def target_tables(source: dict, sheets: dict) -> dict[str, str]:
     """Returns {tab name: table name} for the tabs to download."""
     sheets_settings = source.get("sheets") or {}
@@ -245,6 +263,9 @@ def download_source(source: dict, seeds_dir: Path = SEEDS_DIR, fetch=fetch_googl
     for sheet_name, table in target_tables(source, sheets).items():
         try:
             csv_rows = rows_to_csv_rows(sheets[sheet_name])
+            columns = ((source.get("sheets") or {}).get(sheet_name) or {}).get("columns")
+            if columns:
+                csv_rows = select_columns(csv_rows, columns)
         except ExternalSourceError as e:
             logging.error("External source %s / %s: %s, table %s left unchanged", name, sheet_name, e, table)
             results[table] = False

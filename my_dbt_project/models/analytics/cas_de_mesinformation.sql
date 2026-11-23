@@ -18,7 +18,9 @@
     containing the case, then the closest one, then a row with an emission, the most recent grid, the program
     of the same day, the latest started. Program day: the day the emission starts, an emission ending after
     midnight counting for the day before. A case further than 6 min from every row of its channel has no
-    program. Built in the analytics schema after task_global_completion (see entrypoints/dbt.sh). -#}
+    program. Built in the analytics schema after task_global_completion (see entrypoints/dbt.sh).
+    Targets and attacked ad categories of the cases of the Cas_de_mesinfo Google Sheet (cas_affirmation_cible,
+    cas_categorie_visee): NULL for a case not in the sheet, an empty array for a case in it without any. -#}
 WITH mesinfo AS (
     SELECT *
     FROM {{ source('analytics', 'task_global_completion') }}
@@ -74,6 +76,21 @@ mesinfo_programs AS (
         c.minute >= p.start_minute AND c.minute < p.end_minute DESC,
         GREATEST(p.start_minute - c.minute, c.minute - p.end_minute),
         p.emission IS NOT NULL DESC, p.grid_start DESC NULLS LAST, c.day_offset, p.start_minute DESC
+),
+-- cases of the Cas_de_mesinfo Google Sheet, with or without targets
+cas_rattaches AS (
+    SELECT DISTINCT trim(task_aggregate_id)::text AS task_aggregate_id
+    FROM ({{ source_or_empty('advertising', 'cas_affirmations', ['task_aggregate_id']) }}) a
+),
+cas_cibles AS (
+    SELECT task_aggregate_id, array_agg(DISTINCT cible_code ORDER BY cible_code) AS cibles
+    FROM {{ ref('cas_affirmation_cible') }}
+    GROUP BY task_aggregate_id
+),
+cas_categories AS (
+    SELECT task_aggregate_id, array_agg(cat_code ORDER BY cat_code) AS categories_visees
+    FROM {{ ref('cas_categorie_visee') }}
+    GROUP BY task_aggregate_id
 )
 SELECT
     m.*,
@@ -84,7 +101,13 @@ SELECT
     e.program_id,
     e.program,
     e.emission_cle,
-    e.jour_programme
+    e.jour_programme,
+    CASE WHEN r.task_aggregate_id IS NOT NULL THEN COALESCE(cc.cibles, '{}'::text[]) END AS cibles,
+    CASE WHEN r.task_aggregate_id IS NOT NULL THEN COALESCE(cv.categories_visees, '{}'::text[]) END
+        AS categories_visees
 FROM mesinfo m
 LEFT JOIN channels c ON c.channel_name = m.data_item_channel_name AND c.country = m.country
 LEFT JOIN mesinfo_programs e ON e.task_aggregate_id = m.task_aggregate_id
+LEFT JOIN cas_rattaches r ON r.task_aggregate_id = m.task_aggregate_id
+LEFT JOIN cas_cibles cc ON cc.task_aggregate_id = m.task_aggregate_id
+LEFT JOIN cas_categories cv ON cv.task_aggregate_id = m.task_aggregate_id

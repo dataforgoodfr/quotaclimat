@@ -67,5 +67,12 @@
       become: false
   when: brevo_smtp_login | length > 0 and brevo_smtp_key | length > 0
 
+- name: Allow the custom worker tags
+  include_tasks:
+    file: custom_tags.yml
+    apply:
+      delegate_to: localhost
+      become: false
+
 - name: Push the flows
   include_tasks: flows.yml

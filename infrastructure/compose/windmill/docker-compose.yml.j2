@@ -68,8 +68,9 @@ services:
           cpus: "1"
           memory: 2048M
 
-  # Only worker serving the "dbt" tag (steps of f/quotaclimat/dbt): one worker, so two
-  # dbt runs queue instead of overlapping (Kestra's concurrency limit 1, Enterprise-only in Windmill)
+  # Only worker serving the "dbt_serial" tag (steps of f/quotaclimat/dbt): one worker, so two
+  # dbt runs queue instead of overlapping (Kestra's concurrency limit 1, Enterprise-only in Windmill).
+  # Not "dbt": it is the default tag of Windmill's dbt language, served by the default workers too.
   windmill-worker-dbt:
     <<: [*windmill-common, *windmill-docker-worker]
     container_name: windmill-worker-dbt
@@ -77,7 +78,7 @@ services:
       <<: *windmill-env
       MODE: worker
       WORKER_GROUP: dbt
-      WORKER_TAGS: dbt
+      WORKER_TAGS: dbt_serial
       NUM_WORKERS: 1
     deploy:
       resources:

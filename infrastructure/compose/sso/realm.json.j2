@@ -1,0 +1,94 @@
+{
+  "realm": "{{ keycloak_realm }}",
+  "enabled": true,
+  "registrationAllowed": false,
+  "verifyEmail": {{ 'true' if brevo_smtp_login else 'false' }},
+  "resetPasswordAllowed": true,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+{% if brevo_smtp_login %}
+  "smtpServer": {
+    "host": "{{ brevo_smtp_host }}",
+    "port": "{{ brevo_smtp_port }}",
+    "from": "{{ keycloak_from_email }}",
+    "fromDisplayName": "QuotaClimat SSO",
+    "auth": "true",
+    "user": "{{ brevo_smtp_login }}",
+    "password": "{{ brevo_smtp_key }}",
+    "starttls": "true",
+    "ssl": "false"
+  },
+{% endif %}
+  "users": [
+    {
+      "username": "service-account-metabase-sso-admin",
+      "enabled": true,
+      "serviceAccountClientId": "metabase-sso-admin",
+      "clientRoles": {
+        "realm-management": ["manage-users", "view-users", "query-groups"]
+      }
+    }
+  ],
+  "clients": [
+    {
+      "clientId": "metabase-sso-admin",
+      "name": "Metabase SSO adapter (admin API, first-login group mirroring)",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "secret": "{{ sso_admin_client_secret }}",
+      "serviceAccountsEnabled": true,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false
+    },
+    {
+      "clientId": "metabase-sso",
+      "name": "Metabase SSO adapter",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "secret": "{{ sso_client_secret }}",
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "rootUrl": "https://{{ metabase_domain }}",
+      "redirectUris": ["https://{{ metabase_domain }}/sso/callback/keycloak"],
+      "webOrigins": ["https://{{ metabase_domain }}"],
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "https://{{ metabase_domain }}/sso/"
+      },
+      "defaultClientScopes": ["email", "profile"],
+      "protocolMappers": [
+        {
+          "name": "groups",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-group-membership-mapper",
+          "config": {
+            "full.path": "false",
+            "claim.name": "groups",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true"
+          }
+        }
+      ]
+    }
+  ],
+  "identityProviders": [
+    {
+      "alias": "google",
+      "displayName": "Google",
+      "providerId": "google",
+      "enabled": true,
+      "trustEmail": true,
+      "firstBrokerLoginFlowAlias": "first broker login",
+      "config": {
+        "clientId": "{{ sso_google_client_id }}",
+        "clientSecret": "{{ sso_google_client_secret }}",
+        "hostedDomain": "*",
+        "syncMode": "IMPORT",
+        "defaultScope": "openid profile email"
+      }
+    }
+  ]
+}

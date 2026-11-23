@@ -12,6 +12,9 @@
     kestra_domain: "{{ lookup('env', 'KESTRA_DOMAIN') }}"
     glitchtip_domain: "{{ lookup('env', 'GLITCHTIP_DOMAIN') }}"
     windmill_domain: "{{ lookup('env', 'WINDMILL_DOMAIN') }}"
+    keycloak_domain: "{{ lookup('env', 'KEYCLOAK_DOMAIN') }}"
+    # Public domain of Metabase: Traefik sends it to the Metabase container and the SSO adapter
+    metabase_domain: "{{ lookup('env', 'METABASE_DOMAIN') }}"
 
     # Traefik
     traefik_dashboard_auth: "{{ lookup('env', 'TRAEFIK_DASHBOARD_AUTH') }}"
@@ -48,6 +51,44 @@
     windmill_workspace: "{{ lookup('env', 'WINDMILL_WORKSPACE') }}"
     # Windmill email (instance SMTP, same BREVO_SMTP_* credentials as GlitchTip); skipped when they are empty
     windmill_from_email: "{{ lookup('env', 'WINDMILL_FROM_EMAIL') | default('windmill@quotaclimat.org', true) }}"
+
+    # Keycloak + Metabase SSO adapter (role sso)
+    keycloak_db_user: "{{ lookup('env', 'KEYCLOAK_DB_USER') }}"
+    keycloak_db_password: "{{ lookup('env', 'KEYCLOAK_DB_PASSWORD') }}"
+    keycloak_db_name: "{{ lookup('env', 'KEYCLOAK_DB_NAME') }}"
+    keycloak_admin_user: "{{ lookup('env', 'KEYCLOAK_ADMIN_USER') }}"
+    keycloak_admin_password: "{{ lookup('env', 'KEYCLOAK_ADMIN_PASSWORD') }}"
+    keycloak_realm: "{{ lookup('env', 'KEYCLOAK_REALM') | default('metabase', true) }}"
+    # Comma separated CIDRs allowed on /admin and /realms/master; empty leaves the admin console public
+    keycloak_admin_allowed_ips: "{{ lookup('env', 'KEYCLOAK_ADMIN_ALLOWED_IPS') }}"
+    keycloak_from_email: "{{ lookup('env', 'KEYCLOAK_FROM_EMAIL') | default('sso@quotaclimat.org', true) }}"
+    # URL of the Metabase serverless container (https://<id>.functions.fnc.fr-par.scw.cloud, no trailing slash)
+    metabase_upstream_url: "{{ lookup('env', 'METABASE_UPSTREAM_URL') }}"
+    # Existing Metabase admin account the adapter uses to create users and open their sessions
+    sso_metabase_admin_email: "{{ lookup('env', 'SSO_METABASE_ADMIN_EMAIL') }}"
+    sso_metabase_admin_password: "{{ lookup('env', 'SSO_METABASE_ADMIN_PASSWORD') }}"
+    sso_client_secret: "{{ lookup('env', 'SSO_CLIENT_SECRET') }}"
+    # Secret of the Keycloak client metabase-sso-admin (service account of the adapter)
+    sso_admin_client_secret: "{{ lookup('env', 'SSO_ADMIN_CLIENT_SECRET') }}"
+    sso_session_secret: "{{ lookup('env', 'SSO_SESSION_SECRET') }}"
+    sso_google_client_id: "{{ lookup('env', 'SSO_GOOGLE_CLIENT_ID') }}"
+    sso_google_client_secret: "{{ lookup('env', 'SSO_GOOGLE_CLIENT_SECRET') }}"
+    sso_allowed_email_domains: "{{ lookup('env', 'SSO_ALLOWED_EMAIL_DOMAINS') | default('dataforgood.fr,quotaclimat.org', true) }}"
+    # Metabase groups (exact names) an SSO login may add the user to, from the Keycloak groups of the same name.
+    # SSO_GROUPS (comma separated) overrides this list.
+    sso_groups_default:
+      - Administrators
+      - Belgique
+      - Désinformation
+      - Droit à l'info - Admin
+      - Droit à l'info - privé
+      - Droit à l'info - publique
+      - Interne OME
+      - Publicité - collaborateurs externes
+      - Quotaclimat
+      - QuotaClimat - Claude compatible
+    sso_groups: "{{ lookup('env', 'SSO_GROUPS') | default(sso_groups_default | join(','), true) }}"
+    sso_allow_any_domain: "{{ lookup('env', 'SSO_ALLOW_ANY_DOMAIN') | default('false', true) }}"
 
     # Managed Postgres
     postgres_host: "{{ lookup('env', 'POSTGRES_HOST') }}"
@@ -124,3 +165,5 @@
       tags: [glitchtip]
     - role: windmill
       tags: [windmill]
+    - role: sso
+      tags: [sso]

@@ -26,7 +26,7 @@ define TG_CMD
 	mise exec -- terragrunt $(1) --terragrunt-working-dir live/$(target)/$(env)
 endef
 
-.PHONY: tg-init tg-plan tg-apply tg-fmt tg-state-pull tg-state-list tg-state-rm tg-destroy tg-output
+.PHONY: tg-init tg-plan tg-apply tg-fmt tg-state-pull tg-state-list tg-state-rm tg-import tg-destroy tg-output
 
 tg-init:
 	$(call TG_CMD,init)
@@ -52,6 +52,13 @@ tg-state-list:
 tg-state-rm:
 	@test -n "$(addr)" || { echo "usage: make target=<t> env=<e> tg-state-rm addr=\"<resource address> [...]\""; exit 1; }
 	$(call TG_CMD,state rm $(addr))
+
+# Imports an existing cloud resource into the state (nothing is created or changed in the cloud). addr is the
+# resource address, id its import id, e.g.
+#   make target=barometre env=prod tg-import addr=scaleway_container.metabase id=fr-par/<container-id>
+tg-import:
+	@test -n "$(addr)" -a -n "$(id)" || { echo "usage: make target=<t> env=<e> tg-import addr=<resource address> id=<import id>"; exit 1; }
+	$(call TG_CMD,import $(addr) $(id))
 
 tg-destroy:
 	$(call TG_CMD,destroy)

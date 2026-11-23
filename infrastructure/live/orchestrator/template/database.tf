@@ -1,4 +1,4 @@
-# Databases for Kestra, GlitchTip and Windmill on the existing managed Postgres instance.
+# Databases for Kestra, GlitchTip, Keycloak and Windmill on the existing managed Postgres instance.
 
 data "scaleway_account_project" "pg_project" {
   name = var.pg_project_name
@@ -49,6 +49,27 @@ resource "scaleway_rdb_privilege" "glitchtip" {
   database_name = scaleway_rdb_database.glitchtip.name
   permission    = "all"
   depends_on    = [scaleway_rdb_user.glitchtip, scaleway_rdb_database.glitchtip]
+}
+
+# --- Keycloak (role sso) ---
+
+resource "scaleway_rdb_user" "keycloak" {
+  instance_id = data.scaleway_rdb_instance.shared.id
+  name        = "keycloak"
+  password    = var.postgres_password_keycloak
+}
+
+resource "scaleway_rdb_database" "keycloak" {
+  instance_id = data.scaleway_rdb_instance.shared.id
+  name        = "keycloak"
+}
+
+resource "scaleway_rdb_privilege" "keycloak" {
+  instance_id   = data.scaleway_rdb_instance.shared.id
+  user_name     = scaleway_rdb_user.keycloak.name
+  database_name = scaleway_rdb_database.keycloak.name
+  permission    = "all"
+  depends_on    = [scaleway_rdb_user.keycloak, scaleway_rdb_database.keycloak]
 }
 
 # --- Windmill ---

@@ -23,7 +23,7 @@ infrastructure/
 ├── live/
 │   ├── terragrunt.hcl         # Root config: backend, provider, terraform_binary
 │   ├── advertising/           # Label Studio + advertising detection infra
-│   ├── barometre/              # Barometre database infra
+│   ├── barometre/             # Barometre database infra + Metabase (prod imported, dev created)
 │   ├── misinformation/        # Label Studio + label-misinformation job per country (climate-safeguards-<env>)
 │   ├── rrs/                   # RRS database + serverless jobs + extended perimeter (Droit à l'info)
 │   │   └── template/
@@ -37,7 +37,7 @@ infrastructure/
 │       │   └── terragrunt.hcl
 │       └── template/
 │           ├── instance.tf    # Elastic Metal server (EM-A610R-NVMe), SSH keys, offer/OS
-│           ├── database.tf    # Kestra + GlitchTip databases on managed PG
+│           ├── database.tf    # Kestra + GlitchTip + Keycloak databases on managed PG
 │           ├── s3.tf          # GlitchTip S3 bucket, scoped IAM application + API key
 │           ├── variables.tf
 │           └── outputs.tf
@@ -45,7 +45,8 @@ infrastructure/
 │   ├── traefik/
 │   ├── kestra/
 │   ├── glitchtip/
-│   └── windmill/
+│   ├── windmill/
+│   └── sso/                   # Keycloak + Metabase SSO adapter (adapter/ source built on the host)
 ├── kestra/
 │   └── flows/                 # Kestra flow definitions (uploaded by Ansible)
 ├── windmill/                  # Windmill copy of the Kestra flows (wmill project, pushed by Ansible)
@@ -60,7 +61,8 @@ infrastructure/
         ├── traefik/           # Reverse proxy with auto-TLS
         ├── kestra/            # Orchestrator + secrets/KV provisioning + flow upload
         ├── glitchtip/         # Error tracking + Redis
-        └── windmill/          # Windmill server + workers (Kestra alternative) + secrets sync + flow push
+        ├── windmill/          # Windmill server + workers (Kestra alternative) + secrets sync + flow push
+        └── sso/               # Keycloak + Metabase SSO adapter + Traefik route to the Metabase container
 ```
 
 The root `live/terragrunt.hcl` generates the S3 backend and Scaleway provider configuration for every environment automatically, so there is no duplicated `backend.tf` or `provider.tf` to maintain. Each environment folder only needs a `terragrunt.hcl` with its specific input values.
@@ -152,7 +154,7 @@ make env=prod target=orchestrator tg-apply
 | `make tags=kestra ansible` | Run only the kestra role |
 | `make tags=traefik,kestra ansible` | Run specific roles |
 
-Available tags: `common`, `traefik`, `kestra`, `glitchtip`, `windmill`.
+Available tags: `common`, `traefik`, `kestra`, `glitchtip`, `windmill`, `sso`.
 
 Before running Ansible for the first time, create the inventory file from the template:
 ```bash
@@ -197,7 +199,8 @@ cd ansible && cp inventory.yml.j2 inventory.yml
 #     (rdb-poc's ACL is managed outside this repo). On migration, remove the old IP.
 
 # 5b. Point DNS records to the server IP
-#     traefik.<domain>, kestra.<domain>, glitchtip.<domain>, windmill.<domain>
+#     traefik.<domain>, kestra.<domain>, glitchtip.<domain>, windmill.<domain>,
+#     keycloak.<domain>, and the Metabase domain (METABASE_DOMAIN)
 
 # 6. Deploy services
 cd .. && make ansible
@@ -209,6 +212,7 @@ cd .. && make ansible
 make tags=kestra ansible     # Redeploy Kestra + re-upload flows + sync secrets
 make tags=glitchtip ansible  # Redeploy GlitchTip only
 make tags=windmill ansible   # Redeploy Windmill + sync secrets + push flows
+make tags=sso ansible        # Redeploy Keycloak + the Metabase SSO adapter + the Traefik route to Metabase
 ```
 
 [Windmill](https://www.windmill.dev/docs/advanced/self_host) (Kestra alternative) runs as a server plus default, native and `dbt` workers (`compose/windmill/docker-compose.yml.j2`, role `windmill`), on its own `windmill` database on the managed Postgres. Traefik routes `WINDMILL_DOMAIN` to the server (port 8000) with automatic TLS. Set `WINDMILL_DOMAIN`, `WINDMILL_DB_USER`, `WINDMILL_DB_PASSWORD`, `WINDMILL_DB_NAME` in `.env.secrets` and `TF_VAR_postgres_password_windmill` (same value as `WINDMILL_DB_PASSWORD`) for OpenTofu. First login is `admin@windmill.dev` / `changeme`: change it right away.
@@ -228,6 +232,51 @@ Before removing Windmill, apply once with `TF_VAR_windmill_bootstrap=true`: the 
 
 GlitchTip stores files and archived events/logs (DuckDB cold storage) in S3. After `make env=prod target=orchestrator tg-apply`, copy the `glitchtip_s3_*` outputs into `GLITCHTIP_S3_ACCESS_KEY`, `GLITCHTIP_S3_SECRET_KEY` and `GLITCHTIP_S3_BUCKET` in `.env.secrets` (rendered by `compose/glitchtip/.env.s3.j2`). Invitation emails go through [Brevo](https://www.brevo.com) SMTP (`compose/glitchtip/.env.email.j2`, loaded after `.env`). Verify the `quotaclimat.org` domain in Brevo (DKIM/DMARC), create an SMTP key (SMTP & API), then set in `.env.secrets`: `BREVO_SMTP_LOGIN` (Brevo login email), `BREVO_SMTP_KEY`, and optionally `GLITCHTIP_FROM_EMAIL` (default `glitchtip@quotaclimat.org`), `BREVO_SMTP_HOST` (default `smtp-relay.brevo.com`), `BREVO_SMTP_PORT` (default `587`). Without `BREVO_SMTP_LOGIN`/`BREVO_SMTP_KEY`, emails are only printed in the container logs (`consolemail://`). Redeploy with `make tags=glitchtip ansible`. If sending fails, check the Brevo logs and try port 465 with `smtp+ssl` in the template.
 The managed Postgres sets `max_locks_per_transaction = 512` for GlitchTip (`live/barometre/template/database.tf`).
+
+### Metabase SSO (Keycloak + adapter)
+
+Metabase Community has no OIDC/SAML, so [Keycloak](https://www.keycloak.org) (identity provider, brokers Google login, user invitations) is paired with a small FastAPI adapter (`compose/sso/adapter/app.py`) that turns a Keycloak OIDC login into a Metabase session. Role `sso` (`compose/sso/docker-compose.yml.j2`, `ansible/roles/sso/`) deploys both on the orchestrator host, behind the shared Traefik.
+
+**How a request flows.** Metabase itself is a Scaleway serverless container, outside this host. Traefik serves the Metabase domain (`METABASE_DOMAIN`) with two routers: the adapter's (docker labels, priority 100) takes `/sso/*`, `/auth/login` and `/` without a `metabase.SESSION` cookie (Metabase is a single-page app: its own login screen never makes a request Traefik could redirect), and everything else goes to the container (`compose/traefik/dynamic/metabase.yml.j2`, Traefik file provider, priority 10, `passHostHeader: false` because Scaleway routes a container by its own Host header). The adapter must share the Metabase hostname: the `metabase.SESSION` cookie is host-scoped.
+
+**Setup**
+1. OpenTofu: set `TF_VAR_postgres_password_keycloak` (same value as `KEYCLOAK_DB_PASSWORD`) and apply `live/orchestrator` (`keycloak` user, database and privilege on the shared managed Postgres, like Kestra and GlitchTip; Keycloak 26 needs Postgres 13+).
+2. Google Cloud Console: OAuth client (Web application), authorized redirect URI `https://<KEYCLOAK_DOMAIN>/realms/<KEYCLOAK_REALM>/broker/google/endpoint`. One client serves both Google domains: the consent screen must be *External* and published, and the adapter enforces `SSO_ALLOWED_EMAIL_DOMAINS` (default `dataforgood.fr,quotaclimat.org`, because Google's `hd` parameter takes a single domain). `SSO_ALLOW_ANY_DOMAIN=true` also lets Keycloak-invited users from other domains in.
+3. Metabase container: set `MB_SITE_URL=https://<METABASE_DOMAIN>`. The adapter needs an existing Metabase admin account (`SSO_METABASE_ADMIN_EMAIL`/`SSO_METABASE_ADMIN_PASSWORD`); the adapter's first-time setup only runs on a fresh Metabase.
+4. DNS: `KEYCLOAK_DOMAIN` and `METABASE_DOMAIN` to the server IP (the Metabase domain moves from the container to Traefik).
+5. `.env.secrets`: `KEYCLOAK_*`, `METABASE_DOMAIN`, `METABASE_UPSTREAM_URL` (container URL without trailing slash), `SSO_*` (see `.env.secrets.dist`), then `make tags=sso ansible`. `KEYCLOAK_ADMIN_ALLOWED_IPS` (comma separated CIDRs) restricts `/admin` and `/realms/master`; empty leaves the admin console public. Invitation emails use the same Brevo SMTP credentials as GlitchTip (`KEYCLOAK_FROM_EMAIL`, default `sso@quotaclimat.org`).
+
+**First login: Metabase groups to Keycloak.** When a user signs in for the first time (not yet in the Keycloak marker group `sso-metabase-synced`), the adapter reads their groups in Metabase and adds them to the Keycloak groups of the same name, limited to `SSO_GROUPS` and creating a missing Keycloak group (name only). So existing Metabase users keep their access when they move to SSO, and Keycloak becomes the place to maintain memberships from then on. It uses the Keycloak client `metabase-sso-admin` (service account with `manage-users`, `view-users`, `query-groups` only, secret `SSO_ADMIN_CLIENT_SECRET`); left empty, the feature is off. A failure is logged and retried at the next login, never blocking the login. Remove a user from `sso-metabase-synced` to mirror them again. Each later login still adds the user, in Metabase, to the groups Keycloak gives them (additive).
+
+**Inviting users**: Keycloak admin console, realm `KEYCLOAK_REALM`, Users, Add user, then Credentials, send the update-password / verify-email action. At each login the adapter adds the user to the **existing** Metabase groups whose name equals one of their Keycloak groups, limited to `SSO_GROUPS` (default: the OME groups, exact names, in `ansible/playbook.yml`). This is additive: it never creates, renames or empties a group, never changes its permissions, and never removes a membership, so a user removed from a Keycloak group keeps the Metabase group until you remove it in Metabase. `Administrators` is Metabase's admin group: a Keycloak group of that name makes its members admins.
+
+**Caveats**
+- The realm (`compose/sso/realm.json.j2`) is imported on Keycloak's first start only: later changes to the file are ignored, edit the realm in the console (or delete it and redeploy). On a Keycloak already running, create the `metabase-sso-admin` client by hand: Clients, Create, *Client authentication* on, only *Service accounts roles* checked, secret = `SSO_ADMIN_CLIENT_SECRET`; then its Service accounts roles tab, assign from `realm-management` the roles `manage-users`, `view-users` and `query-groups`.
+- The adapter sets a random password on each SSO login and never shows it: a user who had a local Metabase password loses it, and users are matched by email. Keep a break-glass admin that never signs in through SSO.
+- The Metabase container stays reachable at its own `*.functions.fnc.fr-par.scw.cloud` URL, which bypasses SSO (password login still works there). Set the container to private and send its `X-Auth-Token` from Traefik to close it.
+- Disabling a user in Keycloak does not end an existing Metabase session before it expires.
+- Keep the adapter at one replica: its per-user lock is in memory.
+
+### Metabase (in `live/barometre`)
+
+Metabase runs as a Serverless Container with its application database on the environment's managed Postgres instance (prod: project `barometre`, instance `rdb-poc`; dev: project `barometre-dev`, instance `rdb-barometre-dev`, both managed by `live/barometre`). The prod one was created by hand in the Scaleway console: `live/barometre/template/metabase.tf` describes it so that it can be imported (with the values of `live/barometre/prod/terragrunt.hcl`) and creates the dev one. It lives in the `barometre` target, next to the project and the Postgres instance it uses. In prod the container namespace, shared with Label Studio and other containers, is looked up with a data source, never managed here. `metabase-proxy`, the container in front of Metabase in prod, is not described.
+
+**Import prod** (once; imports write to the state only, nothing changes in the cloud):
+```bash
+# add TF_VAR_metabase_db_password to live/barometre/prod/.env.secrets (MB_DB_PASS of the container; any non-empty value works to import and plan)
+make env=prod target=barometre tg-init
+I=a3110caf-2410-4cb9-8298-dd001a768ef1   # rdb-poc: scw rdb instance list
+make env=prod target=barometre tg-import addr=scaleway_container.metabase id=fr-par/3dfd8cd3-2ee4-493f-8fe5-d602076273de
+make env=prod target=barometre tg-import addr=scaleway_rdb_database.metabase id=fr-par/$I/metabase
+make env=prod target=barometre tg-import addr=scaleway_rdb_user.metabase id=fr-par/$I/metabase_barometre
+make env=prod target=barometre tg-import addr=scaleway_rdb_privilege.metabase id=fr-par/$I/metabase/metabase_barometre
+make env=prod target=barometre tg-plan      # expected: "No changes"
+```
+The plan was checked against the deployed resources: no change. Two `ignore_changes` keep it that way: the API never returns the container's secret values (`MB_DB_*`) nor `deploy`, so without them the first apply would rewrite the secrets and redeploy (restart) Metabase. Remove `secret_environment_variables` from `ignore_changes` (`template/metabase.tf`) once a plan confirms the secrets match, to manage them from here. The database user's `password` is ignored too (the API never returns it): rotate it by removing that line.
+
+**Create dev**: add `TF_VAR_metabase_db_password` (a new password) to `live/barometre/dev/.env.secrets`, then `make env=dev target=barometre tg-plan tg-apply` (the plan also covers the rest of the dev barometre target: only the Metabase resources should be new). It creates the namespace `metabase-dev`, the container (1 vCPU, 2 GB, sleeps when unused: the first request after a pause takes about a minute), the `metabase` database and a non-admin `metabase-dev` user. The dev Postgres ACL already allows all addresses. The first visit to the container URL (output `metabase_url`) runs Metabase's setup screen.
+
+Change the image with `metabase_image` (`live/barometre/template/variables.tf`, prod default `metabase/metabase:v0.64.2.2`): applying redeploys the container. In prod, `JAVA_OPTS` is `-Xmx8g` on an 8 GB container, so the heap is as big as the memory limit: lower it if Metabase gets killed for memory. The output `metabase_url` of prod is the container's own URL, usable as `METABASE_UPSTREAM_URL` of the SSO stack.
 
 ### Kestra flows
 
@@ -379,6 +428,11 @@ Resources marked *per country* are `for_each` over the `countries` input (addres
 | IAM Application | `scaleway_iam_application.mediatree_videos_application` | App identity scoped to the `mediatree-videos` bucket (project-wide in practice) |
 | IAM Policy | `scaleway_iam_policy.mediatree_videos_policy` | Object storage read/write for `mediatree_videos_application` |
 | IAM API key | `scaleway_iam_api_key.mediatree_videos_api_key` | Credentials for `mediatree_videos_application` |
+| Container namespace | `scaleway_container_namespace.metabase[0]` | `metabase-dev` only (`manage_container_namespace = true`); prod looks up its shared `barometre` namespace |
+| Container | `scaleway_container.metabase` | Metabase (`metabase/metabase` image, port 3000): prod `metabase-barometre`, dev `metabase-dev` |
+| RDB database | `scaleway_rdb_database.metabase` | `metabase` application database on the environment's managed Postgres instance |
+| RDB user | `scaleway_rdb_user.metabase` | Database owner: prod `metabase_barometre` (Scaleway admin, as created by hand), dev `metabase-dev` |
+| RDB privilege | `scaleway_rdb_privilege.metabase` | `all` for that user on the `metabase` database |
 
 ### `rrs` (`live/rrs/template/`)
 | Resource | Address | Purpose |
@@ -426,6 +480,9 @@ Resources marked *per country* are `for_each` over the `countries` input (addres
 | RDB user | `scaleway_rdb_user.glitchtip` | GlitchTip app DB user |
 | RDB database | `scaleway_rdb_database.glitchtip` | GlitchTip database |
 | RDB privilege | `scaleway_rdb_privilege.glitchtip` | Grants for `glitchtip` user |
+| RDB user | `scaleway_rdb_user.keycloak` | Keycloak app DB user |
+| RDB database | `scaleway_rdb_database.keycloak` | Keycloak database |
+| RDB privilege | `scaleway_rdb_privilege.keycloak` | Grants for `keycloak` user |
 | RDB user | `scaleway_rdb_user.windmill` | Windmill app DB user, Scaleway admin only while `TF_VAR_windmill_bootstrap=true` |
 | Terraform data | `terraform_data.windmill_database` | Creates the `windmill` database (owned by the `windmill` user) and the `windmill_admin`/`windmill_user` roles with `psql`; drops them on destroy |
 | IAM SSH key | `scaleway_iam_ssh_key.paul_gabriel` | SSH access to the baremetal server |

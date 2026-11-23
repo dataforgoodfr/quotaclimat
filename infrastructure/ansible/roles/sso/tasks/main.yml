@@ -1,0 +1,59 @@
+---
+- name: Create sso directory
+  file:
+    path: "{{ sso_service_dir }}"
+    state: directory
+    mode: "0755"
+
+# The adapter image is built on the host from its source
+- name: Copy the SSO adapter source
+  copy:
+    src: "{{ playbook_dir }}/../compose/sso/adapter/"
+    dest: "{{ sso_service_dir }}/adapter/"
+    mode: preserve
+
+# The compose file and the realm embed secrets, hence the restrictive mode.
+- name: Template keycloak realm
+  template:
+    src: "{{ playbook_dir }}/../compose/sso/realm.json.j2"
+    dest: "{{ sso_service_dir }}/realm.json"
+    mode: "0644"
+
+- name: Template sso docker-compose
+  template:
+    src: "{{ playbook_dir }}/../compose/sso/docker-compose.yml.j2"
+    dest: "{{ sso_service_dir }}/docker-compose.yml"
+    mode: "0600"
+
+# Traefik watches this directory: the route to the Metabase container is live as soon as the file lands
+- name: Route the Metabase domain to the Metabase container
+  template:
+    src: "{{ playbook_dir }}/../compose/traefik/dynamic/metabase.yml.j2"
+    dest: "{{ traefik_service_dir }}/dynamic/metabase.yml"
+    mode: "0644"
+
+- name: Start keycloak and the SSO adapter
+  community.docker.docker_compose_v2:
+    project_src: "{{ sso_service_dir }}"
+    state: present
+    pull: always
+    build: always
+
+- name: Wait for Keycloak to be healthy
+  shell: docker inspect --format '{{ '{{' }}.State.Health.Status{{ '}}' }}' keycloak
+  register: keycloak_health
+  retries: 30
+  delay: 10
+  until: keycloak_health.stdout == 'healthy'
+  changed_when: false
+
+# Traefik routes to a container only once its Docker health check passes
+- name: Wait for Keycloak to be reachable at its public URL
+  uri:
+    url: "https://{{ keycloak_domain }}/realms/{{ keycloak_realm }}/.well-known/openid-configuration"
+    return_content: false
+  register: keycloak_public
+  retries: 12
+  delay: 10
+  until: keycloak_public.status == 200
+  changed_when: false

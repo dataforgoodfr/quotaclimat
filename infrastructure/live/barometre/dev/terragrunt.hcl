@@ -25,6 +25,19 @@ inputs = {
   # Ignored in dev — 0.0.0.0/0 is used instead (see template/database.tf).
   acl_allowed_ips = "[]"
 
+  # Metabase dev: new, created by template/metabase.tf (there is none by hand in barometre-dev).
+  manage_container_namespace = true
+  container_namespace_name   = "metabase-dev"
+  metabase_container_name    = "metabase-dev"
+  metabase_cpu_limit         = 1000
+  metabase_memory_limit      = 2048
+  # Sleeps when unused: the first request after a pause takes about a minute
+  metabase_min_scale = 0
+  metabase_java_opts = "-Xmx1536m"
+  metabase_db_user   = "metabase-dev"
+  # Password of the new Metabase database user: choose one
+  metabase_db_password = get_env("TF_VAR_metabase_db_password")
+
   # GPU instance defaults (see template/variables.tf) — override here if dev needs something non-default.
   multi_zone                 = false
   gpu_zone                   = "fr-par-1"

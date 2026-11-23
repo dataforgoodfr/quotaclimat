@@ -1,0 +1,118 @@
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "100m"
+    max-file: "3"
+
+services:
+  keycloak:
+    image: {{ keycloak_image }}
+    container_name: keycloak
+    restart: unless-stopped
+    logging: *default-logging
+    # Imports the realm on the first start only: later changes to realm.json are ignored, edit the realm in the console
+    command: ["start", "--import-realm"]
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: "jdbc:postgresql://{{ postgres_host }}:{{ postgres_port }}/{{ keycloak_db_name }}?sslmode=require"
+      KC_DB_USERNAME: "{{ keycloak_db_user }}"
+      KC_DB_PASSWORD: "{{ keycloak_db_password }}"
+      # Public URL for the browser; the adapter reads the discovery document on the internal URL
+      # (http://keycloak:8080) thanks to the dynamic backchannel
+      KC_HOSTNAME: "https://{{ keycloak_domain }}"
+      KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
+      KC_HTTP_ENABLED: "true"
+      KC_PROXY_HEADERS: xforwarded
+      KC_HEALTH_ENABLED: "true"
+      KC_BOOTSTRAP_ADMIN_USERNAME: "{{ keycloak_admin_user }}"
+      KC_BOOTSTRAP_ADMIN_PASSWORD: "{{ keycloak_admin_password }}"
+    volumes:
+      - ./realm.json:/opt/keycloak/data/import/realm.json:ro
+    networks:
+      - traefik-public
+    security_opt:
+      - no-new-privileges:true
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.keycloak.rule=Host(`{{ keycloak_domain }}`)
+      - traefik.http.routers.keycloak.entrypoints=websecure
+      - traefik.http.routers.keycloak.tls.certresolver=letsencrypt
+      - traefik.http.routers.keycloak.service=keycloak
+      - traefik.http.services.keycloak.loadbalancer.server.port=8080
+{% if keycloak_admin_allowed_ips %}
+      # Admin console and master realm limited to these addresses
+      - traefik.http.routers.keycloak-admin.rule=Host(`{{ keycloak_domain }}`) && (PathPrefix(`/admin`) || PathPrefix(`/realms/master`))
+      - traefik.http.routers.keycloak-admin.priority=100
+      - traefik.http.routers.keycloak-admin.entrypoints=websecure
+      - traefik.http.routers.keycloak-admin.tls.certresolver=letsencrypt
+      - traefik.http.routers.keycloak-admin.service=keycloak
+      - traefik.http.routers.keycloak-admin.middlewares=keycloak-admin-ips
+      - "traefik.http.middlewares.keycloak-admin-ips.ipallowlist.sourcerange={{ keycloak_admin_allowed_ips }}"
+{% endif %}
+      - autoheal=true
+    healthcheck:
+      # No curl in the Keycloak image: read /health/ready on the management port with bash
+      test:
+        - CMD-SHELL
+        - >-
+          exec 3<>/dev/tcp/localhost/9000 &&
+          printf 'GET /health/ready HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n' >&3 &&
+          grep -q '"status": "UP"' <&3
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+
+  sso-adapter:
+    build: ./adapter
+    image: sso-adapter:local
+    container_name: sso-adapter
+    restart: unless-stopped
+    logging: *default-logging
+    depends_on:
+      keycloak:
+        condition: service_healthy
+    environment:
+      PUBLIC_URL: "https://{{ metabase_domain }}"
+      # The adapter calls the Metabase API directly, not through Traefik
+      MB_URL: "{{ metabase_upstream_url }}"
+      MB_ADMIN_EMAIL: "{{ sso_metabase_admin_email }}"
+      MB_ADMIN_PASSWORD: "{{ sso_metabase_admin_password }}"
+      COOKIE_SECURE: "true"
+      SESSION_SECRET: "{{ sso_session_secret }}"
+      OIDC_DISCOVERY_URL: "http://keycloak:8080/realms/{{ keycloak_realm }}/.well-known/openid-configuration"
+      OIDC_CLIENT_ID: metabase-sso
+      OIDC_CLIENT_SECRET: "{{ sso_client_secret }}"
+      ALLOWED_EMAIL_DOMAINS: "{{ sso_allowed_email_domains }}"
+      ALLOW_ANY_DOMAIN: "{{ sso_allow_any_domain }}"
+      # Metabase groups a login can add the user to (additive: nothing is created or removed)
+      ALLOWED_GROUPS: "{{ sso_groups }}"
+      # At a user's first login, their Metabase groups are added to the same-named Keycloak groups (admin API)
+      KC_URL: http://keycloak:8080
+      KC_REALM: "{{ keycloak_realm }}"
+      KC_ADMIN_CLIENT_SECRET: "{{ sso_admin_client_secret }}"
+    networks:
+      - traefik-public
+    security_opt:
+      - no-new-privileges:true
+    labels:
+      - traefik.enable=true
+      # /sso, Metabase's login page and / without a Metabase session go to the adapter (Metabase is a
+      # single-page app: its own login screen never makes a request that Traefik could redirect).
+      # The rest of {{ metabase_domain }} is the file-provider router `metabase` (traefik/dynamic/metabase.yml).
+      - traefik.http.routers.sso.rule=Host(`{{ metabase_domain }}`) && (PathPrefix(`/sso`) || Path(`/auth/login`) || (Path(`/`) && !HeaderRegexp(`Cookie`, `metabase\.SESSION=`)))
+      - traefik.http.routers.sso.priority=100
+      - traefik.http.routers.sso.entrypoints=websecure
+      - traefik.http.routers.sso.tls.certresolver=letsencrypt
+      - traefik.http.services.sso.loadbalancer.server.port=8000
+      - autoheal=true
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request as u; u.urlopen('http://localhost:8000/sso/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+
+networks:
+  traefik-public:
+    name: traefik-public
+    external: true

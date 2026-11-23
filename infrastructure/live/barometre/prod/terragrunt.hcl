@@ -38,6 +38,20 @@ inputs = {
   barometre_rrs_read_password = get_env("TF_VAR_barometre_rrs_read_password")
   metabase_analytics_password = get_env("TF_VAR_metabase_analytics_password")
 
+  # Metabase: created by hand in the console, described in template/metabase.tf so that it can be imported (see
+  # "Metabase" in infrastructure/Readme.md). Every value is the deployed one, so that the import shows no change.
+  manage_container_namespace = false # shared with Label Studio and other containers: looked up
+  container_namespace_name   = "barometre"
+  metabase_container_name    = "metabase-barometre"
+  metabase_cpu_limit         = 3000
+  metabase_memory_limit      = 8192
+  metabase_min_scale         = 1
+  metabase_java_opts         = "-Xmx8g"
+  metabase_db_user           = "metabase_barometre"
+  metabase_db_user_is_admin  = true
+  # Password of the Metabase database user (the value of MB_DB_PASS in the container)
+  metabase_db_password = get_env("TF_VAR_metabase_db_password")
+
   # Hand-curated personal/CI IPs currently allowed on rdb-poc, on top of the
   # Scaleway job CIDRs already baked into the template. Pruning this list of
   # stale personal IPs is a separate follow-up, not part of the import.

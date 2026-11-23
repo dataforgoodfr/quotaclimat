@@ -16,6 +16,8 @@
 #   sheets:        optional per-tab settings, keyed by the exact tab name:
 #                    table:   table name instead of the default one (must start with ref_)
 #                    skip:    true to not download this tab
+#                    columns: optional {header in the sheet: column name}: only these columns are written, renamed,
+#                             in this order (a configured header missing from the tab leaves its table unchanged)
 #
 # Column types and tests of the seeds: my_dbt_project/seeds/ref/_ref_seeds.yml.
 
@@ -49,3 +51,67 @@ sources:
     folder_env: EXTERNAL_SOURCES_DRIVE_FOLDER
     spreadsheet: Programmes
     table_prefix: ref_programmes_
+
+  # misinformation cases of 2026 linked to their targets ("cibles") and the targets to the ad product categories
+  # they attack, for the analysis of the ads around the cases: base data only, the matching is done by dbt
+  # (my_dbt_project/models/analytics/cas_affirmation_cible.sql, cas_categorie_visee.sql). The computed tabs
+  # (matrices, par_cas, 4_cas_categories) and the fine grid are not downloaded; the transcripts of
+  # 1_affirmations neither (only the columns listed are kept, renamed)
+  - name: cas_de_mesinfo
+    folder_env: EXTERNAL_SOURCES_DRIVE_FOLDER
+    spreadsheet: Cas_de_mesinfo
+    table_prefix: ref_cas_
+    sheets:
+      Lisez-moi:
+        skip: true
+      2_grille:
+        skip: true
+      2_matrice:
+        skip: true
+      3_matrice_binaire:
+        skip: true
+      par_cas:
+        skip: true
+      4_cas_categories:
+        skip: true
+      0_cibles:
+        table: ref_cas_cibles
+        columns:
+          Code: cible_code
+          Cible: cible
+          Famille: famille
+          Catégorie OMÉ (rapport 2025): categorie_ome
+          Ce qu'elle couvre: perimetre
+          Sens le plus courant: sens_reference
+      1_affirmations:
+        table: ref_cas_affirmations
+        columns:
+          id affirmation: affirmation_id
+          Identifiant du cas: task_aggregate_id
+          Affirmation: affirmation
+          # one column per target: "attaque", "défend" or empty, unpivoted by cas_affirmation_cible
+          ENR: enr
+          Prix élec.: prx
+          Nucléaire: nuc
+          Fossiles: fos
+          VE: ve
+          Thermique: vt
+          Politiques auto: pau
+          Aérien: aer
+          Vélo / mobilités douces: vel
+          Train / collectifs: trc
+          Rénovation: bat
+          Clim: clim
+          Élevage: elv
+          Pesticides / irrigation: agr
+          Science: sci
+          Messagers: mes
+          Rôle FR / politiques: rol
+          Explication (debunk): explication
+      3_grille_binaire:
+        table: ref_cas_grille_binaire
+        columns:
+          Cible (code): cible_code
+          Code catégorie: cat_code
+          Produit visé (1 = attaqué): produit_vise
+          Analyse: analyse

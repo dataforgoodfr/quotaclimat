@@ -746,8 +746,9 @@ models:
       In the analytics schema. One row per misinformation case validated in Label Studio: the rows of
       task_global_completion with the first annotation ("Annotation Version" = 1) answering 'Correct' alone
       ('Correct,Incorrect' left out), same definition as ad_occurrence_mesinfo, all countries. All the
-      columns of task_global_completion, with the channel attributes of program_metadata and the emission
-      on the air (analytics.program).
+      columns of task_global_completion, with the channel attributes of program_metadata, the emission
+      on the air (analytics.program), and the targets and attacked ad categories of the cases of the
+      Cas_de_mesinfo Google Sheet (cibles, categories_visees).
     columns:
       - name: task_aggregate_id
         description: Label Studio task (labelstudio_task_aggregate.task_aggregate_id).
@@ -780,6 +781,16 @@ models:
         description: >
           Program day of the case (Paris), as in emission_jour: the day the emission starts, an emission ending
           after midnight counting for the day before.
+      - name: cibles
+        description: >
+          Targets of the claims of the case in the Cas_de_mesinfo Google Sheet, in either direction (codes of
+          cas_affirmation_cible, e.g. {ENR,PRX}). NULL for a case not in the sheet, empty for a case in it
+          without any target.
+      - name: categories_visees
+        description: >
+          Ad product categories attacked by the case (cat_code of cas_categorie_visee, e.g. {AUT1,AUT6}), filter
+          with 'AUT1' = ANY(categories_visees). NULL for a case not in the sheet, empty for a case in it attacking
+          no category.
 
   - name: emission_jour
     description: >
@@ -932,6 +943,69 @@ models:
         description: >
           Media scope of the agency (perimetre_media of the sheet) - 'partiel' when it buys only part of the media of the
           advertiser (e.g. programmatic and social only), 'tout', or NULL when not given.
+  - name: cas_affirmation_cible
+    description: >
+      In the analytics schema. One row per claim of a misinformation case and per target ("cible": ENR, VE,
+      ELV...) it attacks or defends, from the Cas_de_mesinfo Google Sheet (tabs 1_affirmations, one column per
+      target, unpivoted here, and 0_cibles). The cases are the ones of the sheet, validated in Label Studio or not
+      since: join with cas_de_mesinformation to keep the validated ones.
+    columns:
+      - name: affirmation_id
+        description: Identifier of the claim in the sheet (column "id affirmation").
+        tests:
+          - not_null
+      - name: task_aggregate_id
+        description: Label Studio task of the case (cas_de_mesinformation.task_aggregate_id).
+        tests:
+          - not_null
+      - name: cible_code
+        description: Code of the target (tab 0_cibles), e.g. VE.
+        tests:
+          - not_null
+      - name: cible
+        description: Name of the target, NULL when the code is missing from the tab 0_cibles.
+      - name: famille
+        description: Family of the target (Cible produit, Transversal...).
+      - name: sens
+        description: attaque (the claim denigrates the object of the target) or défend (it praises it).
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['attaque', 'défend']
+      - name: sens_reference
+        description: Reference direction of the target (tab 0_cibles, "Sens le plus courant").
+      - name: est_sens_reference
+        description: >
+          The claim goes the reference direction of its target, the only direction the binary grid applies to
+          (cas_categorie_visee).
+
+  - name: cas_categorie_visee
+    description: >
+      In the analytics schema. One row per misinformation case and per ad product category its claims attack:
+      at least one claim in the reference direction of a target whose row of the binary grid (tab
+      3_grille_binaire of the Cas_de_mesinfo Google Sheet) has "Produit visé" = 1. Left out: the claims in the
+      other direction, the indirect links (fine grade -1) and the categories comforted by the claims. Cases of
+      the sheet, validated or not since: join with cas_de_mesinformation. To compare with the ads: join on
+      analytics.publicites.cat_code.
+    columns:
+      - name: task_aggregate_id
+        description: Label Studio task of the case (cas_de_mesinformation.task_aggregate_id).
+        tests:
+          - not_null
+      - name: cat_code
+        description: Product category of the ads (advertising.ref_ome_categories.cat_code), e.g. AUT1.
+        tests:
+          - not_null
+      - name: categorie
+        description: French label of the category, NULL when the code is not in ref_ome_categories.
+      - name: secteur
+        description: French label of the sector of the category.
+      - name: cibles
+        description: Targets through which the case attacks the category, e.g. {ENR,PRX}.
+      - name: nb_affirmations
+        description: Claims of the case attacking the category.
+
   - name: cas_theme
     description: >
       In the analytics schema. Themes of the validated misinformation cases of the French channels, found by

@@ -203,3 +203,89 @@ seeds:
           - matches_pattern:
               arguments:
                 pattern: '^([0-9]{4}-[0-9]{2}-[0-9]{2}|[0-9]{2}/[0-9]{2}/[0-9]{4})$'
+
+  # Cas_de_mesinfo spreadsheet: tabs 0_cibles, 1_affirmations and 3_grille_binaire, only the columns listed in
+  # external_sources.yml (renamed there), read by analytics.cas_affirmation_cible and cas_categorie_visee
+  - name: ref_cas_cibles
+    config:
+      column_types:
+        cible_code: text
+        cible: text
+        famille: text
+        categorie_ome: text
+        perimetre: text
+        sens_reference: text
+    columns:
+      - name: cible_code
+        tests:
+          - unique
+          - not_null
+      - name: sens_reference
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['attaque', 'défend']
+
+  - name: ref_cas_affirmations
+    config:
+      # all text: the target columns may be empty in a sheet, the identifiers are compared as text
+      column_types:
+        affirmation_id: text
+        task_aggregate_id: text
+        affirmation: text
+        enr: text
+        prx: text
+        nuc: text
+        fos: text
+        ve: text
+        vt: text
+        pau: text
+        aer: text
+        vel: text
+        trc: text
+        bat: text
+        clim: text
+        elv: text
+        agr: text
+        sci: text
+        mes: text
+        rol: text
+        explication: text
+    columns:
+      - name: affirmation_id
+        tests:
+          - unique
+          - not_null
+      - name: task_aggregate_id
+        tests:
+          - not_null
+
+  - name: ref_cas_grille_binaire
+    config:
+      column_types:
+        cible_code: text
+        cat_code: text
+        produit_vise: text
+        analyse: text
+    tests:
+      - unique_name_keys:
+          arguments:
+            columns: ['cible_code', 'cat_code']
+    columns:
+      - name: cible_code
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('ref_cas_cibles')
+                field: cible_code
+      - name: cat_code
+        tests:
+          - not_null
+      - name: produit_vise
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['0', '1']

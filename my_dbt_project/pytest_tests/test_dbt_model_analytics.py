@@ -1,3 +1,4 @@
+import csv
 import datetime
 import logging
 import os
@@ -106,6 +107,30 @@ def programmes_test_source() -> dict:
 def advertiser_inventory_test_source() -> dict:
     """Production advertiser inventory (media agencies) source settings."""
     return production_source("inventaire_des_annonceurs")
+
+
+def cas_de_mesinfo_test_source() -> dict:
+    """Production settings of the misinformation cases / targets / ad categories source."""
+    return production_source("cas_de_mesinfo")
+
+
+# validated misinformation cases of the labelstudio seeds (see test_cas_de_mesinformation)
+CAS_FRANCEINFOTV = "70ff0eebb0d606feacde156e1584139ef1bea0d3a5f6b100dec9cb437617a23a"
+CAS_SUD_RADIO = "8c3c2001a96d3c2e2ede323a6115fd7948229baa56385f69cfbaa5555f0a13e0"
+CAS_TARGET_HEADERS = [
+    "ENR", "Prix élec.", "Nucléaire", "Fossiles", "VE", "Thermique", "Politiques auto", "Aérien",
+    "Vélo / mobilités douces", "Train / collectifs", "Rénovation", "Clim", "Élevage", "Pesticides / irrigation",
+    "Science", "Messagers", "Rôle FR / politiques",
+]
+
+
+def cas_affirmation_row(affirmation_id: str, cas: str, targets: dict[str, str]) -> list[str]:
+    """A row of the tab 1_affirmations: one column per target, then columns left out by the download."""
+    return (
+        [affirmation_id, cas, "2025-04-05", "France Info TV", "Pytest émission", "invité", f"affirmation {affirmation_id}"]
+        + [targets.get(h, "") for h in CAS_TARGET_HEADERS]
+        + ["VE", "oui", "transcription not downloaded", f"explication {affirmation_id}", "https://example.org"]
+    )
 
 
 def fake_fetch(sheets: dict[str, list[list]], source: dict | None = None):
@@ -349,6 +374,65 @@ def load_test_external_sources():
         fetch=fake_fetch(agency_sheets, advertiser_inventory_test_source()),
     )
     assert results == {"ref_annonceurs_agence_entreprise": True}
+    cas_sheets = {
+        "Lisez-moi": [["Rattachement des cas"], ["for humans only"]],
+        "0_cibles": [
+            [
+                "Code", "Cible", "Famille", "Catégorie OMÉ (rapport 2025)", "Ce qu'elle couvre", "Sens le plus courant",
+                "Affirmations « attaque »", "Affirmations « défend »", "Cas concernés",
+            ],
+            ["VE", "Véhicule électrique", "Cible produit", "Solutions – Mobilité", "Voitures électriques", "attaque",
+             "3", "1", "2"],
+            ["VT", "Véhicule thermique et carburants", "Cible produit", "Solutions – Mobilité", "Diesel", "défend"],
+            ["ELV", "Élevage, viande et lait", "Cible produit", "Solutions – Agriculture", "Élevage", "défend"],
+        ],
+        "1_affirmations": [
+            ["id affirmation", "Identifiant du cas", "Date", "Chaîne", "Émission", "Locuteurs", "Affirmation"]
+            + CAS_TARGET_HEADERS
+            + ["Cibles par mots-clés (pour info)", "Accord avec les mots-clés", "Transcription du cas",
+               "Explication (debunk)", "Extrait"],
+            # attacks the electric vehicle, its reference direction: PYTEST_AUTO_EV attacked
+            cas_affirmation_row("0", CAS_FRANCEINFOTV, {"VE": "attaque"}),
+            # defends the combustion car (reference direction, nothing attacked in the grid) and the electric one
+            # (not its reference direction): no category
+            cas_affirmation_row("1", CAS_FRANCEINFOTV, {"Thermique": "défend", "VE": "défend"}),
+            # defends livestock farming: PYTEST_FOOD_SNACK attacked (plant-based substitutes)
+            cas_affirmation_row("2", CAS_FRANCEINFOTV, {"Élevage": "défend"}),
+            # in the sheet, other direction only (spaces and case ignored): targets but no category
+            cas_affirmation_row("3", CAS_SUD_RADIO, {"VE": " Défend "}),
+            # case not validated in Label Studio: in cas_categorie_visee only
+            cas_affirmation_row("4", "pytest_cas_non_valide", {"VE": "attaque"}),
+        ],
+        "3_grille_binaire": [
+            [
+                "Cible (code)", "Cible", "Famille", "Sens de référence", "Code catégorie", "Catégorie de pub", "Secteur",
+                "Note fine (copie de l'onglet 2_grille)", "Produit visé (1 = attaqué)", "Analyse", "À discuter",
+            ],
+            ["VE", "Véhicule électrique", "Cible produit", "attaque", "PYTEST_AUTO_EV", "Voiture électrique",
+             "Automobile", "-3", "1", "Gardé : cible directe."],
+            ["VE", "Véhicule électrique", "Cible produit", "attaque", "PYTEST_AUTO_ICE", "Voiture thermique",
+             "Automobile", "-1", "0", "Retiré : lien indirect."],
+            ["VT", "Véhicule thermique et carburants", "Cible produit", "défend", "PYTEST_AUTO_ICE",
+             "Voiture thermique", "Automobile", "3", "0", "Retiré : la cible conforte ce produit."],
+            ["ELV", "Élevage, viande et lait", "Cible produit", "défend", "PYTEST_FOOD_SNACK", "Snacks",
+             "Alimentation", "-2", "1", "Gardé.", "oui"],
+        ],
+        # computed tabs, not downloaded
+        "2_grille": [["Cible (code)", "Note"], ["VE", "-3"]],
+        "2_matrice": [["Catégorie", "VE"], ["PYTEST_AUTO_EV", "-3"]],
+        "3_matrice_binaire": [["Catégorie", "VE"], ["PYTEST_AUTO_EV", "1"]],
+        "par_cas": [["Identifiant du cas", "Cibles"], [CAS_FRANCEINFOTV, "VE"]],
+        "4_cas_categories": [["Identifiant du cas", "PYTEST_AUTO_EV"], [CAS_FRANCEINFOTV, "1"]],
+    }
+    results = download_source(
+        cas_de_mesinfo_test_source(), SEEDS_DIR, fetch=fake_fetch(cas_sheets, cas_de_mesinfo_test_source())
+    )
+    assert results == {"ref_cas_cibles": True, "ref_cas_affirmations": True, "ref_cas_grille_binaire": True}
+    # only the configured columns, renamed: no transcript
+    with open(SEEDS_DIR / "ref_cas_affirmations.csv", encoding="utf-8") as f:
+        header = next(csv.reader(f))
+    assert header[:3] == ["affirmation_id", "task_aggregate_id", "affirmation"]
+    assert header[-1] == "explication" and len(header) == 21
     # as entrypoints/dbt.sh: without --no-partial-parse, the column_types of the CSV files just written are ignored
     run_dbt_command(["seed", "--full-refresh", "--no-partial-parse", "--select", "path:seeds/ref"])
     run_dbt_command(["test", "--select", "path:seeds/ref"])
@@ -375,6 +459,10 @@ def run_analytics(create_test_roles, create_advertising_tables, load_test_extern
             "path:models/advertising",
             "--exclude",
             "cas_de_mesinformation",
+            "--exclude",
+            "cas_affirmation_cible",
+            "--exclude",
+            "cas_categorie_visee",
             "--exclude",
             "publicites",
             "--exclude",
@@ -407,6 +495,10 @@ def run_analytics(create_test_roles, create_advertising_tables, load_test_extern
             "run",
             "--select",
             "path:models/advertising",
+            "--select",
+            "cas_affirmation_cible",
+            "--select",
+            "cas_categorie_visee",
             "--select",
             "cas_de_mesinformation",
             "--select",
@@ -684,6 +776,52 @@ def test_cas_de_mesinformation_emission(db_connection):
         assert cur.fetchall() == par_emission
         # the 5 cases are all in an emission or a program of the test grids
         assert sum(r[2] for r in par_emission) == 5
+
+
+def test_cas_categorie_visee(db_connection):
+    """Ad categories attacked by the claims of the cases in the reference direction of their target, with
+    produit_vise = 1 in the binary grid of the Cas_de_mesinfo sheet."""
+    with db_connection.cursor() as cur:
+        cur.execute("""
+            SELECT affirmation_id, cible_code, sens, est_sens_reference
+            FROM analytics.cas_affirmation_cible
+            ORDER BY affirmation_id, cible_code
+        """)
+        assert cur.fetchall() == [
+            ("0", "VE", "attaque", True),
+            ("1", "VE", "défend", False),
+            ("1", "VT", "défend", True),
+            ("2", "ELV", "défend", True),
+            ("3", "VE", "défend", False),
+            ("4", "VE", "attaque", True),
+        ]
+        cur.execute("""
+            SELECT task_aggregate_id, cat_code, categorie, secteur, cibles, nb_affirmations
+            FROM analytics.cas_categorie_visee
+            ORDER BY task_aggregate_id, cat_code
+        """)
+        assert cur.fetchall() == [
+            (CAS_FRANCEINFOTV, "PYTEST_AUTO_EV", "Voiture électrique", "Automobile", ["VE"], 1),
+            (CAS_FRANCEINFOTV, "PYTEST_FOOD_SNACK", "Snacks", "Alimentation", ["ELV"], 1),
+            ("pytest_cas_non_valide", "PYTEST_AUTO_EV", "Voiture électrique", "Automobile", ["VE"], 1),
+        ]
+        cur.execute("""
+            SELECT task_aggregate_id, cibles, categories_visees
+            FROM analytics.cas_de_mesinformation
+            WHERE task_aggregate_id IN (%s, %s)
+            ORDER BY task_aggregate_id
+        """, (CAS_FRANCEINFOTV, CAS_SUD_RADIO))
+        assert cur.fetchall() == [
+            (CAS_FRANCEINFOTV, ["ELV", "VE", "VT"], ["PYTEST_AUTO_EV", "PYTEST_FOOD_SNACK"]),
+            # in the sheet without any attacked category: empty, not NULL
+            (CAS_SUD_RADIO, ["VE"], []),
+        ]
+        # the cases not in the sheet: NULL
+        cur.execute("""
+            SELECT COUNT(*) FROM analytics.cas_de_mesinformation
+            WHERE cibles IS NULL AND categories_visees IS NULL
+        """)
+        assert cur.fetchone()[0] == 3
 
 
 def test_cas_theme(db_connection):

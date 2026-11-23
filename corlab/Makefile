@@ -25,8 +25,8 @@ migrate: ## Apply the alembic migrations of the repo to the barometre database
 	$(LOAD_ENV); cd ansible; mise exec -- ansible-playbook playbook.yml --tags migrate
 
 tunnel: ## Forward the server's Postgres to localhost:$(local_port) (Ctrl-C to stop)
-	$(LOAD_ENV); ssh -N -L $(local_port):127.0.0.1:6436 $${CORLAB_SSH_USER:-ubuntu}@$$CORLAB_HOST_IP
+	$(LOAD_ENV); ssh -p $${CORLAB_SSH_PORT:-2251} -N -L $(local_port):127.0.0.1:6436 $${CORLAB_SSH_USER:-ubuntu}@$$CORLAB_HOST_IP
 
 psql: ## Open psql on the barometre database, on the server
-	$(LOAD_ENV); ssh -t $${CORLAB_SSH_USER:-ubuntu}@$$CORLAB_HOST_IP \
+	$(LOAD_ENV); ssh -p $${CORLAB_SSH_PORT:-2251} -t $${CORLAB_SSH_USER:-ubuntu}@$$CORLAB_HOST_IP \
 		'docker exec -it postgres sh -c "psql -U \$$POSTGRES_USER -d \$$POSTGRES_DB"'

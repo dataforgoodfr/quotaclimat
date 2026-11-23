@@ -1,0 +1,21 @@
+#!/bin/sh
+# Managed by Ansible (corlab, role postgres). Restricts the published Postgres port to
+# the allowed source IPs. Docker publishes ports around UFW, so the filter has to sit in
+# the DOCKER-USER chain. Matching on the ORIGINAL destination port (conntrack) is needed
+# because packets are already DNATed to the container port when they reach DOCKER-USER.
+# Traffic between containers (Metabase -> postgres:5432) is not DNATed and is unaffected.
+set -eu
+
+CHAIN=CORLAB-PG
+PORT={{ postgres_published_port }}
+
+iptables -N "$CHAIN" 2>/dev/null || true
+iptables -F "$CHAIN"
+{% for ip in postgres_allowed_ips %}
+iptables -A "$CHAIN" -s {{ ip }} -j RETURN
+{% endfor %}
+iptables -A "$CHAIN" -j DROP
+
+# DOCKER-USER is created by Docker; jump to our chain once, first
+iptables -C DOCKER-USER -p tcp -m conntrack --ctorigdstport "$PORT" --ctdir ORIGINAL -j "$CHAIN" 2>/dev/null \
+  || iptables -I DOCKER-USER 1 -p tcp -m conntrack --ctorigdstport "$PORT" --ctdir ORIGINAL -j "$CHAIN"

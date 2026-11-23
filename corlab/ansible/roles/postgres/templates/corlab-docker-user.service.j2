@@ -1,0 +1,12 @@
+[Unit]
+Description=corlab: restrict the published Postgres port to the allowed IPs (DOCKER-USER)
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/sbin/corlab-docker-user.sh
+
+[Install]
+WantedBy=multi-user.target

@@ -11,6 +11,9 @@
     deploy_user: "{{ lookup('env', 'CORLAB_DEPLOY_USER') | default(lookup('env', 'CORLAB_SSH_USER') | default('ubuntu', true), true) }}"
     deploy_user_password: "{{ lookup('env', 'CORLAB_DEPLOY_USER_PASSWORD') }}"
 
+    # Port sshd listens on (UFW and fail2ban follow it; sshd itself is not reconfigured)
+    ssh_port: "{{ lookup('env', 'CORLAB_SSH_PORT') | default('2251', true) }}"
+
     acme_email: "{{ lookup('env', 'ACME_EMAIL') }}"
 
     # Domains (DNS A records must point to the server before the first run)
@@ -23,6 +26,9 @@
     # Postgres (superuser of the instance, owner of the barometre database)
     postgres_user: "{{ lookup('env', 'CORLAB_PG_USER') }}"
     postgres_password: "{{ lookup('env', 'CORLAB_PG_PASSWORD') }}"
+    # Source IPs allowed to reach the published Postgres port (DOCKER-USER chain),
+    # comma-separated IPv4 or CIDR, e.g. "203.0.113.10,198.51.100.7"
+    postgres_allowed_ips: "{{ (lookup('env', 'CORLAB_PG_ALLOWED_IPS') | default('', true)).split(',') | map('trim') | reject('equalto', '') | list }}"
     barometre_db_name: "{{ lookup('env', 'CORLAB_BAROMETRE_DB') | default('barometre', true) }}"
 
     # Metabase application database (separate database and role on the same instance)
@@ -43,6 +49,9 @@
           - postgres_user | length > 0
           - postgres_password | length > 0
           - metabase_db_password | length > 0
+          # At least one IP, and only plain IPv4/CIDR values (they are written into a root script)
+          - postgres_allowed_ips | length > 0
+          - postgres_allowed_ips | select('match', '^[0-9]{1,3}(\.[0-9]{1,3}){3}(/[0-9]{1,2})?$') | list | length == postgres_allowed_ips | length
         fail_msg: "Missing variable(s): fill corlab/.env (see corlab/README.md)"
       tags: [always]
 

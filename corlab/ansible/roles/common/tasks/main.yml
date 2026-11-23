@@ -58,7 +58,7 @@
     content: |
       [sshd]
       enabled = true
-      port = ssh
+      port = {{ ssh_port }}
       filter = sshd
       maxretry = 5
       bantime = 3600
@@ -117,7 +117,7 @@
 - name: Allow SSH through UFW
   community.general.ufw:
     rule: allow
-    port: "22"
+    port: "{{ ssh_port }}"
     proto: tcp
 
 - name: Allow HTTP through UFW
@@ -130,6 +130,12 @@
   community.general.ufw:
     rule: allow
     port: "443"
+    proto: tcp
+
+- name: Allow external access to Postgres through UFW
+  community.general.ufw:
+    rule: allow
+    port: "6436"
     proto: tcp
 
 - name: Enable UFW

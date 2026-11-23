@@ -20,9 +20,7 @@ services:
       MB_SITE_URL: "https://{{ metabase_domain }}"
       JAVA_TIMEZONE: Europe/Paris
       JAVA_OPTS: "{{ metabase_java_opts }}"
-    # Loopback only (Docker bypasses UFW for published ports); public access goes through Traefik
-    ports:
-      - "127.0.0.1:4300:3000"
+    # No published port: Metabase is only reached through Traefik (443)
     networks:
       - traefik-public
       - corlab-internal

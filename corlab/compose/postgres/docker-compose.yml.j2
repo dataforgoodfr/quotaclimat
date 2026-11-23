@@ -19,9 +19,10 @@ services:
       TZ: Europe/Paris
     volumes:
       - postgres-data:/var/lib/postgresql/data
-    # Loopback only: reachable through `ssh -L` (make tunnel), never from the internet
+    # Published on all interfaces for external services. Docker bypasses UFW: the source IPs
+    # are restricted in the DOCKER-USER chain (see the postgres role, CORLAB_PG_ALLOWED_IPS).
     ports:
-      - "127.0.0.1:6436:5432"
+      - "{{ postgres_published_port }}:5432"
     networks:
       - corlab-internal
     security_opt:

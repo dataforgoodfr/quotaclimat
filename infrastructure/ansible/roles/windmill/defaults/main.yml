@@ -8,6 +8,11 @@ windmill_worker_replicas: 2
 # Maximum duration of a job (6 h): the longest pipeline steps run for hours
 windmill_timeout_secs: 21600
 
+# Custom worker tags that every workspace user may assign (tasks/custom_tags.yml): added to the
+# instance setting, which only superadmins may go beyond. dbt_serial: steps of f/quotaclimat/dbt.
+windmill_custom_tags:
+  - dbt_serial
+
 # Flows and secrets (tasks/flows.yml, tasks/secrets.yml)
 # The CLI is pinned to the server version
 windmill_cli_version: "{{ windmill_version }}"

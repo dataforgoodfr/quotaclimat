@@ -38,6 +38,7 @@ class Ad(AdvertisingBase):
 
     fragment_type = Column(String, nullable=False)  # "advertising" or "jingle" ...
     transcript = Column(Text, nullable=True)
+    ocr_transcript = Column(Text, nullable=True)
     prediction = Column(JSON, nullable=True)
     prediction_status = Column(String, nullable=True)
     prediction_confidence = Column(Double, nullable=True)

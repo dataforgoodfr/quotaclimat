@@ -16,7 +16,6 @@ from collections import Counter
 from dataclasses import dataclass, field
 from datetime import date
 
-from quotaclimat.data_ingestion.advertising.s03_classification.dictionary.normalize import normalize
 from quotaclimat.data_ingestion.advertising.s05_enrichment.e01_brand_groups.inpi import (
     COMPANY_NAME_WORDS,
     Notice,
@@ -25,7 +24,9 @@ from quotaclimat.data_ingestion.advertising.s05_enrichment.e01_brand_groups.inpi
 from quotaclimat.data_ingestion.advertising.s05_enrichment.e01_brand_groups.registries import (
     Company,
 )
-
+from quotaclimat.data_ingestion.advertising.tools.normalize import (
+    normalize,
+)
 
 VERIFIED = "vérifié"
 UNVERIFIED = "non vérifié"  # used anyway

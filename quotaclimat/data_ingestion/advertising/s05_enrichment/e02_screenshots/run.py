@@ -23,7 +23,7 @@ from quotaclimat.data_ingestion.advertising.s02_exportation.ad_bucket import (
     ad_media_s3_key,
     get_margin_from_detection_date,
 )
-from quotaclimat.data_ingestion.advertising.s03_classification.prediction_status import (
+from quotaclimat.data_ingestion.advertising.tools.prediction_status import (
     FINAL_PREDICTION_STATUSES,
 )
 from quotaclimat.data_ingestion.advertising.s05_enrichment.e02_screenshots.frames import (

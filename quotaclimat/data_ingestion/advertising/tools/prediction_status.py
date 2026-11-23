@@ -1,7 +1,7 @@
-"""Values of advertising.ad.prediction_status written by the classification pipeline (see README.md,
-"Status reference"). Every status written by a stage must be in FINAL_PREDICTION_STATUSES or
-NON_FINAL_PREDICTION_STATUSES: test/advertising_classification/test_prediction_status.py reads the pipeline
-code and fails otherwise.
+"""Values of advertising.ad.prediction_status written by the classification (s03_classification, see the
+status table of s03_classification/sector_and_brand/README.md) and by the merge of split ads. Every status
+written by a stage must be in FINAL_PREDICTION_STATUSES or NON_FINAL_PREDICTION_STATUSES:
+test/advertising_classification/test_prediction_status.py reads the pipeline code and fails otherwise.
 
 A final status is shown in the analyses only for an advertising (fragment_type AD_CONTENT_TYPE): a manual
 correction can change the content type of a classified ad (s04_consolidation/e02_manual_corrections).
@@ -24,26 +24,30 @@ FINAL_PREDICTION_STATUSES = (
     "merge_inherited",
 )
 
-# Final statuses still waiting for the sub-category of stage 4 (e04_classify_subcat.py)
+# Final statuses still waiting for the sub-category of e4_classify_subcat
 SUBCATEGORY_PENDING_STATUSES = ("dict_miss", "dict_tier2_no_kw", "dict_tier3_no_kw")
 
 # Waiting for the next stage, or to be inspected: left out of the analyses.
 # NULL (not classified yet) is not a status of this list.
 NON_FINAL_PREDICTION_STATUSES = (
-    "ad_type_done",
+    "ad_type_done", # waiting for the next stage
     "ad_type_parse_error",
     "subcat_parse_error",
-    "no_data",
-)
-
-# Written by an earlier version of the classification, no longer by the code, still in the database:
-# left out of the analyses. not_ad: the content is not an advertising (fragment_type BUMPER, OTHER...),
-# no_sector_found: an advertising without sector, video_decode_error: the video could not be read.
-LEGACY_PREDICTION_STATUSES = (
-    "not_ad",
+    "no_data", # the video was missing
+    "not_ad", # fragment_type BUMPER, OTHER...
     "no_sector_found",
     "video_decode_error",
 )
 
-# fragment_type of an advertising, content type of the classification (ad_classification_schema.py)
+# Written by an earlier version of the classification, no longer by the code, still in the database:
+# left out of the analyses. None at the moment.
+LEGACY_PREDICTION_STATUSES: tuple[str, ...] = ()
+
+# prediction_method of the ads classified in s04_consolidation, which the classification stages leave alone:
+MANUAL_METHOD = "manual"
+INHERITED_METHOD = "merge_inherited"
+
+# Content types of the classification (e1_classify_ad), written as the fragment_type of the ad
+CONTENT_TYPES = ("AD", "BUMPER", "CHANNEL_PROMO", "SPONSORSHIP", "OTHER")
+# fragment_type of an advertising
 AD_CONTENT_TYPE = "AD"

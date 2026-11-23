@@ -489,6 +489,66 @@ def test_not_classified_ad_corrected_to_ad_goes_back_to_the_dictionary_stage(eng
     assert "catégorie ignorée" in sheet.column("correction_ads", "message")[0]
 
 
+def test_ad_waiting_for_its_subcategory_corrected_with_a_category_is_classified(
+    engine,
+):
+    insert(
+        engine,
+        make_ad(
+            "a1", status="dict_miss", predicted_sector="AUT", prediction_method="dict_miss"
+        ),
+    )
+    sheet = MemorySheet({"correction_ads": [AD_HEADER, ["a1", "", "", "AUT1", ""]]})
+    assert run(engine, sheet) == {"appliqué": 1}
+
+    ad = get_ad(engine, "a1")
+    # subcat_done: e4_classify_subcat no longer selects it
+    assert (
+        ad.prediction_status,
+        ad.prediction_method,
+        ad.predicted_brand,
+        ad.predicted_sector,
+        ad.predicted_product_category,
+    ) == ("subcat_done", "manual", "Pytest", "AUT", "AUT1")
+
+
+def test_ad_waiting_for_its_subcategory_corrected_without_category_goes_back_to_the_dictionary_stage(
+    engine,
+):
+    insert(
+        engine,
+        make_ad(
+            "a1",
+            status="dict_tier2_no_kw",
+            brand="Renaut",
+            predicted_sector="AUT",
+            prediction_method="dict_tier2_no_kw",
+            prediction=[
+                {
+                    "stage": "ad_type",
+                    "raw_response": {
+                        "content_type": "AD",
+                        "brand_name": "Renaut",
+                        "sector_code": "AUT",
+                    },
+                }
+            ],
+        ),
+    )
+    sheet = MemorySheet({"correction_ads": [AD_HEADER, ["a1", "Renault", "", "", ""]]})
+    run(engine, sheet)
+
+    ad = get_ad(engine, "a1")
+    assert (
+        ad.prediction_status,
+        ad.prediction_method,
+        ad.predicted_brand,
+        ad.predicted_sector,
+        ad.predicted_product_category,
+    ) == ("ad_type_done", None, None, "AUT", None)
+    assert ad.prediction[0]["raw_response"]["brand_name"] == "Renault"
+
+
 def test_each_row_is_processed_once(engine):
     insert(engine, make_ad("a1"))
     sheet = MemorySheet({"correction_ads": [AD_HEADER, ["a1", "Renault", "", "", ""]]})

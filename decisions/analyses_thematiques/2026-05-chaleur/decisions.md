@@ -31,15 +31,15 @@ Pas de liste propre à la canicule : le corpus repose sur le thème « conséque
 
 Questions Metabase : « Base Presse écrite » (1993), « Presse écrite - liens causaux » (1994), « Presse écrite - adaptation systémique vs. individuelle » (1995), « Requete mot-clé Presse ecrite Vague de chaleur » (1996), « Analyse par mots-clés - Vague de chaleur » (1992), « Vague de Chaleur - Adaptation - Requête propre pour graphiques Flourish » (2009).
 
-| Axe | Origine | Termes | Graphique | Question Metabase | Résultat |
-|---|---|---|---|---|---|
-| Lien avec le changement climatique (maillon « constat ») | banque, termes propres | ci-dessous | | 1992, 1993, 1994 | publié |
-| Causes climatiques (maillon « causes ») | banque, termes propres | ci-dessous | | 1992, 1993, 1994 | publié |
-| Adaptation individuelle ou systémique | spécifique | ci-dessous | Barres (presse) | 1992, 1993, 1995, 2009 | publié |
-| Désinformation | banque | Cas détectés par climateguard, saisines Arcom | | hors Metabase | publié |
-| Unes | banque | Présence en Une, par titre | | hors Metabase | publié |
-| Croisement Lien CC x causes, par média (presse) | banque | | G13 (dans Metabase) | 1994 | testé |
-| Croisement Comparaison entre épisodes (chaleur vs incendies) | banque | | | | publié |
+| Axe | Origine | Termes | Question Metabase | Résultat |
+|---|---|---|---|---|
+| Lien avec le changement climatique (maillon « constat ») | banque, termes propres | ci-dessous | 1992, 1993, 1994 | publié |
+| Causes climatiques (maillon « causes ») | banque, termes propres | ci-dessous | 1992, 1993, 1994 | publié |
+| Adaptation individuelle ou systémique | spécifique | ci-dessous | 1992, 1993, 1995, 2009 | publié |
+| Désinformation | banque | Cas détectés par climateguard, saisines Arcom | hors Metabase | publié |
+| Unes | banque | Présence en Une, par titre | hors Metabase | publié |
+| Croisement Lien CC x causes, par média (presse) | banque | | 1994 | testé |
+| Croisement Comparaison entre épisodes (chaleur vs incendies) | banque | | | publié |
 
 La collection contient aussi des questions paramétrées sur le second épisode de 2026 (19 au 30 juin) : liens causaux (2023), mots-clés (2024), conséquences sectorielles en presse (2061). Elles ont servi au Bilan OMÉ S1 2026, pas à cet article.
 

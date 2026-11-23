@@ -10,6 +10,16 @@ Fichier reconstitué à partir de la fiche d'analyse, des questions Metabase et 
 - Collection Metabase : `03. Analyses thématiques/19. Incendies 2026` (id 362)
 - Inspiration : [article vague de chaleur de mai 2026](https://quotaclimat.org/actualites/vague-chaleur-mai-2026-couverture-mediatique/) ; méthode audiovisuelle alignée sur l'analyse faite pour le BBIE, étendue à la presse
 
+## Angle
+
+Questions auxquelles l'analyse répond, avec les axes du §3 qui y répondent :
+
+- Parle-t-on du réchauffement climatique ? (A1, A2, C2a)
+- Parle-t-on davantage des solutions curatives que préventives ? (E3)
+- Ne parle-t-on que des pyromanes, ou d'autres causes ? (C1a et C1b, face à C2a à C2d)
+- Parle-t-on des causes structurelles ou immédiates ? (C3)
+- Quels feux de forêt ont le plus ému les médias ? Est-ce lié à la proximité avec Paris, ou à la gravité de la situation ? (Q8)
+
 ## 1. Méthode spécifique
 
 **Corpus construit hors dictionnaire OME.** Le dictionnaire OME est pauvre en vocabulaire du feu : `incendie`, `incendie de forêt` et `feux de forêt` sont HRFP et classés dans `changement_climatique_consequences_indirectes`. Les compteurs `*_no_hrfp` les ignorent, et le modèle `core_query_thematics_keywords`, qui filtre les thèmes `%indirect%`, ne les contient pas. Le corpus a donc été construit par regex sur le texte (§2). À l'inverse, le vocabulaire de la canicule est dans le dictionnaire (`changement_climatique_consequences`, non HRFP).
@@ -120,6 +130,38 @@ Ventilations publiées : public / privé, presse nationale / régionale.
 - Presse nationale 40,5 %, presse régionale 19 %.
 - Secours et moyens de lutte : 78 % des séquences, 62,5 % des articles. Solutions curatives 41 % du temps d'antenne, préventives 5 %.
 
-**Limites** : pas d'encadré méthodologique dans l'article (voir méthode commune §3.9). En presse, `incendie` étant HRFP, une partie des articles qui le mentionnent n'est pas dans `factiva_articles` (méthode commune §3.10).
+**Note méthodologique** (texte transmis le 23/11/2026, reproduit tel quel). 🔴 [lien vers la note publiée, ou préciser où elle a été diffusée]
+
+> **Corpus**
+>
+> **Fenêtre temporelle.** Du 1er juillet au 31 août 2026 inclus sauf mention contraire.
+>
+> **Audiovisuel.** Le périmètre de l'OME se limite [aux programmes d'information comme définis par l'ARCOM](https://observatoiremediaecologie.fr/audiovisuel/methodologie/), réparties sur 18 chaînes TV et Radio.
+>
+> **Presse écrite.** Tous articles de plus de 100 mots, parmi 76 titres nationaux et régionaux, papier et web.
+>
+> **Périmètre cadré « incendies »**
+>
+> **Audiovisuel.** Retenues les séquences de 2 min lors desquelles au moins une mention stricte de ce sujet (voir tableau ci-dessous) apparaît parmi un dictionnaire d'expressions à détecter, à l'exclusion des séquences mentionnant des incendies domestiques, de véhicules ou industriels. Ces séquences représentent environ 1900 heures de programmes, c'est la base de référence de nos pourcentages pour l'audiovisuel.
+>
+> **Presse écrite.** Retenus les articles (titre, chapô ou corps du texte) dans lesquels apparaissent au moins une mention stricte également (n = 14565). C'est la base de référence de nos pourcentages pour la presse écrite.
+>
+> **Mentions strictes.** Ces mots et expressions permettent de comptabiliser le nombre de mentions des incendies lorsque nommées comme telles, et de déterminer nos corpus de séquences/articles incendies. La détection est faite par expression régulière pour les mentions strictes et les exclusions. Les formes au singulier et au pluriel font partie du dictionnaire lorsqu'applicable.
+>
+> *Mots et expressions recherchés* : Incendie, mégafeu, brasier, feu de forêt, feu de végétation, feu de tourbe, feu de lande, feu de broussailles, départ de feu, reprise de feu, front de flammes, front du feu, hectares brûlés, parti en fumée, ravagé par le feu, ravagée par les flammes, soldats du feu, bombardier d'eau, canadair
+>
+> *Exclusions* : Incendies domestiques, de véhicule ou industriels, détectés par proximité lexicale entre un mot de feu et un mot de bâtiment ou de véhicule. Exemple : « L'incendie s'est déclaré dans un entrepôt de Grenoble »
+>
+> **Une recontextualisation**
+>
+> **Audiovisuel.** Une recontextualisation est considérée valide si un mot ou une expression clé relative aux constats, causes ou aux solutions de cette crise est relevé dans la séquence dite incendies, celle précédente ou celle suivante (+/- 2 minutes), ce qui correspond aux [standards de la profession en terme de durée d'un reportage](https://inatheque.ina.fr/hub-p/public/2026-03/INASTAT_31_radio%20et%20tv%20quelle%20offre%20d%27information.pdf).
+>
+> **Presse écrite.** Cette recontextualisation doit intervenir à l'échelle de l'article (titre, chapô, et corps).
+>
+> **Limites**
+>
+> Les dictionnaires de détection sont explicites mais non exhaustifs. L'analyse étant automatisée, le cadre Incendies ne permet pas dans 100% des cas de s'assurer que : les séquences/articles identifiés portent bien sur les incendies de forêts ; 100% des séquences/articles portant sur les incendies soient détectés. Pour autant, ce biais apparaît homogène parmi toutes les sources.
+
+**Limites** : voir la note méthodologique ci-dessus (méthode commune §3.9). En presse, `incendie` étant HRFP, une partie des articles qui le mentionnent n'est pas dans `factiva_articles` (méthode commune §3.10).
 
 **Axes remontés dans la banque** : fait.

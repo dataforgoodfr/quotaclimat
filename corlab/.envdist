@@ -1,0 +1,33 @@
+# Copy to corlab/.env and fill in. Never commit .env.
+# Password generator: LC_ALL=C tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 32
+
+# --- Server access (SSH password based) ---
+CORLAB_HOST_IP=
+CORLAB_SSH_PORT=2251
+# Account Ansible logs in with
+CORLAB_SSH_USER=ubuntu
+CORLAB_SSH_PASSWORD=
+# sudo password, optional (defaults to CORLAB_SSH_PASSWORD)
+CORLAB_BECOME_PASSWORD=
+# Optional: account to create/use for the deployment (default: CORLAB_SSH_USER)
+CORLAB_DEPLOY_USER=
+# Optional: its password, only set when the account is created (needs passlib locally)
+CORLAB_DEPLOY_USER_PASSWORD=
+
+# --- Traefik / TLS (DNS A records of both domains must point to CORLAB_HOST_IP) ---
+ACME_EMAIL=
+CORLAB_TRAEFIK_DOMAIN=traefik.corlab.example.org
+CORLAB_METABASE_DOMAIN=metabase.corlab.example.org
+# echo $(htpasswd -nB admin) | sed -e s/\\$/\\$\\$/g
+CORLAB_TRAEFIK_DASHBOARD_AUTH=
+
+# --- Postgres ---
+CORLAB_PG_USER=corlab
+CORLAB_PG_PASSWORD=
+# Comma-separated IPv4/CIDR allowed to reach port 6436 (at least one), e.g. 203.0.113.10,198.51.100.7
+CORLAB_PG_ALLOWED_IPS=
+# Optional, default: barometre
+CORLAB_BAROMETRE_DB=barometre
+
+# --- Metabase application database (role and database `metabase`) ---
+CORLAB_METABASE_DB_PASSWORD=

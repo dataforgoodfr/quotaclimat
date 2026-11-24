@@ -47,6 +47,9 @@ from quotaclimat.data_ingestion.advertising.tools.ad_merge import (
     ROLE_ABSORBED,
     ROLE_PIECE,
 )
+from quotaclimat.data_ingestion.advertising.tools.mediatree.bucket_mediatree import (
+    VIDEO_ENCODER_ARGS,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -411,8 +414,7 @@ async def render_merged_ad(
         "[v]",
         "-map",
         "[a]",
-        "-c:v",
-        "libx264",
+        *VIDEO_ENCODER_ARGS,
         "-c:a",
         "aac",
     ]

@@ -24,6 +24,21 @@ REGION = "fr-par"
 ENDPOINT_URL = f"https://s3.{REGION}.scw.cloud"
 AD_S3_PREFIX = "ads"
 
+# libx264 settings of the videos cut or rebuilt for the ads. The default preset (medium) took most of the
+# CPU of the exportation; veryfast encodes ~40% faster for a file of about the same size. Each ffmpeg is
+# limited to a few threads so that the concurrent exports share the CPUs of the job instead of each one
+# starting a thread per CPU (and their buffers, which count in the memory of a Scaleway job).
+VIDEO_PRESET = os.environ.get("VIDEO_PRESET", "veryfast")
+FFMPEG_THREADS = os.environ.get("FFMPEG_THREADS", "2")
+VIDEO_ENCODER_ARGS = [
+    "-c:v",
+    "libx264",
+    "-preset",
+    VIDEO_PRESET,
+    "-threads",
+    FFMPEG_THREADS,
+]
+
 # Our channel name -> name of its folder and files in mediatree's bucket, when they differ
 MEDIATREE_CHANNEL_MAPPING = {"sud-radio": "sudradio"}
 
@@ -437,8 +452,8 @@ async def _merge_video_parts(
     """Concatenate video parts (in order) and trim down to the requested segment.
 
     Re-encodes rather than stream-copying so the trim lands on the exact requested
-    boundaries instead of the nearest keyframe; export volumes are low enough that the
-    extra CPU cost doesn't matter.
+    boundaries instead of the nearest keyframe (VIDEO_ENCODER_ARGS: the encoding is most of
+    the CPU of the exportation).
     """
     with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False) as filelist:
         for part_path in part_paths:
@@ -459,8 +474,7 @@ async def _merge_video_parts(
             str(trim_start.total_seconds()),
             "-t",
             str(trim_duration.total_seconds()),
-            "-c:v",
-            "libx264",
+            *VIDEO_ENCODER_ARGS,
             "-c:a",
             "aac",
             output_path,

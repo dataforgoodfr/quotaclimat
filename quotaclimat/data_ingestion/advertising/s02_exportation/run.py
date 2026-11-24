@@ -1,15 +1,16 @@
 import asyncio
 import logging
+import math
 import os
 import shutil
 import tempfile
 import time
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 
 import s3fs
 from sentry_sdk.crons import monitor
-from sqlalchemy import exists, func, select, update
+from sqlalchemy import BigInteger, exists, func, or_, select, update
 from sqlalchemy.orm import aliased
 
 from postgres.database_connection import get_db_session
@@ -17,6 +18,7 @@ from postgres.schemas.advertising.models import Ad, Ad_Merge, Ad_Occurrence
 from quotaclimat.data_ingestion.advertising.s02_exportation.ad_bucket import (
     ad_media_s3_key,
     ad_prefix_in_bucket,
+    get_margin_from_detection_date,
 )
 from quotaclimat.data_ingestion.advertising.s02_exportation.merged_ads import (
     mp4_to_mp3,
@@ -78,17 +80,40 @@ MIN_BYTES_PER_SECOND_VIDEO = (
     10_000  # ~80 kbps; below this threshold the mp4 is likely corrupted
 )
 
+
+def _env_int(name: str) -> int | None:
+    value = os.environ.get(name)
+    return int(value) if value else None
+
+
+def _job_cpus() -> int:
+    """CPUs of the Scaleway job (SCW_SLS_CPU, in mVCPU), those of the machine otherwise."""
+    mvcpu = os.environ.get("SCW_SLS_CPU")
+    if mvcpu:
+        return max(1, math.floor(int(mvcpu) / 1000))
+    return os.cpu_count() or 1
+
+
 PAGE_SIZE = 100
-MAX_CONCURRENT_EXPORTS = 20
+# Ads cut/rebuilt (ffmpeg), uploaded and screenshotted at once. The encoding is most of the CPU of the
+# run: more exports than CPUs only made them wait for each other and filled the memory of the job.
+MAX_CONCURRENT_EXPORTS = _env_int("MAX_CONCURRENT_EXPORTS") or _job_cpus()
+# Ads checked in the bucket at once (one HEAD request each): apart from the exports, so that the
+# checks of a group don't wait behind the ffmpeg of the other groups.
+MAX_CONCURRENT_CHECKS = 50
 # How many (channel, day) groups to check/download/export at once. Groups write to
 # their own local_dir and don't share state, so this overlaps one group's downloads
 # with another's ffmpeg extraction/upload instead of running the pipeline in lockstep.
 MAX_CONCURRENT_GROUPS = 3
-# Each concurrent group opens its own download batch, so split the download budget
-# across them to keep total simultaneous S3 downloads close to MAX_CONCURRENT_EXPORTS.
-MAX_CONCURRENT_DOWNLOADS_PER_GROUP = max(
-    1, MAX_CONCURRENT_EXPORTS // MAX_CONCURRENT_GROUPS
-)
+# S3 downloads of mediatree archives at once, per group.
+MAX_CONCURRENT_DOWNLOADS_PER_GROUP = 6
+
+# The run stops starting new (channel, day) groups after this time, finishes the started ones and
+# ends normally, before the timeout of the Scaleway job (6 h): every group is saved as soon as it is
+# done, and the next run goes on with the ads left. A group takes up to ~30 min on the busiest days.
+MAX_RUN_DURATION = timedelta(minutes=_env_int("MAX_RUN_DURATION_MIN") or 300)
+# Stops starting new groups once this many ads were taken (unset: no limit).
+MAX_ADS = _env_int("MAX_ADS")
 
 LOCAL_CACHE_DIR = "./.cache/mediatree_export"
 
@@ -109,13 +134,36 @@ async def ad_folder_exists_in_s3(ad_id: str, fs: s3fs.S3FileSystem) -> bool:
         return False
 
 
-async def get_raw_mp4_size_in_s3(ad_id: str, fs: s3fs.S3FileSystem) -> int | None:
-    path = ad_media_s3_key(ad_id, "mp4")
-    try:
-        info = await fs._info(path)
-        return info.get("size")
-    except Exception:
-        return None
+def _min_mp4_bytes(duration_sec):
+    """Below this size the mp4 is likely corrupted (works on a column or a float)."""
+    return (duration_sec + 2) * MIN_BYTES_PER_SECOND_VIDEO
+
+
+def margin_sec_at(export_date: datetime) -> float | None:
+    """Margin the exportation applied to a video saved at export_date (MARGIN_ON_MEDIA_EXPORT_HISTORY of
+    ad_bucket.py, which follows the changes of MARGIN_ON_MEDIA_EXPORT); None before the history."""
+    if export_date.tzinfo is not None:
+        export_date = export_date.astimezone(timezone.utc).replace(tzinfo=None)
+    margin = get_margin_from_detection_date(export_date)
+    return margin.total_seconds() if margin is not None else None
+
+
+def media_export_info(
+    mp4_bytes: int | None,
+    margin_sec: float | None,
+    exported_at: datetime | None = None,
+    method: str | None = None,
+) -> dict:
+    """Value of advertising.ad.media_export (see the model)."""
+    exported_at = exported_at or datetime.now(timezone.utc)
+    info = {
+        "exported_at": exported_at.isoformat(),
+        "mp4_bytes": mp4_bytes,
+        "margin_sec": margin_sec,
+    }
+    if method is not None:
+        info["method"] = method
+    return info
 
 
 def _base_ads_query(
@@ -141,6 +189,16 @@ def _base_ads_query(
         base_query = base_query.where(
             ~exists(select(1).where(Ad_Merge.merged_ad_id == Ad.id))
         )
+
+    # Only the ads left to export: not known as exported (media_export NULL, checked in the bucket), or
+    # exported with a too small mp4. An ad exported without a known size is trusted.
+    mp4_bytes = Ad.media_export["mp4_bytes"].astext.cast(BigInteger)
+    base_query = base_query.where(
+        or_(
+            Ad.media_export.is_(None),
+            mp4_bytes < _min_mp4_bytes(Ad.duration_sec),
+        )
+    )
 
     if start_date:
         base_query = base_query.where(Ad.first_detection_date >= start_date)
@@ -236,12 +294,14 @@ async def _export_ad(
     parts: dict[datetime, dict[str, str]],
     local_dir: str,
     fs: s3fs.S3FileSystem,
+    media_sizes: dict | None = None,
 ) -> ScreenshotResult | None:
     """Extract an ad's segment out of the downloaded mediatree parts and upload it to
     S3, for both the mp3 and mp4 formats.
 
     With SCREENSHOT_ON_EXPORT, also makes the mosaic of the ad from the mp4 and returns its
     result (an `error` result when only the mosaic failed: the export itself succeeded).
+    With media_sizes, fills it with the size of each uploaded file ({"mp4": bytes, ...}).
     """
     screenshot = None
     for media_format in ("mp3", "mp4"):
@@ -257,6 +317,8 @@ async def _export_ad(
 
         s3_key = ad_media_s3_key(ad.id, media_format)
         try:
+            if media_sizes is not None:
+                media_sizes[media_format] = os.path.getsize(local_path)
             await fs._put_file(local_path, s3_key, StorageClass="ONEZONE_IA")
             logger.debug(f"Uploaded s3://{s3_key}")
             if media_format == "mp4" and SCREENSHOT_ON_EXPORT:
@@ -273,6 +335,7 @@ async def _rebuild_merged_ad(
     plan_merged,
     local_dir: str,
     fs: s3fs.S3FileSystem,
+    media_sizes: dict | None = None,
 ) -> ScreenshotResult | None:
     """Rebuild the mp4 of a merged ad from the videos of its source ads (merged_ads.py), with the
     usual export margin, make its mp3 from it, and upload both like _export_ad.
@@ -294,6 +357,8 @@ async def _rebuild_merged_ad(
         )
         await mp4_to_mp3(mp4_path, mp3_path)
         for media_format, local_path in (("mp3", mp3_path), ("mp4", mp4_path)):
+            if media_sizes is not None:
+                media_sizes[media_format] = os.path.getsize(local_path)
             await fs._put_file(
                 local_path,
                 ad_media_s3_key(ad.id, media_format),
@@ -329,14 +394,34 @@ async def _screenshot_exported_ad(
         shutil.rmtree(work_dir, ignore_errors=True)
 
 
-async def _ad_needs_export(ad: Ad, fs: s3fs.S3FileSystem) -> bool:
-    """True if the ad is missing from S3, or present with a suspiciously small mp4."""
-    if not await ad_folder_exists_in_s3(ad.id, fs):
-        return True
+async def _check_in_bucket(ad: Ad, fs: s3fs.S3FileSystem) -> tuple[bool, dict | None]:
+    """(needs export, media_export found in the bucket).
 
-    mp4_size = await get_raw_mp4_size_in_s3(ad.id, fs)
-    min_expected_size = (ad.duration_sec + 2) * MIN_BYTES_PER_SECOND_VIDEO
-    return mp4_size is not None and mp4_size < min_expected_size
+    An ad with a media_export was only selected because its mp4 is too small: exported again without
+    a request. Otherwise its raw.mp4 is looked up (one request): missing or too small, the ad is
+    exported; present, its media_export is made from it (no method: not known) so that the next runs
+    no longer check it. A folder without raw.mp4 is left as before (not exported again) and checked
+    again at the next run.
+    """
+    if ad.media_export is not None:
+        return True, None
+    try:
+        info = await fs._info(ad_media_s3_key(ad.id, "mp4"))
+    except FileNotFoundError:
+        return not await ad_folder_exists_in_s3(ad.id, fs), None
+    except Exception as e:
+        logger.error(f"Error checking S3 for ad {ad.id}: {e}")
+        return True, None
+
+    size = info.get("size")
+    if size is not None and size < _min_mp4_bytes(ad.duration_sec):
+        return True, None
+    exported_at = info.get("LastModified")
+    return False, media_export_info(
+        size,
+        margin_sec_at(exported_at) if exported_at else None,
+        exported_at=exported_at,
+    )
 
 
 async def _process_group(
@@ -350,6 +435,8 @@ async def _process_group(
     reset_no_data_ads: list,
     screenshots: list,
     plan_merged=None,
+    exported: dict | None = None,
+    check_semaphore: asyncio.Semaphore | None = None,
 ) -> None:
     """Check, download and export every ad in one (channel, day) group. Groups are
     independent of each other (own local_dir, own downloaded parts), so this is meant
@@ -357,19 +444,26 @@ async def _process_group(
 
     With plan_merged (EXPORT_MERGED_ADS), an ad whose mediatree archives are missing is
     rebuilt from the videos of its source ads instead (see _rebuild_merged_ad).
+    `exported` gets the media_export of every ad exported or found in the bucket ({ad id: value}),
+    for the caller to save. The checks take `check_semaphore` (`semaphore` when not given).
     """
     group_start = time.monotonic()
+    if exported is None:
+        exported = {}
+    check_semaphore = check_semaphore or semaphore
 
     async def _check(ad, occurrence):
-        async with semaphore:
-            return (ad, occurrence, await _ad_needs_export(ad, fs))
+        async with check_semaphore:
+            return (ad, occurrence, *await _check_in_bucket(ad, fs))
 
     checked = await asyncio.gather(*(_check(ad, occurrence) for ad, occurrence in ads))
     check_elapsed = time.monotonic() - group_start
 
     # (ad, occurrence, from_date, to_date) for ads that still need exporting.
     needs_export = []
-    for ad, occurrence, needs in checked:
+    for ad, occurrence, needs, found in checked:
+        if found is not None:
+            exported[ad.id] = found
         if needs:
             from_date, to_date = _ad_export_window(ad, occurrence)
             needs_export.append((ad, occurrence, from_date, to_date))
@@ -424,10 +518,19 @@ async def _process_group(
         async def _limited_export(ad, occurrence, from_date, to_date):
             async with semaphore:
                 try:
+                    sizes = {}
                     try:
                         screenshot = await _export_ad(
-                            ad, occurrence, from_date, to_date, parts, local_dir, fs
+                            ad,
+                            occurrence,
+                            from_date,
+                            to_date,
+                            parts,
+                            local_dir,
+                            fs,
+                            media_sizes=sizes,
                         )
+                        method = "mediatree_cut"
                         progress.count("uploaded")
                     except Exception as e:
                         if plan_merged is None:
@@ -436,10 +539,17 @@ async def _process_group(
                             f"Merged ad {ad.id} not cut from mediatree ({e}), "
                             "rebuilding it from its sources"
                         )
+                        sizes = {}
                         screenshot = await _rebuild_merged_ad(
-                            ad, plan_merged, local_dir, fs
+                            ad, plan_merged, local_dir, fs, media_sizes=sizes
                         )
+                        method = "merged_rebuild"
                         progress.count("rebuilt")
+                    exported[ad.id] = media_export_info(
+                        sizes.get("mp4"),
+                        MARGIN_ON_MEDIA_EXPORT.total_seconds(),
+                        method=method,
+                    )
                     if screenshot is not None:
                         screenshots.append(screenshot)
                     if ad.fragment_type == "no_data":
@@ -474,6 +584,36 @@ async def _process_group(
         cleanup_day_media_parts(local_dir)
 
 
+def _save_exports(session, exported: dict, reset_no_data_ids: list) -> None:
+    """Saves a group as soon as it is done, so that a run stopped by its timeout keeps its work: the
+    media_export of the ads exported or found in the bucket, and the no_data ads that now have their
+    media. A failure is only logged: the next run checks these ads in the bucket again."""
+    if not exported and not reset_no_data_ids:
+        return
+    try:
+        if exported:
+            session.execute(
+                update(Ad),
+                [
+                    {"id": ad_id, "media_export": info}
+                    for ad_id, info in exported.items()
+                ],
+            )
+        if reset_no_data_ids:
+            # fragment_type is NOT NULL, so fall back to "advertising" -- same default
+            # sector_and_brand/e1_classify_ad uses -- just to clear it out of "no_data" and let it be
+            # picked back up by the s03_classification stages.
+            session.execute(
+                update(Ad)
+                .where(Ad.id.in_(reset_no_data_ids))
+                .values(fragment_type="advertising")
+            )
+        session.commit()
+    except Exception as e:
+        session.rollback()
+        logger.error(f"Failed to save the exports of {len(exported)} ads: {e}")
+
+
 def _save_screenshots(session, screenshots: list[ScreenshotResult]) -> None:
     """Rows of advertising.ad_screenshot, upserted: a new export replaces the mosaic of the previous
     one. A failure is only logged: the screenshots job (s05_enrichment/e02_screenshots) catches up
@@ -500,6 +640,7 @@ async def run(start_date: datetime | None, end_date: datetime | None):
     missing_ads = []
     reset_no_data_ads = []
     screenshot_statuses = []
+    saved_exports = 0
 
     try:
         total = count_ads_since(session, start_date, end_date, EXPORT_MERGED_ADS)
@@ -514,12 +655,19 @@ async def run(start_date: datetime | None, end_date: datetime | None):
         )
 
         semaphore = asyncio.Semaphore(MAX_CONCURRENT_EXPORTS)
+        check_semaphore = asyncio.Semaphore(MAX_CONCURRENT_CHECKS)
         group_semaphore = asyncio.Semaphore(MAX_CONCURRENT_GROUPS)
         progress = interactive_tqdm(total=total, desc="Exporting ads")
         run_start = time.monotonic()
+        deadline = run_start + MAX_RUN_DURATION.total_seconds()
+        logger.info(
+            f"{MAX_CONCURRENT_EXPORTS} exports at once, new groups started for "
+            f"{MAX_RUN_DURATION}" + (f", up to {MAX_ADS} ads" if MAX_ADS else "")
+        )
 
         async def _bounded_group(channel, day, ads):
-            screenshots = []
+            nonlocal saved_exports
+            screenshots, exported, reset_no_data = [], {}, []
             try:
                 await _process_group(
                     channel,
@@ -529,16 +677,22 @@ async def run(start_date: datetime | None, end_date: datetime | None):
                     semaphore,
                     progress,
                     missing_ads,
-                    reset_no_data_ads,
+                    reset_no_data,
                     screenshots,
                     plan_merged,
+                    exported,
+                    check_semaphore,
                 )
             finally:
                 _save_screenshots(write_session, screenshots)
+                _save_exports(write_session, exported, reset_no_data)
+                saved_exports += len(exported)
+                reset_no_data_ads.extend(reset_no_data)
                 screenshot_statuses.extend(s.status for s in screenshots)
                 group_semaphore.release()
 
         tasks = []
+        taken = 0
         for (channel, day), ads in iter_ads_by_channel_day(
             session, start_date, end_date, PAGE_SIZE, EXPORT_MERGED_ADS
         ):
@@ -546,22 +700,21 @@ async def run(start_date: datetime | None, end_date: datetime | None):
             # streaming DB cursor behind iter_ads_by_channel_day -- pauses until a slot
             # frees up, instead of eagerly materializing every group's ads in memory.
             await group_semaphore.acquire()
+            if time.monotonic() > deadline or (MAX_ADS and taken >= MAX_ADS):
+                group_semaphore.release()
+                logger.warning(
+                    f"Run stopped before {channel}/{day} after {taken} ads "
+                    f"(MAX_RUN_DURATION_MIN or MAX_ADS reached): the next run goes on "
+                    "with the ads left"
+                )
+                break
+            taken += len(ads)
             tasks.append(asyncio.create_task(_bounded_group(channel, day, ads)))
 
         await asyncio.gather(*tasks)
 
-        # Done only now that the streaming cursor above is fully consumed and every
-        # group task has finished, so nothing else is using the session concurrently.
+        logger.info(f"media_export saved for {saved_exports} ads")
         if reset_no_data_ads:
-            # fragment_type is NOT NULL, so fall back to "advertising" -- same default
-            # sector_and_brand/e1_classify_ad uses -- just to clear it out of "no_data" and let it be
-            # picked back up by the s03_classification stages.
-            session.execute(
-                update(Ad)
-                .where(Ad.id.in_(reset_no_data_ads))
-                .values(fragment_type="advertising")
-            )
-            session.commit()
             logger.info(
                 f"Reset fragment_type for {len(reset_no_data_ads)} "
                 "previously no_data ads:"

@@ -19,6 +19,12 @@ CORLAB_PG_USER=corlab
 CORLAB_PG_PASSWORD=
 # Optional, default: barometre
 CORLAB_BAROMETRE_DB=barometre
+# Read-only roles granted by the dbt grants in prod (DBT_ENV=prod). Each one is created either way (dbt needs them
+# to exist); a password makes it a login user, empty keeps it NOLOGIN.
+CORLAB_RRS_READ_DEV_PASSWORD=
+CORLAB_RRS_READ_PROD_PASSWORD=
+CORLAB_CLIMATEGUARD_READER_PASSWORD=
+CORLAB_METABASE_ANALYTICS_PROD_PASSWORD=
 
 # --- Metabase (published on 3000) ---
 # Application database (role and database `metabase`)

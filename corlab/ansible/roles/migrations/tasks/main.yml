@@ -3,10 +3,46 @@
 # idempotent, so the role can be re-run after each new migration (`make migrate`).
 # It is tagged `never` in the playbook: it only runs when asked for explicitly.
 
-- name: Install rsync (needed by synchronize)
-  apt:
-    name: rsync
-    state: present
+# The code is shipped as a tar archive through Ansible's own connection (password SSH + sudo):
+# rsync would run as the login user and could not write to the root-owned /opt/services.
+# Only what alembic/env.py and the migrations import.
+- name: Create a local temporary file for the archive
+  ansible.builtin.tempfile:
+    state: file
+    suffix: .tgz
+  delegate_to: localhost
+  become: false
+  register: migrations_archive
+  changed_when: false
+  check_mode: false
+
+- name: Archive the alembic project and the code it imports (local)
+  ansible.builtin.command:
+    argv:
+      - tar
+      - -czf
+      - "{{ migrations_archive.path }}"
+      - --exclude=__pycache__
+      - --exclude=*.pyc
+      - -C
+      - "{{ repo_root }}"
+      - pyproject.toml
+      - poetry.lock
+      - alembic.ini
+      - alembic
+      - postgres
+      - quotaclimat
+  environment:
+    COPYFILE_DISABLE: "1"   # macOS: no ._* metadata files in the archive
+  delegate_to: localhost
+  become: false
+  changed_when: false
+  check_mode: false
+
+- name: Remove the previous build directory
+  file:
+    path: "{{ migrations_dir }}/src"
+    state: absent
 
 - name: Create migrations build directory
   file:
@@ -14,23 +50,19 @@
     state: directory
     mode: "0755"
 
-# Only what alembic/env.py and the migrations import
-- name: Sync the alembic project and the code it imports
-  ansible.posix.synchronize:
-    src: "{{ repo_root }}/"
-    dest: "{{ migrations_dir }}/src/"
-    delete: true
-    recursive: true
-    rsync_opts:
-      - "--exclude=__pycache__"
-      - "--exclude=*.pyc"
-      - "--include=pyproject.toml"
-      - "--include=poetry.lock"
-      - "--include=alembic.ini"
-      - "--include=alembic/***"
-      - "--include=postgres/***"
-      - "--include=quotaclimat/***"
-      - "--exclude=/*"
+- name: Unpack the archive on the server
+  ansible.builtin.unarchive:
+    src: "{{ migrations_archive.path }}"
+    dest: "{{ migrations_dir }}/src"
+
+- name: Remove the local temporary archive
+  ansible.builtin.file:
+    path: "{{ migrations_archive.path }}"
+    state: absent
+  delegate_to: localhost
+  become: false
+  changed_when: false
+  check_mode: false
 
 - name: Copy the migrations Dockerfile
   copy:

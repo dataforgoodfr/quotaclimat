@@ -11,7 +11,7 @@
     deploy_user: "{{ lookup('env', 'CORLAB_DEPLOY_USER') | default(lookup('env', 'CORLAB_SSH_USER') | default('ubuntu', true), true) }}"
     deploy_user_password: "{{ lookup('env', 'CORLAB_DEPLOY_USER_PASSWORD') }}"
 
-    # Port sshd listens on (UFW and fail2ban follow it; sshd itself is not reconfigured)
+    # Port Ansible connects to (the common role also opens the ports sshd listens on; sshd itself is not reconfigured)
     ssh_port: "{{ lookup('env', 'CORLAB_SSH_PORT') | default('2251', true) }}"
 
     # Standard ports published on the host
@@ -22,6 +22,15 @@
     postgres_user: "{{ lookup('env', 'CORLAB_PG_USER') }}"
     postgres_password: "{{ lookup('env', 'CORLAB_PG_PASSWORD') }}"
     barometre_db_name: "{{ lookup('env', 'CORLAB_BAROMETRE_DB') | default('barometre', true) }}"
+
+    # Read-only roles granted `select` by the dbt +grants when DBT_ENV=prod
+    # (my_dbt_project/dbt_project.yml). LOGIN + password only when the password is set,
+    # otherwise NOLOGIN.
+    readonly_roles:
+      - { name: rrs-read-dev, password: "{{ lookup('env', 'CORLAB_RRS_READ_DEV_PASSWORD') }}" }
+      - { name: rrs-read-prod, password: "{{ lookup('env', 'CORLAB_RRS_READ_PROD_PASSWORD') }}" }
+      - { name: climateguard-reader-user, password: "{{ lookup('env', 'CORLAB_CLIMATEGUARD_READER_PASSWORD') }}" }
+      - { name: metabase-analytics-prod, password: "{{ lookup('env', 'CORLAB_METABASE_ANALYTICS_PROD_PASSWORD') }}" }
 
     # Metabase application database (separate database and role on the same instance)
     metabase_db_name: metabase
@@ -43,8 +52,6 @@
   roles:
     - role: user
       tags: [user]
-    - role: ssh-keys
-      tags: [ssh-keys]
     - role: common
       tags: [common]
     - role: postgres

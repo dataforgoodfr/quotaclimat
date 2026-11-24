@@ -16,39 +16,19 @@
       - ufw
     state: present
 
-# --- SSH hardening ---
+# --- SSH ports (read-only) ---
+# The port Ansible connects to (ssh_port) can differ from the one sshd listens on (port
+# forwarding, NAT). Both are kept open in UFW and fail2ban, so enabling the firewall never
+# cuts SSH. sshd itself is not configured here.
+- name: Read the ports sshd listens on
+  ansible.builtin.shell: /usr/sbin/sshd -T | awk '$1 == "port" {print $2}'
+  register: sshd_listen_ports
+  changed_when: false
+  check_mode: false
 
-# corlab is reached with an SSH password: password authentication is left untouched
-# unless ssh_disable_password_auth is set (only once key-based access works).
-- name: Disable SSH password authentication
-  lineinfile:
-    path: /etc/ssh/sshd_config
-    regexp: "^#?PasswordAuthentication"
-    line: "PasswordAuthentication no"
-  when: ssh_disable_password_auth
-  notify: restart sshd
-
-- name: Disable SSH root login with password
-  lineinfile:
-    path: /etc/ssh/sshd_config
-    regexp: "^#?PermitRootLogin"
-    line: "PermitRootLogin prohibit-password"
-  notify: restart sshd
-
-- name: Disable SSH X11 forwarding
-  lineinfile:
-    path: /etc/ssh/sshd_config
-    regexp: "^#?X11Forwarding"
-    line: "X11Forwarding no"
-  notify: restart sshd
-
-- name: Set SSH MaxAuthTries
-  lineinfile:
-    path: /etc/ssh/sshd_config
-    regexp: "^#?MaxAuthTries"
-    # 6 with passwords: agent keys offered first count as tries and would lock out the password
-    line: "MaxAuthTries {{ 3 if ssh_disable_password_auth else 6 }}"
-  notify: restart sshd
+- name: Compute the SSH ports to keep open
+  ansible.builtin.set_fact:
+    ssh_open_ports: "{{ ([ssh_port | string] + sshd_listen_ports.stdout_lines) | unique }}"
 
 # --- fail2ban ---
 
@@ -58,7 +38,7 @@
     content: |
       [sshd]
       enabled = true
-      port = {{ ssh_port }}
+      port = {{ ssh_open_ports | join(',') }}
       filter = sshd
       maxretry = 5
       bantime = 3600
@@ -114,11 +94,12 @@
     direction: outgoing
     default: allow
 
-- name: Allow SSH through UFW
+- name: Allow SSH through UFW (connection port and the ports sshd listens on)
   community.general.ufw:
     rule: allow
-    port: "{{ ssh_port }}"
+    port: "{{ item }}"
     proto: tcp
+  loop: "{{ ssh_open_ports }}"
 
 - name: Allow Postgres and Metabase through UFW
   community.general.ufw:

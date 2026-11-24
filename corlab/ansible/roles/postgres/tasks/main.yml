@@ -59,3 +59,42 @@
         SQL
   no_log: true
   changed_when: false
+
+# Read-only roles named by the dbt `+grants` (my_dbt_project/dbt_project.yml) and by the
+# Terraform of the barometre DB (metabase-analytics-*). Created here, before the migrations:
+# the default privileges below make every table and schema that the migrations then create
+# (as CORLAB_PG_USER) readable by these roles, like infrastructure/live/barometre/template/grants.tf.
+# A role gets LOGIN + password only when its CORLAB_*_PASSWORD is set, otherwise it is NOLOGIN
+# (still a valid target of dbt grants). Idempotent: re-run it to catch up on the existing tables.
+- name: Create the read-only roles and their privileges on the barometre database
+  community.docker.docker_container_exec:
+    container: postgres
+    env:
+      RO_ROLE: "{{ item.name }}"
+      RO_PW: "{{ item.password }}"
+      RO_DB: "{{ barometre_db_name }}"
+    argv:
+      - sh
+      - -c
+      - |
+        psql -U "$POSTGRES_USER" -d "$RO_DB" -v ON_ERROR_STOP=1 \
+          -v role="$RO_ROLE" -v pw="$RO_PW" -v db="$RO_DB" <<'SQL'
+        SELECT format('CREATE ROLE %I', :'role')
+          WHERE NOT EXISTS (SELECT FROM pg_roles WHERE rolname = :'role') \gexec
+        SELECT format('ALTER ROLE %I %s', :'role',
+          CASE WHEN :'pw' <> '' THEN 'LOGIN PASSWORD ' || quote_literal(:'pw') ELSE 'NOLOGIN' END) \gexec
+        SELECT format('GRANT CONNECT ON DATABASE %I TO %I', :'db', :'role') \gexec
+        -- tables and schemas that already exist
+        SELECT format('GRANT USAGE ON SCHEMA %I TO %I', nspname, :'role')
+          FROM pg_namespace WHERE nspname !~ '^pg_' AND nspname <> 'information_schema' \gexec
+        SELECT format('GRANT SELECT ON ALL TABLES IN SCHEMA %I TO %I', nspname, :'role')
+          FROM pg_namespace WHERE nspname !~ '^pg_' AND nspname <> 'information_schema' \gexec
+        -- tables and schemas that CORLAB_PG_USER creates next (alembic migrations)
+        SELECT format('ALTER DEFAULT PRIVILEGES GRANT SELECT ON TABLES TO %I', :'role') \gexec
+        SELECT format('ALTER DEFAULT PRIVILEGES GRANT USAGE ON SCHEMAS TO %I', :'role') \gexec
+        SQL
+  loop: "{{ readonly_roles }}"
+  loop_control:
+    label: "{{ item.name }}"
+  no_log: true
+  changed_when: false

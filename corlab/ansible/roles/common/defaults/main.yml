@@ -1,6 +1,4 @@
 ---
 services_base_dir: /opt/services
-# false: the server is accessed with an SSH password, sshd keeps accepting it
-ssh_disable_password_auth: false
-# Port sshd already listens on (not changed by this role), used for UFW and fail2ban
+# Port Ansible connects to; UFW and fail2ban also open the ports sshd actually listens on (sshd is not configured by this role)
 ssh_port: 2251

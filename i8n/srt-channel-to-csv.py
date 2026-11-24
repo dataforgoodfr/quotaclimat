@@ -20,6 +20,7 @@ import argparse
 import csv
 import re
 import sys
+import unicodedata
 from datetime import datetime, time, timedelta
 from pathlib import Path
 
@@ -45,12 +46,24 @@ def parse_srt(path: Path, encoding: str = "utf-8-sig"):
                 break
 
 
-# srt folder name -> file name used by the partner in the csv file names
+# Other folder names seen in the deliveries -> canonical name (key of the dicts below).
+# Folder names are compared in upper case, without accents.
+ALIASES = {"BOUKE": "CANALC", "QU4TRE": "RTC"}
+
+
+def canonical_channel(folder_name: str) -> str:
+    name = "".join(
+        c for c in unicodedata.normalize("NFD", folder_name) if unicodedata.category(c) != "Mn"
+    ).upper()
+    return ALIASES.get(name, name)
+
+
+# canonical channel name -> file name used by the partner in the csv file names
 FILE_NAMES = {
     "ACTV": "ACTV",
     "BX1": "BX1",
     "CANALC": "Boukè",
-    "CanalZoom": "CanalZoom",
+    "CANALZOOM": "CanalZoom",
     "LAUNE": "LaUne",
     "MATELE": "MaTélé",
     "NOTELE": "NoTélé",
@@ -98,7 +111,7 @@ PROGRAM_GRID = {
     "TVCOM": _jt_18h("Actu BW"),
     "TVLUX": _jt_18h("Le journal"),
     "VEDIA": _jt_18h("Les infos"),
-    "CanalZoom": _jt_18h("Le JT"),
+    "CANALZOOM": _jt_18h("Le JT"),
 }
 
 
@@ -120,11 +133,11 @@ def month_half(dt: datetime) -> str:
 
 
 def convert_channel(channel_dir: Path, output_root: Path):
-    channel = channel_dir.name
+    channel = canonical_channel(channel_dir.name)
     if channel not in PROGRAM_GRID:
-        print(f"  No program grid for {channel}, skipping (add it to PROGRAM_GRID)")
+        print(f"  No program grid for {channel_dir.name}, skipping (add it to PROGRAM_GRID or ALIASES)")
         return
-    csv_channel = channel.upper()  # first column of the partner csv (CanalZoom -> CANALZOOM)
+    csv_channel = channel  # first column of the partner csv (CANALC, RTC, CANALZOOM...)
     file_name = FILE_NAMES.get(channel, channel)
 
     rows = []
@@ -166,7 +179,8 @@ if __name__ == "__main__":
 
     channel_dirs = sorted(d for d in args.input_dir.iterdir() if d.is_dir() and any(d.glob("*.srt")))
     if args.channels:
-        channel_dirs = [d for d in channel_dirs if d.name in args.channels]
+        wanted = {canonical_channel(c) for c in args.channels}
+        channel_dirs = [d for d in channel_dirs if canonical_channel(d.name) in wanted]
     if not channel_dirs:
         sys.exit(f"No channel folder with .srt files in {args.input_dir}")
     for channel_dir in channel_dirs:

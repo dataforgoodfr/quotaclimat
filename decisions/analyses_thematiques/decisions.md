@@ -62,7 +62,7 @@ Les questions sont créées dans les collections de l'analyse (conventions Metab
 
 **Le repo est public** : aucun chiffre ni takeaway non publié n'y entre. Avant publication, les résultats des requêtes sont consignés dans un Google Sheets séparé. Le statut d'un axe reste « testé » jusqu'à la publication.
 
-**Conventions Metabase.** Collection `03. Analyses thématiques/NN. <Sujet> <Année>`, avec une sous-collection `AV` et une sous-collection `PE` pour les questions de chaque média. À la racine de la collection : la liste des périodes (`<thematique> period filters`, ci-dessous et §7.10) et les questions qui servent à toute l'analyse : les posts LinkedIn (§7.5), la relecture humaine (§7.6) et le Pareto (§7.11). Préfixe `AV -` pour l'audiovisuel, `PE -` pour la presse. Les questions de contrôle prennent le code `CTRL` à la place de celui d'un axe : `AV - CTRL - Relecture humaine chunks et voisins par axe`, `PE - CTRL - Pareto par mot clé`. Après le préfixe, le code de l'axe ([§4.1](#41-catégories-et-codes)) : `AV - V2 - Volume`, `PE - A1 - Lien CC`. Une question qui regroupe tous les axes d'un maillon prend la lettre du maillon : `AV - A - Constat`, `AV - B - Causes`, `AV - C - Conséquences`, `AV - D - Solutions`. Les questions sur les tables thématiques prennent la période en variable Metabase `{{period}}` (texte, libellé « Period ») : `[[WHERE k.period = {{period}}]]`, sans valeur toutes les périodes. Dans Metabase, la variable s'affiche en liste déroulante alimentée par une question de la collection de l'analyse, à créer à chaque analyse : `<thematique> period filters`, qui fait `SELECT DISTINCT period FROM thematic_extracts.<thematique>_keywords_fr` (exemple : question 2435 pour les inondations). La liste suit ainsi les périodes réellement extraites, sans saisie à la main. Le connecteur ne sait pas brancher cette source : elle se choisit dans les réglages de la variable (liste déroulante, depuis une question, colonne `period`). Versions abandonnées préfixées `OLD-`. On ne modifie jamais une question d'une autre analyse : on la duplique. Dans le SQL, `<sujet>` (en-tête) et `<thematique>` (commentaires, noms de CTE et de colonnes) se remplacent par le thème : `Courbe journalière inondations`, `dictionnaire_inondations`, `nb_articles_inondations`. On n'emploie pas « noyau » dans les requêtes. L'extrait audiovisuel de 2 minutes s'y appelle `chunk`, comme la colonne `thematic_chunk`, et non segment (`nb_chunks_inondations`, CTE `chunks`). Une part en pourcentage (de 0 à 100) se nomme `pct_<mesure>` (`pct_a1_lien_cc`, `pct_articles_inondations`), un nombre `nb_<mesure>`. Toutes les questions sont versionnées dans Metabase, et leur SQL commence par un chapeau en commentaire : le média (audiovisuel ou presse écrite), le titre de la question, une description courte de ce qu'elle fait. Les modèles du §7 suivent ce format. Après publication, le SQL des questions utilisées est copié dans `<AAAA-MM>-<sujet>/queries/`.
+**Conventions Metabase.** Collection `03. Analyses thématiques/NN. <Sujet> <Année>`, avec une sous-collection `AV` et une sous-collection `PE` pour les questions de chaque média. À la racine de la collection : la liste des périodes (`<thematique> period filters`, ci-dessous et §7.10) et les questions qui servent à toute l'analyse : les posts LinkedIn (§7.5), la relecture humaine (§7.6) et le Pareto (§7.11). Préfixe `AV -` pour l'audiovisuel, `PE -` pour la presse. Les questions de contrôle prennent le code `CTRL` à la place de celui d'un axe : `AV - CTRL - Relecture humaine chunks et voisins par axe`, `PE - CTRL - Pareto par mot clé`. Après le préfixe, le code de l'axe ([§4.1](#41-catégories-et-codes)) : `AV - V2 - Volume`, `PE - A1 - Lien CC`. Une question qui regroupe tous les axes d'un maillon prend la lettre du maillon : `AV - A - Constat`, `AV - B - Causes`, `AV - C - Conséquences`, `AV - D - Solutions`. Les questions sur les tables thématiques prennent la période en variable Metabase `{{period}}` (texte, libellé « Period ») : `[[WHERE k.period = {{period}}]]`, sans valeur toutes les périodes. Dans Metabase, la variable s'affiche en liste déroulante alimentée par une question de la collection de l'analyse, à créer à chaque analyse : `<thematique> period filters`, qui fait `SELECT DISTINCT period FROM thematic_extracts.<thematique>_keywords_fr` (exemple : question 2435 pour les inondations). La liste suit ainsi les périodes réellement extraites, sans saisie à la main. Le connecteur ne sait pas brancher cette source : elle se choisit dans les réglages de la variable (liste déroulante, depuis une question, colonne `period`). Versions abandonnées préfixées `OLD-`. On ne modifie jamais une question d'une autre analyse : on la duplique. Dans le SQL, `<sujet>` (en-tête) et `<thematique>` (commentaires, noms de CTE et de colonnes) se remplacent par le thème : `Courbe journalière inondations`, `dictionnaire_inondations`, `nb_articles_inondations`. On n'emploie pas « noyau » dans les requêtes. L'extrait audiovisuel de 2 minutes s'y appelle `chunk`, et non segment (`nb_chunks_inondations`, CTE `chunks`). Une part en pourcentage (de 0 à 100) se nomme `pct_<mesure>` (`pct_a1_lien_cc`, `pct_articles_inondations`), un nombre `nb_<mesure>`. Toutes les questions sont versionnées dans Metabase, et leur SQL commence par un chapeau en commentaire : le média (audiovisuel ou presse écrite), le titre de la question, une description courte de ce qu'elle fait. Les modèles du §7 suivent ce format. Après publication, le SQL des questions utilisées est copié dans `<AAAA-MM>-<sujet>/queries/`.
 
 **Nouvelle analyse.** Au début de l'étape 0, Claude crée `<AAAA-MM>-<sujet>/decisions.md` à partir du [modèle](#6-modèle-pour-une-analyse) ; l'Angle, les §1 et §2 sont remplis avant toute requête.
 
@@ -71,29 +71,27 @@ Les questions sont créées dans les collections de l'analyse (conventions Metab
 Les analyses tournent sur des tables thématiques légères, générées par un job Scaleway lancé à la main (code : `quotaclimat/data_processing/thematic_extracts/`), et non plus directement sur `keywords` et `factiva_articles`.
 
 **Configuration.** `quotaclimat/data_processing/thematic_extracts/thematic_jobs_config.yml`, une entrée par thème :
-- `periodes.<pays>` (`france`, `belgium`, `belgium_flanders`) : liste des périodes à extraire, chacune avec un `id` (`[a-z0-9_]`), un `start` (inclus) et un `end` (exclu). Les périodes d'un même pays ne se chevauchent pas ;
-- `keywords.<langue>.audiovisuel` : termes sous leur forme exacte dans `keywords_with_timestamp` (orthographe et accents du dictionnaire OME) ;
+- `periodes.<pays>` (`france`, `belgiumfr`, `belgiumnl`) : liste des périodes à extraire, chacune avec un `id` (`[a-z0-9_]`), un `start` (inclus) et un `end` (exclu). Les périodes d'un même pays ne se chevauchent pas ;
+- `keywords.<langue>.audiovisuel` (`french` pour `france` et `belgiumfr`, `dutch` pour `belgiumnl`) : termes sous leur forme exacte dans `keywords_with_timestamp` (orthographe et accents du dictionnaire OME) ;
 - `keywords.<langue>.presse` : toutes les variantes (genre, nombre) des termes OME, détectées par regex après normalisation.
 
 Le job prend en entrée `THEMATIC` (l'entrée du fichier), `MODE` et `COUNTRY` (par défaut `france`). Modes : `new` crée la table, `resume` reprend chaque période à son dernier jour ingéré (c'est ainsi qu'on ajoute une période), `reset` vide la table et repart du début (obligatoire si l'on modifie les dates ou l'`id` d'une période déjà ingérée). `DRY_RUN` n'écrit rien.
 
-**Tables.** Schéma `thematic_extracts`, nommées `<thème>_<articles|keywords>_<pays>`, sans date, où `<pays>` vaut `fr`, `be` ou `befl` (exemple : `incendies_keywords_fr`). Une table par thème, par type de média et par pays ; elle contient toutes les périodes de l'entrée, quel que soit leur nombre. On sélectionne une période en filtrant sur la colonne `period`, qui contient l'`id` de la période dans le YAML (par exemple `ete_2026`).
+**Tables.** Schéma `thematic_extracts`, nommées `<thème>_<articles|keywords>_<pays>`, sans date, où `<pays>` vaut `fr`, `befr` ou `benl` (exemple : `incendies_keywords_fr`). Une table par thème, par type de média et par pays ; elle contient toutes les périodes de l'entrée, quel que soit leur nombre. On sélectionne une période en filtrant sur la colonne `period`, qui contient l'`id` de la période dans le YAML (par exemple `ete_2026`).
 
 | | Presse écrite | Audiovisuel |
 |---|---|---|
 | Base | Print Media DB (Metabase id 8) | Baromètre (Scaleway Postgres, Metabase id 2) |
-| Source | `public.factiva_articles`, hors `duplicate_status = 'DUP'` | `public.keywords` pour les segments thématiques, S3 Mediatree pour les segments adjacents |
-| Une ligne | Un article dont le titre, le chapô ou le corps contient un terme de l'entrée `presse` | Un segment de 2 minutes : thématique (`thematic_chunk = true`, il contient un terme de l'entrée `audiovisuel`) ou adjacent d'un segment thématique de la même chaîne (`false`). Un segment à la fois thématique et adjacent compte comme thématique |
-| Texte (normalisé, §3.5) | `title_normalized`, `snippet_normalized`, `body_normalized` | `plaintext_normalized` |
-| Colonne de contrôle | `keywords_found` : termes détectés, distincts, sous forme normalisée | `keywords_found` : termes détectés, distincts, sous leur forme dans le dictionnaire OME (non normalisée) ; `themes` : thèmes OME détectés. Vides pour un segment adjacent |
+| Source | `public.factiva_articles`, hors `duplicate_status = 'DUP'` | `public.keywords` pour les chunks thématiques, S3 Mediatree pour le texte de leurs voisins |
+| Une ligne | Un article dont le titre, le chapô ou le corps contient un terme de l'entrée `presse` | Un chunk thématique de 2 minutes (il contient un terme de l'entrée `audiovisuel`), avec le texte de ses voisins : le chunk précédent et le suivant de la même chaîne, lus sur S3 (le plus proche à 2 min 30 près, vide s'il n'y en a pas) |
+| Texte (normalisé, §3.5) | `title_normalized`, `snippet_normalized`, `body_normalized` | `plaintext_normalized` ; voisins : `plaintext_normalized_prev`, `plaintext_normalized_next` |
+| Colonne de contrôle | `keywords_found` : termes détectés, distincts, sous forme normalisée | `keywords_found` : termes détectés, distincts, sous leur forme dans le dictionnaire OME (non normalisée) ; `themes` : thèmes OME détectés |
 | Période | `period` : `id` de la période dans le YAML | `period` : `id` de la période dans le YAML |
-| Autres colonnes | `an` (clé), `source_code`, `source_name`, `publication_datetime`, `word_count`, `created_at` | `this_id` (clé : chaîne + `start` en UTC), `channel_name`, `channel_title`, `start` (heure de Paris), `source_keywords_id`, `country` (contrôle), `created_at` |
+| Autres colonnes | `an` (clé), `source_code`, `source_name`, `publication_datetime`, `word_count`, `created_at` | `id` (clé : id de la ligne de `keywords`), `channel_name`, `channel_title`, `start` (heure de Paris), `start_prev`, `start_next` (heure des voisins, pour ne compter qu'une fois un chunk voisin de deux chunks thématiques, §3.4), `country` (contrôle), `created_at` |
 
-Les anciennes tables datées (par exemple `incendies_articles_fr_20260701_20260708`) sont vouées à disparaître ; aucune table n'est plus créée sous ce nom.
+Profondeur des données : rien avant le 1er janvier 2023 en audiovisuel (`keywords`), et rien avant le 1er décembre 2023 sur S3, d'où vient le texte des voisins (avant cette date, pas de recontextualisation à ±2 minutes) ; rien avant le 1er janvier 2025 en presse (`factiva_articles`). Les articles de presse n'entrent en base qu'une semaine après leur parution : pas d'analyse presse au jour le jour, la dernière semaine est toujours incomplète. `time_monitored` ne remonte pas avant 2025 : en deçà, les heures se prennent dans la grille (`program_metadata`).
 
-Profondeur des données : rien avant le 1er janvier 2023 en audiovisuel (`keywords`), et rien avant le 1er décembre 2023 sur S3, d'où viennent les segments adjacents (avant cette date, pas de recontextualisation à ±2 minutes) ; rien avant le 1er janvier 2025 en presse (`factiva_articles`). Les articles de presse n'entrent en base qu'une semaine après leur parution : pas d'analyse presse au jour le jour, la dernière semaine est toujours incomplète. `time_monitored` ne remonte pas avant 2025 : en deçà, les heures se prennent dans la grille (`program_metadata`).
-
-Volume du corpus audiovisuel : toujours filtrer sur `thematic_chunk = true`. Les segments adjacents ne servent qu'à la recontextualisation.
+Volume du corpus audiovisuel : une ligne par chunk thématique, sans filtre à poser. Les voisins ne servent qu'à la recontextualisation (§3.4).
 
 Corpus presse : à partir de l'étape 2 (axes), toujours filtrer sur `word_count >= 100` (articles de moins de 100 mots exclus). La courbe journalière de l'étape 0 n'applique pas ce filtre : elle mesure l'agitation des médias sur tous les articles, comme son dénominateur `stats_factiva_articles`. Le job garde les articles courts dans les tables thématiques, pour pouvoir y revenir.
 
@@ -244,10 +242,10 @@ Les axes sont des listes de termes explicites (§4.4), comme la mention explicit
 | B4 | Causes | [Co-aléa vent et météo](#co-aléa-vent-et-météo) | L'événement est-il relié aux conditions météo ? | Incendies 2026 |
 | B5 | Causes | [Aléas composés](#aléas-composés) | L'événement est-il présenté comme la combinaison de plusieurs aléas ? | Incendies 2026 |
 | B6 | Causes | [Forces de l'ordre et justice](#forces-de-lordre-et-justice) | Les causes humaines directes (origine criminelle, enquête) dominent-elles, le sujet est-il traité comme un fait divers ? | Incendies 2026 |
-| C1 | Conséquences | Par secteur | De quelles conséquences de l'événement parle-t-on le plus : transports, économie, assurance, écoles, travail, agriculture, alimentation... (secteurs à choisir selon le sujet) ? | idée (Bilan OMÉ S1 2026) |
-| C2 | Conséquences | [Santé](#santé) | Les effets sanitaires sont-ils évoqués ? | Incendies 2026, Surchauffe 2026 |
+| C1 | Conséquences | [Par secteur](#conséquences-par-secteur) | De quelles conséquences de l'événement parle-t-on le plus : transports, économie, assurance, écoles, travail, agriculture, alimentation... (secteurs à choisir selon le sujet) ? Piste : ne compter un article dans un secteur qu'à partir de 2 ou 3 mentions de ses termes, pour écarter les mentions en passant | Chaleur 2026 (juin, presse) ; idée (Bilan OMÉ S1 2026) |
+| C2 | Conséquences | [Santé](#santé) | Les effets sanitaires sont-ils évoqués ? | Incendies 2026, Surchauffe 2026, Chaleur 2026 (juin, presse) |
 | C3 | Conséquences | Précarité du ménage | Les ménages précaires ou modestes sont-ils évoqués ? Termes larges (`populaire`, `fragile`) : à contrôler | Surchauffe 2026 |
-| C4 | Conséquences | Personnes vulnérables | Les personnes âgées, les enfants, les nourrissons sont-ils évoqués ? Termes larges (`enfant`) : à contrôler | Surchauffe 2026 |
+| C4 | Conséquences | Personnes vulnérables ([personnes âgées](#personnes-âgées), enfants) | Les personnes âgées, les enfants, les nourrissons sont-ils évoqués ? Termes larges (`enfant`) : à contrôler | Surchauffe 2026, Chaleur 2026 (juin, presse) |
 | D1 | Solutions | [Solutions](#solutions) | Quelles solutions sont présentées : atténuation, adaptation ? | Incendies 2026, Chaleur 2026 |
 | D2 | Solutions | Individuelles ou systémiques | Les solutions relèvent-elles du geste individuel et du court terme, ou de l'action collective et structurelle ? Généralise l'axe chaleur « adaptation palliative ou structurelle » | Chaleur 2026 (adaptation) ; idée en général (Bilan OMÉ S1 2026) |
 | D3 | Solutions | Curatif ou préventif | La couverture porte-t-elle sur la lutte et les secours (pompiers, moyens aériens) ou sur la prévention ? | Incendies 2026 |
@@ -262,7 +260,7 @@ T1 à T4 : mentions larges du domaine, termes génériques réutilisables d'un s
 |---|---|---|---|
 | T1 | Transport | Le sujet est-il relié aux transports (routes, trains, circulation) ? | Inondations 2026 (C5, bruité) |
 | T2 | Économie | Le sujet est-il relié à l'économie (entreprises, commerces, emploi) ? | Inondations 2026 (C6, bruité) |
-| T3 | Agriculture | Le sujet est-il relié à l'agriculture et à l'élevage ? | Inondations 2026 (C4) |
+| T3 | [Agriculture](#agriculture) | Le sujet est-il relié à l'agriculture et à l'élevage ? | Inondations 2026 (C4), Chaleur 2026 (juin, presse) |
 | T4 | Tourisme | Le sujet est-il relié au tourisme ? | Inondations 2026 (C7) |
 | T5 | Unes | Le sujet fait-il la Une ? Présence en Une, par titre | Chaleur 2026 |
 | T6 | Hiérarchie dans le JT | Le sujet ouvre-t-il le journal, à quelle position arrive-t-il ? Piste : `keywords` porte `channel_program` et `program_metadata` l'heure de début de l'émission dans la grille, ce qui situe un segment en minutes depuis le début prévu de l'émission. Limite : heure de la grille, pas de la diffusion réelle (retards, éditions spéciales) | idée (Acrimed) |
@@ -327,13 +325,32 @@ Mots français du dictionnaire OME de thème `changement_climatique_causes` (dir
 
 - **Atténuation** : `reduire les emissions`, `reduction des emissions`, `baisse des emissions`, `decarbonation`, `decarboner`, `neutralite carbone`, `zero emission nette`, `sortie des energies fossiles`, `sortie du charbon`, `energies fossiles`, `puits de carbone`, `budget carbone`, `objectifs climatiques`, `accord de paris`, `green deal`, `plan climat`, `pniec`, `snbc`
 
+#### Conséquences par secteur
+
+Axe C1 ; termes de la chaleur de juin 2026 (question 2061, presse), à choisir selon le sujet. L'agriculture est en T3 ([Agriculture](#agriculture)).
+
+- **Enfance et écoles** : `ecoles?`, `scolaires?`, `eleves`, `creches?`, `cantine`, `colleges?`, `lycees?`, `brevet`, `baccalaureat`, `enfants?`, `nourrissons?`, `cour de recreation`, `bati scolaire`
+- **Alimentation** : `prix alimentaires?`, `fruits et legumes`, `rayon frais`, `chaine du froid`, `supermarches?`, `consommateurs?`, `restauration`, `penuries? alimentaires?`, `securite alimentaire`, `gaspillage alimentaire`
+- **Travail** : `chantiers?`, `btp`, `travailleurs?`, `salaries?`, `droit de retrait`, `conditions de travail`, `horaires decales`, `travail en exterieur`, `inspection du travail`
+
+Termes larges : `enfants?`, `brevet`, `restauration`, `consommateurs?`, `salaries?`.
+
 #### Santé
 
-`qualite de l air`, `pollution de l air`, `particules fines`, `pm10`, `pm2`, `microparticules`, `masque`, `personnes vulnerables`, `personnes fragiles`, `problemes respiratoires`, `asthme`, `rester chez soi`, `rester a l interieur`, `consigne sanitaire`, `consignes sanitaires`, `recommandation sanitaire`, `fermer les fenetres`, `atmo`, `prevair`
+- **Qualité de l'air et consignes** : `qualite de l air`, `pollution de l air`, `particules fines`, `pm10`, `pm2`, `microparticules`, `masque`, `personnes vulnerables`, `personnes fragiles`, `problemes respiratoires`, `asthme`, `rester chez soi`, `rester a l interieur`, `consigne sanitaire`, `consignes sanitaires`, `recommandation sanitaire`, `fermer les fenetres`, `atmo`, `prevair`
+- **Soins et mortalité** (chaleur de juin 2026, question 2061) : `urgences`, `hopital`, `hopitaux`, `mortalite`, `deces`, `surmortalite`, `deshydratation`, `coup de chaleur`, `hyperthermie`, `sante publique france`, `samu`. Termes larges : `urgences`, `deces`.
+
+#### Personnes âgées
+
+Axe C4 ; termes de la chaleur de juin 2026 (question 2061). Les enfants sont dans [Conséquences par secteur](#conséquences-par-secteur) (enfance et écoles). `personnes? agees?`, `ehpad`, `maisons? de retraite`, `residence senior`, `geriatri\w+`, `isolement des aines`, `registre canicule`, `plan bleu`, `octogenaire`, `nonagenaire`
 
 #### Forces de l'ordre et justice
 
 `parquet`, `enquete judiciaire`, `ouvre une enquete`, `juge d instruction`, `police`, `auteur`, `poursuites`, `plainte`, `risque jusqu a`, `ans de prison`, `inculpe`
+
+#### Agriculture
+
+Axe T3 ; termes de C4 des inondations 2026 et de la chaleur de juin 2026 (question 2061) : `agricult\w+`, `agricoles?`, `paysans?`, `eleveurs?`, `elevages?`, `betail`, `maraich\w+`, `viticulteurs?`, `vignerons?`, `vendanges?`, `arboriculteurs?`, `cerealiers?`, `recoltes?`, `moissons?`, `irrigation`
 
 ## 5. Références
 

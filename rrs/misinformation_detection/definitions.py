@@ -81,35 +81,29 @@ l'agriculture, l'industrie, l'alimentation et la régulation sanitaire.
 """.strip(),
 
     "purchase_power": """
-Tout débat public sur l'argent en France : ce qu'il coûte de vivre, ce qu'il
-coûte de produire, ce que l'État prélève et dépense, et les choix économiques
-proposés pour changer cela.
-Cela couvre le budget des ménages : revenus, salaires, prix (alimentation,
-courses, transports), énergie (factures d'électricité et de gaz, chauffage,
-prix des carburants), logement (loyers, charges, prix de l'immobilier, crédit
-immobilier, accession à la propriété, crise du logement, logement social,
-mal-logement), santé, retraites, prestations et aides ; les charges, les coûts
-(dont l'énergie) et les aides des entreprises ; les impôts et la question de
-qui doit les payer, y compris la taxation des hauts patrimoines et des plus
-riches (taxe Zucman, ISF, flat tax, exil fiscal, justice fiscale) ; les
-finances publiques (dépense, dette, déficit, notation, fraude) et les
-négociations budgétaires (PLF, PLFSS, 49.3, censure) lorsqu'un choix fiscal ou
-social est en jeu ; l'économie du pays (emploi, croissance, industrie, Europe) ;
-ainsi que les causes avancées, les responsabilités désignées et les programmes
-économiques de campagne.
-Y figurent les chiffres comme les récits qui les accompagnent, la contestation
-des chiffres officiels et des institutions, les exemples étrangers invoqués
-comme argument, les propositions désignées par le nom de leur auteur, et les
-contre-récits autant que les récits dominants.
-Hors thème : le vocabulaire économique au figuré, l'économie d'un autre pays
-traitée pour elle-même, la vie d'une entreprise sans enjeu collectif, l'énergie
-ou le logement traités sans enjeu de prix, de coût ou de revenu (météo,
-technique, géopolitique sans effet sur les prix), et, car traités ailleurs :
-le coût de l'immigration pour les finances publiques, et le coût des
-politiques climatiques et de la transition énergétique pour l'État ou
-l'économie (subventions aux renouvelables, EPR, ZFE...). Quand le propos relie
-une politique énergétique ou migratoire à un prix, une facture ou un loyer
-payé par les ménages, il reste dans le thème.
+Thème. Tout débat public sur l'argent en France : ce qu'il coûte de vivre, ce qu'il coûte de produire, ce que l'État prélève et dépense, et les choix économiques proposés pour changer cela.
+
+Ce que cela couvre. Le budget des ménages : revenus, salaires, prix (alimentation, courses, transports), énergie (factures d'électricité et de gaz, chauffage, prix des carburants), logement (loyers, charges, prix de l'immobilier, crédit immobilier, accession à la propriété, crise du logement, logement social, mal-logement), santé, retraites, prestations et aides ; les charges, les coûts (dont l'énergie) et les aides des entreprises ; les impôts, taxes et droits de douane, et la question de qui doit les payer, y compris la taxation des hauts patrimoines et des plus riches (taxe Zucman, ISF, flat tax, exil fiscal, justice fiscale) ; les finances publiques (dépense, budgets des services publics, dette, déficit, notation, fraude) et les négociations budgétaires (PLF, PLFSS, 49.3, censure) lorsqu'un choix fiscal ou social est en jeu ; l'économie du pays (emploi, croissance, industrie, commerce, Europe et accords commerciaux) ; ainsi que les causes avancées, les responsabilités désignées et les programmes économiques de campagne.
+
+Y figurent les chiffres comme les récits qui les accompagnent, la contestation des chiffres officiels et des institutions, les exemples étrangers invoqués comme argument, les propositions désignées par le nom de leur auteur, et les contre-récits autant que les récits dominants.
+
+Règle de décision. L'extrait est dans le thème seulement s'il contient au moins une phrase qui parle d'argent en France : un prix, un revenu, un salaire, un impôt ou une taxe, une dépense ou une recette publique, une dette, une aide, un coût pour les ménages ou les entreprises. Cite cette phrase. Si aucune phrase ne remplit cette condition, l'extrait est hors thème, même s'il contient un mot économique.
+
+Extraits mixtes. Un extrait peut mêler plusieurs séquences. Ne juge que le propos principal. Ignore les publicités, les jeux et concours, les annonces de programme (« on en parle dans quelques instants »), la météo et les titres d'actualité sans développement. Un mot économique présent seulement dans ces séquences ne suffit pas.
+
+Hors thème :
+- le vocabulaire économique au figuré (« à la rigueur », « payer le prix », « taux de participation ») ;
+- les élections, la vie politique nationale ou locale, l'identité, la religion, la sécurité ou la délinquance, sauf si un choix fiscal, budgétaire ou social y est discuté ;
+- les guerres, conflits et relations internationales, sauf si le propos chiffre ou décrit un effet sur les prix, les revenus ou les finances publiques en France ;
+- l'économie d'un autre pays traitée pour elle-même ;
+- le fonctionnement d'une institution, d'un organisme ou d'un service public sans enjeu d'argent public ni de coût pour les ménages ou les entreprises ;
+- la vie d'une entreprise sans enjeu collectif ;
+- l'énergie ou le logement traités sans enjeu de prix, de coût ou de revenu (météo, technique, géopolitique sans effet sur les prix) ;
+- car traités ailleurs : le coût de l'immigration pour les finances publiques, et le coût des politiques climatiques et de la transition énergétique pour l'État ou l'économie (subventions aux renouvelables, EPR, ZFE…).
+
+Exception. Quand le propos relie une politique énergétique, migratoire, sécuritaire ou internationale à un prix, une facture, un loyer, un salaire ou un impôt payé en France, il reste dans le thème.
+
+Ordre d'analyse. D'abord décider si l'extrait est dans le thème, avec la phrase citée. Ensuite seulement, s'il est dans le thème, évaluer s'il contient de la désinformation.
 """.strip(),
 }
 

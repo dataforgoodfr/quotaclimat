@@ -1,8 +1,14 @@
+import os
 from dataclasses import dataclass
-from datetime import date, datetime, timedelta, timezone
+from datetime import date, datetime, time, timedelta, timezone
 from zoneinfo import ZoneInfo
 
 tz_paris = ZoneInfo("Europe/Paris")
+
+# Mediatree delivers a day about 24 hours after it ends, and the last show of a Sunday
+# (plus its margin) can end on Monday morning: by default a week is processed from the
+# Tuesday after it, 6 a.m. Paris time (Monday midnight + 30 hours).
+DATA_DELAY = timedelta(hours=int(os.environ.get("MEDIATREE_DATA_DELAY_HOURS") or 30))
 
 
 @dataclass
@@ -84,8 +90,16 @@ def plan_week(
     ]
 
 
-def is_week_finished(week: date, today_paris: date) -> bool:
-    return week <= today_paris - timedelta(days=7)
+def week_available_from(week: date) -> datetime:
+    """Paris time from which the whole week starting on Monday `week` is in mediatree's
+    bucket: the end of the week (the Monday after, midnight) plus DATA_DELAY."""
+    end_of_week = datetime.combine(week + timedelta(days=7), time(), tzinfo=tz_paris)
+    return end_of_week + DATA_DELAY
+
+
+def is_week_finished(week: date, now_paris: datetime) -> bool:
+    """True when the week is over and its last day has been delivered by mediatree."""
+    return now_paris >= week_available_from(week)
 
 
 def format_summary(

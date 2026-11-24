@@ -587,7 +587,7 @@
     },
     {
       "id": "p2",
-      "label": "2e passage : ce que 4 et 5 ont produit"
+      "label": "2e passage : pubs fusionnées restées sans classement"
     },
     {
       "id": "out",
@@ -598,8 +598,7 @@
     "det",
     "exp1",
     "cla1",
-    "fus1",
-    "cor"
+    "fus1"
   ],
   "nodes": [
     {
@@ -649,23 +648,6 @@
           "path": "quotaclimat/data_ingestion/advertising/tools/ad_merge.py",
           "line": 147,
           "label": "lecture par la fusion"
-        }
-      ]
-    },
-    {
-      "id": "corsheet",
-      "lane": "ref",
-      "col": 4,
-      "type": "external",
-      "label": "Corrections_publicites",
-      "sublabel": "après captures et doublons",
-      "explanation": "Rempli à la main, notamment après le contrôle des mosaïques (étape 9) et des paires trouvées par duplicate_ads. Chaque ligne n'est traitée qu'une fois (traite_le).",
-      "sources": [
-        {
-          "path": "quotaclimat/data_ingestion/advertising/s04_consolidation/e02_manual_corrections/run.py",
-          "line": 1,
-          "end_line": 18,
-          "label": "onglets"
         }
       ]
     },
@@ -739,8 +721,10 @@
       "col": 3,
       "type": "backend",
       "label": "4. Fusion des morceaux",
-      "sublabel": "s04 e01 · 7 derniers jours",
-      "explanation": "Colle deux morceaux consécutifs de même marque (predicted_brand, sinon marque brute de e1) : il faut donc la classification avant. Crée une pub fusionnée et soft delete les occurrences des morceaux. La pub fusionnée hérite du classement de ses morceaux s'ils sont tous classés ; sinon elle reste sans classement. Fenêtre : AD_MERGE_DAYS=7, ou AD_MERGE_START_DATE/END_DATE pour l'historique.",
+      "sublabel": "fusionne, puis fait hériter",
+      "tag": "voir la vie d'une pub fusionnée",
+      "href": "vie_pub_fusionnee.html",
+      "explanation": "Chaque run fait deux choses. 1) Fusion de la fenêtre (AD_MERGE_DAYS=7, ou AD_MERGE_START_DATE/END_DATE) : colle deux morceaux consécutifs de même marque (predicted_brand, sinon marque brute de e1), crée la pub fusionnée et soft delete les occurrences des morceaux. 2) Héritage : pour TOUTES les pubs fusionnées encore sans classement, quelle que soit leur date, retente de prendre le classement des morceaux (s'ils sont tous classés, sous-catégorie comprise, et de même marque). AD_MERGE_INHERIT_ONLY=true ne fait que le 2). Le détail est dans le schéma vie_pub_fusionnee.",
       "sources": [
         {
           "path": "quotaclimat/data_ingestion/advertising/s04_consolidation/e01_merge_split_ads/detect.py",
@@ -750,40 +734,18 @@
         },
         {
           "path": "quotaclimat/data_ingestion/advertising/s04_consolidation/e01_merge_split_ads/run.py",
-          "line": 179,
+          "line": 214,
           "end_line": 227,
-          "label": "fenêtre puis héritage"
-        }
-      ]
-    },
-    {
-      "id": "cor",
-      "lane": "p1",
-      "col": 4,
-      "type": "backend",
-      "label": "5. Corrections",
-      "sublabel": "s04 e02",
-      "explanation": "Applique les onglets du Sheet : correction_ads (une pub sans catégorie donnée repart en ad_type_done), nouvelle_ad (nouvelle pub sans classement), dechets, reattribution, fusion (annule les fusions de morceaux qui touchent la pub retirée). Les étapes de classification ne réécrivent jamais une pub corrigée (prediction_method manual).",
-      "sources": [
-        {
-          "path": "quotaclimat/data_ingestion/advertising/s04_consolidation/e02_manual_corrections/run.py",
-          "line": 353,
-          "end_line": 362,
-          "label": "traitement par onglet"
-        },
-        {
-          "path": "quotaclimat/data_ingestion/advertising/s04_consolidation/e02_manual_corrections/corrections.py",
-          "line": 555,
-          "label": "annulation de fusion"
+          "label": "fenêtres puis héritage"
         }
       ]
     },
     {
       "id": "exp2",
       "lane": "p2",
-      "col": 1,
+      "col": 3,
       "type": "messagebus",
-      "label": "6. Export des fusionnées",
+      "label": "5. Export des fusionnées",
       "sublabel": "EXPORT_MERGED_ADS=true",
       "explanation": "Même job que l'étape 2, ne prend que les pubs fusionnées d'une fusion active. Si les archives mediatree ont disparu, reconstruit la vidéo depuis celles des morceaux.",
       "sources": [
@@ -804,11 +766,11 @@
     {
       "id": "cla2",
       "lane": "p2",
-      "col": 2,
+      "col": 4,
       "type": "messagebus",
-      "label": "7. Classification",
-      "sublabel": "pubs restées sans classement",
-      "explanation": "Même pipeline que l'étape 3. Il ne trouve du travail que sur ce que 4 et 5 ont laissé : pubs fusionnées sans classement hérité (statut vide), nouvelle_ad, pubs renvoyées en ad_type_done.",
+      "label": "6. Classification",
+      "sublabel": "sur leur propre vidéo",
+      "explanation": "Même pipeline que l'étape 3. Il ne trouve du travail que sur les pubs fusionnées que la fusion n'a pas pu classer par héritage (statut vide), une fois leur vidéo exportée. Les morceaux classés ici permettent aussi à d'autres fusions d'hériter au run suivant de la fusion.",
       "sources": [
         {
           "path": "quotaclimat/data_ingestion/advertising/s03_classification/sector_and_brand/e1_classify_ad.py",
@@ -819,35 +781,11 @@
       ]
     },
     {
-      "id": "fus2",
-      "lane": "p2",
-      "col": 3,
-      "type": "messagebus",
-      "label": "8. Fusion relancée",
-      "sublabel": "rattrape l'héritage",
-      "tag": "AD_MERGE_INHERIT_ONLY=true",
-      "explanation": "Même job que l'étape 4. À chaque run, après les fenêtres, il reprend toutes les fusions actives dont la pub fusionnée n'a toujours pas de classement (quelle que soit leur date) et retente l'héritage : un morceau qui n'était pas classé à l'étape 4 l'est peut-être depuis l'étape 7. AD_MERGE_INHERIT_ONLY=true saute les fenêtres et ne fait que ce rattrapage. Une pub fusionnée déjà classée n'est jamais reprise.",
-      "sources": [
-        {
-          "path": "quotaclimat/data_ingestion/advertising/s04_consolidation/e01_merge_split_ads/run.py",
-          "line": 194,
-          "end_line": 227,
-          "label": "INHERIT_ONLY"
-        },
-        {
-          "path": "quotaclimat/data_ingestion/advertising/tools/ad_merge.py",
-          "line": 371,
-          "end_line": 390,
-          "label": "fusions sans classement"
-        }
-      ]
-    },
-    {
       "id": "shots",
       "lane": "out",
       "col": 3,
       "type": "backend",
-      "label": "9. Captures",
+      "label": "7. Captures",
       "sublabel": "s05 e02 · statuts finaux",
       "explanation": "Mosaïques des pubs et des occurrences pour le contrôle visuel dans Metabase. Ne prend que les pubs au statut final, d'où sa place après la classification. Les mosaïques d'occurrence ont besoin des archives mediatree.",
       "sources": [
@@ -863,7 +801,7 @@
       "lane": "out",
       "col": 4,
       "type": "database",
-      "label": "10. dbt",
+      "label": "8. dbt",
       "sublabel": "publicites, curated.publicite",
       "explanation": "entrypoints/dbt.sh, dans le flow barometre de main-pipeline (2 fois par jour). Recharge les Sheets en seeds, puis construit analytics.publicites (occurrences non supprimées des pubs AD au statut final), pub_annonceur_emission_jour et curated.publicite.",
       "sources": [
@@ -911,22 +849,6 @@
       "role": "branch"
     },
     {
-      "id": "dict-fus1",
-      "from": "dict",
-      "to": "fus1",
-      "label": "seed dbt",
-      "variant": "dashed",
-      "role": "branch"
-    },
-    {
-      "id": "corsheet-cor",
-      "from": "corsheet",
-      "to": "cor",
-      "label": "lignes sans traite_le",
-      "variant": "dashed",
-      "role": "branch"
-    },
-    {
       "id": "det-exp1",
       "from": "det",
       "to": "exp1",
@@ -946,18 +868,11 @@
       "variant": "emphasis"
     },
     {
-      "id": "fus1-cor",
+      "id": "fus1-exp2",
       "from": "fus1",
-      "to": "cor",
-      "variant": "emphasis"
-    },
-    {
-      "id": "cor-exp2",
-      "from": "cor",
       "to": "exp2",
-      "label": "fusionnées sans classement",
-      "variant": "emphasis",
-      "role": "return"
+      "label": "non classées",
+      "variant": "emphasis"
     },
     {
       "id": "exp2-cla2",
@@ -966,17 +881,20 @@
       "variant": "emphasis"
     },
     {
-      "id": "cla2-fus2",
+      "id": "cla2-shots",
       "from": "cla2",
-      "to": "fus2",
-      "label": "morceaux classés",
+      "to": "shots",
       "variant": "emphasis"
     },
     {
-      "id": "fus2-shots",
-      "from": "fus2",
-      "to": "shots",
-      "variant": "emphasis"
+      "id": "cla2-fus1",
+      "from": "cla2",
+      "to": "fus1",
+      "label": "run suivant : héritage",
+      "variant": "dashed",
+      "role": "return",
+      "fromSide": "top",
+      "toSide": "right"
     },
     {
       "id": "shots-dbt",
@@ -1006,27 +924,33 @@
   "cards": [
     {
       "dot": "amber",
-      "title": "Étapes 6 à 8 : pourquoi relancer",
+      "title": "Étapes 5 et 6 : pourquoi relancer",
       "items": [
-        "Une pub fusionnée n'a ni vidéo ni classement tant que ses morceaux ne sont pas tous classés de la même façon.",
-        "6 et 7 la traitent comme une nouvelle pub. 8 retente l'héritage pour celles dont les morceaux viennent d'être classés.",
-        "Chaque job ne prend que les lignes qui l'attendent : les relancer ne refait rien d'autre."
+        "Une pub fusionnée naît sans vidéo. Elle prend le classement de ses morceaux quand ils sont tous classés pareil ; sinon elle reste sans classement.",
+        "5 et 6 la traitent alors comme une nouvelle pub, sur sa propre vidéo.",
+        "Il n'y a pas de job d'héritage à part : chaque run de la fusion le retente pour toutes les fusions sans classement. Détail : vie_pub_fusionnee.html."
+      ]
+    },
+    {
+      "dot": "slate",
+      "title": "Corrections manuelles (optionnel)",
+      "items": [
+        "Hors de cette chaîne : voir corrections_manuelles.html, qui dit quels flows relancer après chaque onglet."
       ]
     },
     {
       "dot": "violet",
-      "title": "Pourquoi la fusion lit le dictionnaire",
+      "title": "Fusion et dictionnaire",
       "items": [
-        "Pour apparier : deux morceaux se collent s'ils ont la même marque, celle que le dictionnaire a orthographiée (predicted_brand).",
-        "Pour classer : si les morceaux ont la même marque mais pas le même secteur ou la même catégorie, la fusion rejoue le dictionnaire sur la transcription entière.",
-        "Sinon, elle prend la catégorie des morceaux qui couvrent la plus longue durée."
+        "La fusion apparie deux morceaux s'ils ont la même marque : celle que le dictionnaire a orthographiée à l'étape 3.",
+        "Un seul usage direct : si les morceaux ont la même marque mais pas la même catégorie, elle rejoue le dictionnaire (copie dbt) sur la transcription entière. Sinon, catégorie des morceaux les plus longs."
       ]
     },
     {
       "dot": "rose",
       "title": "Retraiter une semaine (START_DATE)",
       "items": [
-        "Efface fusions, déchets, réattributions et nouvelle_ad de la chaîne sur la semaine.",
+        "Efface les occurrences fusionnées et corrigées de la chaîne sur la semaine.",
         "Ensuite : fusion avec AD_MERGE_START_DATE/END_DATE sur la semaine, puis vider traite_le des corrections concernées."
       ]
     }

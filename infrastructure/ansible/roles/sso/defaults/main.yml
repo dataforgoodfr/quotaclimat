@@ -1,0 +1,4 @@
+---
+sso_service_dir: /opt/services/sso
+keycloak_image: quay.io/keycloak/keycloak:26.0
+traefik_service_dir: /opt/services/traefik

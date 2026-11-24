@@ -36,3 +36,12 @@ output "mediatree_videos_api_key_secret_key" {
 output "gpu_instance_ip" {
   value = { for zone, ip in scaleway_instance_ip.gpu : zone => ip.address }
 }
+
+output "metabase_url" {
+  description = "Public URL of the Metabase container itself (prod: METABASE_UPSTREAM_URL of the SSO stack, see infrastructure/Readme.md)."
+  value       = scaleway_container.metabase.public_endpoint
+}
+
+output "metabase_container_id" {
+  value = scaleway_container.metabase.id
+}

@@ -106,3 +106,70 @@ variable "gpu_root_volume_size_in_gb" {
   default = 100
 }
 
+
+# --- Metabase (metabase.tf) ---
+
+variable "manage_container_namespace" {
+  type        = bool
+  default     = false
+  description = "false: the Serverless Containers namespace exists and is shared with other containers, so it is looked up (prod). true: this target creates it (dev)."
+}
+
+variable "container_namespace_name" {
+  type        = string
+  description = "Name of the Serverless Containers namespace of Metabase, looked up or created depending on manage_container_namespace."
+}
+
+variable "metabase_container_name" {
+  type        = string
+  description = "Name of the Metabase container (prod: metabase-barometre, the name it was created with by hand)."
+}
+
+variable "metabase_image" {
+  type        = string
+  default     = "metabase/metabase:v0.64.2.2"
+  description = "Metabase image (Docker Hub). Changing it redeploys the container."
+}
+
+variable "metabase_cpu_limit" {
+  type        = number
+  description = "CPU limit of the Metabase container, in mVCPU."
+}
+
+variable "metabase_memory_limit" {
+  type        = number
+  description = "Memory limit of the Metabase container, in MB."
+}
+
+variable "metabase_min_scale" {
+  type        = number
+  default     = 1
+  description = "Minimum number of instances. 0 lets the container sleep (cold start of about a minute for Metabase)."
+}
+
+variable "metabase_java_opts" {
+  type        = string
+  description = "JAVA_OPTS of the Metabase JVM, e.g. -Xmx8g. Keep the heap below the container memory limit."
+}
+
+variable "metabase_db_name" {
+  type    = string
+  default = "metabase"
+}
+
+variable "metabase_db_user" {
+  type        = string
+  description = "Owner of the Metabase database (prod: metabase_barometre, as created by hand)."
+}
+
+variable "metabase_db_user_is_admin" {
+  type        = bool
+  default     = false
+  description = "Scaleway admin user (CREATEDB + CREATEROLE). Metabase does not need it: true only for the prod user, which was created that way by hand."
+}
+
+variable "metabase_db_password" {
+  type        = string
+  sensitive   = true
+  description = "Password of the Metabase database user, also the MB_DB_PASS secret of the container."
+}

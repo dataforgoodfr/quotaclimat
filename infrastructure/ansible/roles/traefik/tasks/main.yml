@@ -5,6 +5,12 @@
     state: directory
     mode: "0755"
 
+- name: Create traefik dynamic configuration directory
+  file:
+    path: "{{ traefik_service_dir }}/dynamic"
+    state: directory
+    mode: "0755"
+
 - name: Copy traefik docker-compose
   copy:
     src: "{{ playbook_dir }}/../compose/traefik/docker-compose.yml"

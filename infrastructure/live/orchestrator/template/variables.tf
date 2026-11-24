@@ -46,6 +46,11 @@ variable "postgres_password_glitchtip" {
   sensitive = true
 }
 
+variable "postgres_password_keycloak" {
+  type      = string
+  sensitive = true
+}
+
 variable "postgres_password_windmill" {
   type      = string
   sensitive = true

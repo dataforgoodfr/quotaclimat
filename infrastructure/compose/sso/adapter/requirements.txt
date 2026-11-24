@@ -1,0 +1,5 @@
+fastapi==0.115.*
+uvicorn[standard]==0.32.*
+httpx==0.27.*
+authlib==1.3.*
+itsdangerous==2.2.*

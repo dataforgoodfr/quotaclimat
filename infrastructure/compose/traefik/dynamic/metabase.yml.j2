@@ -1,0 +1,20 @@
+# Metabase runs outside this host (Scaleway serverless container): Traefik forwards the public domain to it.
+# The SSO adapter's router (priority 100, docker labels in compose/sso) takes /sso, /auth/login and the
+# cookieless / before this one.
+http:
+  routers:
+    metabase:
+      rule: "Host(`{{ metabase_domain }}`)"
+      entryPoints:
+        - websecure
+      priority: 10
+      service: metabase-upstream
+      tls:
+        certResolver: letsencrypt
+  services:
+    metabase-upstream:
+      loadBalancer:
+        # Scaleway routes a serverless container by its Host header: send the upstream's own, not the public one
+        passHostHeader: false
+        servers:
+          - url: "{{ metabase_upstream_url }}"

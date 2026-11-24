@@ -2,7 +2,6 @@ summary: quotaclimat/barometre
 description: "Main detection pipeline for the OME. Ingests data from Mediatree into S3, \ndetects the presence of keywords\
   \ using a validation methodology for high \nrisk false positives, detects possible misinformation using an LLM and \naggregates\
   \ data using DBT."
-has_on_behalf_of: true
 value:
   modules:
   - id: ingest_data_to_s3

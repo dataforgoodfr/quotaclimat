@@ -1,6 +1,5 @@
 summary: quotaclimat/barometre-catchup
 description: "Catchup pipeline for the OME. Runs over the last week skipping days that \nhave been analysed already."
-has_on_behalf_of: true
 value:
   modules:
   - id: ingest_data_to_s3

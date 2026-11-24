@@ -8,7 +8,6 @@ description: |-
   read from the single JSON variable f/secrets/I18N_COUNTRY_SECRETS, keyed by country code. Other
   per-country config is in the table of the loop's iterator (`i18n_loop`). To add a country: add its code to the
   `countries` input (values and default), an entry in the iterator's table and a key in the secret.
-has_on_behalf_of: true
 value:
   modules:
   - id: i18n_loop

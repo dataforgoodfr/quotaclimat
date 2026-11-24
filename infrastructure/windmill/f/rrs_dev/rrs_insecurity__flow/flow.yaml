@@ -2,7 +2,6 @@ summary: rrs-dev/rrs-insecurity
 description: |-
   Climate pipeline for RRS imports data from the OME database and performs clustering
   for audiovisual data sourced from Mediatree.
-has_on_behalf_of: true
 value:
   modules:
   - id: analyse_keywords

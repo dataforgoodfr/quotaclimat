@@ -1,6 +1,5 @@
 summary: rrs-dev/extended-perimeter
 description: Dev pipeline to ingest the extended perimeter in the Droit à l'Info scope.
-has_on_behalf_of: true
 value:
   modules:
   - id: ingest_data_to_s3

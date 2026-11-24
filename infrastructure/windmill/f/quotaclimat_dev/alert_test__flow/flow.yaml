@@ -6,7 +6,6 @@ description: >-
   check that a failing step sends the Mattermost alert (message, links to the
 
   failed subflow and to the execution).
-has_on_behalf_of: true
 value:
   modules:
     - id: fail

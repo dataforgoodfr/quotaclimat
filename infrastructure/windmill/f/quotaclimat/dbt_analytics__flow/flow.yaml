@@ -6,7 +6,6 @@ description: |-
   metabase-sync. Same quotaclimat_base:latest image as barometre: the code must
   be deployed (merged on main). The dbt step waits if another dbt run
   (barometre, barometre-catchup) is in progress.
-has_on_behalf_of: true
 value:
   modules:
   - id: dbt_analytics

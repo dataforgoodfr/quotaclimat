@@ -76,11 +76,3 @@
 
 - name: Push the flows
   include_tasks: flows.yml
-
-# After the push: a new flow is created without an identity (see the task file)
-- name: Run the flows on behalf of the token owner
-  include_tasks:
-    file: on_behalf_of.yml
-    apply:
-      delegate_to: localhost
-      become: false

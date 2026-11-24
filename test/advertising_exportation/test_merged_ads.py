@@ -346,20 +346,22 @@ class _Progress:
         pass
 
 
-def _run_group(monkeypatch, plan_merged):
+def _run_group(monkeypatch, plan_merged, exported=None):
     async def _needs_export(ad, fs):
-        return True
+        return True, None
 
     async def _no_archives(*args, **kwargs):
         raise RuntimeError("archives gone")
 
     rebuilt = []
 
-    async def _rebuild(ad, plan, local_dir, fs):
+    async def _rebuild(ad, plan, local_dir, fs, media_sizes=None):
         rebuilt.append(ad.id)
+        if media_sizes is not None:
+            media_sizes["mp4"] = 123_456
         return None
 
-    monkeypatch.setattr(export, "_ad_needs_export", _needs_export)
+    monkeypatch.setattr(export, "_check_in_bucket", _needs_export)
     monkeypatch.setattr(export, "download_media_parts", _no_archives)
     monkeypatch.setattr(export, "_rebuild_merged_ad", _rebuild)
     ad = Ad(id="m", duration_sec=5.0, fragment_type="no_data")
@@ -377,6 +379,7 @@ def _run_group(monkeypatch, plan_merged):
             reset,
             [],
             plan_merged,
+            exported,
         )
     )
     return progress.counts, missing, reset, rebuilt
@@ -395,3 +398,17 @@ def test_process_group_without_flag_keeps_the_error(monkeypatch):
     assert rebuilt == []
     assert counts == {"error": 1}
     assert missing == ["m"]
+
+
+def test_process_group_records_the_rebuilt_export(monkeypatch):
+    exported = {}
+    _run_group(monkeypatch, lambda ad_id: None, exported)
+    assert exported["m"]["method"] == "merged_rebuild"
+    assert exported["m"]["mp4_bytes"] == 123_456
+    assert exported["m"]["margin_sec"] == export.MARGIN_ON_MEDIA_EXPORT.total_seconds()
+
+
+def test_process_group_without_flag_records_nothing(monkeypatch):
+    exported = {}
+    _run_group(monkeypatch, None, exported)
+    assert exported == {}

@@ -17,14 +17,9 @@ CORLAB_DEPLOY_USER_PASSWORD=
 # --- Postgres (published on 5432) ---
 CORLAB_PG_USER=corlab
 CORLAB_PG_PASSWORD=
-# Comma-separated IPv4/CIDR allowed to reach port 5432 (at least one), e.g. 203.0.113.10,198.51.100.7
-CORLAB_PG_ALLOWED_IPS=
 # Optional, default: barometre
 CORLAB_BAROMETRE_DB=barometre
 
 # --- Metabase (published on 3000) ---
 # Application database (role and database `metabase`)
 CORLAB_METABASE_DB_PASSWORD=
-# Optional: comma-separated IPv4/CIDR allowed to reach port 3000 (e.g. the reverse proxy machine).
-# Empty: port 3000 is not filtered.
-CORLAB_METABASE_ALLOWED_IPS=

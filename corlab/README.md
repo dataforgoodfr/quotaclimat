@@ -20,7 +20,7 @@ INTERNET ── 3000 ─▶ Metabase ──(corlab-internal)──▶ PostgreSQL
          ── 2251 ─▶ sshd (Ansible, make psql)
 ```
 
-**Source-IP restriction**: Docker publishes ports around UFW, so the `postgres` role restricts both ports in the `DOCKER-USER` iptables chain. Only the IPs in `CORLAB_PG_ALLOWED_IPS` (required, comma-separated IPv4/CIDR) can reach `5432`, and only those in `CORLAB_METABASE_ALLOWED_IPS` (optional) can reach `3000`; with an empty Metabase list, `3000` is not filtered. Everything else is dropped. The rules live in `CORLAB-PG` and `CORLAB-MB` chains applied by `/usr/local/sbin/corlab-docker-user.sh` and the `corlab-docker-user` systemd unit (re-applied after each Docker start). Container-to-container traffic and SSH tunnels are not affected. Also use a strong `CORLAB_PG_PASSWORD` and enable `ssl=on` with `hostssl` rules in `pg_hba.conf` (not configured yet): the protocol is plaintext by default, and Metabase is plain HTTP until a proxy terminates TLS. Check with `sudo iptables -L DOCKER-USER -n -v`, `sudo iptables -L CORLAB-PG -n -v` and `sudo iptables -L CORLAB-MB -n -v`.
+**Exposure**: Postgres and Metabase are published on all interfaces, with no IP filtering in this repo (Docker publishes ports around UFW, so UFW would not filter them anyway). Access control is the job of the network firewall in front of the server, which also handles the redirection from the separate reverse proxy machine. Use a strong `CORLAB_PG_PASSWORD` and enable `ssl=on` with `hostssl` rules in `pg_hba.conf` (not configured yet): the protocol is plaintext by default, and Metabase is plain HTTP until a proxy terminates TLS.
 
 ## First-time deployment
 
@@ -39,11 +39,9 @@ CORLAB_BECOME_PASSWORD=          # sudo password, optional (defaults to the SSH 
    # Postgres (instance superuser, owner of barometre)
    CORLAB_PG_USER=corlab
    CORLAB_PG_PASSWORD=
-   CORLAB_PG_ALLOWED_IPS=           # comma-separated IPv4/CIDR allowed on 5432, e.g. 203.0.113.10,198.51.100.7 (at least one)
    CORLAB_BAROMETRE_DB=barometre    # optional
-   # Metabase application database, and optional IPs allowed on 3000
+   # Metabase application database
    CORLAB_METABASE_DB_PASSWORD=
-   CORLAB_METABASE_ALLOWED_IPS=     # optional, e.g. the reverse proxy machine
    ```
    Password generator: `LC_ALL=C tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 32`.
 4. `make syntax`, then `make check` (dry run), then `make ansible`.
@@ -71,5 +69,5 @@ The role syncs `pyproject.toml`, `poetry.lock`, `alembic.ini`, `alembic/`, `post
 - **Password SSH**: Ansible connects with `CORLAB_SSH_PASSWORD` (public-key auth is disabled in the inventory), which requires `sshpass` on your machine. The `common` role leaves sshd's `PasswordAuthentication` untouched (`ssh_disable_password_auth: false` in `roles/common/defaults/main.yml`) and sets `MaxAuthTries` to 6, so it cannot lock you out. Once key access works, switch to keys: remove the password lines from `ansible/inventory.yml` and set that variable to `true`. `make tunnel`/`make psql` use plain `ssh` and prompt for the password.
 - The `ssh-keys` role copied from `infrastructure` authorizes the same team keys (root and the deploy user) on this server: edit `ansible/roles/ssh-keys/tasks/main.yml` if the access list should differ.
 - `metabase_version` defaults to `latest` (`ansible/roles/metabase/defaults/main.yml`); pin a version before relying on it.
-- **Reverse proxy later**: it will run on a separate machine. Point it at `http://<this-server>:3000` and add its IP to `CORLAB_METABASE_ALLOWED_IPS`, then run `make tags=postgres ansible` to apply the filter.
+- **Reverse proxy later**: it will run on a separate machine. Point it at `http://<this-server>:3000`; the network firewall handles the redirection.
 - No backups are configured. The Postgres data lives in the Docker volume `postgres_postgres-data`.

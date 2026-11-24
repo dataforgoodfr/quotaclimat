@@ -21,23 +21,12 @@
     # Postgres (superuser of the instance, owner of the barometre database)
     postgres_user: "{{ lookup('env', 'CORLAB_PG_USER') }}"
     postgres_password: "{{ lookup('env', 'CORLAB_PG_PASSWORD') }}"
-    # Source IPs allowed to reach the published Postgres port (DOCKER-USER chain),
-    # comma-separated IPv4 or CIDR, e.g. "203.0.113.10,198.51.100.7"
-    postgres_allowed_ips: "{{ (lookup('env', 'CORLAB_PG_ALLOWED_IPS') | default('', true)).split(',') | map('trim') | reject('equalto', '') | list }}"
     barometre_db_name: "{{ lookup('env', 'CORLAB_BAROMETRE_DB') | default('barometre', true) }}"
 
     # Metabase application database (separate database and role on the same instance)
     metabase_db_name: metabase
     metabase_db_user: metabase
     metabase_db_password: "{{ lookup('env', 'CORLAB_METABASE_DB_PASSWORD') }}"
-    # Source IPs allowed to reach the Metabase port (e.g. the reverse proxy machine). Optional:
-    # empty means the port is not filtered in DOCKER-USER.
-    metabase_allowed_ips: "{{ (lookup('env', 'CORLAB_METABASE_ALLOWED_IPS') | default('', true)).split(',') | map('trim') | reject('equalto', '') | list }}"
-
-    # Ports published around UFW, filtered in the DOCKER-USER chain (empty ips: no filter)
-    docker_user_rules:
-      - { chain: CORLAB-PG, port: "{{ postgres_published_port }}", ips: "{{ postgres_allowed_ips }}" }
-      - { chain: CORLAB-MB, port: "{{ metabase_published_port }}", ips: "{{ metabase_allowed_ips }}" }
 
   pre_tasks:
     - name: Check the required variables are set
@@ -48,10 +37,6 @@
           - postgres_user | length > 0
           - postgres_password | length > 0
           - metabase_db_password | length > 0
-          # At least one IP, and only plain IPv4/CIDR values (they are written into a root script)
-          - postgres_allowed_ips | length > 0
-          - postgres_allowed_ips | select('match', '^[0-9]{1,3}(\.[0-9]{1,3}){3}(/[0-9]{1,2})?$') | list | length == postgres_allowed_ips | length
-          - metabase_allowed_ips | select('match', '^[0-9]{1,3}(\.[0-9]{1,3}){3}(/[0-9]{1,2})?$') | list | length == metabase_allowed_ips | length
         fail_msg: "Missing variable(s): fill corlab/.env (see corlab/README.md)"
       tags: [always]
 

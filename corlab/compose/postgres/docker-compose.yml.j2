@@ -19,8 +19,8 @@ services:
       TZ: Europe/Paris
     volumes:
       - postgres-data:/var/lib/postgresql/data
-    # Published on all interfaces for external services. Docker bypasses UFW: the source IPs
-    # are restricted in the DOCKER-USER chain (see the postgres role, CORLAB_PG_ALLOWED_IPS).
+    # Published on all interfaces for external services. No IP filtering here: the network
+    # firewall in front of the server controls who can connect.
     ports:
       - "{{ postgres_published_port }}:5432"
     networks:

@@ -4,36 +4,6 @@
     name: corlab-internal
     state: present
 
-# Firewall first, so the published port is never open to everyone, even briefly.
-# Rules are re-applied after each Docker start by a systemd unit.
-- name: Install iptables
-  apt:
-    name: iptables
-    state: present
-
-- name: Install the DOCKER-USER script restricting Postgres to the allowed IPs
-  template:
-    src: corlab-docker-user.sh.j2
-    dest: /usr/local/sbin/corlab-docker-user.sh
-    owner: root
-    group: root
-    mode: "0750"
-  register: docker_user_script
-
-- name: Install the DOCKER-USER systemd unit
-  template:
-    src: corlab-docker-user.service.j2
-    dest: /etc/systemd/system/corlab-docker-user.service
-    mode: "0644"
-  register: docker_user_unit
-
-- name: Enable the DOCKER-USER unit and apply the rules
-  systemd:
-    name: corlab-docker-user
-    enabled: true
-    state: "{{ 'restarted' if (docker_user_script.changed or docker_user_unit.changed) else 'started' }}"
-    daemon_reload: true
-
 - name: Create postgres directory
   file:
     path: "{{ postgres_service_dir }}"

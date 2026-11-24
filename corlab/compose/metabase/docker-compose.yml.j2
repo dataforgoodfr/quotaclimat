@@ -19,8 +19,7 @@ services:
       MB_DB_PASS: "{{ metabase_db_password }}"
       JAVA_TIMEZONE: Europe/Paris
       JAVA_OPTS: "{{ metabase_java_opts }}"
-    # Published on all interfaces: restrict the source IPs in the DOCKER-USER chain
-    # (see the postgres role, CORLAB_METABASE_ALLOWED_IPS)
+    # Published on all interfaces: the network firewall / reverse proxy in front controls access
     ports:
       - "{{ metabase_published_port }}:3000"
     networks:

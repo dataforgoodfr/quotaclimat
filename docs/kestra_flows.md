@@ -41,6 +41,7 @@ Each flow has its own diagram. Read it top to bottom: every horizontal lane is o
 | [`barometre-catchup`](#barometre-catchup) | `quotaclimat` | `main_quotaclimat_barometrecatchup.yaml` | cron 03:00 |
 | [`barometre-i18n`](#barometre-i18n) | `quotaclimat` | `main_quotaclimat_barometrei18n.yaml` | cron 04:07 |
 | [`pulsar-themes`](#pulsar-themes) | `rrs` | `main_rrs_pulsarthemes.yml` | cron 00:30 |
+| [`pipeline`](#corlab-pipeline) | `corlab` | `main_corlab_pipeline.yaml` | by hand (no schedule) |
 
 All times are Europe/Paris. Dev flows are covered [at the end](#dev-flows).
 
@@ -217,6 +218,20 @@ The same four steps and the same code as [`barometre`](#barometre), run for the 
 | `detect_misinformation` | `misinformation-extended-perimeter-prod` bucket, Label Studio project 24 (S3 storage id 18), looks back `days_back` days (not `+1`). |
 | `dbt_run_transformations` | `EXTENDED_PERIMETER=true`: Label Studio ingestion only keeps project 24 (`configs.py`), and dbt grants `select` only to `rrs-read-prod`. No `EXTERNAL_SOURCES_DRIVE_FOLDER`, so the Google Sheets download is skipped. |
 | `curated_and_metabase_docs` | Not run: the `curated` schema is only built on `barometre`. |
+
+## corlab-pipeline
+
+(No diagram yet.)
+
+The same four steps and the same code as [`barometre`](#barometre), run for the Corlab radios: the 11 channels of `CORLAB` (`radio-kreiz-breizh`, `radio-laser`, `radio-parole-de-vie`, `radio-tregor-goelo`, `timbrefm`, `transistoch`, `euradio`, `jadefm`, `jetfm`, `fidelite`, `radio-campus-angers`, with their own program grid), with `COUNTRY=clb` and `CORLAB_PERIMETER=true`, in the Postgres database deployed by `corlab/` (database `barometre`, port 5432). Windmill: `f/corlab/pipeline`. No schedule: run it by hand. Inputs: `days_back` (default 1), `start_date` (default now), and `label_studio_project` / `label_studio_project_id`, required with no default so that no other country's Label Studio project is used by mistake. A failed step posts to Mattermost (`errors:` block, `failure_module` in Windmill). Differences from `barometre`:
+
+| Step | Difference |
+|---|---|
+| `ingest_data_to_s3` | Bucket `mediatree-corlab-prod`, written with `CORLAB_SCW_ACCESS`/`CORLAB_SCW_SECRET`. Objects get a `country=corlab/` prefix. |
+| `detect_keywords` | Writes to the Corlab Postgres (`CORLAB_PG_HOST`, port 5432) with `CORLAB_PG_USER`, the owner of the database, because `alembic upgrade head` needs DDL rights. `CORLAB_PERIMETER=true` loads only the Corlab program grid into `program_metadata`. |
+| `detect_misinformation` | `misinformation-corlab-prod` bucket, Mistral (`mistral-small-2603`, `MISTRAL_API_KEY`) as in `barometre`, reads the Label Studio database with the same read user, looks back `days_back` days (not `+1`). |
+| `dbt_run_transformations` | `CORLAB_PERIMETER=true`: Label Studio ingestion is skipped (`db_config_corlab_perimeter` is empty, so the other countries' annotations stay out), and dbt grants `select` to the prod roles (`rrs-read-dev`, `rrs-read-prod`, `climateguard-reader-user`, `metabase-analytics-prod`). No `EXTERNAL_SOURCES_DRIVE_FOLDER`, so the Google Sheets download is skipped. |
+| `curated_and_metabase_docs` | Not run. |
 
 ## rrs-climate
 

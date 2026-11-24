@@ -12,6 +12,8 @@ from quotaclimat.data_processing.mediatree.i8n.country import (
     GERMANY,
     POLAND,
     SPAIN,
+    CORLAB,
+    ALL_COUNTRIES,
 )
 
 def test_validate_country_code_fra():
@@ -67,3 +69,21 @@ def test_get_channels_spain():
 
 def test_get_channel_title_for_name_spain():
       assert get_channel_title_for_name("antenna-3", SPAIN) == "Antenna 3"
+
+
+def test_corlab_virtual_country():
+      assert validate_country_code("clb") == "clb"
+      assert get_country_from_code("clb") == CORLAB
+      assert (CORLAB.code, CORLAB.name, CORLAB.language) == ("clb", "corlab", "french")
+      assert CORLAB not in ALL_COUNTRIES  # own database, never swept in by "all"
+
+def test_get_channels_corlab():
+      os.environ['ENV'] = 'prod'
+      channels = get_channels(country_code=CORLAB.code)
+      assert channels == CORLAB.channels
+      assert len(channels) == 11
+      os.environ['ENV'] = 'docker'
+
+def test_get_channel_title_for_name_corlab():
+      assert get_channel_title_for_name("jetfm", CORLAB) == "Jet FM"
+      assert set(CORLAB.titles) == set(CORLAB.channels)

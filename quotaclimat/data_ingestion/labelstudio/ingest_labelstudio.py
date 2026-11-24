@@ -7,6 +7,7 @@ from quotaclimat.data_ingestion.labelstudio import models
 from quotaclimat.data_ingestion.labelstudio.configs import (
     db_config,
     db_config_extended_perimeter,
+    db_config_corlab_perimeter,
 )
 from quotaclimat.data_ingestion.scrap_sitemap import get_consistent_hash
 from postgres.database_connection import connect_to_db, get_db_session
@@ -309,6 +310,10 @@ def main(conn_kwargs, target_conn_kwargs, db_config=db_config):
         target_conn_kwargs (dict): Target database connection parameters
         db_config (list): Source database configurations to ingest from
     """
+    if not db_config:
+        logging.info("No Label Studio project to ingest: nothing to do")
+        return
+
     # Collect data from all sources
     tasks_df, task_completions_df = collect_all_data(db_config, conn_kwargs)
 
@@ -318,6 +323,7 @@ def main(conn_kwargs, target_conn_kwargs, db_config=db_config):
 
 if __name__ == "__main__":
     EXTENDED_PERIMETER = os.getenv("EXTENDED_PERIMETER", "false").lower() == "true"
+    CORLAB_PERIMETER = os.getenv("CORLAB_PERIMETER", "false").lower() == "true"
 
     POSTGRES_HOST = os.getenv("POSTGRES_HOST", "localhost")
     POSTGRES_PORT = int(os.getenv("POSTGRES_PORT", 5432))
@@ -336,8 +342,11 @@ if __name__ == "__main__":
         password=os.getenv("POSTGRES_PASSWORD", "password"),
     )
 
-    main(
-        conn_kwargs,
-        target_conn_kwargs,
-        db_config=db_config_extended_perimeter if EXTENDED_PERIMETER else db_config,
-    )
+    if CORLAB_PERIMETER:
+        perimeter_db_config = db_config_corlab_perimeter
+    elif EXTENDED_PERIMETER:
+        perimeter_db_config = db_config_extended_perimeter
+    else:
+        perimeter_db_config = db_config
+
+    main(conn_kwargs, target_conn_kwargs, db_config=perimeter_db_config)

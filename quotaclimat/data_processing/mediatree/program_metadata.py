@@ -15,9 +15,13 @@ from quotaclimat.data_processing.mediatree.i8n.belgium_flanders.channel_program 
 from quotaclimat.data_processing.mediatree.i8n.brazil.channel_program import (
     channels_programs_brazil,
 )
+from quotaclimat.data_processing.mediatree.i8n.corlab.channel_program import (
+    channels_programs_corlab,
+)
 from quotaclimat.data_processing.mediatree.i8n.country import (
     BELGIUM,
     BRAZIL,
+    CORLAB,
     FRANCE,
     GERMANY,
     POLAND,
@@ -212,6 +216,84 @@ channel_mapping = {
         "infocontinue": False,
         "radio": False,
         "country": FRANCE.name,
+    },
+    # Corlab radios (separate perimeter, CORLAB_PERIMETER=true)
+    "radio-kreiz-breizh": {
+        "title": "Radio Kreiz Breizh",
+        "public": False,
+        "infocontinue": False,
+        "radio": True,
+        "country": CORLAB.name,
+    },
+    "radio-laser": {
+        "title": "Radio Laser",
+        "public": False,
+        "infocontinue": False,
+        "radio": True,
+        "country": CORLAB.name,
+    },
+    "radio-parole-de-vie": {
+        "title": "Radio Parole de Vie",
+        "public": False,
+        "infocontinue": False,
+        "radio": True,
+        "country": CORLAB.name,
+    },
+    "radio-tregor-goelo": {
+        "title": "Radio Treger Goueloù",
+        "public": False,
+        "infocontinue": False,
+        "radio": True,
+        "country": CORLAB.name,
+    },
+    "timbrefm": {
+        "title": "Timbre FM",
+        "public": False,
+        "infocontinue": False,
+        "radio": True,
+        "country": CORLAB.name,
+    },
+    "transistoch": {
+        "title": "Transistoc'h",
+        "public": False,
+        "infocontinue": False,
+        "radio": True,
+        "country": CORLAB.name,
+    },
+    "euradio": {
+        "title": "Euradio",
+        "public": False,
+        "infocontinue": False,
+        "radio": True,
+        "country": CORLAB.name,
+    },
+    "jadefm": {
+        "title": "Jade FM",
+        "public": False,
+        "infocontinue": False,
+        "radio": True,
+        "country": CORLAB.name,
+    },
+    "jetfm": {
+        "title": "Jet FM",
+        "public": False,
+        "infocontinue": False,
+        "radio": True,
+        "country": CORLAB.name,
+    },
+    "fidelite": {
+        "title": "Radio Fidélité",
+        "public": False,
+        "infocontinue": False,
+        "radio": True,
+        "country": CORLAB.name,
+    },
+    "radio-campus-angers": {
+        "title": "Radio Campus Angers",
+        "public": False,
+        "infocontinue": False,
+        "radio": True,
+        "country": CORLAB.name,
     },
     # 🇩🇪 Germany
     "daserste": {
@@ -566,12 +648,18 @@ def _expand_weekdays(program_data: dict) -> list[dict]:
     return [{**program_data, "weekday": day} for day in days]
 
 
-def build_program_metadata(extended_perimeter: bool | None = None) -> list[dict]:
+def build_program_metadata(
+    extended_perimeter: bool | None = None, corlab_perimeter: bool | None = None
+) -> list[dict]:
     """Every program of the grid, one entry per weekday, sorted by weekday and channel.
     With the extended perimeter (default: EXTENDED_PERIMETER env var), its programs are added.
+    With the Corlab perimeter (default: CORLAB_PERIMETER env var), the grid is only the Corlab
+    one: its database is separate and holds none of the other countries.
     """
     if extended_perimeter is None:
         extended_perimeter = os.getenv("EXTENDED_PERIMETER", "false").lower() == "true"
+    if corlab_perimeter is None:
+        corlab_perimeter = os.getenv("CORLAB_PERIMETER", "false").lower() == "true"
 
     channels_programs = (
         channels_programs_france
@@ -582,7 +670,10 @@ def build_program_metadata(extended_perimeter: bool | None = None) -> list[dict]
         + channels_programs_belgium
         + channels_programs_belgium_flanders
     )
-    if extended_perimeter:
+    if corlab_perimeter:
+        logging.info("CORLAB_PERIMETER is true - only the Corlab program grid is loaded")
+        channels_programs = channels_programs_corlab
+    elif extended_perimeter:
         logging.info(
             "EXTENDED_PERIMETER is true - importing extended perimeter programs for France"
         )

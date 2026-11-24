@@ -46,24 +46,26 @@ models:
     # Config indicated by + and applies to all files under models/example/
     analytics:
       +grants: &analytics_grants
+        # CORLAB_PERIMETER=true (Corlab database): the prod roles, whatever DBT_ENV is (it only has those)
         # grant nothing in dev; set DBT_ENV=prod to enable grants in prod
         # the extended-perimeter DB only has a rrs-read-{dev,prod} user (no climateguard-reader-user,
         # no metabase-analytics-{dev,prod}), so when EXTENDED_PERIMETER is true, grant only to the
         # rrs-read user matching DBT_ENV
-        select: "{{ (['\"rrs-read-prod\"'] if env_var('DBT_ENV', 'dev') == 'prod' else ['\"rrs-read-dev\"']) if env_var('EXTENDED_PERIMETER', 'false') == 'true' else (['\"rrs-read-dev\"', '\"rrs-read-prod\"', '\"climateguard-reader-user\"', '\"metabase-analytics-prod\"'] if env_var('DBT_ENV', 'dev') == 'prod' else ['\"rrs-read-dev\"', '\"metabase-analytics-dev\"']) }}"
+        select: "{{ ['\"rrs-read-dev\"', '\"rrs-read-prod\"', '\"climateguard-reader-user\"', '\"metabase-analytics-prod\"'] if env_var('CORLAB_PERIMETER', 'false') == 'true' else ((['\"rrs-read-prod\"'] if env_var('DBT_ENV', 'dev') == 'prod' else ['\"rrs-read-dev\"']) if env_var('EXTENDED_PERIMETER', 'false') == 'true' else (['\"rrs-read-dev\"', '\"rrs-read-prod\"', '\"climateguard-reader-user\"', '\"metabase-analytics-prod\"'] if env_var('DBT_ENV', 'dev') == 'prod' else ['\"rrs-read-dev\"', '\"metabase-analytics-dev\"'])) }}"
     dashboards:
       +grants:
+        # CORLAB_PERIMETER=true (Corlab database): the prod roles, whatever DBT_ENV is (it only has those)
         # grant nothing in dev; set DBT_ENV=prod to enable grants in prod
         # the extended-perimeter DB only has a rrs-read-{dev,prod} user (no climateguard-reader-user,
         # no metabase-analytics-{dev,prod}), so when EXTENDED_PERIMETER is true, grant only to the
         # rrs-read user matching DBT_ENV
-        select: "{{ (['\"rrs-read-prod\"'] if env_var('DBT_ENV', 'dev') == 'prod' else ['\"rrs-read-dev\"']) if env_var('EXTENDED_PERIMETER', 'false') == 'true' else (['\"climateguard-reader-user\"', '\"metabase-analytics-prod\"'] if env_var('DBT_ENV', 'dev') == 'prod' else ['\"rrs-read-dev\"', '\"metabase-analytics-dev\"']) }}"
+        select: "{{ ['\"climateguard-reader-user\"', '\"metabase-analytics-prod\"'] if env_var('CORLAB_PERIMETER', 'false') == 'true' else ((['\"rrs-read-prod\"'] if env_var('DBT_ENV', 'dev') == 'prod' else ['\"rrs-read-dev\"']) if env_var('EXTENDED_PERIMETER', 'false') == 'true' else (['\"climateguard-reader-user\"', '\"metabase-analytics-prod\"'] if env_var('DBT_ENV', 'dev') == 'prod' else ['\"rrs-read-dev\"', '\"metabase-analytics-dev\"'])) }}"
     advertising:
       # built next to the ad tables (created by alembic), see macros/generate_schema_name.sql
       +schema: advertising
       +grants: &advertising_grants
         # same grants as analytics models
-        select: "{{ (['\"rrs-read-prod\"'] if env_var('DBT_ENV', 'dev') == 'prod' else ['\"rrs-read-dev\"']) if env_var('EXTENDED_PERIMETER', 'false') == 'true' else (['\"rrs-read-dev\"', '\"rrs-read-prod\"', '\"climateguard-reader-user\"', '\"metabase-analytics-prod\"'] if env_var('DBT_ENV', 'dev') == 'prod' else ['\"rrs-read-dev\"', '\"metabase-analytics-dev\"']) }}"
+        select: "{{ ['\"rrs-read-dev\"', '\"rrs-read-prod\"', '\"climateguard-reader-user\"', '\"metabase-analytics-prod\"'] if env_var('CORLAB_PERIMETER', 'false') == 'true' else ((['\"rrs-read-prod\"'] if env_var('DBT_ENV', 'dev') == 'prod' else ['\"rrs-read-dev\"']) if env_var('EXTENDED_PERIMETER', 'false') == 'true' else (['\"rrs-read-dev\"', '\"rrs-read-prod\"', '\"climateguard-reader-user\"', '\"metabase-analytics-prod\"'] if env_var('DBT_ENV', 'dev') == 'prod' else ['\"rrs-read-dev\"', '\"metabase-analytics-dev\"'])) }}"
     homepage:
       +materialized: view
       # same grants as analytics models

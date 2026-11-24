@@ -10,6 +10,7 @@ from app.country import (
     BELGIUM_COUNTRY,
     BELGIUM_FLANDERS_COUNTRY,
     BRAZIL_COUNTRY,
+    CORLAB_COUNTRY,
     EXTENDED_FRANCE_COUNTRY,
     FRANCE_COUNTRY,
     GERMANY_COUNTRY,
@@ -91,6 +92,7 @@ def test_get_country_or_collection_from_code():
     for entity in (
         FRANCE_COUNTRY,
         EXTENDED_FRANCE_COUNTRY,
+        CORLAB_COUNTRY,
         BELGIUM_COUNTRY,
         BELGIUM_FLANDERS_COUNTRY,
         BRAZIL_COUNTRY,
@@ -114,3 +116,16 @@ def test_get_countries_disambiguates_name_clash_by_code():
 def test_get_countries_all_prod_legacy_exclude_extended_france():
     for identifier in ("all", "prod", "legacy"):
         assert EXTENDED_FRANCE_COUNTRY not in get_countries(identifier).countries
+
+
+def test_corlab_country_only_runs_explicitly():
+    # CORLAB_COUNTRY has its own database: COUNTRY=clb only, never COUNTRY=all/prod/legacy.
+    assert (CORLAB_COUNTRY.code, CORLAB_COUNTRY.name, CORLAB_COUNTRY.language) == (
+        "clb",
+        "corlab",
+        "french",
+    )
+    assert len(CORLAB_COUNTRY.channels) == 11
+    assert get_countries("clb").countries == [CORLAB_COUNTRY]
+    for identifier in ("all", "prod", "legacy"):
+        assert CORLAB_COUNTRY not in get_countries(identifier).countries

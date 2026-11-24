@@ -1,4 +1,4 @@
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 
 import pytest
 
@@ -9,6 +9,8 @@ from quotaclimat.data_ingestion.advertising.s01_detection.tools.rolling_channels
     next_monday_after,
     parse_channels,
     plan_week,
+    tz_paris,
+    week_available_from,
 )
 
 
@@ -80,9 +82,17 @@ def test_forced_start_date_runs_every_channel():
     )
 
 
-def test_is_week_finished():
-    assert is_week_finished(date(2026, 11, 9), date(2026, 11, 16))
-    assert not is_week_finished(date(2026, 11, 9), date(2026, 11, 15))
+def test_is_week_finished_waits_for_the_last_day_delivery():
+    week = date(2026, 11, 9)  # Monday
+    assert week_available_from(week) == datetime(2026, 11, 17, 6, 0, tzinfo=tz_paris)
+    # Sunday evening and the Monday after: Sunday is not delivered yet
+    assert not is_week_finished(week, datetime(2026, 11, 15, 23, 0, tzinfo=tz_paris))
+    assert not is_week_finished(week, datetime(2026, 11, 16, 12, 0, tzinfo=tz_paris))
+    assert not is_week_finished(week, datetime(2026, 11, 17, 5, 59, tzinfo=tz_paris))
+    # Tuesday 6 a.m. Paris time
+    assert is_week_finished(week, datetime(2026, 11, 17, 6, 0, tzinfo=tz_paris))
+    # UTC datetimes are compared on the same instant
+    assert is_week_finished(week, datetime(2026, 11, 17, 5, 0, tzinfo=timezone.utc))
 
 
 def test_summary_lists_every_channel():

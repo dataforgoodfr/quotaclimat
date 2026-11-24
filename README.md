@@ -642,7 +642,7 @@ poetry run python3 srt-channel-to-csv.py "csa-belge/tv Bel fr octobre 2026" --ch
 - Rows are split by month half and written to `csa-belge/<year>/<month>/<1-14|15+>/<first day>_<last day>_<FileName>.csv` (existing files are overwritten), with no header and `;` as separator: `channel;program;DD/MM/YYYY HH:MM:SS;text`.
 - The srt folder name is mapped to the partner file name by `FILE_NAMES` in the script (e.g. `CANALC` → `Boukè`, `RTC` → `Qu4tre`, `RTL` → `RTLTVi`). A new channel keeps its folder name: add it to `FILE_NAMES` if the partner uses another name.
 - The first column is the folder name in upper case (`CanalZoom` → `CANALZOOM`).
-- The program column is empty (the srt does not contain it); `--program` sets one value for all channels.
+- Only the cues inside the program grid of the channel are kept (`PROGRAM_GRID` in the script: program, weekdays, start and end time per channel, from the partner grid); the program column is filled with the program name. Where two programs overlap (e.g. `QR Débat` and `#Investigations`), the one that started last wins. A channel absent from `PROGRAM_GRID` is skipped: add it there when the partner grid changes.
 
 **Step 2**:
 

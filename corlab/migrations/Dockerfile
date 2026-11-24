@@ -4,8 +4,13 @@
 # (keywords, program metadata, pandas...), hence the full dependency install.
 FROM python:3.12.10
 
+# Dependencies go into a project virtualenv (.venv), like the root Dockerfile: installing them
+# in the system Python, next to Poetry, replaces Poetry's own dependencies (virtualenv...)
+# and breaks the install midway.
 ENV POETRY_NO_INTERACTION=1 \
-    POETRY_VIRTUALENVS_CREATE=false \
+    POETRY_VIRTUALENVS_IN_PROJECT=1 \
+    POETRY_VIRTUALENVS_CREATE=1 \
+    PATH="/app/.venv/bin:$PATH" \
     PYTHONPATH=/app
 
 WORKDIR /app

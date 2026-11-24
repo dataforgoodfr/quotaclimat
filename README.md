@@ -314,7 +314,7 @@ With Sentry or [GlitchTip](https://glitchtip.com) (Sentry-compatible, hosted on 
 Learn more here : https://docs.sentry.io/platforms/python/configuration/options/
 
 ### Log format
-The jobs that call `getLogger()` (`quotaclimat/utils/logger.py`) write `LEVEL - file.py:line | message`, without the time: Scaleway Cockpit and Kestra already put it in front of each line. The level stays in the line because Cockpit reads it from there (a line without it shows as `UNK`). `LOG_TIME=true` puts the time back, to run a script locally. `set_log_prefix("tf1")` (or `getLogger(prefix="tf1")`) starts every following line with `tf1 | `, `set_log_prefix(None)` removes it.
+The jobs that call `getLogger()` (`quotaclimat/utils/logger.py`) write `LEVEL - file.py:line | message`, without the time: Scaleway Cockpit and Kestra already put it in front of each line. The level stays in the line because Cockpit reads it from there (a line without it shows as `UNK`). `LOG_TIME=true` puts the time back, to run a script locally. Lines are colored only when stdout is a terminal (`LOG_COLOR=true`/`false` forces it): Cockpit (Grafana) takes as level the first level word of the line, and a color code glued to `INFO` hides it, so the line showed as `UNK`, or as `ERROR` when the message contained `error` (e.g. `error=23` in a progress line). `set_log_prefix("tf1")` (or `getLogger(prefix="tf1")`) starts every following line with `tf1 | `, `set_log_prefix(None)` removes it.
 
 ### Send logs to Sentry
 By setting `SENTRY_LOGGING` to `"true"` we can send the job logs (`INFO` and above) to sentry or GlitchTip (as Scaleway Cockpit is not always reliable). The Kestra flows `barometre`, `barometre-catchup` and `barometre-i18n` (and the dev one) set it.

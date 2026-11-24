@@ -15,6 +15,13 @@ def set_log_prefix(prefix: str | None):
     _prefix = f"{prefix} | " if prefix else ""
 
 
+def _env_flag(name: str, default: bool) -> bool:
+    value = os.getenv(name)
+    if value is None or value == "":
+        return default
+    return value.lower() in ("1", "true", "yes")
+
+
 class CustomFormatter(logging.Formatter):
 
     grey = "\x1b[38;20m"
@@ -37,13 +44,23 @@ class CustomFormatter(logging.Formatter):
         logging.CRITICAL: bold_red,
     }
 
-    def __init__(self, with_time: bool | None = None):
+    def __init__(self, with_time: bool | None = None, with_color: bool | None = None):
         super().__init__()
         if with_time is None:
-            with_time = os.getenv("LOG_TIME", "false").lower() in ("1", "true", "yes")
+            with_time = _env_flag("LOG_TIME", False)
+        if with_color is None:
+            # Colors only in a terminal by default. In Cockpit (Grafana), the level of a line is the
+            # first level word found between word boundaries: "\x1b[36mINFO" hides INFO behind the
+            # color code ("m" and "I" are both word characters), so a line showed as UNK, or as ERROR
+            # when its message contained "error" (e.g. "error=23" in a progress line).
+            with_color = _env_flag("LOG_COLOR", sys.stdout.isatty())
         log_fmt = self.LOG_FORMAT_WITH_TIME if with_time else self.LOG_FORMAT
         self.formatters = {
-            level: logging.Formatter(color + "%(log_prefix)s" + log_fmt + self.reset)
+            level: logging.Formatter(
+                color + "%(log_prefix)s" + log_fmt + self.reset
+                if with_color
+                else "%(log_prefix)s" + log_fmt
+            )
             for level, color in self.COLORS.items()
         }
 

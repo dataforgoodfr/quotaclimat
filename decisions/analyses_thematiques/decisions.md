@@ -23,14 +23,12 @@ L'angle s'écrit avec son contexte, en tête de la section « Angle » :
 - **Destination** : rapport OMÉ (semestriel, annuel), article QuotaClimat, présentation à des partenaires (non publique)... avec sa date de parution prévue. Elle fixe ce que couvre l'analyse : un rapport annuel porte sur les principaux épisodes de l'année, un article peut ne porter que sur un épisode.
 - **Plan de comparaison** : les périodes d'analyse, et à quoi chacune se compare (épisodes antérieurs en France, épisodes à l'étranger, même saison sans événement...). Une ligne par période du YAML avec son rôle. Ce plan fixe la liste complète des périodes avant la première entrée du YAML : chaque période ajoutée après coup demande une modification du YAML, une PR et un nouveau lancement du job.
 
-Pour nourrir l'angle, on regarde aussi ce que QuotaClimat a déjà publié sur le sujet : la table `wp_linkedin_posts` (base Metabase `db_wordpress`) contient nos posts LinkedIn, avec leur texte (`content`) et leur engagement. Un simple filtre `content LIKE '%<thematique>%'` donne tous les posts qui en parlent, où l'on pioche des angles. La question se nomme `Brainstorm - LinkedIn <thematique>`, dans la collection de l'analyse (exemple : question 2433 pour les inondations).
-
 | Étape | Ce qu'on produit | Où on le consigne |
 |---|---|---|
-| 0. Cadrage | Angle (destination, questions auxquelles l'analyse répond, plan de comparaison), mots du dictionnaire OME retenus (liste stricte audiovisuel, regex presse), événements recensés, périodes candidates | `decisions.md` de l'analyse, Angle, §1 et §2 |
-| 1. Extraction | Entrée de `thematic_jobs_config.yml` (mots-clés, périodes), tables thématiques générées, contrôles | `decisions.md` de l'analyse, §1 et §2 |
-| 2. Axes | Axes de la banque appliqués ou non exploités, axes spécifiques, termes | `decisions.md` de l'analyse, §3 |
-| 3. Requêtes | Questions Metabase sur les tables thématiques | Colonne « Question Metabase » du §3 |
+| 0. Cadrage | Angle (destination, questions auxquelles l'analyse répond, plan de comparaison), mots du dictionnaire OME retenus (liste stricte audiovisuel, regex presse), événements recensés, courbes journalières (V1), périodes candidates | `decisions.md` de l'analyse, Angle, §1 et §2 |
+| 1. Extraction | Entrée de `thematic_jobs_config.yml` (mots-clés, périodes), tables thématiques générées par le job | `decisions.md` de l'analyse, §1 et §2 |
+| 2. Axes | Brainstorm (posts LinkedIn de QuotaClimat, analyses précédentes, références), axes de la banque appliqués ou non exploités, axes spécifiques, termes | `decisions.md` de l'analyse, §3 |
+| 3. Requêtes | Toutes les questions Metabase : liste des périodes, volumétrie, A à D, T, contrôles (CTRL) | Colonne « Question Metabase » du §3 |
 | 4. Résultats | Takeaways triés (publiable, à creuser, rien à signaler), encadré méthodologique | Google Sheets séparé avant publication, `decisions.md` de l'analyse §4 après publication |
 
 **Étape 0, cadrage, après l'angle.** Elle précède l'entrée du YAML et se fait donc sur les tables sources (`public.keywords`, `public.factiva_articles`). Une fois l'angle validé, ses trois sous-étapes se valident une par une, comme les étapes : on ne propose pas la suivante (événements, courbe, périodes) tant que la précédente n'est pas validée par l'équipe.
@@ -41,14 +39,30 @@ Pour nourrir l'angle, on regarde aussi ce que QuotaClimat a déjà publié sur l
    | Début | Fin | Lieu (ville, département, région) | Impact | Source datée |
    |---|---|---|---|---|
 
-   L'impact dépend de l'aléa : hectares brûlés, personnes évacuées ou déplacées, victimes, dégâts matériels ou coût assuré, vigilance orange ou rouge, arrêtés de catastrophe naturelle, pic de pollution... Il sert à comparer les épisodes entre eux et à tester si le traitement médiatique est proportionné aux conséquences de l'événement ou relève d'un choix éditorial (piste X3).
-3. **Courbe des occurrences par jour.** La recherche sur internet laisse passer des événements. On trace donc le nombre d'occurrences par jour des mots du dictionnaire noyau sur une fenêtre large (plusieurs mois à deux ans), en audiovisuel (occurrences par heure de grille, par jour) et en presse (part des articles, par semaine, pour lisser les rythmes de parution et d'ingestion des quotidiens et des hebdomadaires). Chaque pic doit être rattaché à un événement de la liste ; un pic sans événement signale un oubli : on cherche ce qui s'est passé ce jour-là et on complète la liste. Modèles : §7.1 (audiovisuel) et §7.2 (presse).
+   L'impact dépend de l'aléa : hectares brûlés, personnes évacuées ou déplacées, victimes, dégâts matériels ou coût assuré, vigilance orange ou rouge, arrêtés de catastrophe naturelle, pic de pollution... Il sert à comparer les épisodes entre eux et à tester si le traitement médiatique est proportionné aux conséquences de l'événement ou relève d'un choix éditorial (axe T7).
+3. **Courbe des occurrences par jour (axe V1).** La recherche sur internet laisse passer des événements. On trace donc le nombre d'occurrences par jour des mots du dictionnaire noyau sur une fenêtre large (plusieurs mois à deux ans), en audiovisuel (occurrences par heure de grille, par jour) et en presse (part des articles, par semaine, pour lisser les rythmes de parution et d'ingestion des quotidiens et des hebdomadaires). Chaque pic doit être rattaché à un événement de la liste ; un pic sans événement signale un oubli : on cherche ce qui s'est passé ce jour-là et on complète la liste. Modèles : §7.1 (audiovisuel) et §7.2 (presse).
 
 La recherche donne les événements marquants, susceptibles d'être cités dans la publication ; les pics servent de tamis pour ce qu'elle a manqué. La liste fixe ensuite les périodes d'analyse et de comparaison (§3.2) déclarées dans le YAML.
 
+**Étape 1, extraction.** L'entrée du YAML (mots-clés noyau, périodes) passe en PR, puis le job génère les tables thématiques. Les contrôles, qui lisent ces tables, se font à l'étape 3.
+
+**Étape 2, axes (adoptée).** Les axes se cherchent en brainstorm, à partir de trois sources : la banque (§4) et les analyses précédentes, les références (§5), et ce que QuotaClimat a déjà publié sur le sujet. Pour ce dernier, la table `wp_linkedin_posts` (base Metabase `db_wordpress`) contient nos posts LinkedIn, avec leur texte (`content`) et leur engagement : un simple filtre `content LIKE '%<thematique>%'` donne tous les posts qui en parlent, où l'on pioche des angles. La question se nomme `Brainstorm - LinkedIn <thematique>`, dans la collection de l'analyse (§7.5 ; exemple : question 2433 pour les inondations). Chaque axe retenu se rattache à une question de l'Angle et s'écrit au §3 de l'analyse (règles : §3.3).
+
+**Étape 3, construction des questions (adoptée).** L'étape 3 commence quand le dictionnaire noyau et les périodes sont validés, que le job de l'étape 1 a tourné et que les axes de l'étape 2 sont validés. À ce stade, Claude propose à la personne responsable de l'analyse de construire toutes les questions ci-dessous, en AV et en PE, sans attendre qu'elle les demande une à une. Il présente la liste complète, avec le nom de chaque question, puis demande, une catégorie après l'autre, lesquelles garder : il retire d'office ce qui ne s'applique pas au sujet (C et D hors catastrophe climatique, T sans thème retenu) et fait choisir entre une question par maillon et une question par axe. Il crée ensuite les questions retenues, sans les lancer.
+
+| Catégorie | Questions proposées | Modèles |
+|---|---|---|
+| Périodes (indispensable, à créer en premier) | `<thematique> period filters`, à la racine de la collection. Toutes les autres questions en tirent la liste déroulante de leur variable `{{period}}` | §7.10 |
+| V | `AV - V2 - Volume`, `PE - V2 - Volume` ; `AV - V3 - Part de couverture`, `PE - V3 - Part de couverture`. Les courbes (V1) sont déjà tracées à l'étape 0 | V2 : §7.8, §7.9 ; V3 : questions 2432 (AV) et 2513 (PE), à dupliquer |
+| A, B, C, D | Par maillon : `AV - A - Constat`, `AV - B - Causes`, `AV - C - Conséquences`, `AV - D - Solutions` et les mêmes en `PE -` ; ou par axe : `AV - A1 - Lien CC`, `PE - A1 - Lien CC`... | §7.3, §7.4 |
+| T | `AV - T - Thèmes`, `PE - T - Thèmes`, ou une question par thème (`AV - T1 - Transport`) ; une question par autre axe T retenu (Unes, cadrages, étranger ou France...) ; les croisements se font dans le Google Sheets (§4.3) | §7.3, §7.4 |
+| CTRL | `AV - CTRL - Relecture humaine chunks et voisins par axe`, `PE - CTRL - Relecture humaine articles par axe`, lues dans les visionneuses (§3.6) ; `AV - CTRL - Pareto par mot clé`, `PE - CTRL - Pareto par mot clé` : occurrences de chaque terme du noyau (maillon `noyau`) et des axes (`all` ou un maillon), pour repérer les termes qui portent un axe à eux seuls | §7.6, §7.7, §7.11, §7.12 |
+
+Les questions sont créées dans les collections de l'analyse (conventions Metabase ci-dessous) et notées dans la colonne « Question Metabase » du §3 de l'analyse. Les réglages que le connecteur ne sait pas faire restent à la personne responsable : brancher la liste déroulante de `{{period}}` sur `<thematique> period filters`, saisir la liste statique des codes d'axe des questions CTRL de relecture.
+
 **Le repo est public** : aucun chiffre ni takeaway non publié n'y entre. Avant publication, les résultats des requêtes sont consignés dans un Google Sheets séparé. Le statut d'un axe reste « testé » jusqu'à la publication.
 
-**Conventions Metabase.** Collection `03. Analyses thématiques/NN. <Sujet> <Année>`, avec une sous-collection `AV` et une sous-collection `PE` pour les questions de chaque média. À la racine de la collection : la liste des périodes (`<thematique> period filters`, ci-dessous et §7.10) et les questions qui servent à toute l'analyse : les posts LinkedIn (§7.5), la relecture humaine (§7.6) et le contrôle sans voisin (§3.6). Préfixe `AV -` pour l'audiovisuel, `PE -` pour la presse. Après le préfixe, le code de l'axe ([§4.1](#41-catégories-et-codes)) : `AV - V1 - Volume`, `PE - A1 - Lien CC`. Une question qui regroupe tous les axes d'un maillon prend la lettre du maillon : `AV - A - Constat`, `AV - B - Causes`, `AV - C - Conséquences`, `AV - D - Solutions`. Les questions sur les tables thématiques prennent la période en variable Metabase `{{period}}` (texte, libellé « Period ») : `[[WHERE k.period = {{period}}]]`, sans valeur toutes les périodes. Dans Metabase, la variable s'affiche en liste déroulante alimentée par une question de la collection de l'analyse, à créer à chaque analyse : `<thematique> period filters`, qui fait `SELECT DISTINCT period FROM thematic_extracts.<thematique>_keywords_fr` (exemple : question 2435 pour les inondations). La liste suit ainsi les périodes réellement extraites, sans saisie à la main. Le connecteur ne sait pas brancher cette source : elle se choisit dans les réglages de la variable (liste déroulante, depuis une question, colonne `period`). Versions abandonnées préfixées `OLD-`. On ne modifie jamais une question d'une autre analyse : on la duplique. Dans le SQL, `<sujet>` (en-tête) et `<thematique>` (commentaires, noms de CTE et de colonnes) se remplacent par le thème : `Courbe journalière inondations`, `dictionnaire_inondations`, `nb_articles_inondations`. On n'emploie pas « noyau » dans les requêtes. L'extrait audiovisuel de 2 minutes s'y appelle `chunk`, comme la colonne `thematic_chunk`, et non segment (`nb_chunks_inondations`, CTE `chunks`). Une part en pourcentage (de 0 à 100) se nomme `pct_<mesure>` (`pct_a1_lien_cc`, `pct_articles_inondations`), un nombre `nb_<mesure>`. Toutes les questions sont versionnées dans Metabase, et leur SQL commence par un chapeau en commentaire : le média (audiovisuel ou presse écrite), le titre de la question, une description courte de ce qu'elle fait. Les modèles du §7 suivent ce format. Après publication, le SQL des questions utilisées est copié dans `<AAAA-MM>-<sujet>/queries/`.
+**Conventions Metabase.** Collection `03. Analyses thématiques/NN. <Sujet> <Année>`, avec une sous-collection `AV` et une sous-collection `PE` pour les questions de chaque média. À la racine de la collection : la liste des périodes (`<thematique> period filters`, ci-dessous et §7.10) et les questions qui servent à toute l'analyse : les posts LinkedIn (§7.5), la relecture humaine (§7.6) et le Pareto (§7.11). Préfixe `AV -` pour l'audiovisuel, `PE -` pour la presse. Les questions de contrôle prennent le code `CTRL` à la place de celui d'un axe : `AV - CTRL - Relecture humaine chunks et voisins par axe`, `PE - CTRL - Pareto par mot clé`. Après le préfixe, le code de l'axe ([§4.1](#41-catégories-et-codes)) : `AV - V2 - Volume`, `PE - A1 - Lien CC`. Une question qui regroupe tous les axes d'un maillon prend la lettre du maillon : `AV - A - Constat`, `AV - B - Causes`, `AV - C - Conséquences`, `AV - D - Solutions`. Les questions sur les tables thématiques prennent la période en variable Metabase `{{period}}` (texte, libellé « Period ») : `[[WHERE k.period = {{period}}]]`, sans valeur toutes les périodes. Dans Metabase, la variable s'affiche en liste déroulante alimentée par une question de la collection de l'analyse, à créer à chaque analyse : `<thematique> period filters`, qui fait `SELECT DISTINCT period FROM thematic_extracts.<thematique>_keywords_fr` (exemple : question 2435 pour les inondations). La liste suit ainsi les périodes réellement extraites, sans saisie à la main. Le connecteur ne sait pas brancher cette source : elle se choisit dans les réglages de la variable (liste déroulante, depuis une question, colonne `period`). Versions abandonnées préfixées `OLD-`. On ne modifie jamais une question d'une autre analyse : on la duplique. Dans le SQL, `<sujet>` (en-tête) et `<thematique>` (commentaires, noms de CTE et de colonnes) se remplacent par le thème : `Courbe journalière inondations`, `dictionnaire_inondations`, `nb_articles_inondations`. On n'emploie pas « noyau » dans les requêtes. L'extrait audiovisuel de 2 minutes s'y appelle `chunk`, comme la colonne `thematic_chunk`, et non segment (`nb_chunks_inondations`, CTE `chunks`). Une part en pourcentage (de 0 à 100) se nomme `pct_<mesure>` (`pct_a1_lien_cc`, `pct_articles_inondations`), un nombre `nb_<mesure>`. Toutes les questions sont versionnées dans Metabase, et leur SQL commence par un chapeau en commentaire : le média (audiovisuel ou presse écrite), le titre de la question, une description courte de ce qu'elle fait. Les modèles du §7 suivent ce format. Après publication, le SQL des questions utilisées est copié dans `<AAAA-MM>-<sujet>/queries/`.
 
 **Nouvelle analyse.** Au début de l'étape 0, Claude crée `<AAAA-MM>-<sujet>/decisions.md` à partir du [modèle](#6-modèle-pour-une-analyse) ; l'Angle, les §1 et §2 sont remplis avant toute requête.
 
@@ -116,14 +130,14 @@ Classification des titres de presse (nationale, régionale...) : table `source_c
 - Un axe entre dans la banque (catégories V, A, B, C, D et T) s'il remplit deux conditions :
   1. sa question se transpose à au moins deux aléas (incendies, inondations, chaleur...), ou à deux sujets pour un thème (T), sans changer de sens ; les termes peuvent varier, l'analyse note ses ajouts et retraits dans son §3 ;
   2. il a une trace : une analyse qui l'a testé, ou une référence datée (§5) pour une idée.
-- Un axe qui ne remplit pas la condition 1 reste dans le `decisions.md` de son analyse ; une idée sans trace va en X (pistes exploratoires).
+- Un axe qui ne remplit pas la condition 1 reste dans le `decisions.md` de son analyse ; une idée sans trace reste dans le `decisions.md` de son analyse, au §3, parmi les pistes.
 - Le recensement des axes non exploités commence avec les analyses menées après la révision ; les analyses antérieures (incendies et chaleur 2026) ne le contiennent pas.
 - Dans le SQL, chaque axe est un drapeau (une regex). Réutiliser les regex existantes avant d'en écrire.
 
 ### 3.4 Recontextualisation (adoptée)
 
 - **Audiovisuel** : un axe compte s'il apparaît dans le segment thématique ou dans un segment adjacent de la même chaîne (±2 minutes).
-- **Voisins partagés** : un chunk peut être le voisin de deux chunks thématiques. Pour la part d'un axe, chaque chunk thématique se juge avec ses propres voisins, même s'ils sont thématiques : pas de dédoublonnage. Pour un comptage d'occurrences (X1 des inondations), chaque chunk, thématique ou voisin, ne compte qu'une fois, repéré par sa chaîne et son heure (`start_prev`, `start_next`), avec le texte du chunk thématique en priorité.
+- **Voisins partagés** : un chunk peut être le voisin de deux chunks thématiques. Pour la part d'un axe, chaque chunk thématique se juge avec ses propres voisins, même s'ils sont thématiques : pas de dédoublonnage. Pour un comptage d'occurrences (T1 des inondations), chaque chunk, thématique ou voisin, ne compte qu'une fois, repéré par sa chaîne et son heure (`start_prev`, `start_next`), avec le texte du chunk thématique en priorité.
 - **Presse** : l'article entier (titre, chapô, corps).
 
 ### 3.5 Normalisation du texte (adoptée)
@@ -136,9 +150,9 @@ Le job normalise le texte des tables thématiques et, en presse, les mots-clés 
 
 Les regex des axes s'appliquent aux colonnes `*_normalized`, en mots entiers (`\y...\y` en Postgres). Leurs termes sont donc écrits sous la même forme : `secheresse`, `manque d eau`, `pare feu`.
 
-### 3.6 Contrôles (étape 1)
+### 3.6 Contrôles (étape 3)
 
-**Frugalité (adoptée).** Claude ne lit pas le texte du corpus (`plaintext_normalized`) et aucun corpus n'est relu par un LLM. Le contrôle se fait avec la question de contrôle de l'analyse (`AV - Contrôle - Chunks et voisins par axe`, 2488 pour les inondations) : 25 chunks thématiques détectés pour l'axe choisi, tirés au hasard à chaque exécution, avec le texte de leurs voisins à ±2 minutes. En presse, la question `PE - Contrôle - Relecture humaine articles par axe` (2548 pour les inondations) tire de même 25 articles, avec leur titre, leur chapô et leur corps d'origine (§7.7). Pas de contrôle de complétude : les scripts du job vérifient déjà ce qu'ils ingèrent.
+**Frugalité (adoptée).** Claude ne lit pas le texte du corpus (`plaintext_normalized`) et aucun corpus n'est relu par un LLM. Le contrôle se fait avec la question de contrôle de l'analyse (`AV - CTRL - Relecture humaine chunks et voisins par axe`, 2488 pour les inondations) : 25 chunks thématiques détectés pour l'axe choisi, tirés au hasard à chaque exécution, avec le texte de leurs voisins à ±2 minutes. En presse, la question `PE - CTRL - Relecture humaine articles par axe` (2548 pour les inondations) tire de même 25 articles, avec leur titre, leur chapô et leur corps d'origine (§7.7). Pas de contrôle de complétude : les scripts du job vérifient déjà ce qu'ils ingèrent.
 
 **Lecture humaine (adoptée).** Les contrôles qui demandent de lire des contenus sont faits par la personne responsable de l'analyse. Claude ne relit pas les textes du corpus et ne propose pas de le faire.
 
@@ -181,24 +195,22 @@ Statuts : **publié** (a donné un résultat publié), **présenté** (figure da
 
 ### 4.1 Catégories et codes
 
-Les axes se rangent en sept catégories, dans l'ordre où un article les présente généralement : la volumétrie, les quatre maillons de la chaîne causale, les thèmes, les inclassables. La chaîne causale convient aux catastrophes climatiques (incendies, inondations, chaleur). Pour un sujet qui n'en est pas une (prix des carburants), conséquences et solutions s'appliquent mal : on regarde plutôt de quels thèmes on parle, avec les axes T, seuls ou à côté de A à D.
+Les axes se rangent en six catégories, dans l'ordre où un article les présente généralement : la volumétrie, les quatre maillons de la chaîne causale, les thèmes. La chaîne causale convient aux catastrophes climatiques (incendies, inondations, chaleur). Pour un sujet qui n'en est pas une (prix des carburants), conséquences et solutions s'appliquent mal : on regarde plutôt de quels thèmes on parle, avec les axes T, seuls ou à côté de A à D.
 
 | Préfixe | Catégorie | Question type | Traitement |
 |---|---|---|---|
-| V | Volumétrie | Combien de données a-t-on ? Nombre d'articles, d'occurrences, de segments, et leur timeline. Sert surtout à savoir s'il faudra agréger (effectif minimal) ; la timeline sert aussi à fixer les périodes et à comparer l'agitation médiatique d'une thématique à l'autre | Quelques requêtes à chaque analyse ; l'article commence en général par la timeline |
+| V | Volumétrie | Combien de données a-t-on ? Leur timeline (V1, tracée en premier, à l'étape 0), le nombre d'articles, d'occurrences, de segments (V2), la part de couverture (V3). Sert surtout à savoir s'il faudra agréger (effectif minimal) ; la timeline sert aussi à fixer les périodes et à comparer l'agitation médiatique d'une thématique à l'autre | Quelques requêtes à chaque analyse ; l'article commence en général par la timeline |
 | A | Constat | L'événement est-il relié au changement climatique, présenté comme une tendance, expliqué par des scientifiques ? | Le cœur de l'analyse, avec B, C et D |
 | B | Causes | Quelles causes sont évoquées : climatiques, météorologiques, humaines directes, locales ? | |
 | C | Conséquences | Quelles conséquences sont évoquées : humaines, matérielles, par secteur ? Les personnes vulnérables relèvent des conséquences | |
 | D | Solutions | Quelles solutions sont présentées : curatives, préventives, atténuation, adaptation ? Les pompiers relèvent des solutions | |
-| T | Thèmes | De quels thèmes parle-t-on avec le sujet : transport, économie, agriculture, tourisme, santé... ? Un thème est une mention large du domaine, sans dire s'il est cause, conséquence ou solution. À distinguer de X4 (cadrages concurrents), qui cherche l'angle dominant (pouvoir d'achat, souveraineté...) | Le cœur de l'analyse quand le sujet n'est pas une catastrophe climatique ; sinon, en complément de A à D |
-| X | Inclassables | Angles qui n'entrent dans aucun maillon (Unes, intervenants, cadrages...) | Pas systématique ; réservoir d'idées pour sortir des analyses répétitives, à enrichir à chaque analyse |
+| T | Thèmes | De quels thèmes parle-t-on avec le sujet : transport, économie, agriculture, tourisme, santé... ? Un thème est une mention large du domaine, sans dire s'il est cause, conséquence ou solution. T reçoit aussi les angles qui n'entrent dans aucun maillon (Unes, hiérarchie, cadrages concurrents, politisation...), les croisements de variables (§4.3) et les requêtes annexes : c'est le réservoir d'idées pour sortir des analyses répétitives, à enrichir à chaque analyse | Le cœur de l'analyse quand le sujet n'est pas une catastrophe climatique ; sinon, en complément de A à D |
 
 **Codage.**
 
 - V : `V` + numéro (`V1`, `V2`).
 - A, B, C, D : la lettre est le maillon (`A` constat, `B` causes, `C` conséquences, `D` solutions), suivie d'un numéro (`C2` santé).
 - T : `T` + numéro (`T1` transport).
-- X : `X` + numéro.
 - Les questions Metabase reprennent le code : `AV - A1 - Lien CC`.
 - Dans une analyse, les axes sont numérotés dans leur maillon (`A1`, `A2`...) ; un axe repris de la banque indique son code de banque dans la colonne « Origine » (`banque A1`). Un axe propre à l'analyse n'entre pas dans la banque.
 - Les analyses antérieures (incendies, chaleur et surchauffe 2026) gardent leurs anciens codes (Q1, A1, B1...), qui ne correspondent pas aux codes actuels.
@@ -213,10 +225,9 @@ Statuts : voir plus haut. « Explorée dans » cite les analyses ; « idée » r
 
 | Code | Ancien code | Axe | Question posée | Explorée dans |
 |---|---|---|---|---|
-| V1 | Q1 (en partie) | Volume | Combien d'articles, d'occurrences, de segments, par média ? Faudra-t-il agréger ? | Incendies 2026, Chaleur 2026 |
-| V2 | Q7 | Timeline | Comment le volume évolue-t-il jour par jour ? Occurrences par heure de grille sur une fenêtre large (voir l'étape 0). Sert à fixer les périodes, à mesurer l'agitation des médias sur le sujet et à la comparer d'une thématique à l'autre (incendies face à inondations), pour formuler des hypothèses sur ce qui fait réagir les médias. Attention à la taille des dictionnaires noyau comparés | Incendies 2026 |
-| V3 | | Mots les plus employés | Quels mots du dictionnaire noyau portent le volume, et lesquels restent peu utilisés ? Compter les occurrences dans le texte (`plaintext_normalized`, `title/snippet/body_normalized`, par exemple avec `regexp_matches(..., 'g')`), pas `keywords_found` : celui-ci ne donne que le nombre de segments ou d'articles où le mot apparaît, pas le nombre de fois où il est dit. Intéressant selon le contexte | Surchauffe 2026 |
-| V4 | Q1 (en partie), Q6 | Part de couverture, comparaison et répartition | Quelle part du temps d'antenne ou des articles porte sur les enjeux environnementaux, est-elle exceptionnelle par rapport au niveau habituel ou à un épisode similaire, et quel maillon domine ? Takeaway à en tirer : le reflux (ancien Q7b), la couverture retombe-t-elle sous son niveau habituel après le pic ? Sources, par semaine : `public.core_query_environmental_shares` en audiovisuel (par chaîne), question Metabase 1384 « Modèle crises Presse Ecrite - splitées par crise » en presse (par type de média). Forme de la requête audiovisuelle : une ligne par période du YAML et par chaîne, avec côte à côte la part de la période, celle des 52 semaines précédentes et l'écart en points (exemple : question 2432, inondations 2026) | Incendies 2026, Chaleur 2026 ; répartition : idée (Bilan OMÉ S1 2026) |
+| V1 | Q7 | Timeline (courbe journalière) | Comment le volume évolue-t-il jour par jour ? Occurrences par heure de grille sur une fenêtre large, tracées en premier, à l'étape 0. Sert à fixer les périodes, à mesurer l'agitation des médias sur le sujet et à la comparer d'une thématique à l'autre (incendies face à inondations), pour formuler des hypothèses sur ce qui fait réagir les médias. Attention à la taille des dictionnaires noyau comparés | Incendies 2026 |
+| V2 | Q1 (en partie) | Volume | Combien d'articles, d'occurrences, de segments, par média ? Faudra-t-il agréger ? | Incendies 2026, Chaleur 2026 |
+| V3 | Q1 (en partie), Q6 | Part de couverture, comparaison et répartition | Quelle part du temps d'antenne ou des articles porte sur les enjeux environnementaux, est-elle exceptionnelle par rapport au niveau habituel ou à un épisode similaire, et quel maillon domine ? Takeaway à en tirer : le reflux (ancien Q7b), la couverture retombe-t-elle sous son niveau habituel après le pic ? Sources, par semaine : `public.core_query_environmental_shares` en audiovisuel (par chaîne), question Metabase 1384 « Modèle crises Presse Ecrite - splitées par crise » en presse (par type de média). Forme de la requête audiovisuelle : une ligne par période du YAML et par chaîne, avec côte à côte la part de la période, celle des 52 semaines précédentes et l'écart en points (exemple : question 2432, inondations 2026) | Incendies 2026, Chaleur 2026 ; répartition : idée (Bilan OMÉ S1 2026) |
 
 **A à D. Chaîne causale**
 
@@ -245,7 +256,7 @@ La désinformation n'entre pas dans ces analyses : elle fait l'objet d'analyses 
 
 **T. Thèmes**
 
-Mentions larges du domaine, termes génériques réutilisables d'un sujet à l'autre. Les inondations 2026 les ont testés comme conséquences par secteur (C4 à C7) : leurs regex servent de point de départ.
+T1 à T4 : mentions larges du domaine, termes génériques réutilisables d'un sujet à l'autre. Les inondations 2026 les ont testés comme conséquences par secteur (C4 à C7) : leurs regex servent de point de départ. T5 à T11 : angles qui n'entrent dans aucun maillon (anciens X1 à X7). Les croisements de variables sont au §4.3.
 
 | Code | Axe | Question posée | Explorée dans |
 |---|---|---|---|
@@ -253,22 +264,17 @@ Mentions larges du domaine, termes génériques réutilisables d'un sujet à l'a
 | T2 | Économie | Le sujet est-il relié à l'économie (entreprises, commerces, emploi) ? | Inondations 2026 (C6, bruité) |
 | T3 | Agriculture | Le sujet est-il relié à l'agriculture et à l'élevage ? | Inondations 2026 (C4) |
 | T4 | Tourisme | Le sujet est-il relié au tourisme ? | Inondations 2026 (C7) |
-
-**X. Inclassables**
-
-| Code | Axe | Question posée | Explorée dans |
-|---|---|---|---|
-| X1 | Unes | Le sujet fait-il la Une ? Présence en Une, par titre | Chaleur 2026 |
-| X2 | Hiérarchie dans le JT | Le sujet ouvre-t-il le journal, à quelle position arrive-t-il ? Piste : `keywords` porte `channel_program` et `program_metadata` l'heure de début de l'émission dans la grille, ce qui situe un segment en minutes depuis le début prévu de l'émission. Limite : heure de la grille, pas de la diffusion réelle (retards, éditions spéciales) | idée (Acrimed) |
-| X3 | Par événement et proportionnalité (ancien Q8) | Quels événements sont couverts, et la couverture est-elle proportionnée à leur impact (liste de l'étape 0) ? Pistes : un événement régional est-il couvert par la presse régionale d'autres régions (inondations) ? La couverture suit-elle un indicateur physique de l'aléa (ITN, hectares brûlés, niveau des crues), jour par jour ? | Surchauffe 2026 (mentions face à l'ITN) ; par événement : idée (jamais vraiment mis en œuvre) |
-| X4 | Cadrages concurrents | Quel angle domine : pouvoir d'achat, souveraineté, géopolitique, industrie et emploi, santé, « écologie punitive » ? Codage booléen non exclusif, un dictionnaire par cadrage | idée (Bilan OMÉ S1 2026) |
-| X5 | Politisation | Le sujet est-il présenté comme l'affaire d'un camp politique ? Demande une lecture humaine ; un codage par LLM impose les précautions de la charte IA | idée (Bilan OMÉ S1 2026) |
-| X6 | Couplage avec une autre actualité | Quelle part du corpus relie le sujet à un autre événement du moment (élection, crise énergétique...) ? | idée (Bilan OMÉ S1 2026) |
-| X7 | Étranger ou France | Recontextualise-t-on davantage un événement qui se passe à l'étranger qu'en France (lien avec le climat, causes, solutions) ? Croiser les axes avec une regex de lieu (exemple : colonne `espagne` de la question 2427, analyse inondations) | idée (posts LinkedIn de QuotaClimat, question 2433) |
+| T5 | Unes | Le sujet fait-il la Une ? Présence en Une, par titre | Chaleur 2026 |
+| T6 | Hiérarchie dans le JT | Le sujet ouvre-t-il le journal, à quelle position arrive-t-il ? Piste : `keywords` porte `channel_program` et `program_metadata` l'heure de début de l'émission dans la grille, ce qui situe un segment en minutes depuis le début prévu de l'émission. Limite : heure de la grille, pas de la diffusion réelle (retards, éditions spéciales) | idée (Acrimed) |
+| T7 | Par événement et proportionnalité (ancien Q8) | Quels événements sont couverts, et la couverture est-elle proportionnée à leur impact (liste de l'étape 0) ? Pistes : un événement régional est-il couvert par la presse régionale d'autres régions (inondations) ? La couverture suit-elle un indicateur physique de l'aléa (ITN, hectares brûlés, niveau des crues), jour par jour ? | Surchauffe 2026 (mentions face à l'ITN) ; par événement : idée (jamais vraiment mis en œuvre) |
+| T8 | Cadrages concurrents | Quel angle domine : pouvoir d'achat, souveraineté, géopolitique, industrie et emploi, santé, « écologie punitive » ? Codage booléen non exclusif, un dictionnaire par cadrage | idée (Bilan OMÉ S1 2026) |
+| T9 | Politisation | Le sujet est-il présenté comme l'affaire d'un camp politique ? Demande une lecture humaine ; un codage par LLM impose les précautions de la charte IA | idée (Bilan OMÉ S1 2026) |
+| T10 | Couplage avec une autre actualité | Quelle part du corpus relie le sujet à un autre événement du moment (élection, crise énergétique...) ? | idée (Bilan OMÉ S1 2026) |
+| T11 | Étranger ou France | Recontextualise-t-on davantage un événement qui se passe à l'étranger qu'en France (lien avec le climat, causes, solutions) ? Croiser les axes avec une regex de lieu (exemple : colonne `espagne` de la question 2427, analyse inondations) | idée (posts LinkedIn de QuotaClimat, question 2433) |
 
 ### 4.3 Croisements
 
-Un croisement met deux variables face à face. Il n'a pas de requête propre : il se fait dans le Google Sheets des résultats, à partir des sorties des requêtes d'axes. Exemple, par média : part des séquences du corpus qui font le lien avec le changement climatique (A1), et part qui évoque ses causes (B1). Chaque part est calculée séparément sur le corpus (certains contenus relèvent des deux axes, pas tous) : on ne restreint pas une variable à l'autre. Les médias hauts sur les deux parts font le lien et l'expliquent.
+Les croisements relèvent de la catégorie T. Un croisement met deux variables face à face. Il n'a pas de requête propre : il se fait dans le Google Sheets des résultats, à partir des sorties des requêtes d'axes. Exemple, par média : part des séquences du corpus qui font le lien avec le changement climatique (A1), et part qui évoque ses causes (B1). Chaque part est calculée séparément sur le corpus (certains contenus relèvent des deux axes, pas tous) : on ne restreint pas une variable à l'autre. Les médias hauts sur les deux parts font le lien et l'expliquent.
 
 - **Deux variables**, pas plus, sauf idée qui le justifie clairement : au-delà, le résultat devient illisible.
 - **Les meilleurs croisements découpent les médias en quatre groupes**, pas seulement en bons et mauvais élèves, et donnent quelque chose à dire sur chaque groupe.
@@ -383,7 +389,7 @@ Seulement ce qui s'écarte de la méthode commune. Sinon : « Méthode commune, 
 - Événements recensés (étape 0) : tableau début, fin, lieu, impact, source datée ; pics de la courbe d'occurrences rattachés ou ajoutés
 - Période d'analyse : `<id>` dans le YAML, du ... au ... (justification, source datée)
 - Période de comparaison : `<id>` dans le YAML, du ... au ... (justification)
-- Contrôles : relecture humaine par la personne responsable, sur 25 chunks ou 25 articles par axe (questions de relecture humaine, §7.6 et §7.7), et apport des voisins (contrôle sans voisin, §3.6) ; résultat qualitatif et date, aucun chiffre avant publication
+- Contrôles : relecture humaine par la personne responsable, sur 25 chunks ou 25 articles par axe (questions de relecture humaine, §7.6 et §7.7) ; résultat qualitatif et date, aucun chiffre avant publication
 
 ## 2. Mots-clés
 
@@ -392,7 +398,7 @@ Seulement ce qui s'écarte de la méthode commune. Sinon : « Méthode commune, 
 
 ## 3. Axes
 
-Chaque axe des catégories V, A, B, C, D et T de la banque (méthode commune §4) est soit listé ici, soit noté comme non exploité avec sa raison ; un sujet qui n'est pas une catastrophe climatique peut écarter C et D en bloc (§4.1). X : seulement s'ils sont traités.
+Chaque axe des catégories V, A, B, C, D et T de la banque (méthode commune §4) est soit listé ici, soit noté comme non exploité avec sa raison ; un sujet qui n'est pas une catastrophe climatique peut écarter C et D en bloc (§4.1). Les angles hors maillon de T (T5 à T11) ne sont listés que s'ils sont traités.
 
 | Code | Axe | Origine | Termes | Question Metabase (id) | Résultat |
 |---|---|---|---|---|---|
@@ -422,16 +428,18 @@ Dans les modèles, `<sujet>` (en-tête), `<thematique>` (commentaires, noms de C
 |---|---|---|---|---|
 | [7.1 Courbe journalière](#71-courbe-journalière-audiovisuel) | 0.3 | audiovisuel | occurrence, par heure de grille | `keywords`, `program_metadata` |
 | [7.2 Courbe hebdomadaire](#72-courbe-hebdomadaire-presse) | 0.3 | presse | article, part des articles de la semaine | `factiva_articles`, `stats_factiva_articles` |
-| [7.3 Axe par chaîne](#73-axe-par-chaîne-audiovisuel) | 2 et 3 | audiovisuel | chunk thématique, avec ses voisins (`_prev`, `_next`) | `thematic_extracts.<thematique>_keywords_fr`, `curated.chaine` |
-| [7.4 Axe par titre](#74-axe-par-titre-presse) | 2 et 3 | presse | article d'au moins 100 mots | `thematic_extracts.<thematique>_articles_fr`, `source_classification` |
-| [7.5 Posts LinkedIn](#75-posts-linkedin-de-quotaclimat) | 0 (angle) | posts LinkedIn de QuotaClimat | post | `wp_linkedin_posts` (base db_wordpress) |
+| [7.3 Axe par chaîne](#73-axe-par-chaîne-audiovisuel) | 3 | audiovisuel | chunk thématique, avec ses voisins (`_prev`, `_next`) | `thematic_extracts.<thematique>_keywords_fr`, `curated.chaine` |
+| [7.4 Axe par titre](#74-axe-par-titre-presse) | 3 | presse | article d'au moins 100 mots | `thematic_extracts.<thematique>_articles_fr`, `source_classification` |
+| [7.5 Posts LinkedIn](#75-posts-linkedin-de-quotaclimat) | 2 (axes) | posts LinkedIn de QuotaClimat | post | `wp_linkedin_posts` (base db_wordpress) |
 | [7.6 Relecture humaine](#76-relecture-humaine-des-chunks-et-voisins-audiovisuel) | contrôle (§3.6) | audiovisuel | chunk thématique, 25 tirés au hasard | `thematic_extracts.<thematique>_keywords_fr` |
 | [7.7 Relecture humaine](#77-relecture-humaine-des-articles-presse) | contrôle (§3.6) | presse | article d'au moins 100 mots, 25 tirés au hasard | `thematic_extracts.<thematique>_articles_fr`, `factiva_articles`, `source_classification` |
-| [7.8 Volume par chaîne](#78-volume-par-chaîne-audiovisuel) | 2 | audiovisuel | chunk thématique et minutes | `thematic_extracts.<thematique>_keywords_fr`, `curated.chaine` |
-| [7.9 Volume par média](#79-volume-par-média-presse) | 2 | presse | article, et part des articles du média | `thematic_extracts.<thematique>_articles_fr`, `stats_factiva_articles`, `source_classification` |
+| [7.8 Volume par chaîne](#78-volume-par-chaîne-audiovisuel) | 3 | audiovisuel | chunk thématique et minutes | `thematic_extracts.<thematique>_keywords_fr`, `curated.chaine` |
+| [7.9 Volume par média](#79-volume-par-média-presse) | 3 | presse | article, et part des articles du média | `thematic_extracts.<thematique>_articles_fr`, `stats_factiva_articles`, `source_classification` |
 | [7.10 Liste des périodes](#710-liste-des-périodes) | 1 à 3 | audiovisuel et presse | période extraite | `thematic_extracts.<thematique>_keywords_fr` |
+| [7.11 Pareto des termes](#711-pareto-des-termes-audiovisuel) | contrôle (§3.6) | audiovisuel | occurrence d'un terme, chaque chunk ou voisin une fois | `thematic_extracts.<thematique>_keywords_fr` |
+| [7.12 Pareto des termes](#712-pareto-des-termes-presse) | contrôle (§3.6) | presse | occurrence d'un terme, articles d'au moins 100 mots | `thematic_extracts.<thematique>_articles_fr` |
 
-Les modèles 7.5, 7.6 et 7.10, et le contrôle sans voisin (§3.6), servent à toute l'analyse : leurs questions sont à la racine de la collection de l'analyse, les autres dans ses sous-collections `AV` et `PE` (conventions Metabase, §1). La relecture presse (7.7) est dans `PE`.
+Les modèles 7.5, 7.6, 7.10 et 7.11 servent à toute l'analyse : leurs questions sont à la racine de la collection de l'analyse, les autres dans ses sous-collections `AV` et `PE` (conventions Metabase, §1). La relecture presse (7.7) et le Pareto presse (7.12) sont dans `PE`.
 
 ### 7.1 Courbe journalière, audiovisuel
 
@@ -439,7 +447,7 @@ Base Baromètre. Compte les mots du dictionnaire noyau détectés dans `keywords
 
 ```sql
 -- Média : audiovisuel
--- Question : AV - V2 - Courbe journalière <sujet>
+-- Question : AV - V1 - Courbe journalière <sujet>
 -- Description : occurrences des mots du dictionnaire <thematique> par heure de grille, par jour,
 --   toutes chaînes confondues (un chunk de 2 minutes peut contenir plusieurs occurrences).
 -- Tables : public.keywords (keywords_with_timestamp), public.program_metadata
@@ -496,7 +504,7 @@ Base Print Media DB. La courbe est hebdomadaire, pas journalière : quotidiens e
 
 ```sql
 -- Média : presse écrite
--- Question : PE - V2 - Courbe hebdomadaire <sujet>
+-- Question : PE - V1 - Courbe hebdomadaire <sujet>
 -- Description : articles dont le titre, le chapô ou le corps contient un mot du dictionnaire
 --   <thematique>, rapportés au nombre total d'articles de la semaine, par semaine (lundi, heure de Paris).
 -- Tables : public.factiva_articles (hors DUP), public.stats_factiva_articles
@@ -562,7 +570,7 @@ Affichage : courbe, `semaine` en x, `pct_articles_<thematique>` en y, annotée d
 
 ### 7.3 Axe par chaîne, audiovisuel
 
-Base Baromètre. Une question par maillon, qui regroupe tous ses axes : `AV - A - Constat`, `AV - B - Causes`, `AV - C - Conséquences`, `AV - D - Solutions` (exemples : questions 2429, 2426, 2436 et 2434 des inondations, construites sur ce modèle). Unité : chunk thématique de 2 minutes ; la table n'a qu'une ligne par chunk thématique. Un axe compte s'il apparaît dans le chunk ou dans ses voisins, les chunks précédent et suivant de la même chaîne (`plaintext_normalized_prev`, `plaintext_normalized_next`), même s'ils sont eux-mêmes thématiques : pas de dédoublonnage des voisins (§3.4). Les trois textes sont lus ensemble, séparés par ` /// ` pour qu'un terme ne soit pas lu à cheval sur deux chunks ; un voisin absent est ignoré (`concat_ws`). Ces requêtes ne calculent pas l'axe sur le chunk seul, pour rester rapides : c'est la question de contrôle sans voisin qui le fait (§3.6). Une ligne par période et par chaîne. La variable `{{period}}` (plusieurs valeurs possibles) reste toujours dans la requête : sans valeur, toutes les périodes ; quand la requête est trop longue, on la lance période par période (§7.10). Chaque chaîne porte son secteur et son type, lus dans `curated.chaine` (jointure `chaine_id = channel_name`), pour les ventilations public / privé et par type de média (§4.1) : `media_sector` vaut `Public` ou `Privé`, `media_type` vaut `Télévision généraliste`, `Info en continu` ou `Radio généraliste` (une radio d'information en continu, comme France Info, compte en information en continu). Un axe de plus : une regex, un drapeau et deux colonnes de plus. Un axe lu dans le dictionnaire OME (A5 des inondations) se construit dans une CTE sur `public.dictionary`, comme dans la question 2429.
+Base Baromètre. Une question par maillon, qui regroupe tous ses axes : `AV - A - Constat`, `AV - B - Causes`, `AV - C - Conséquences`, `AV - D - Solutions` (exemples : questions 2429, 2426, 2436 et 2434 des inondations, construites sur ce modèle). Unité : chunk thématique de 2 minutes ; la table n'a qu'une ligne par chunk thématique. Un axe compte s'il apparaît dans le chunk ou dans ses voisins, les chunks précédent et suivant de la même chaîne (`plaintext_normalized_prev`, `plaintext_normalized_next`), même s'ils sont eux-mêmes thématiques : pas de dédoublonnage des voisins (§3.4). Les trois textes sont lus ensemble, séparés par ` /// ` pour qu'un terme ne soit pas lu à cheval sur deux chunks ; un voisin absent est ignoré (`concat_ws`). Ces requêtes ne calculent pas l'axe sur le chunk seul, pour rester rapides. Une ligne par période et par chaîne. La variable `{{period}}` (plusieurs valeurs possibles) reste toujours dans la requête : sans valeur, toutes les périodes ; quand la requête est trop longue, on la lance période par période (§7.10). Chaque chaîne porte son secteur et son type, lus dans `curated.chaine` (jointure `chaine_id = channel_name`), pour les ventilations public / privé et par type de média (§4.1) : `media_sector` vaut `Public` ou `Privé`, `media_type` vaut `Télévision généraliste`, `Info en continu` ou `Radio généraliste` (une radio d'information en continu, comme France Info, compte en information en continu). Un axe de plus : une regex, un drapeau et deux colonnes de plus. Un axe lu dans le dictionnaire OME (A5 des inondations) se construit dans une CTE sur `public.dictionary`, comme dans la question 2429.
 
 ```sql
 -- Média : audiovisuel
@@ -648,7 +656,7 @@ Affichage : classement des titres en barres colorées par famille ; un titre sou
 
 ### 7.5 Posts LinkedIn de QuotaClimat
 
-Base db_wordpress (MySQL, Metabase id 5). Étape 0, avant le dictionnaire noyau : ce que QuotaClimat a déjà publié sur le sujet, avec l'engagement de chaque post, pour y piocher des angles et des questions (Angle de l'analyse). `LIKE` ignore la casse et les accents (collation MySQL) : `'%inondation%'` trouve aussi « Inondations ». Exemple : question 2433 (inondations).
+Base db_wordpress (MySQL, Metabase id 5). Étape 2, brainstorm des axes : ce que QuotaClimat a déjà publié sur le sujet, avec l'engagement de chaque post, pour y piocher des angles. `LIKE` ignore la casse et les accents (collation MySQL) : `'%inondation%'` trouve aussi « Inondations ». Exemple : question 2433 (inondations).
 
 ```sql
 -- Source : posts LinkedIn de QuotaClimat
@@ -679,7 +687,7 @@ Base Baromètre. Contrôle de précision (§3.6), lu par la personne responsable
 
 ```sql
 -- Média : audiovisuel
--- Question : AV - Contrôle - Relecture humaine chunks et voisins par axe
+-- Question : AV - CTRL - Relecture humaine chunks et voisins par axe
 -- Description : 25 chunks thématiques <sujet> détectés pour l'axe choisi (dans le chunk ou ses voisins), tirés au hasard
 --   à chaque exécution, avec le texte des chunks précédent et suivant et le premier terme trouvé dans chacun.
 --   Regex copiées des questions d'axes : à resynchroniser si leurs termes changent.
@@ -740,7 +748,7 @@ Base Print Media DB. Contrôle de précision (§3.6), lu par la personne respons
 
 ```sql
 -- Média : presse écrite
--- Question : PE - Contrôle - Relecture humaine articles par axe
+-- Question : PE - CTRL - Relecture humaine articles par axe
 -- Description : 25 articles <sujet> d'au moins 100 mots où l'axe choisi apparaît (titre, chapô ou corps), tirés au
 --   hasard à chaque exécution, avec le texte d'origine et le premier terme trouvé dans chaque partie.
 --   Regex copiées des questions d'axes presse : à resynchroniser si leurs termes changent.
@@ -813,11 +821,11 @@ Affichage : export CSV ou JSON lu dans la visionneuse d'articles.
 
 ### 7.8 Volume par chaîne, audiovisuel
 
-Base Baromètre. Axe V1 : nombre de chunks thématiques et minutes correspondantes (2 minutes par chunk), une ligne par période et par chaîne. La table n'a qu'une ligne par chunk thématique : pas de filtre à poser. Secteur et type de la chaîne lus dans `curated.chaine`, comme au §7.3. Exemple : question 2427 (inondations).
+Base Baromètre. Axe V2 : nombre de chunks thématiques et minutes correspondantes (2 minutes par chunk), une ligne par période et par chaîne. La table n'a qu'une ligne par chunk thématique : pas de filtre à poser. Secteur et type de la chaîne lus dans `curated.chaine`, comme au §7.3. Exemple : question 2427 (inondations).
 
 ```sql
 -- Média : audiovisuel
--- Question : AV - V1 - Volume
+-- Question : AV - V2 - Volume
 -- Description : nombre de chunks thématiques <sujet> et minutes correspondantes (2 min par chunk), par chaîne.
 --   Une ligne par période et par chaîne.
 -- Tables : thematic_extracts.<thematique>_keywords_fr, curated.chaine
@@ -841,11 +849,11 @@ Affichage : tableau, ou classement des chaînes en barres.
 
 ### 7.9 Volume par média, presse
 
-Base Print Media DB. Axe V1 : nombre d'articles par média et part dans le total des articles du média sur la période. Un média (`media_all`) additionne ses éditions papier et web ; une source absente de `source_classification` garde son `source_name`. Deux comptes : `nb_articles_<thematique>` (articles d'au moins 100 mots, le corpus des axes, §2) et `nb_articles_<thematique>_tous` (tous les articles). La part se calcule sur tous les articles, comme son dénominateur `stats_factiva_articles` (§7.2), sur les jours de Paris. Les bornes des périodes sont recopiées du YAML : à resynchroniser quand l'entrée change. Exemple : question 2480 (inondations).
+Base Print Media DB. Axe V2 : nombre d'articles par média et part dans le total des articles du média sur la période. Un média (`media_all`) additionne ses éditions papier et web ; une source absente de `source_classification` garde son `source_name`. Deux comptes : `nb_articles_<thematique>` (articles d'au moins 100 mots, le corpus des axes, §2) et `nb_articles_<thematique>_tous` (tous les articles). La part se calcule sur tous les articles, comme son dénominateur `stats_factiva_articles` (§7.2), sur les jours de Paris. Les bornes des périodes sont recopiées du YAML : à resynchroniser quand l'entrée change. Exemple : question 2480 (inondations).
 
 ```sql
 -- Média : presse écrite
--- Question : PE - V1 - Volume
+-- Question : PE - V2 - Volume
 -- Description : articles <sujet> par média, en nombre et en part du total des articles du média sur la période
 --   (stats_factiva_articles, tous les articles). Une ligne par période et par média (media_all : éditions papier et
 --   web additionnées ; source_name pour une source non classée). Périodes recopiées du YAML.
@@ -925,3 +933,154 @@ ORDER BY 1;
 ```
 
 Affichage : tableau.
+
+### 7.11 Pareto des termes, audiovisuel
+
+Base Baromètre. Contrôle : nombre d'occurrences de chaque terme, du plus dit au moins dit, avec la part cumulée, pour repérer les termes qui portent le corpus ou un axe à eux seuls et ceux qui ne sont jamais dits. La variable `{{maillon}}` choisit les termes :
+
+- `noyau` : les termes du dictionnaire noyau ;
+- `all` (tous les axes) ou un maillon (`constat`, `causes`, `consequences`, `solutions`, `themes`) : les termes des axes.
+
+Les occurrences se comptent dans le texte (`regexp_count`), pas dans `keywords_found`. Chaque chunk, thématique ou voisin, compte une fois, repéré par sa chaîne et son heure, avec le texte du chunk thématique en priorité (§3.4). `all` laisse de côté le noyau, qui écraserait le reste, et les axes qui reprennent les termes d'un autre (B1 des inondations répète A1). La part cumulée se calcule sur les termes affichés. Les termes sont recopiés des questions d'axes au moment de la création ; on ne les resynchronise pas d'office quand un terme change. Un axe lu dans `public.dictionary` s'ajoute par un `UNION ALL` dans la CTE `termes`, avec ses mots normalisés et échappés (CTE `mots_a5` de la question 2430). Requête lourde : la lancer période par période (§7.10). Question à la racine de la collection, `AV - CTRL - Pareto par mot clé`. Exemple : question 2430 (inondations).
+
+```sql
+-- Média : audiovisuel
+-- Question : AV - CTRL - Pareto par mot clé
+-- Description : occurrences de chaque terme du dictionnaire noyau <sujet> et des axes dans les chunks thématiques
+--   et leurs voisins (chaque chunk une fois), en Pareto. Variable maillon : all (tous les axes, sans le noyau ni les
+--   axes qui en répètent un autre), noyau, constat, causes, consequences, solutions ou themes ; la part cumulée se
+--   calcule sur les termes affichés. Une ligne = un terme.
+-- Tables : thematic_extracts.<thematique>_keywords_fr
+WITH filtre AS (
+    SELECT lower(COALESCE(NULLIF(trim({{maillon}}), ''), 'all')) AS m
+),
+-- un terme par ligne, sous forme normalisée (§3.5) : maillon, code de l'axe, terme
+termes_ecrits(maillon, axe, terme) AS (
+    VALUES
+        -- dictionnaire noyau (entrée <thematique> > keywords > french > audiovisuel du YAML, avec pluriels)
+        ('noyau', 'noyau', '<terme>'), ('noyau', 'noyau', '<terme>'),
+        -- A1 <nom de l'axe>
+        ('constat', 'A1', '<terme>'), ('constat', 'A1', '<terme>'),
+        -- B1 <nom de l'axe>
+        ('causes', 'B1', '<terme>'),
+        -- C1 <nom de l'axe>
+        ('consequences', 'C1', '<terme>'),
+        -- D1 <nom de l'axe>
+        ('solutions', 'D1', '<terme>'),
+        -- T1 <nom du thème>
+        ('themes', 'T1', '<terme>')
+),
+termes AS (
+    SELECT t.*
+    FROM termes_ecrits t
+    CROSS JOIN filtre f
+    -- all : tous les axes, sans le noyau ni les axes qui en répètent un autre
+    WHERE (f.m = 'all' AND t.axe NOT IN ('noyau' /*, '<axe répété>' */)) OR t.maillon = f.m
+),
+-- chaque chunk une fois, thématique ou voisin, le texte du chunk thématique en priorité
+chunks AS (
+    SELECT DISTINCT ON (k.period, k.channel_name, t.start) t.texte
+    FROM thematic_extracts.<thematique>_keywords_fr k
+    CROSS JOIN LATERAL (VALUES
+        (k.start,      k.plaintext_normalized,      true),
+        (k.start_prev, k.plaintext_normalized_prev, false),
+        (k.start_next, k.plaintext_normalized_next, false)
+    ) AS t(start, texte, est_thematique)
+    WHERE t.start IS NOT NULL  -- côté sans voisin
+      [[AND k.period IN ({{period}})]]  -- variable Period, liste déroulante des id du YAML
+    ORDER BY k.period, k.channel_name, t.start, t.est_thematique DESC
+),
+-- occurrences de chaque terme : chaque paire terme × chunk n'est testée qu'une fois
+occurrences AS (
+    SELECT
+        t.maillon,
+        t.axe,
+        t.terme,
+        COALESCE(SUM(n.nb), 0)           AS nb_occurrences,
+        COUNT(*) FILTER (WHERE n.nb > 0) AS nb_chunks
+    FROM termes t
+    CROSS JOIN chunks c
+    CROSS JOIN LATERAL (SELECT regexp_count(c.texte, '\y(' || t.terme || ')\y') AS nb) n
+    GROUP BY t.maillon, t.axe, t.terme
+)
+SELECT
+    ROW_NUMBER() OVER (ORDER BY nb_occurrences DESC, axe, terme) AS rang,
+    axe,
+    terme,
+    nb_occurrences,
+    nb_chunks,
+    100.0 * SUM(nb_occurrences) OVER (ORDER BY nb_occurrences DESC, axe, terme ROWS UNBOUNDED PRECEDING)
+          / NULLIF(SUM(nb_occurrences) OVER (), 0) AS pct_cumule,
+    maillon
+FROM occurrences
+ORDER BY rang;
+```
+
+Variables : `maillon` (texte, requise, `all` par défaut), `period` (texte, liste déroulante du §7.10). Affichage : combo, barres pour `nb_occurrences` et courbe pour `pct_cumule` (axe de droite), abscisse `terme` en échelle ordinale.
+
+### 7.12 Pareto des termes, presse
+
+Base Print Media DB. Même requête que le §7.11, sur les articles : le texte compté est `concat_ws(' ', title_normalized, snippet_normalized, body_normalized)`, des articles d'au moins 100 mots (le corpus des axes, §2), chaque article une fois ; `nb_chunks` devient `nb_articles`. Les termes des axes sont ceux de l'audiovisuel (les questions d'axes presse reprennent les mêmes regex) ; ceux du noyau sont les regex presse de l'entrée du YAML (`keywords > french > presse`), écrites sous forme normalisée avec leurs variantes (`crues?`, `coulees? de boue`). Requête lourde, les corps d'articles étant longs : la lancer période par période. Question dans la sous-collection `PE`, `PE - CTRL - Pareto par mot clé`. Exemple : question 2549 (inondations).
+
+```sql
+-- Média : presse écrite
+-- Question : PE - CTRL - Pareto par mot clé
+-- Description : occurrences de chaque terme du dictionnaire noyau <sujet> (regex presse du YAML) et des axes dans les
+--   articles <sujet> d'au moins 100 mots (titre, chapô et corps, chaque article une fois), en Pareto. Variable maillon :
+--   all (tous les axes, sans le noyau ni les axes qui en répètent un autre), noyau, constat, causes, consequences,
+--   solutions ou themes ; la part cumulée se calcule sur les termes affichés. Une ligne = un terme.
+-- Tables : thematic_extracts.<thematique>_articles_fr
+WITH filtre AS (
+    SELECT lower(COALESCE(NULLIF(trim({{maillon}}), ''), 'all')) AS m
+),
+-- un terme par ligne, sous forme normalisée (§3.5) : maillon, code de l'axe, terme
+termes_ecrits(maillon, axe, terme) AS (
+    VALUES
+        -- dictionnaire noyau (entrée <thematique> > keywords > french > presse du YAML)
+        ('noyau', 'noyau', '<terme>'), ('noyau', 'noyau', '<terme>'),
+        -- A1 <nom de l'axe> (mêmes termes que le §7.11)
+        ('constat', 'A1', '<terme>'),
+        -- T1 <nom du thème>
+        ('themes', 'T1', '<terme>')
+),
+termes AS (
+    SELECT t.*
+    FROM termes_ecrits t
+    CROSS JOIN filtre f
+    -- all : tous les axes, sans le noyau ni les axes qui en répètent un autre
+    WHERE (f.m = 'all' AND t.axe NOT IN ('noyau' /*, '<axe répété>' */)) OR t.maillon = f.m
+),
+-- chaque article une fois : titre, chapô et corps, articles d'au moins 100 mots (corpus des axes)
+articles AS (
+    SELECT concat_ws(' ', a.title_normalized, a.snippet_normalized, a.body_normalized) AS texte
+    FROM thematic_extracts.<thematique>_articles_fr a
+    WHERE a.word_count >= 100
+      [[AND a.period = {{period}}]]  -- variable Period, liste déroulante des id du YAML
+),
+-- occurrences de chaque terme : chaque paire terme × article n'est testée qu'une fois
+occurrences AS (
+    SELECT
+        t.maillon,
+        t.axe,
+        t.terme,
+        COALESCE(SUM(n.nb), 0)           AS nb_occurrences,
+        COUNT(*) FILTER (WHERE n.nb > 0) AS nb_articles
+    FROM termes t
+    CROSS JOIN articles ar
+    CROSS JOIN LATERAL (SELECT regexp_count(ar.texte, '\y(' || t.terme || ')\y') AS nb) n
+    GROUP BY t.maillon, t.axe, t.terme
+)
+SELECT
+    ROW_NUMBER() OVER (ORDER BY nb_occurrences DESC, axe, terme) AS rang,
+    axe,
+    terme,
+    nb_occurrences,
+    nb_articles,
+    100.0 * SUM(nb_occurrences) OVER (ORDER BY nb_occurrences DESC, axe, terme ROWS UNBOUNDED PRECEDING)
+          / NULLIF(SUM(nb_occurrences) OVER (), 0) AS pct_cumule,
+    maillon
+FROM occurrences
+ORDER BY rang;
+```
+
+Variables et affichage : comme au §7.11.

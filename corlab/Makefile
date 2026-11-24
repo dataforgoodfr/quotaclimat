@@ -18,14 +18,14 @@ syntax: ## Check the playbook syntax
 check: ## Dry run against the server
 	$(LOAD_ENV); cd ansible; mise exec -- ansible-playbook playbook.yml --check --diff $(if $(tags),--tags $(tags),)
 
-ansible: ## Deploy Traefik, Postgres and Metabase (make tags=metabase ansible for one role)
+ansible: ## Deploy Postgres and Metabase (make tags=metabase ansible for one role)
 	$(LOAD_ENV); cd ansible; mise exec -- ansible-playbook playbook.yml $(if $(tags),--tags $(tags),)
 
 migrate: ## Apply the alembic migrations of the repo to the barometre database
 	$(LOAD_ENV); cd ansible; mise exec -- ansible-playbook playbook.yml --tags migrate
 
 tunnel: ## Forward the server's Postgres to localhost:$(local_port) (Ctrl-C to stop)
-	$(LOAD_ENV); ssh -p $${CORLAB_SSH_PORT:-2251} -N -L $(local_port):127.0.0.1:6436 $${CORLAB_SSH_USER:-ubuntu}@$$CORLAB_HOST_IP
+	$(LOAD_ENV); ssh -p $${CORLAB_SSH_PORT:-2251} -N -L $(local_port):127.0.0.1:5432 $${CORLAB_SSH_USER:-ubuntu}@$$CORLAB_HOST_IP
 
 psql: ## Open psql on the barometre database, on the server
 	$(LOAD_ENV); ssh -p $${CORLAB_SSH_PORT:-2251} -t $${CORLAB_SSH_USER:-ubuntu}@$$CORLAB_HOST_IP \

@@ -120,23 +120,14 @@
     port: "{{ ssh_port }}"
     proto: tcp
 
-- name: Allow HTTP through UFW
+- name: Allow Postgres and Metabase through UFW (source IPs are restricted in DOCKER-USER)
   community.general.ufw:
     rule: allow
-    port: "80"
+    port: "{{ item }}"
     proto: tcp
-
-- name: Allow HTTPS through UFW
-  community.general.ufw:
-    rule: allow
-    port: "443"
-    proto: tcp
-
-- name: Allow external access to Postgres through UFW
-  community.general.ufw:
-    rule: allow
-    port: "6436"
-    proto: tcp
+  loop:
+    - "{{ postgres_published_port }}"
+    - "{{ metabase_published_port }}"
 
 - name: Enable UFW
   community.general.ufw:
@@ -193,11 +184,6 @@
     name: docker
     enabled: true
     state: started
-
-- name: Create shared Docker network for Traefik
-  community.docker.docker_network:
-    name: traefik-public
-    state: present
 
 - name: Create services base directory
   file:

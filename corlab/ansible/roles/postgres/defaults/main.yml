@@ -1,5 +1,3 @@
 ---
 postgres_service_dir: /opt/services/postgres
 postgres_version: "15"
-# Host port published for external services (container port 5432)
-postgres_published_port: 6436

@@ -14,20 +14,17 @@ CORLAB_DEPLOY_USER=
 # Optional: its password, only set when the account is created (needs passlib locally)
 CORLAB_DEPLOY_USER_PASSWORD=
 
-# --- Traefik / TLS (DNS A records of both domains must point to CORLAB_HOST_IP) ---
-ACME_EMAIL=
-CORLAB_TRAEFIK_DOMAIN=traefik.corlab.example.org
-CORLAB_METABASE_DOMAIN=metabase.corlab.example.org
-# echo $(htpasswd -nB admin) | sed -e s/\\$/\\$\\$/g
-CORLAB_TRAEFIK_DASHBOARD_AUTH=
-
-# --- Postgres ---
+# --- Postgres (published on 5432) ---
 CORLAB_PG_USER=corlab
 CORLAB_PG_PASSWORD=
-# Comma-separated IPv4/CIDR allowed to reach port 6436 (at least one), e.g. 203.0.113.10,198.51.100.7
+# Comma-separated IPv4/CIDR allowed to reach port 5432 (at least one), e.g. 203.0.113.10,198.51.100.7
 CORLAB_PG_ALLOWED_IPS=
 # Optional, default: barometre
 CORLAB_BAROMETRE_DB=barometre
 
-# --- Metabase application database (role and database `metabase`) ---
+# --- Metabase (published on 3000) ---
+# Application database (role and database `metabase`)
 CORLAB_METABASE_DB_PASSWORD=
+# Optional: comma-separated IPv4/CIDR allowed to reach port 3000 (e.g. the reverse proxy machine).
+# Empty: port 3000 is not filtered.
+CORLAB_METABASE_ALLOWED_IPS=

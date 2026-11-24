@@ -17,22 +17,16 @@ services:
       MB_DB_DBNAME: "{{ metabase_db_name }}"
       MB_DB_USER: "{{ metabase_db_user }}"
       MB_DB_PASS: "{{ metabase_db_password }}"
-      MB_SITE_URL: "https://{{ metabase_domain }}"
       JAVA_TIMEZONE: Europe/Paris
       JAVA_OPTS: "{{ metabase_java_opts }}"
-    # No published port: Metabase is only reached through Traefik (443)
+    # Published on all interfaces: restrict the source IPs in the DOCKER-USER chain
+    # (see the postgres role, CORLAB_METABASE_ALLOWED_IPS)
+    ports:
+      - "{{ metabase_published_port }}:3000"
     networks:
-      - traefik-public
       - corlab-internal
     security_opt:
       - no-new-privileges:true
-    labels:
-      - traefik.enable=true
-      - traefik.docker.network=traefik-public
-      - "traefik.http.routers.metabase.rule=Host(`{{ metabase_domain }}`)"
-      - traefik.http.routers.metabase.entrypoints=websecure
-      - traefik.http.routers.metabase.tls.certresolver=letsencrypt
-      - traefik.http.services.metabase.loadbalancer.server.port=3000
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://localhost:3000/api/health"]
       interval: 15s
@@ -41,9 +35,6 @@ services:
       start_period: 120s
 
 networks:
-  traefik-public:
-    name: traefik-public
-    external: true
   corlab-internal:
     name: corlab-internal
     external: true

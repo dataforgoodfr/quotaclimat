@@ -23,7 +23,7 @@ Flow names are the Kestra ids with `_` instead of `-` (`rrs/rrs-pollution` → `
 
 `make tags=windmill ansible` (role `ansible/roles/windmill`) deploys everything, after starting Windmill:
 
-1. **Secrets** (`tasks/secrets.yml`): every entry of `kestra_secrets` and `kestra_secrets_dev` (`ansible/playbook.yml`, read from `.env.secrets`) is written as the secret variable `f/secrets/<NAME>`, through the Windmill API. A variable is written only when it is missing or its value changed. Entries left empty in `.env.secrets` are skipped and listed ("Empty, skipped: ...").
+1. **Secrets** (`tasks/secrets.yml`): every entry of `kestra_secrets` and `kestra_secrets_dev` (`ansible/playbook.yml`, read from `.env.secrets`) is written as the secret variable `f/secrets/<NAME>`, through the Windmill API. A variable is written only when it is missing or its value changed. Entries left empty in `.env.secrets` are skipped and listed ("Empty, skipped: ..."). The groups of `windmill_secrets_folder_perms` (`ansible/roles/windmill/defaults/main.yml`, today `g/Devs` read-only) are added to the permissions of the folder `f/secrets` (see [Who can read the secrets](#who-can-read-the-secrets)).
 2. **SMTP** (`tasks/smtp.yml`): the instance's invitation emails use the Brevo account of GlitchTip, with `WINDMILL_FROM_EMAIL` as sender (see `infrastructure/Readme.md`, "Orchestrator deployment").
 3. **Assignable worker tags** (`tasks/custom_tags.yml`): the tags of `windmill_custom_tags` (`ansible/roles/windmill/defaults/main.yml`, today `dbt_serial`) are added to the instance setting `custom_tags` (Instance settings → Workers → Assignable tags), keeping the tags already there. Without it, only a superadmin can run a step carrying such a tag: a flow started by hand by another user fails with `Tag dbt_serial is not included in the allowed CUSTOM_TAGS, which only super admins can go beyond`, while the schedules, deployed with the superadmin token, still pass.
 4. **Flows and scripts** (`tasks/flows.yml`): `infrastructure/windmill/` is copied to the server and pushed with the Windmill CLI (`wmill sync push`, version pinned to the server's), run in a `node` container on the `windmill-internal` network.
@@ -121,6 +121,12 @@ The flows read the secrets as `f/secrets/<NAME>`, the names of the Kestra secret
 3. `make tags=windmill ansible`.
 
 Values are changed the same way (edit `.env.secrets`, deploy): a value edited in the UI is overwritten by the next deploy.
+
+### Who can read the secrets
+
+A flow started by hand runs as the person who starts it: its steps read `f/secrets/<NAME>` with that person's permissions. The folder `f/secrets` is therefore readable by `g/Devs` (read-only, `windmill_secrets_folder_perms`), on top of its creator (the owner of `WINDMILL_TOKEN`). Without it, a flow started by hand fails on its first secret with `Variable exists but you don't have access to it`, while the schedules, which run as the token owner, still pass. A member of `g/Devs` can thus read every secret value, prod included. A user outside the groups of `windmill_secrets_folder_perms` (e.g. `g/Operators`) cannot run a flow that reads a secret.
+
+The task only adds the groups of `windmill_secrets_folder_perms` and keeps the other permissions of the folder: a group removed from the list keeps its access until it is removed in the UI (folder `secrets` → permissions).
 
 ## Failure alerts
 

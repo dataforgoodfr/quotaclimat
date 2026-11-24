@@ -559,16 +559,16 @@
       "mode": "auto",
       "entries": {
         "backend": {
-          "label": "Job, 1er passage"
+          "label": "Job de la chaîne"
         },
         "messagebus": {
-          "label": "Même job relancé (2e passage)"
+          "label": "Même job relancé"
         },
         "external": {
           "label": "Google Sheet rempli à la main"
         },
         "cloud": {
-          "label": "Job hors chaîne"
+          "label": "Job optionnel ou hors chaîne"
         },
         "database": {
           "label": "Tables lues par Metabase"
@@ -587,18 +587,21 @@
     },
     {
       "id": "p2",
-      "label": "2e passage : pubs fusionnées restées sans classement"
+      "label": "2e passage : la fusion crée des pubs à classer"
     },
     {
       "id": "out",
       "label": "Contrôle et analyses"
+    },
+    {
+      "id": "p3",
+      "label": "3e passage (optionnel) : corrections manuelles"
     }
   ],
   "mainPath": [
     "det",
     "exp1",
-    "cla1",
-    "fus1"
+    "cla1"
   ],
   "nodes": [
     {
@@ -717,8 +720,8 @@
     },
     {
       "id": "fus1",
-      "lane": "p1",
-      "col": 3,
+      "lane": "p2",
+      "col": 2,
       "type": "backend",
       "label": "4. Fusion des morceaux",
       "sublabel": "fusionne, puis fait hériter",
@@ -781,11 +784,64 @@
       ]
     },
     {
+      "id": "corsheet",
+      "lane": "p3",
+      "col": 0,
+      "type": "external",
+      "label": "Corrections_publicites",
+      "sublabel": "rempli à la main",
+      "explanation": "Rempli à la main, notamment après le contrôle des mosaïques (étape 7) et des paires de duplicate_ads. Chaque ligne n'est traitée qu'une fois (traite_le).",
+      "sources": [
+        {
+          "path": "quotaclimat/data_ingestion/advertising/s04_consolidation/e02_manual_corrections/run.py",
+          "line": 1,
+          "end_line": 18,
+          "label": "onglets"
+        }
+      ]
+    },
+    {
+      "id": "cor",
+      "lane": "p3",
+      "col": 1,
+      "type": "cloud",
+      "label": "Corrections manuelles",
+      "sublabel": "s04 e02",
+      "tag": "détail par onglet",
+      "href": "corrections_manuelles.html",
+      "explanation": "Applique les onglets du Sheet : correction_ads, nouvelle_ad, dechets, reattribution, fusion. Ensuite : la classification seulement pour une nouvelle_ad ou une pub renvoyée en ad_type_done, puis dbt. Le détail par onglet est dans corrections_manuelles.",
+      "sources": [
+        {
+          "path": "quotaclimat/data_ingestion/advertising/s04_consolidation/e02_manual_corrections/run.py",
+          "line": 353,
+          "end_line": 362,
+          "label": "traitement par onglet"
+        }
+      ]
+    },
+    {
+      "id": "cla3",
+      "lane": "p3",
+      "col": 2,
+      "type": "messagebus",
+      "label": "Classification",
+      "sublabel": "pubs créées ou renvoyées",
+      "explanation": "Même pipeline que l'étape 3. Ne prend que les pubs qui l'attendent : une nouvelle_ad (statut vide, transcription comprise) ou une pub renvoyée en ad_type_done. Ne réécrit jamais une pub corrigée à la main.",
+      "sources": [
+        {
+          "path": "quotaclimat/data_ingestion/advertising/s03_classification/utils/database.py",
+          "line": 29,
+          "end_line": 30,
+          "label": "jamais les manual"
+        }
+      ]
+    },
+    {
       "id": "shots",
       "lane": "out",
       "col": 3,
       "type": "backend",
-      "label": "7. Captures",
+      "label": "7. Mosaïques",
       "sublabel": "s05 e02 · statuts finaux",
       "explanation": "Mosaïques des pubs et des occurrences pour le contrôle visuel dans Metabase. Ne prend que les pubs au statut final, d'où sa place après la classification. Les mosaïques d'occurrence ont besoin des archives mediatree.",
       "sources": [
@@ -849,6 +905,14 @@
       "role": "branch"
     },
     {
+      "id": "dict-fus1",
+      "from": "dict",
+      "to": "fus1",
+      "label": "seed dbt",
+      "variant": "dashed",
+      "role": "branch"
+    },
+    {
       "id": "det-exp1",
       "from": "det",
       "to": "exp1",
@@ -892,15 +956,33 @@
       "to": "fus1",
       "label": "run suivant : héritage",
       "variant": "dashed",
-      "role": "return",
-      "fromSide": "top",
-      "toSide": "right"
+      "role": "return"
     },
     {
       "id": "shots-dbt",
       "from": "shots",
       "to": "dbt",
       "variant": "emphasis"
+    },
+    {
+      "id": "corsheet-cor",
+      "from": "corsheet",
+      "to": "cor",
+      "variant": "dashed"
+    },
+    {
+      "id": "cor-cla3",
+      "from": "cor",
+      "to": "cla3",
+      "label": "si besoin",
+      "variant": "dashed"
+    },
+    {
+      "id": "cla3-dbt",
+      "from": "cla3",
+      "to": "dbt",
+      "label": "puis dbt",
+      "variant": "dashed"
     },
     {
       "id": "dbt-inv",
@@ -916,9 +998,9 @@
       "label": "relu au dbt suivant",
       "variant": "dashed",
       "role": "return",
-      "fromSide": "bottom",
-      "toSide": "bottom",
-      "route": "bottom-channel"
+      "fromSide": "top",
+      "toSide": "top",
+      "route": "up-channel"
     }
   ],
   "cards": [
@@ -926,16 +1008,17 @@
       "dot": "amber",
       "title": "Étapes 5 et 6 : pourquoi relancer",
       "items": [
-        "Une pub fusionnée naît sans vidéo. Elle prend le classement de ses morceaux quand ils sont tous classés pareil ; sinon elle reste sans classement.",
+        "La fusion (4) ouvre ce passage : une pub fusionnée naît sans vidéo. Elle prend le classement de ses morceaux quand ils sont tous classés pareil ; sinon elle reste sans classement.",
         "5 et 6 la traitent alors comme une nouvelle pub, sur sa propre vidéo.",
         "Il n'y a pas de job d'héritage à part : chaque run de la fusion le retente pour toutes les fusions sans classement. Détail : vie_pub_fusionnee.html."
       ]
     },
     {
       "dot": "slate",
-      "title": "Corrections manuelles (optionnel)",
+      "title": "3e passage : corrections (optionnel)",
       "items": [
-        "Hors de cette chaîne : voir corrections_manuelles.html, qui dit quels flows relancer après chaque onglet."
+        "Classification seulement pour une nouvelle_ad ou une pub renvoyée, puis dbt. Les autres onglets n'ont besoin que de dbt.",
+        "Détail par onglet : corrections_manuelles.html."
       ]
     },
     {
@@ -943,7 +1026,7 @@
       "title": "Fusion et dictionnaire",
       "items": [
         "La fusion apparie deux morceaux s'ils ont la même marque : celle que le dictionnaire a orthographiée à l'étape 3.",
-        "Un seul usage direct : si les morceaux ont la même marque mais pas la même catégorie, elle rejoue le dictionnaire (copie dbt) sur la transcription entière. Sinon, catégorie des morceaux les plus longs."
+        "Usage direct (flèche seed dbt) : si les morceaux ont la même marque mais pas la même catégorie, elle rejoue le dictionnaire sur la transcription entière. Sinon, catégorie des morceaux les plus longs."
       ]
     },
     {

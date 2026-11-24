@@ -123,6 +123,7 @@ def cas_de_mesinfo_test_source() -> dict:
 # validated misinformation cases of the labelstudio seeds (see test_cas_de_mesinformation)
 CAS_FRANCEINFOTV = "70ff0eebb0d606feacde156e1584139ef1bea0d3a5f6b100dec9cb437617a23a"
 CAS_SUD_RADIO = "8c3c2001a96d3c2e2ede323a6115fd7948229baa56385f69cfbaa5555f0a13e0"
+CAS_EUROPE1 = "000dee7a4b8ef6cd99d8f9b58dc85505ddcee214fc7f756b569f4d1477e52c5a"
 CAS_TARGET_HEADERS = [
     "ENR", "Prix élec.", "Nucléaire", "Fossiles", "VE", "Thermique", "Politiques auto", "Aérien",
     "Vélo / mobilités douces", "Train / collectifs", "Rénovation", "Clim", "Élevage", "Pesticides / irrigation",
@@ -399,15 +400,17 @@ def load_test_external_sources():
                "Explication (debunk)", "Extrait"],
             # attacks the electric vehicle, its reference direction: PYTEST_AUTO_EV attacked
             cas_affirmation_row("0", CAS_FRANCEINFOTV, {"VE": "attaque"}),
-            # defends the combustion car (reference direction, nothing attacked in the grid) and the electric one
-            # (not its reference direction): no category
+            # defends the combustion car (nothing attacked in the grid) and the electric one: PYTEST_AUTO_ICE
+            # attacked through the grid row VE défend (not through VE attaque)
             cas_affirmation_row("1", CAS_FRANCEINFOTV, {"Thermique": "défend", "VE": "défend"}),
             # defends livestock farming: PYTEST_FOOD_SNACK attacked (plant-based substitutes)
             cas_affirmation_row("2", CAS_FRANCEINFOTV, {"Élevage": "défend"}),
-            # in the sheet, other direction only (spaces and case ignored): targets but no category
+            # spaces and case ignored: VE défend, PYTEST_AUTO_ICE attacked
             cas_affirmation_row("3", CAS_SUD_RADIO, {"VE": " Défend "}),
             # case not validated in Label Studio: in cas_categorie_visee only
             cas_affirmation_row("4", "pytest_cas_non_valide", {"VE": "attaque"}),
+            # in the sheet, direction without any grid row: targets but no category
+            cas_affirmation_row("5", CAS_EUROPE1, {"Thermique": "attaque"}),
         ],
         "3_grille_binaire": [
             [
@@ -418,6 +421,9 @@ def load_test_external_sources():
              "Automobile", "-3", "1", "Gardé : cible directe."],
             ["VE", "Véhicule électrique", "Cible produit", "attaque", "PYTEST_AUTO_ICE", "Voiture thermique",
              "Automobile", "-1", "0", "Retiré : lien indirect."],
+            # the same target in the other direction: defending the electric car attacks the combustion one
+            ["VE", "Véhicule électrique", "Cible produit", "défend", "PYTEST_AUTO_ICE", "Voiture thermique",
+             "Automobile", "-2", "1", "Gardé."],
             ["VT", "Véhicule thermique et carburants", "Cible produit", "défend", "PYTEST_AUTO_ICE",
              "Voiture thermique", "Automobile", "3", "0", "Retiré : la cible conforte ce produit."],
             ["ELV", "Élevage, viande et lait", "Cible produit", "défend", "PYTEST_FOOD_SNACK", "Snacks",
@@ -785,8 +791,8 @@ def test_cas_de_mesinformation_emission(db_connection):
 
 
 def test_cas_categorie_visee(db_connection):
-    """Ad categories attacked by the claims of the cases in the reference direction of their target, with
-    produit_vise = 1 in the binary grid of the Cas_de_mesinfo sheet."""
+    """Ad categories attacked by the claims of the cases: same target and same direction as a row of the binary grid
+    of the Cas_de_mesinfo sheet with produit_vise = 1."""
     with db_connection.cursor() as cur:
         cur.execute("""
             SELECT affirmation_id, cible_code, sens, est_sens_reference
@@ -800,34 +806,40 @@ def test_cas_categorie_visee(db_connection):
             ("2", "ELV", "défend", True),
             ("3", "VE", "défend", False),
             ("4", "VE", "attaque", True),
+            ("5", "VT", "attaque", False),
         ]
         cur.execute("""
-            SELECT task_aggregate_id, cat_code, categorie, secteur, cibles, nb_affirmations
+            SELECT task_aggregate_id, cat_code, categorie, secteur, cibles, cibles_sens, nb_affirmations
             FROM analytics.cas_categorie_visee
             ORDER BY task_aggregate_id, cat_code
         """)
         assert cur.fetchall() == [
-            (CAS_FRANCEINFOTV, "PYTEST_AUTO_EV", "Voiture électrique", "Automobile", ["VE"], 1),
-            (CAS_FRANCEINFOTV, "PYTEST_FOOD_SNACK", "Snacks", "Alimentation", ["ELV"], 1),
-            ("pytest_cas_non_valide", "PYTEST_AUTO_EV", "Voiture électrique", "Automobile", ["VE"], 1),
+            (CAS_FRANCEINFOTV, "PYTEST_AUTO_EV", "Voiture électrique", "Automobile", ["VE"], ["VE attaque"], 1),
+            # VE défend only: not through the row VE attaque of PYTEST_AUTO_ICE (produit_vise = 0)
+            (CAS_FRANCEINFOTV, "PYTEST_AUTO_ICE", "Voiture thermique", "Automobile", ["VE"], ["VE défend"], 1),
+            (CAS_FRANCEINFOTV, "PYTEST_FOOD_SNACK", "Snacks", "Alimentation", ["ELV"], ["ELV défend"], 1),
+            (CAS_SUD_RADIO, "PYTEST_AUTO_ICE", "Voiture thermique", "Automobile", ["VE"], ["VE défend"], 1),
+            ("pytest_cas_non_valide", "PYTEST_AUTO_EV", "Voiture électrique", "Automobile", ["VE"], ["VE attaque"], 1),
         ]
         cur.execute("""
-            SELECT task_aggregate_id, cibles, categories_visees
+            SELECT task_aggregate_id, cibles, cibles_sens, categories_visees
             FROM analytics.cas_de_mesinformation
-            WHERE task_aggregate_id IN (%s, %s)
+            WHERE task_aggregate_id IN (%s, %s, %s)
             ORDER BY task_aggregate_id
-        """, (CAS_FRANCEINFOTV, CAS_SUD_RADIO))
+        """, (CAS_FRANCEINFOTV, CAS_SUD_RADIO, CAS_EUROPE1))
         assert cur.fetchall() == [
-            (CAS_FRANCEINFOTV, ["ELV", "VE", "VT"], ["PYTEST_AUTO_EV", "PYTEST_FOOD_SNACK"]),
             # in the sheet without any attacked category: empty, not NULL
-            (CAS_SUD_RADIO, ["VE"], []),
+            (CAS_EUROPE1, ["VT"], ["VT attaque"], []),
+            (CAS_FRANCEINFOTV, ["ELV", "VE", "VT"], ["ELV défend", "VE attaque", "VE défend", "VT défend"],
+             ["PYTEST_AUTO_EV", "PYTEST_AUTO_ICE", "PYTEST_FOOD_SNACK"]),
+            (CAS_SUD_RADIO, ["VE"], ["VE défend"], ["PYTEST_AUTO_ICE"]),
         ]
         # the cases not in the sheet: NULL
         cur.execute("""
             SELECT COUNT(*) FROM analytics.cas_de_mesinformation
-            WHERE cibles IS NULL AND categories_visees IS NULL
+            WHERE cibles IS NULL AND cibles_sens IS NULL AND categories_visees IS NULL
         """)
-        assert cur.fetchone()[0] == 3
+        assert cur.fetchone()[0] == 2
 
 
 def test_cas_theme(db_connection):

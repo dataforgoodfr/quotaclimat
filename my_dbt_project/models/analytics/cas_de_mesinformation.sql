@@ -83,7 +83,8 @@ cas_rattaches AS (
     FROM ({{ source_or_empty('advertising', 'cas_affirmations', ['task_aggregate_id']) }}) a
 ),
 cas_cibles AS (
-    SELECT task_aggregate_id, array_agg(DISTINCT cible_code ORDER BY cible_code) AS cibles
+    SELECT task_aggregate_id, array_agg(DISTINCT cible_code ORDER BY cible_code) AS cibles,
+           array_agg(DISTINCT cible_code || ' ' || sens ORDER BY cible_code || ' ' || sens) AS cibles_sens
     FROM {{ ref('cas_affirmation_cible') }}
     GROUP BY task_aggregate_id
 ),
@@ -104,7 +105,8 @@ SELECT
     e.jour_programme,
     CASE WHEN r.task_aggregate_id IS NOT NULL THEN COALESCE(cc.cibles, '{}'::text[]) END AS cibles,
     CASE WHEN r.task_aggregate_id IS NOT NULL THEN COALESCE(cv.categories_visees, '{}'::text[]) END
-        AS categories_visees
+        AS categories_visees,
+    CASE WHEN r.task_aggregate_id IS NOT NULL THEN COALESCE(cc.cibles_sens, '{}'::text[]) END AS cibles_sens
 FROM mesinfo m
 LEFT JOIN channels c ON c.channel_name = m.data_item_channel_name AND c.country = m.country
 LEFT JOIN mesinfo_programs e ON e.task_aggregate_id = m.task_aggregate_id

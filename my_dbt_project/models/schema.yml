@@ -791,6 +791,10 @@ models:
           Ad product categories attacked by the case (cat_code of cas_categorie_visee, e.g. {AUT1,AUT6}), filter
           with 'AUT1' = ANY(categories_visees). NULL for a case not in the sheet, empty for a case in it attacking
           no category.
+      - name: cibles_sens
+        description: >
+          Targets of the claims of the case with their direction, e.g. {"NUC défend","VE attaque"}. NULL for a case
+          not in the sheet, empty for a case in it without any target.
 
   - name: emission_jour
     description: >
@@ -974,20 +978,21 @@ models:
               arguments:
                 values: ['attaque', 'défend']
       - name: sens_reference
-        description: Reference direction of the target (tab 0_cibles, "Sens le plus courant").
+        description: Most common direction of the target (tab 0_cibles, "Sens le plus courant"), for information.
       - name: est_sens_reference
         description: >
-          The claim goes the reference direction of its target, the only direction the binary grid applies to
-          (cas_categorie_visee).
+          The claim goes the most common direction of its target. For information only: the attacked categories
+          depend on the direction of the grid rows (cas_categorie_visee).
 
   - name: cas_categorie_visee
     description: >
-      In the analytics schema. One row per misinformation case and per ad product category its claims attack:
-      at least one claim in the reference direction of a target whose row of the binary grid (tab
-      3_grille_binaire of the Cas_de_mesinfo Google Sheet) has "Produit visé" = 1. Left out: the claims in the
-      other direction, the indirect links (fine grade -1) and the categories comforted by the claims. Cases of
-      the sheet, validated or not since: join with cas_de_mesinformation. To compare with the ads: join on
-      analytics.publicites.cat_code.
+      In the analytics schema. One row per misinformation case and per ad product category its claims attack. A
+      target is taken with a direction: each row of the binary grid (tab 3_grille_binaire of the Cas_de_mesinfo
+      Google Sheet) gives a target, a direction (attaque or défend) and a category, with "Produit visé" = 1 when the
+      claims on that target in that direction attack the category. A case attacks a category when at least one of its
+      claims matches such a row (same target, same direction). Left out: the indirect links (fine grade -1) and the
+      categories comforted by the claims. Cases of the sheet, validated or not since: join with
+      cas_de_mesinformation. To compare with the ads: join on analytics.publicites.cat_code.
     columns:
       - name: task_aggregate_id
         description: Label Studio task of the case (cas_de_mesinformation.task_aggregate_id).
@@ -1003,6 +1008,8 @@ models:
         description: French label of the sector of the category.
       - name: cibles
         description: Targets through which the case attacks the category, e.g. {ENR,PRX}.
+      - name: cibles_sens
+        description: The same targets with the direction of the claims, e.g. {"ENR attaque","PRX attaque"}.
       - name: nb_affirmations
         description: Claims of the case attacking the category.
 

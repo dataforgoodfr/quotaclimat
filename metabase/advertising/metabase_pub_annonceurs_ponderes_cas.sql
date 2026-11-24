@@ -16,14 +16,14 @@
 --       secondes de pub autour de l'émission, puis additionnés par annonceur (cas_attribues). Un annonceur qui a
 --       10 % de la pub d'une émission à 20 cas se voit attribuer 2 cas. Favorise les émissions longues (plus
 --       d'heures, plus de cas) ;
---     - true : chaque seconde de pub pèse le score de son émission, ses cas par heure consacrée à l'environnement
+--     - true : chaque seconde de pub pèse le score de son émission, ses cas par heure consacrée au climat
 --       sur la période (intensité de la mésinformation climatique, indépendante de la durée des émissions) : une
---       seconde autour d'une émission à 2 cas par heure d'environnement pèse deux fois plus qu'autour d'une
+--       seconde autour d'une émission à 2 cas par heure de climat pèse deux fois plus qu'autour d'une
 --       émission à 1 cas par heure. cas_attribues est alors la somme des secondes x score (ce n'est plus un
 --       nombre de cas, seules les parts, rangs et cumuls se lisent) ; les colonnes _cas se lisent « pondéré ».
 --   env_heures_min type Nombre, facultatif (0.5 si vide), avec ponderation_par_temps_denv seulement : émissions
---           gardées, au moins ce temps consacré à l'environnement sur la période ; en dessous le score repose sur
---           trop peu d'heures (1 cas en 6 min d'environnement donne 10 cas par heure) et l'émission est écartée de
+--           gardées, au moins ce temps consacré au climat sur la période ; en dessous le score repose sur
+--           trop peu d'heures (1 cas en 6 min de climat donne 10 cas par heure) et l'émission est écartée de
 --           tout le calcul, pub comprise
 --   theme_cas type Texte, facultatif (vide : tous les cas) : ne compter que les cas de ce thème
 --          (analytics.cas_theme, ex. automobile : mots-clés trouvés dans l'affirmation du cas seulement),
@@ -81,9 +81,9 @@
 --     s'il est négatif) marque le rang où la deuxième courbe commence à rattraper la première ; un plateau : des
 --     annonceurs neutres (indice proche de 1) ou très petits. Il revient à 0 quand tous les annonceurs sont
 --     comptés ;
---   cas_par_heure_moyen, cas_par_heure_env_moyen : cas par heure de programme et cas par heure d'environnement des
+--   cas_par_heure_moyen, cas_par_heure_env_moyen : cas par heure de programme et cas par heure de climat des
 --     émissions de l'annonceur, moyennes pondérées par ses secondes de pub (la seconde sur les seules émissions
---     d'au moins env_heures_min heures d'environnement), quelle que soit la pondération ;
+--     d'au moins env_heures_min heures de climat), quelle que soit la pondération ;
 --   agence_media, groupe_agence, fiabilite_agence : agence média de l'annonceur qui a le plus de ses secondes de
 --     pub dans la sélection (avec un filtre d'agence : l'agence choisie), son groupe et la fiabilité de
 --     l'information (confirmee, probable, indice, inconnue) ; NULL quand l'annonceur n'est pas dans le Google
@@ -101,9 +101,13 @@
 --     quand son perimetre_media_agence est partiel ; sinon fiabilite_agence (confirmee, probable, indice, inconnue) ;
 --     NULL quand l'annonceur n'est pas dans le Google Sheet.
 -- Sources (dbt) : advertising.pub_annonceur_emission_jour (secondes de pub de chaque marque autour de chaque
--- émission, par jour de la pub, avec son agence média) et public.emission_jour (cas, heures de programme et d'environnement par
+-- émission, par jour de la pub, avec son agence média) et public.emission_jour (cas, heures de programme et de climat par
 -- émission, par jour de programme : écart possible d'une journée aux bords de la période pour les émissions qui
 -- passent minuit).
+-- Temps de climat : public.emission_jour.climat_heures, fenêtres de 20 s avec au moins un mot-clé climat
+-- (constat, causes, conséquences, atténuation, adaptation ; biodiversité et ressources exclues). Les noms en env
+-- (env_heures, cas_par_heure_env, env_heures_min...) sont gardés pour ne pas casser les graphiques et filtres des
+-- questions, ils désignent ce temps de climat.
 WITH bornes AS NOT MATERIALIZED (
     SELECT
         CAST({{debut}} AS date) AS debut,
@@ -172,7 +176,7 @@ cas_du_theme AS (
       AND c.jour_programme BETWEEN b.debut AND b.fin
     GROUP BY c.emission_cle
 ),
--- cas (tous, ou ceux du thème), heures de programme et d'environnement de chaque émission sur la période
+-- cas (tous, ou ceux du thème), heures de programme et de climat de chaque émission sur la période
 metriques AS (
     SELECT
         t.emission_cle,
@@ -184,7 +188,7 @@ metriques AS (
             ej.emission_cle,
             SUM(ej.nb_cas) AS nb_cas,
             SUM(ej.volume_heures) AS volume_heures,
-            SUM(ej.env_heures) AS env_heures
+            SUM(ej.climat_heures) AS env_heures
         FROM public.emission_jour ej
         CROSS JOIN bornes b
         WHERE ej.jour BETWEEN b.debut AND b.fin
@@ -193,17 +197,17 @@ metriques AS (
     CROSS JOIN parametres pa
     LEFT JOIN cas_du_theme ct ON ct.emission_cle = t.emission_cle
 ),
--- émissions gardées (pondération par le temps d'environnement : assez de temps d'environnement) et cas_attribues d'une seconde de pub autour
+-- émissions gardées (pondération par le temps de climat : assez de temps de climat) et cas_attribues d'une seconde de pub autour
 -- d'elles ; MATERIALIZED : calculé une seule fois
 emissions AS MATERIALIZED (
     SELECT
         pe.emission_cle,
         m.nb_cas,
         m.volume_heures,
-        -- score, défini seulement avec assez de temps d'environnement
+        -- score, défini seulement avec assez de temps de climat
         CASE WHEN m.env_heures >= pa.env_heures_min THEN m.nb_cas / NULLIF(m.env_heures, 0) END AS cas_par_heure_env,
         CASE WHEN pa.par_temps_env
-            -- score de l'émission (NULL sans environnement, avec env_heures_min à 0)
+            -- score de l'émission (NULL sans climat, avec env_heures_min à 0)
             THEN m.nb_cas / NULLIF(m.env_heures, 0)
             -- cas de l'émission par seconde de sa pub : x secondes de l'annonceur = ses cas attribués
             ELSE COALESCE(m.nb_cas, 0) / pe.pub_secondes_emission

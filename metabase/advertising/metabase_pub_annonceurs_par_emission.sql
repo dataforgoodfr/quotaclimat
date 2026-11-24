@@ -8,15 +8,15 @@
 --   niveau type Texte, échelle de l'annonceur : marque, entreprise ou groupe (société mère ultime) ; à régler en
 --          liste déroulante de ces trois valeurs, valeur par défaut entreprise (une autre valeur ne renvoie rien)
 --   env_heures_min        type Nombre, facultatif (0.5 si vide) : émissions gardées, au moins ce temps
---                         consacré à l'environnement sur la période (heures)
+--                         consacré au climat sur la période (heures)
 --   cas_par_heure_env_min type Nombre, facultatif (0.5 si vide) : émissions gardées, au moins ce nombre de cas
---                         par heure d'environnement sur la période (0 garde aussi les émissions sans cas)
+--                         par heure de climat sur la période (0 garde aussi les émissions sans cas)
 --   cas_par_heure_env_campagne_min type Nombre, facultatif (pas de filtre si vide) : lignes gardées, au moins ce
---                         nombre de cas par heure d'environnement pendant la campagne de l'annonceur (une ligne
---                         sans environnement pendant la campagne est alors écartée) ; avec cas_par_heure_env_min
+--                         nombre de cas par heure de climat pendant la campagne de l'annonceur (une ligne
+--                         sans climat pendant la campagne est alors écartée) ; avec cas_par_heure_env_min
 --                         à 0, seul ce seuil sur la campagne s'applique
 --   env_heures_campagne_min type Nombre, facultatif (pas de filtre si vide) : lignes gardées, au moins ce temps
---                         consacré à l'environnement par l'émission pendant la campagne de l'annonceur (heures)
+--                         consacré au climat par l'émission pendant la campagne de l'annonceur (heures)
 -- Lit les tables précalculées par dbt (voir leur documentation dans my_dbt_project/models/schema.yml) :
 --   advertising.pub_annonceur_emission_jour : secondes de pub de chaque annonceur autour de chaque émission, par
 --     jour (date de la pub en heure de Paris). Une pub compte pour l'émission qui contient tout son écran (100 %
@@ -27,8 +27,8 @@
 --     marque elle-même quand elle n'est pas dans ad_brands ou que la valeur est 'à vérifier') : l'annonceur
 --     est l'un des trois selon niveau, ses secondes la somme de celles de ses marques. Pubs à partir de
 --     ad_analysis_start_date (2025-09-29 par défaut).
---   public.emission_jour : par émission et par jour de programme, volume de grille, temps consacré à
---     l'environnement et cas de mésinformation, mêmes calculs que
+--   public.emission_jour : par émission et par jour de programme, volume de grille, temps consacré au
+--     climat et cas de mésinformation, mêmes calculs que
 --     mesinformation/metabase_taux_mesinformation_par_emission.sql
 --     (programme d'ingestion des segments, marges d'ingestion de 6 min). Jour de programme : le jour où
 --     l'émission commence, une émission qui finit après minuit compte pour la veille.
@@ -44,6 +44,10 @@
 -- reposent sur peu de cas : voir nb_cas_campagne.
 -- NOT MATERIALIZED : les bornes sont recopiées dans chaque lecture comme des constantes, Postgres choisit
 -- l'index sur jour dès la planification
+-- Temps de climat : public.emission_jour.climat_heures, fenêtres de 20 s avec au moins un mot-clé climat
+-- (constat, causes, conséquences, atténuation, adaptation ; biodiversité et ressources exclues). Les noms en env
+-- (env_heures, cas_par_heure_env, env_heures_min...) sont gardés pour ne pas casser les graphiques et filtres des
+-- questions, ils désignent ce temps de climat.
 WITH bornes AS NOT MATERIALIZED (
     SELECT
         CAST({{debut}} AS date) AS debut,
@@ -81,7 +85,7 @@ emissions AS MATERIALIZED (
         nb_cas,
         ROUND((nb_cas / volume_heures)::numeric, 3) AS cas_par_heure,
         ROUND((10 * nb_cas / volume_heures)::numeric, 2) AS cas_pour_10h,
-        -- NULL quand l'émission n'a pas parlé d'environnement sur la période
+        -- NULL quand l'émission n'a pas parlé de climat sur la période
         ROUND((nb_cas / NULLIF(env_heures, 0))::numeric, 2) AS cas_par_heure_env
     FROM (
         SELECT
@@ -93,7 +97,7 @@ emissions AS MATERIALIZED (
             BOOL_OR(ej.rediffusion) AS rediffusion,
             SUM(ej.nb_diffusions) AS nb_diffusions,
             SUM(ej.volume_heures) AS volume_heures,
-            SUM(ej.env_heures) AS env_heures,
+            SUM(ej.climat_heures) AS env_heures,
             SUM(ej.nb_cas) AS nb_cas
         FROM public.emission_jour ej
         CROSS JOIN bornes b
@@ -167,7 +171,7 @@ campagne AS MATERIALIZED (
     CROSS JOIN LATERAL (
         SELECT
             COALESCE(SUM(ej.volume_heures), 0) AS c_volume_heures,
-            COALESCE(SUM(ej.env_heures), 0) AS c_env_heures,
+            COALESCE(SUM(ej.climat_heures), 0) AS c_env_heures,
             COALESCE(SUM(ej.nb_cas), 0) AS c_nb_cas
         FROM public.emission_jour ej
         WHERE ej.emission_cle = pr.emission_cle
@@ -212,7 +216,7 @@ SELECT
     ecart.cas_par_heure_env AS ecart_cas_par_heure_env,
     -- le même écart en trois classes : la campagne tombe-t-elle sur une période où l'émission fait mieux ou pire
     -- que d'habitude ? Classée sur l'écart affiché (arrondi à 0,01), bornes incluses dans neutre ; NULL sans
-    -- environnement pendant la campagne
+    -- climat pendant la campagne
     CASE
         WHEN ecart.cas_par_heure_env IS NULL THEN NULL
         WHEN ecart.cas_par_heure_env > pa.seuil_biais THEN 'négatif'
@@ -231,8 +235,8 @@ WHERE e.env_heures >= pa.env_heures_min
   -- seuil sur la campagne, comparé à la valeur affichée (cas_par_heure_env_campagne)
   AND (pa.cas_par_heure_env_campagne_min IS NULL
        OR ROUND((pe.c_nb_cas / NULLIF(pe.c_env_heures, 0))::numeric, 2) >= pa.cas_par_heure_env_campagne_min)
-  -- temps d'environnement sur la campagne, comparé à la valeur affichée (env_heures_campagne)
+  -- temps de climat sur la campagne, comparé à la valeur affichée (env_heures_campagne)
   AND (pa.env_heures_campagne_min IS NULL
        OR ROUND(pe.c_env_heures::numeric, 2) >= pa.env_heures_campagne_min)
--- sans environnement pendant la campagne (taux vide) en dernier
+-- sans climat pendant la campagne (taux vide) en dernier
 ORDER BY cas_par_heure_env_campagne DESC NULLS LAST

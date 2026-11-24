@@ -25,6 +25,10 @@
 --     qui finit après minuit compte pour la veille, alors que la pub est datée de son propre jour : écart
 --     possible aux bords de la période).
 -- Ligne « Autres » : sommes sur ses émissions, taux recalculés sur ces sommes.
+-- Temps de climat : public.emission_jour.climat_heures, fenêtres de 20 s avec au moins un mot-clé climat
+-- (constat, causes, conséquences, atténuation, adaptation ; biodiversité et ressources exclues). Les noms en env
+-- (env_heures, cas_par_heure_env, env_heures_min...) sont gardés pour ne pas casser les graphiques et filtres des
+-- questions, ils désignent ce temps de climat.
 WITH bornes AS NOT MATERIALIZED (
     SELECT
         CAST({{debut}} AS date) AS debut,
@@ -62,12 +66,12 @@ pub_emission AS (
     WHERE p.jour BETWEEN b.debut AND b.fin
     GROUP BY p.emission_cle
 ),
--- volume, temps d'environnement et cas de chaque émission retenue sur la période
+-- volume, temps de climat et cas de chaque émission retenue sur la période
 metriques AS (
     SELECT
         ej.emission_cle,
         SUM(ej.volume_heures) AS volume_heures,
-        SUM(ej.env_heures) AS env_heures,
+        SUM(ej.climat_heures) AS env_heures,
         SUM(ej.nb_cas) AS nb_cas
     FROM par_emission pe
     JOIN public.emission_jour ej ON ej.emission_cle = pe.emission_cle
@@ -123,7 +127,7 @@ SELECT
     ROUND(volume_heures::numeric, 1) AS volume_heures,
     nb_cas,
     ROUND((nb_cas / NULLIF(volume_heures, 0))::numeric, 3) AS cas_par_heure,
-    -- NULL quand l'émission n'a pas parlé d'environnement sur la période
+    -- NULL quand l'émission n'a pas parlé de climat sur la période
     ROUND((nb_cas / NULLIF(env_heures, 0))::numeric, 2) AS cas_par_heure_env
 FROM parts
 -- par secondes décroissantes, « Autres » (rang nb_emissions + 1) en dernier

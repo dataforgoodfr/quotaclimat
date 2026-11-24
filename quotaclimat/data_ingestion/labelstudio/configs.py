@@ -16,3 +16,9 @@ db_config_extended_perimeter = [
 ] if os.getenv('DBT_ENV', 'dev') == 'prod' else [
     {"database": "labelstudio", "countries": {23: EXTENDED_FRANCE.name}},
 ]
+
+# Used instead of db_config when CORLAB_PERIMETER is true - see ingest_labelstudio.py.
+# Empty until the Corlab Label Studio project exists: no annotations are ingested, and above all the
+# annotations of the other countries (db_config) stay out of the Corlab database. To ingest the project:
+# [{"database": "labelstudio", "countries": {<project id>: CORLAB.name}}]
+db_config_corlab_perimeter = []

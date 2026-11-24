@@ -1,0 +1,5 @@
+---
+migrations_dir: /opt/services/migrations
+migrations_image: corlab-migrations:latest
+# Repo root, relative to corlab/ansible
+repo_root: "{{ playbook_dir }}/../.."

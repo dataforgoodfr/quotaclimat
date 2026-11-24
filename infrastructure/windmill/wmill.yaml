@@ -7,6 +7,7 @@
 includes:
   - "f/quotaclimat/**"
   - "f/quotaclimat_dev/**"
+  - "f/corlab/**"
   - "f/rrs/**"
   - "f/rrs_dev/**"
   - "f/shared/**"

@@ -1,6 +1,7 @@
 from quotaclimat.data_processing.mediatree.i8n.france.channel_program import (
     channels_programs_france,
 )
+from quotaclimat.data_processing.mediatree.i8n.country import CORLAB
 from quotaclimat.data_processing.mediatree.program_metadata import (
     GRID_END_WITHOUT_LIMIT,
     build_program_metadata,
@@ -54,3 +55,15 @@ def test_extended_perimeter_programs():
     assert {p["program_name"] for p in programs_of("tmc", extended_perimeter=True)} == {
         "Quotidien"
     }
+
+
+def test_corlab_perimeter_is_a_separate_grid():
+    corlab = build_program_metadata(corlab_perimeter=True)
+    assert {p["channel_name"] for p in corlab} == set(CORLAB.channels)
+    assert {p["country"] for p in corlab} == {"corlab"}
+    assert all(p["radio"] and not p["public"] for p in corlab)
+    assert len({p["id"] for p in corlab}) == len(corlab)
+    # the other databases never get these programs
+    assert not any(
+        p["country"] == "corlab" for p in build_program_metadata(corlab_perimeter=False)
+    )

@@ -1,0 +1,14 @@
+---
+# Connection settings come from corlab/.env, see README.md. The server is accessed
+# with an SSH password (needs `sshpass` on the machine running Ansible).
+all:
+  hosts:
+    corlab:
+      ansible_host: "{{ lookup('env', 'CORLAB_HOST_IP') }}"
+      ansible_port: "{{ lookup('env', 'CORLAB_SSH_PORT') | default('2251', true) }}"
+      ansible_user: "{{ lookup('env', 'CORLAB_SSH_USER') | default('ubuntu', true) }}"
+      ansible_password: "{{ lookup('env', 'CORLAB_SSH_PASSWORD') }}"
+      ansible_become: true
+      # sudo password; defaults to the SSH password
+      ansible_become_password: "{{ lookup('env', 'CORLAB_BECOME_PASSWORD') | default(lookup('env', 'CORLAB_SSH_PASSWORD'), true) }}"
+      ansible_ssh_extra_args: -o ControlPath=none -o PreferredAuthentications=password -o PubkeyAuthentication=no

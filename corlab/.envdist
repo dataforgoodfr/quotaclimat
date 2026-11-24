@@ -1,0 +1,31 @@
+# Copy to corlab/.env and fill in. Never commit .env.
+# Password generator: LC_ALL=C tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 32
+
+# --- Server access (SSH password based) ---
+CORLAB_HOST_IP=
+CORLAB_SSH_PORT=2251
+# Account Ansible logs in with
+CORLAB_SSH_USER=ubuntu
+CORLAB_SSH_PASSWORD=
+# sudo password, optional (defaults to CORLAB_SSH_PASSWORD)
+CORLAB_BECOME_PASSWORD=
+# Optional: account to create/use for the deployment (default: CORLAB_SSH_USER)
+CORLAB_DEPLOY_USER=
+# Optional: its password, only set when the account is created (needs passlib locally)
+CORLAB_DEPLOY_USER_PASSWORD=
+
+# --- Postgres (published on 5432) ---
+CORLAB_PG_USER=corlab
+CORLAB_PG_PASSWORD=
+# Optional, default: barometre
+CORLAB_BAROMETRE_DB=barometre
+# Read-only roles granted by the dbt grants in prod (DBT_ENV=prod). Each one is created either way (dbt needs them
+# to exist); a password makes it a login user, empty keeps it NOLOGIN.
+CORLAB_RRS_READ_DEV_PASSWORD=
+CORLAB_RRS_READ_PROD_PASSWORD=
+CORLAB_CLIMATEGUARD_READER_PASSWORD=
+CORLAB_METABASE_ANALYTICS_PROD_PASSWORD=
+
+# --- Metabase (published on 3000) ---
+# Application database (role and database `metabase`)
+CORLAB_METABASE_DB_PASSWORD=

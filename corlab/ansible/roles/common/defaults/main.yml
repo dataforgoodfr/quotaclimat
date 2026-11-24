@@ -1,0 +1,4 @@
+---
+services_base_dir: /opt/services
+# Port Ansible connects to; UFW and fail2ban also open the ports sshd actually listens on (sshd is not configured by this role)
+ssh_port: 2251

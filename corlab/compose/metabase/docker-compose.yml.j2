@@ -1,0 +1,39 @@
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "100m"
+    max-file: "3"
+
+services:
+  metabase:
+    image: metabase/metabase:{{ metabase_version }}
+    container_name: metabase
+    restart: unless-stopped
+    logging: *default-logging
+    environment:
+      MB_DB_TYPE: postgres
+      MB_DB_HOST: postgres
+      MB_DB_PORT: "5432"
+      MB_DB_DBNAME: "{{ metabase_db_name }}"
+      MB_DB_USER: "{{ metabase_db_user }}"
+      MB_DB_PASS: "{{ metabase_db_password }}"
+      JAVA_TIMEZONE: Europe/Paris
+      JAVA_OPTS: "{{ metabase_java_opts }}"
+    # Published on all interfaces: the network firewall / reverse proxy in front controls access
+    ports:
+      - "{{ metabase_published_port }}:3000"
+    networks:
+      - corlab-internal
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:3000/api/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 120s
+
+networks:
+  corlab-internal:
+    name: corlab-internal
+    external: true

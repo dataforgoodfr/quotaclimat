@@ -14,6 +14,10 @@ from quotaclimat.data_processing.mediatree.i8n.extended_france import (
     channel_titles_extended_france,
     channels_programs_extended_france,
 ) # Pour Droit à l'info - RRS
+from quotaclimat.data_processing.mediatree.i8n.corlab import (
+    channel_titles_corlab,
+    channels_programs_corlab,
+)  # Radios of the Corlab project, separate database
 from quotaclimat.data_processing.mediatree.i8n.germany import (
     channel_titles_germany,
     channels_programs_germany,
@@ -43,6 +47,7 @@ EPOCH__1MIN_MARGIN = 60 # to add margin for program
 # from https://en.wikipedia.org/wiki/ISO_3166-1_alpha-3
 FranceCode = Literal["fra"]
 ExtendedFranceCode = Literal["ext-fra"]
+CorlabCode = Literal["clb"]
 GermanyCode = Literal["deu"]
 BrazilCode = Literal["bra"]
 BelgiumCode = Literal["bel"]
@@ -53,6 +58,7 @@ AllCode = Literal["all"]
 CountryCode = Union[
     FranceCode,
     ExtendedFranceCode,
+    CorlabCode,
     GermanyCode,
     BelgiumCode,
     BelgiumFlandersCode,
@@ -68,6 +74,8 @@ def get_country_name_from_code(code: CountryCode) -> str:
             return 'france'
         case "ext-fra":
             return 'france'
+        case "clb":
+            return 'corlab'
         case "deu":
             return 'germany'
         case "bra":
@@ -148,6 +156,33 @@ EXTENDED_FRANCE = CountryMediaTree(
     language=FRANCE_LANGUAGE, 
     programs=channels_programs_extended_france, 
     titles=channel_titles_extended_france
+)
+
+# Virtual country for the Corlab radios: own program grid, loaded with CORLAB_PERIMETER=true
+# (see program_metadata.py), not part of ALL_COUNTRIES
+CORLAB_CODE : CorlabCode = "clb"
+CORLAB_CHANNELS = [
+    "radio-kreiz-breizh",
+    "radio-laser",
+    "radio-parole-de-vie",
+    "radio-tregor-goelo",
+    "timbrefm",
+    "transistoch",
+    "euradio",
+    "jadefm",
+    "jetfm",
+    "fidelite",
+    "radio-campus-angers",
+]
+CORLAB_TZ = "Europe/Paris"
+CORLAB_LANGUAGE = "french"
+CORLAB = CountryMediaTree(
+    code=CORLAB_CODE,
+    channels=CORLAB_CHANNELS,
+    timezone=CORLAB_TZ,
+    language=CORLAB_LANGUAGE,
+    programs=channels_programs_corlab,
+    titles=channel_titles_corlab,
 )
 
 BELGIUM_CODE : BelgiumCode = "bel"
@@ -288,6 +323,7 @@ POLAND = CountryMediaTree(code=POLAND_CODE,channels=POLAND_CHANNELS, timezone=PO
 COUNTRIES = {
     FRANCE.code: FRANCE,
     EXTENDED_FRANCE.code: EXTENDED_FRANCE,
+    CORLAB.code: CORLAB,
     GERMANY.code: GERMANY,
     BRAZIL.code: BRAZIL,
     BELGIUM.code: BELGIUM,

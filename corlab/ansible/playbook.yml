@@ -1,0 +1,63 @@
+---
+- name: Provision corlab server (Postgres + Metabase)
+  hosts: corlab
+  remote_user: "{{ lookup('env', 'CORLAB_SSH_USER') | default('ubuntu', true) }}"
+  become: true
+
+  vars:
+    # Account created and used for the deployment (sudo + docker). Defaults to the login
+    # user; set CORLAB_DEPLOY_USER to create a different one when first logging in as
+    # root or another existing admin account (CORLAB_SSH_USER).
+    deploy_user: "{{ lookup('env', 'CORLAB_DEPLOY_USER') | default(lookup('env', 'CORLAB_SSH_USER') | default('ubuntu', true), true) }}"
+    deploy_user_password: "{{ lookup('env', 'CORLAB_DEPLOY_USER_PASSWORD') }}"
+
+    # Port Ansible connects to (the common role also opens the ports sshd listens on; sshd itself is not reconfigured)
+    ssh_port: "{{ lookup('env', 'CORLAB_SSH_PORT') | default('2251', true) }}"
+
+    # Standard ports published on the host
+    postgres_published_port: 5432
+    metabase_published_port: 3000
+
+    # Postgres (superuser of the instance, owner of the barometre database)
+    postgres_user: "{{ lookup('env', 'CORLAB_PG_USER') }}"
+    postgres_password: "{{ lookup('env', 'CORLAB_PG_PASSWORD') }}"
+    barometre_db_name: "{{ lookup('env', 'CORLAB_BAROMETRE_DB') | default('barometre', true) }}"
+
+    # Read-only roles granted `select` by the dbt +grants when DBT_ENV=prod
+    # (my_dbt_project/dbt_project.yml). LOGIN + password only when the password is set,
+    # otherwise NOLOGIN.
+    readonly_roles:
+      - { name: rrs-read-dev, password: "{{ lookup('env', 'CORLAB_RRS_READ_DEV_PASSWORD') }}" }
+      - { name: rrs-read-prod, password: "{{ lookup('env', 'CORLAB_RRS_READ_PROD_PASSWORD') }}" }
+      - { name: climateguard-reader-user, password: "{{ lookup('env', 'CORLAB_CLIMATEGUARD_READER_PASSWORD') }}" }
+      - { name: metabase-analytics-prod, password: "{{ lookup('env', 'CORLAB_METABASE_ANALYTICS_PROD_PASSWORD') }}" }
+
+    # Metabase application database (separate database and role on the same instance)
+    metabase_db_name: metabase
+    metabase_db_user: metabase
+    metabase_db_password: "{{ lookup('env', 'CORLAB_METABASE_DB_PASSWORD') }}"
+
+  pre_tasks:
+    - name: Check the required variables are set
+      ansible.builtin.assert:
+        that:
+          - lookup('env', 'CORLAB_HOST_IP') | length > 0
+          - lookup('env', 'CORLAB_SSH_PASSWORD') | length > 0
+          - postgres_user | length > 0
+          - postgres_password | length > 0
+          - metabase_db_password | length > 0
+        fail_msg: "Missing variable(s): fill corlab/.env (see corlab/README.md)"
+      tags: [always]
+
+  roles:
+    - role: user
+      tags: [user]
+    - role: common
+      tags: [common]
+    - role: postgres
+      tags: [postgres]
+    - role: metabase
+      tags: [metabase]
+    # Not part of a default run (see the role): `make migrate`
+    - role: migrations
+      tags: [migrate, never]

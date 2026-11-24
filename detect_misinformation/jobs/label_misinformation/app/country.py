@@ -82,6 +82,30 @@ EXTENDED_FRANCE_COUNTRY = Country( # For the Droit à l'Info project
     ],
     channels_whisper=["fr3-idf"],
 )
+CORLAB_COUNTRY = Country(  # Corlab radios, separate database (virtual country)
+    code="clb",
+    name="corlab",
+    language="french",
+    # TODO: placeholders, set the real bucket and Label Studio ids of the Corlab project
+    bucket=os.getenv("BUCKET_OUTPUT", "corlab-dev"),
+    model=get_secret_docker("MODEL_NAME", "mistral-small-2603"),
+    prompt_version=get_secret_docker("PROMPT_VERSION", "0.1.0"),
+    label_studio_id=os.getenv("LABEL_STUDIO_PROJECT_ID", 1),
+    label_studio_project=os.getenv("LABEL_STUDIO_PROJECT", 1),
+    channels=[
+        "radio-kreiz-breizh",
+        "radio-laser",
+        "radio-parole-de-vie",
+        "radio-tregor-goelo",
+        "timbrefm",
+        "transistoch",
+        "euradio",
+        "jadefm",
+        "jetfm",
+        "fidelite",
+        "radio-campus-angers",
+    ],
+)
 BELGIUM_COUNTRY = Country(
     code="bel",
     name="belgium",
@@ -225,8 +249,8 @@ POLAND_COUNTRY = Country(
 
 
 def get_all_countries():
-    # EXTENDED_FRANCE_COUNTRY is intentionally excluded: it must be run explicitly
-    # (COUNTRY=ext-fra), never swept in by COUNTRY=all/prod/legacy.
+    # EXTENDED_FRANCE_COUNTRY and CORLAB_COUNTRY are intentionally excluded: they must be run
+    # explicitly (COUNTRY=ext-fra, COUNTRY=clb), never swept in by COUNTRY=all/prod/legacy.
     return sorted(
         [
             FRANCE_COUNTRY,
@@ -292,7 +316,7 @@ def convert_to_base_country_name(name: str):
 
 # Countries that must only be run explicitly (by code) and are never part of
 # ALL_COUNTRIES/LEGACY_COUNTRIES/PROD_COUNTRIES, so COUNTRY=all/prod/legacy never sweeps them in.
-EXPLICIT_ONLY_COUNTRIES = [EXTENDED_FRANCE_COUNTRY]
+EXPLICIT_ONLY_COUNTRIES = [EXTENDED_FRANCE_COUNTRY, CORLAB_COUNTRY]
 
 
 def get_country_or_collection_from_code(code: str):

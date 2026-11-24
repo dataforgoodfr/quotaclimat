@@ -1,0 +1,27 @@
+---
+- name: Create metabase directory
+  file:
+    path: "{{ metabase_service_dir }}"
+    state: directory
+    mode: "0755"
+
+# Mode 0600: the file embeds the metabase database password
+- name: Template metabase docker-compose
+  template:
+    src: "{{ playbook_dir }}/../compose/metabase/docker-compose.yml.j2"
+    dest: "{{ metabase_service_dir }}/docker-compose.yml"
+    mode: "0600"
+
+- name: Start metabase
+  community.docker.docker_compose_v2:
+    project_src: "{{ metabase_service_dir }}"
+    state: present
+    pull: always
+
+- name: Wait for metabase to be healthy
+  ansible.builtin.command: docker inspect --format '{% raw %}{{.State.Health.Status}}{% endraw %}' metabase
+  register: metabase_health
+  until: metabase_health.stdout == 'healthy'
+  retries: 40
+  delay: 10
+  changed_when: false

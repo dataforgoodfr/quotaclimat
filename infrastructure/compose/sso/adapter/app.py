@@ -10,13 +10,14 @@ import html
 import logging
 import os
 import secrets
+import time
 from contextlib import asynccontextmanager
 from urllib.parse import urlencode
 
 import httpx
 from authlib.integrations.starlette_client import OAuth, OAuthError
 from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from starlette.middleware.sessions import SessionMiddleware
 
 logging.basicConfig(level=logging.INFO)
@@ -276,6 +277,54 @@ async def mirror_metabase_groups_to_keycloak(sub: str, uid: int, allowed: list[s
 
 
 # --------------------------------------------------------------------------
+# Logout: Metabase's "Sign out" only ends the Metabase session. The Keycloak (and Google) session would sign the
+# user straight back in, so the adapter also ends the Keycloak session (see metabase_logout).
+# State is in memory, which is why the adapter runs as a single replica: after a restart the ID token of a
+# running session is unknown, and Keycloak asks the user to confirm the logout instead.
+# --------------------------------------------------------------------------
+LOGOUT_COOKIE = "sso_logout"
+LOGOUT_TTL = 300
+ID_TOKENS: dict[str, str] = {}  # Metabase session id -> ID token, the hint that identifies the Keycloak session
+PENDING_LOGOUTS: dict[str, tuple[str, float]] = {}  # cookie nonce -> (Keycloak logout URL, expiry)
+MAX_REMEMBERED = 5000
+
+
+def remember_id_token(sid: str, id_token: str | None):
+    if not id_token:
+        return
+    ID_TOKENS[sid] = id_token
+    while len(ID_TOKENS) > MAX_REMEMBERED:  # oldest first (dicts keep insertion order)
+        ID_TOKENS.pop(next(iter(ID_TOKENS)))
+
+
+async def keycloak_logout_url(org: str, id_token: str | None) -> str:
+    """Keycloak's end-session address, coming back to /sso/ once the session is ended."""
+    meta = await getattr(oauth, f"org_{org}").load_server_metadata()
+    end = meta.get("end_session_endpoint")
+    if not end:
+        return f"{PUBLIC_URL}/sso/"
+    params = {"post_logout_redirect_uri": f"{PUBLIC_URL}/sso/", "client_id": ORGS[org]["client_id"]}
+    if id_token:
+        params["id_token_hint"] = id_token
+    return f"{end}?{urlencode(params)}"
+
+
+async def pending_logout_redirect(request: Request) -> RedirectResponse | None:
+    """After Metabase's logout, the next page load goes to Keycloak's end-session instead of signing back in."""
+    nonce = request.cookies.get(LOGOUT_COOKIE)
+    if not nonce:
+        return None
+    url, expires = PENDING_LOGOUTS.pop(nonce, (None, 0))
+    for key in [k for k, (_, exp) in PENDING_LOGOUTS.items() if exp < time.time()]:
+        PENDING_LOGOUTS.pop(key, None)
+    if not url or expires < time.time():  # unknown nonce (restart) or too old: Keycloak asks to confirm
+        url = await keycloak_logout_url(next(iter(ORGS)), None)
+    resp = RedirectResponse(url, status_code=302)
+    resp.delete_cookie(LOGOUT_COOKIE, path="/")
+    return resp
+
+
+# --------------------------------------------------------------------------
 # Routes
 # --------------------------------------------------------------------------
 @app.get("/sso/health")
@@ -287,7 +336,10 @@ async def health():
 @app.get("/auth/login")  # Metabase's native login URL lands here via Traefik
 @app.get("/sso")
 @app.get("/sso/")
-async def landing():
+async def landing(request: Request):
+    pending = await pending_logout_redirect(request)
+    if pending:  # the user just signed out of Metabase: end their Keycloak session instead of signing back in
+        return pending
     if len(ORGS) == 1:  # single IdP: skip the button page
         return RedirectResponse(f"{PUBLIC_URL}/sso/login/{next(iter(ORGS))}", status_code=302)
     buttons = "".join(
@@ -353,6 +405,7 @@ async def callback(org: str, request: Request):
 
     request.session["org"] = org
     request.session["id_token"] = tok.get("id_token")
+    remember_id_token(sid, tok.get("id_token"))
     resp = RedirectResponse(f"{PUBLIC_URL}/", status_code=302)
     resp.set_cookie(
         "metabase.SESSION", sid, httponly=True, secure=COOKIE_SECURE, samesite="lax", max_age=SESSION_MAX_AGE, path="/"
@@ -372,15 +425,31 @@ async def logout(request: Request):
             await mb.http.delete("/api/session", headers={"X-Metabase-Session": sid, "Cookie": f"metabase.SESSION={sid}"})
         except httpx.HTTPError:
             pass
-    target = f"{PUBLIC_URL}/sso/"
-    if org in ORGS:
-        meta = await getattr(oauth, f"org_{org}").load_server_metadata()
-        end = meta.get("end_session_endpoint")
-        if end:
-            params = {"post_logout_redirect_uri": f"{PUBLIC_URL}/sso/", "client_id": ORGS[org]["client_id"]}
-            if id_token:
-                params["id_token_hint"] = id_token
-            target = f"{end}?{urlencode(params)}"
+    ID_TOKENS.pop(sid, None)
+    target = await keycloak_logout_url(org, id_token) if org in ORGS else f"{PUBLIC_URL}/sso/"
     resp = RedirectResponse(target, status_code=302)
+    resp.delete_cookie("metabase.SESSION", path="/")
+    return resp
+
+
+@app.delete("/api/session")  # Traefik sends only this call here: Metabase's own "Sign out" button
+async def metabase_logout(request: Request):
+    """Ends the Metabase session as Metabase would, and arranges for the Keycloak session to end too.
+
+    Metabase's front end calls this, then reloads the page: that reload (/ or /auth/login) would sign the user
+    straight back in through the still-open Keycloak session. A short-lived cookie makes the adapter send that
+    next page load to Keycloak's end-session address instead.
+    """
+    sid = request.cookies.get("metabase.SESSION")
+    if sid:
+        try:
+            await mb.http.delete("/api/session", headers={"X-Metabase-Session": sid, "Cookie": f"metabase.SESSION={sid}"})
+        except httpx.HTTPError:
+            log.warning("Metabase did not confirm the logout of a session; the cookie is cleared anyway")
+    org = next(iter(ORGS))
+    nonce = secrets.token_urlsafe(16)
+    PENDING_LOGOUTS[nonce] = (await keycloak_logout_url(org, ID_TOKENS.pop(sid, None) if sid else None), time.time() + LOGOUT_TTL)
+    resp = Response(status_code=204)
+    resp.set_cookie(LOGOUT_COOKIE, nonce, httponly=True, secure=COOKIE_SECURE, samesite="lax", max_age=LOGOUT_TTL, path="/")
     resp.delete_cookie("metabase.SESSION", path="/")
     return resp

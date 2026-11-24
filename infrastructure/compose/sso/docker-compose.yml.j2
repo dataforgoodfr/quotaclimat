@@ -4,6 +4,8 @@ x-logging: &default-logging
     max-size: "100m"
     max-file: "3"
 
+# Secrets go through `replace('$', '$$')`: Docker Compose interpolates `$name` in this file, so a `$` in a password
+# would otherwise be read as a variable and silently blanked.
 services:
   keycloak:
     image: {{ keycloak_image }}
@@ -16,7 +18,7 @@ services:
       KC_DB: postgres
       KC_DB_URL: "jdbc:postgresql://{{ postgres_host }}:{{ postgres_port }}/{{ keycloak_db_name }}?sslmode=require"
       KC_DB_USERNAME: "{{ keycloak_db_user }}"
-      KC_DB_PASSWORD: "{{ keycloak_db_password }}"
+      KC_DB_PASSWORD: "{{ keycloak_db_password | replace('$', '$$') }}"
       # Public URL for the browser; the adapter reads the discovery document on the internal URL
       # (http://keycloak:8080) thanks to the dynamic backchannel
       KC_HOSTNAME: "https://{{ keycloak_domain }}"
@@ -25,7 +27,7 @@ services:
       KC_PROXY_HEADERS: xforwarded
       KC_HEALTH_ENABLED: "true"
       KC_BOOTSTRAP_ADMIN_USERNAME: "{{ keycloak_admin_user }}"
-      KC_BOOTSTRAP_ADMIN_PASSWORD: "{{ keycloak_admin_password }}"
+      KC_BOOTSTRAP_ADMIN_PASSWORD: "{{ keycloak_admin_password | replace('$', '$$') }}"
     volumes:
       - ./realm.json:/opt/keycloak/data/import/realm.json:ro
     networks:
@@ -61,7 +63,9 @@ services:
       interval: 15s
       timeout: 5s
       retries: 10
-      start_period: 60s
+      # The first start creates the whole schema on the managed Postgres (dozens of migrations over the network):
+      # failed checks do not count as unhealthy during this period, a passing check ends it at once
+      start_period: 300s
 
   sso-adapter:
     build: ./adapter
@@ -77,12 +81,12 @@ services:
       # The adapter calls the Metabase API directly, not through Traefik
       MB_URL: "{{ metabase_upstream_url }}"
       MB_ADMIN_EMAIL: "{{ sso_metabase_admin_email }}"
-      MB_ADMIN_PASSWORD: "{{ sso_metabase_admin_password }}"
+      MB_ADMIN_PASSWORD: "{{ sso_metabase_admin_password | replace('$', '$$') }}"
       COOKIE_SECURE: "true"
-      SESSION_SECRET: "{{ sso_session_secret }}"
+      SESSION_SECRET: "{{ sso_session_secret | replace('$', '$$') }}"
       OIDC_DISCOVERY_URL: "http://keycloak:8080/realms/{{ keycloak_realm }}/.well-known/openid-configuration"
       OIDC_CLIENT_ID: metabase-sso
-      OIDC_CLIENT_SECRET: "{{ sso_client_secret }}"
+      OIDC_CLIENT_SECRET: "{{ sso_client_secret | replace('$', '$$') }}"
       ALLOWED_EMAIL_DOMAINS: "{{ sso_allowed_email_domains }}"
       ALLOW_ANY_DOMAIN: "{{ sso_allow_any_domain }}"
       # Metabase groups a login can add the user to (additive: nothing is created or removed)
@@ -90,7 +94,7 @@ services:
       # At a user's first login, their Metabase groups are added to the same-named Keycloak groups (admin API)
       KC_URL: http://keycloak:8080
       KC_REALM: "{{ keycloak_realm }}"
-      KC_ADMIN_CLIENT_SECRET: "{{ sso_admin_client_secret }}"
+      KC_ADMIN_CLIENT_SECRET: "{{ sso_admin_client_secret | replace('$', '$$') }}"
     networks:
       - traefik-public
     security_opt:
@@ -104,6 +108,13 @@ services:
       - traefik.http.routers.sso.priority=100
       - traefik.http.routers.sso.entrypoints=websecure
       - traefik.http.routers.sso.tls.certresolver=letsencrypt
+      # Metabase's "Sign out" (DELETE /api/session) goes through the adapter so that the Keycloak session ends too;
+      # without it, the page reload after the logout signs the user straight back in
+      - traefik.http.routers.sso-logout.rule=Host(`{{ metabase_domain }}`) && Method(`DELETE`) && Path(`/api/session`)
+      - traefik.http.routers.sso-logout.priority=110
+      - traefik.http.routers.sso-logout.entrypoints=websecure
+      - traefik.http.routers.sso-logout.tls.certresolver=letsencrypt
+      - traefik.http.routers.sso-logout.service=sso
       - traefik.http.services.sso.loadbalancer.server.port=8000
       - autoheal=true
     healthcheck:

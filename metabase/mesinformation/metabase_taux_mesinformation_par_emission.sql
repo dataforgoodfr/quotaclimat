@@ -1,4 +1,4 @@
--- Taux de mésinformation et part d'environnement par émission, chaînes de télévision françaises (radios écartées)
+-- Taux de mésinformation et part de climat par émission, chaînes de télévision françaises (radios écartées)
 -- Unité d'analyse : l'émission quand analytics.program la connaît (Google Sheet Programmes, chaînes d'info
 -- en continue), sinon le programme suivi de program_metadata (colonne type)
 -- Variables Metabase, type Date (jours de programme, heure de Paris) :
@@ -8,15 +8,19 @@
 -- par jour de programme (le jour où l'émission commence, une émission qui finit après minuit compte pour la
 -- veille) :
 --   volume_heures : durée de diffusion théorique d'après la grille (analytics.program) ;
---   env_heures : temps consacré à l'environnement, même calcul que core_query_environmental_shares
---     (public.keywords.number_of_keywords fenêtres de 20 s) ; chaque segment va au programme posé à
---     l'ingestion (keywords.program_metadata_id), comme dans les dashboards, puis à l'émission de ce
---     programme à l'antenne (la plus proche pour les segments des marges d'ingestion de 6 min) ;
+--   env_heures : temps consacré au climat (public.keywords.number_of_keywords_climat fenêtres de 20 s, comme
+--     number_of_keywords dans core_query_environmental_shares mais sans biodiversité ni ressources) ; chaque
+--     segment va au programme posé à l'ingestion (keywords.program_metadata_id), comme dans les dashboards,
+--     puis à l'émission de ce programme à l'antenne (la plus proche pour les segments des marges d'ingestion de 6 min) ;
 --   nb_cas : cas validés (analytics.cas_de_mesinformation, 1re annotation 'Correct'), sans id de programme :
 --     rattachés par leur heure, créneaux élargis comme à l'ingestion.
 -- La période se compte en jours entiers de programme : pas de coupe à l'heure près.
 -- NOT MATERIALIZED : les bornes sont recopiées dans la lecture comme des constantes, Postgres choisit l'index
 -- sur jour dès la planification
+-- Temps de climat : public.emission_jour.climat_heures, fenêtres de 20 s avec au moins un mot-clé climat
+-- (constat, causes, conséquences, atténuation, adaptation ; biodiversité et ressources exclues). Les noms en env
+-- (env_heures, cas_par_heure_env, env_heures_min...) sont gardés pour ne pas casser les graphiques et filtres des
+-- questions, ils désignent ce temps de climat.
 WITH bornes AS NOT MATERIALIZED (
     SELECT
         CAST({{debut}} AS date) AS debut,
@@ -31,7 +35,7 @@ emissions AS (
         BOOL_OR(ej.rediffusion) AS rediffusion,
         SUM(ej.nb_diffusions) AS nb_diffusions,
         SUM(ej.volume_heures) AS volume_heures,
-        SUM(ej.env_heures) AS env_heures,
+        SUM(ej.climat_heures) AS env_heures,
         SUM(ej.nb_cas) AS nb_cas
     FROM public.emission_jour ej
     CROSS JOIN bornes b
@@ -51,7 +55,7 @@ SELECT
     nb_cas,
     ROUND((nb_cas / volume_heures)::numeric, 3) AS cas_par_heure,
     ROUND((10 * nb_cas / volume_heures)::numeric, 2) AS cas_pour_10h,
-    -- NULL quand l'émission n'a pas parlé d'environnement sur la période
+    -- NULL quand l'émission n'a pas parlé de climat sur la période
     ROUND((nb_cas / NULLIF(env_heures, 0))::numeric, 2) AS cas_par_heure_env
 FROM emissions
 -- seulement les émissions diffusées pendant la période

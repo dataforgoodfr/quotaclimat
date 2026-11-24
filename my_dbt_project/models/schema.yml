@@ -625,7 +625,8 @@ models:
       One row per non-OTHER, non-deleted ad occurrence with the ad tunnel it belongs to.
       An ad tunnel is a sequence of consecutive fragments on a channel, where each one starts
       at most ad_tunnel_tolerance_sec (default 5) seconds after the end of the previous ones;
-      overlapping fragments stay in the same tunnel.
+      overlapping fragments stay in the same tunnel. Occurrences from the day before
+      ad_analysis_start_date (dbt var, default 2025-09-29, UTC) only, the period of analytics.publicites.
     columns:
       - name: occurrence_id
         description: Identifier of the occurrence (advertising.ad_occurrence.id).
@@ -745,8 +746,9 @@ models:
       In the analytics schema. One row per misinformation case validated in Label Studio: the rows of
       task_global_completion with the first annotation ("Annotation Version" = 1) answering 'Correct' alone
       ('Correct,Incorrect' left out), same definition as ad_occurrence_mesinfo, all countries. All the
-      columns of task_global_completion, with the channel attributes of program_metadata and the emission
-      on the air (analytics.program).
+      columns of task_global_completion, with the channel attributes of program_metadata, the emission
+      on the air (analytics.program), and the targets and attacked ad categories of the cases of the
+      Cas_de_mesinfo Google Sheet (cibles, categories_visees).
     columns:
       - name: task_aggregate_id
         description: Label Studio task (labelstudio_task_aggregate.task_aggregate_id).
@@ -779,6 +781,20 @@ models:
         description: >
           Program day of the case (Paris), as in emission_jour: the day the emission starts, an emission ending
           after midnight counting for the day before.
+      - name: cibles
+        description: >
+          Targets of the claims of the case in the Cas_de_mesinfo Google Sheet, in either direction (codes of
+          cas_affirmation_cible, e.g. {ENR,PRX}). NULL for a case not in the sheet, empty for a case in it
+          without any target.
+      - name: categories_visees
+        description: >
+          Ad product categories attacked by the case (cat_code of cas_categorie_visee, e.g. {AUT1,AUT6}), filter
+          with 'AUT1' = ANY(categories_visees). NULL for a case not in the sheet, empty for a case in it attacking
+          no category.
+      - name: cibles_sens
+        description: >
+          Targets of the claims of the case with their direction, e.g. {"NUC défend","VE attaque"}. NULL for a case
+          not in the sheet, empty for a case in it without any target.
 
   - name: emission_jour
     description: >
@@ -789,7 +805,11 @@ models:
       Keyword segments go to their ingestion program (keywords.program_metadata_id, like the dashboards), then
       to its row on the air, the closest one within the ingestion margins [start - 6 min, end + 6 min[;
       misinformation cases are matched on time with the same margins. Days from emission_jour_start_date (dbt
-      var, default 2023-01-01) to today.
+      var, default 2023-01-01) to today. Incremental: a run recomputes the days of the window of the dashboards models
+      (dashboards_lookback_weeks, from the Monday of the previous week by default), and back to the oldest day
+      whose number of cases changed in cas_de_mesinformation; older days keep their values. Rebuilt in full with
+      the dashboards models (dbt.sh full-refresh, first day of each month), needed after a change of the grid
+      (channel_program.py, Programmes Google Sheet) or a reprocessing of older keywords.
     columns:
       - name: emission_cle
         description: "channel_name|type|nom|rediffusion, the key of the emission (also in pub_annonceur_emission_jour)."
@@ -927,6 +947,72 @@ models:
         description: >
           Media scope of the agency (perimetre_media of the sheet) - 'partiel' when it buys only part of the media of the
           advertiser (e.g. programmatic and social only), 'tout', or NULL when not given.
+  - name: cas_affirmation_cible
+    description: >
+      In the analytics schema. One row per claim of a misinformation case and per target ("cible": ENR, VE,
+      ELV...) it attacks or defends, from the Cas_de_mesinfo Google Sheet (tabs 1_affirmations, one column per
+      target, unpivoted here, and 0_cibles). The cases are the ones of the sheet, validated in Label Studio or not
+      since: join with cas_de_mesinformation to keep the validated ones.
+    columns:
+      - name: affirmation_id
+        description: Identifier of the claim in the sheet (column "id affirmation").
+        tests:
+          - not_null
+      - name: task_aggregate_id
+        description: Label Studio task of the case (cas_de_mesinformation.task_aggregate_id).
+        tests:
+          - not_null
+      - name: cible_code
+        description: Code of the target (tab 0_cibles), e.g. VE.
+        tests:
+          - not_null
+      - name: cible
+        description: Name of the target, NULL when the code is missing from the tab 0_cibles.
+      - name: famille
+        description: Family of the target (Cible produit, Transversal...).
+      - name: sens
+        description: attaque (the claim denigrates the object of the target) or défend (it praises it).
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['attaque', 'défend']
+      - name: sens_reference
+        description: Most common direction of the target (tab 0_cibles, "Sens le plus courant"), for information.
+      - name: est_sens_reference
+        description: >
+          The claim goes the most common direction of its target. For information only: the attacked categories
+          depend on the direction of the grid rows (cas_categorie_visee).
+
+  - name: cas_categorie_visee
+    description: >
+      In the analytics schema. One row per misinformation case and per ad product category its claims attack. A
+      target is taken with a direction: each row of the binary grid (tab 3_grille_binaire of the Cas_de_mesinfo
+      Google Sheet) gives a target, a direction (attaque or défend) and a category, with "Produit visé" = 1 when the
+      claims on that target in that direction attack the category. A case attacks a category when at least one of its
+      claims matches such a row (same target, same direction). Left out: the indirect links (fine grade -1) and the
+      categories comforted by the claims. Cases of the sheet, validated or not since: join with
+      cas_de_mesinformation. To compare with the ads: join on analytics.publicites.cat_code.
+    columns:
+      - name: task_aggregate_id
+        description: Label Studio task of the case (cas_de_mesinformation.task_aggregate_id).
+        tests:
+          - not_null
+      - name: cat_code
+        description: Product category of the ads (advertising.ref_ome_categories.cat_code), e.g. AUT1.
+        tests:
+          - not_null
+      - name: categorie
+        description: French label of the category, NULL when the code is not in ref_ome_categories.
+      - name: secteur
+        description: French label of the sector of the category.
+      - name: cibles
+        description: Targets through which the case attacks the category, e.g. {ENR,PRX}.
+      - name: cibles_sens
+        description: The same targets with the direction of the claims, e.g. {"ENR attaque","PRX attaque"}.
+      - name: nb_affirmations
+        description: Claims of the case attacking the category.
+
   - name: cas_theme
     description: >
       In the analytics schema. Themes of the validated misinformation cases of the French channels, found by

@@ -1,0 +1,38 @@
+---
+# Assignable worker tags (instance setting custom_tags, Instance settings → Workers → Assignable tags
+# in the UI). A job whose step carries a tag missing from this list is refused unless it runs as a
+# superadmin ("Tag ... is not included in the allowed CUSTOM_TAGS"): schedules deployed with the
+# superadmin token pass, a flow started by hand by another user fails.
+# Tags of windmill_custom_tags are added to the current list; tags added by hand are kept.
+# WINDMILL_TOKEN must be a superadmin's: instance settings are not workspace ones.
+
+- name: Read the assignable worker tags
+  uri:
+    url: "https://{{ windmill_domain }}/api/settings/global/custom_tags"
+    headers:
+      Authorization: "Bearer {{ windmill_token }}"
+    return_content: true
+  register: windmill_custom_tags_current
+  no_log: true
+
+# Unset (null), the setting is Windmill's default: ["chromium"]
+- name: Merge the assignable worker tags
+  set_fact:
+    windmill_custom_tags_stored: >-
+      {{ windmill_custom_tags_current.json
+         if (windmill_custom_tags_current.json | default(none) | type_debug) == 'list'
+         else ['chromium'] }}
+
+- name: Write the assignable worker tags
+  uri:
+    url: "https://{{ windmill_domain }}/api/settings/global/custom_tags"
+    method: POST
+    headers:
+      Authorization: "Bearer {{ windmill_token }}"
+    body_format: json
+    body:
+      value: "{{ (windmill_custom_tags_stored + windmill_custom_tags) | unique | list }}"
+    status_code: [200, 201]
+  when: windmill_custom_tags | difference(windmill_custom_tags_stored) | length > 0
+  changed_when: true
+  no_log: true

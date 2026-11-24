@@ -25,13 +25,15 @@ Flow names are the Kestra ids with `_` instead of `-` (`rrs/rrs-pollution` → `
 
 1. **Secrets** (`tasks/secrets.yml`): every entry of `kestra_secrets` and `kestra_secrets_dev` (`ansible/playbook.yml`, read from `.env.secrets`) is written as the secret variable `f/secrets/<NAME>`, through the Windmill API. A variable is written only when it is missing or its value changed. Entries left empty in `.env.secrets` are skipped and listed ("Empty, skipped: ...").
 2. **SMTP** (`tasks/smtp.yml`): the instance's invitation emails use the Brevo account of GlitchTip, with `WINDMILL_FROM_EMAIL` as sender (see `infrastructure/Readme.md`, "Orchestrator deployment").
-3. **Flows and scripts** (`tasks/flows.yml`): `infrastructure/windmill/` is copied to the server and pushed with the Windmill CLI (`wmill sync push`, version pinned to the server's), run in a `node` container on the `windmill-internal` network.
+3. **Assignable worker tags** (`tasks/custom_tags.yml`): the tags of `windmill_custom_tags` (`ansible/roles/windmill/defaults/main.yml`, today `dbt_serial`) are added to the instance setting `custom_tags` (Instance settings → Workers → Assignable tags), keeping the tags already there. Without it, only a superadmin can run a step carrying such a tag: a flow started by hand by another user fails with `Tag dbt_serial is not included in the allowed CUSTOM_TAGS, which only super admins can go beyond`, while the schedules, deployed with the superadmin token, still pass.
+4. **Flows and scripts** (`tasks/flows.yml`): `infrastructure/windmill/` is copied to the server and pushed with the Windmill CLI (`wmill sync push`, version pinned to the server's), run in a `node` container on the `windmill-internal` network.
 
-They need `WINDMILL_TOKEN` (a token of a **superadmin**, since SMTP is an instance setting: account settings → Tokens) and `WINDMILL_WORKSPACE` (the workspace **id**, e.g. `quotaclimat`, not its display name) in `.env.secrets`. The workspace is created once by hand in the UI.
+They need `WINDMILL_TOKEN` (a token of a **superadmin**, since SMTP and the assignable tags are instance settings: account settings → Tokens) and `WINDMILL_WORKSPACE` (the workspace **id**, e.g. `quotaclimat`, not its display name) in `.env.secrets`. The workspace is created once by hand in the UI.
 
 `wmill sync push` makes the workspace match the repository, **deletions included**, but only in the folders listed in `infrastructure/windmill/wmill.yaml` (`includes`). Flows, scripts and schedules are synced; variables and resources are left out. So:
 
 - never create or edit a flow or a schedule **in the Windmill UI** in these folders: the next deploy overwrites or deletes it. Flows are created and changed in the repository (`infrastructure/windmill/f/...`), then deployed. The copy on the server (`/opt/services/windmill/workspace/`) is recreated at each deploy: do not edit it either. Outside these folders (e.g. a personal script under `u/<user>/`), the UI can be used freely;
+- the access to each folder is set by group in its `folder.meta.yaml` and pushed with the flows (`skipFolders: false`): `g/Admins` is in `owners` (admin) and also in `extra_perms` with `true` (Windmill rejects an owner without write permission), `g/Devs` has write (`extra_perms: true`) and `g/Operators` is viewer (`extra_perms: false`). The three groups must exist in the workspace before the deploy (names are case-sensitive); a permission changed by hand in the UI is overwritten at the next deploy;
 - a second deploy with nothing changed reports `remote (...) <- local: 0 changes to apply`.
 
 ## From Kestra to Windmill
@@ -48,7 +50,7 @@ The flows were converted once from the Kestra files; they are now maintained by 
 | `allowFailure: true` | `continue_on_error: true` |
 | `ForEach` / `EachParallel` | `forloopflow` (`parallel: false` / `true`) |
 | `errors:` posting to Mattermost | `failure_module` calling `f/shared/mattermost_alert` |
-| `concurrency: limit 1` (`dbt`) | `tag_override: dbt` on its steps (see [dbt](#dbt-one-run-at-a-time)) |
+| `concurrency: limit 1` (`dbt`) | `tag_override: dbt_serial` on its steps (see [dbt](#dbt-one-run-at-a-time)) |
 | `logLevel: WARN` | `stdout_logs: false` (only stderr is kept) |
 | `Fail`, Python `Script` | inline Python steps (`rawscript`, `content: '!inline file.py'`) |
 | flow `inputs` | flow `schema` (same names and defaults), and `(flow_input.x ?? <default>)` where they are read (see below) |
@@ -102,11 +104,13 @@ Jobs are stopped after `TIMEOUT` (`windmill_timeout_secs`, 6 h, `ansible/roles/w
 
 ## dbt: one run at a time
 
-Kestra's `concurrency` limit is an Enterprise feature in Windmill. The steps of `f/quotaclimat/dbt` carry the `dbt` tag instead, and only one worker serves it (`windmill-worker-dbt`, `WORKER_TAGS=dbt`, one worker): only one dbt container runs at a time, the others wait in the queue.
+Kestra's `concurrency` limit is an Enterprise feature in Windmill. The steps of `f/quotaclimat/dbt` carry the `dbt_serial` tag instead, and only one worker serves it (`windmill-worker-dbt`, `WORKER_TAGS=dbt_serial`, one worker): only one dbt container runs at a time, the others wait in the queue.
+
+The tag is not `dbt`: that is the default tag of Windmill's dbt language, which the default workers also serve, so `dbt` steps ran on them too and several dbt could overlap. Every user may assign `dbt_serial` because the deploy adds it to the instance's assignable tags (see [Deployment](#deployment)).
 
 The queue is per step, not per run: for two runs A and B started together, the order can be A `dbt.sh`, B `dbt.sh`, A `curated.sh`, B `curated.sh`. Two dbt containers never overlap, which is what matters (they drop and rebuild the same tables).
 
-Inputs of `f/quotaclimat/dbt` (default `false`, applied with `?? false`): `only_analytics` runs `dbt.sh analytics` and `full_refresh` runs `dbt.sh full-refresh`. By default the incremental models of `models/dashboards` and `models/homepage` recompute only the weeks since the Monday of the previous week (env `DBT_LOOKBACK_WEEKS`); `full_refresh` rebuilds them from the whole `keywords` table (about 35 minutes), as `dbt.sh` does by itself on the first day of each month. See [`kestra_flows.md`](kestra_flows.md#4-dbt_run_transformations-models).
+Inputs of `f/quotaclimat/dbt` (default `false`, applied with `?? false`): `only_analytics` runs `dbt.sh analytics` and `full_refresh` runs `dbt.sh full-refresh`. By default the incremental models of `models/dashboards`, `models/homepage` and `emission_jour` recompute only the weeks since the Monday of the previous week (env `DBT_LOOKBACK_WEEKS`); `full_refresh` rebuilds them from the whole `keywords` table (about 35 minutes), as `dbt.sh` does by itself on the first day of each month. See [`kestra_flows.md`](kestra_flows.md#4-dbt_run_transformations-models).
 
 ## Secrets
 
@@ -124,7 +128,7 @@ Values are changed the same way (edit `.env.secrets`, deploy): a value edited in
 
 ## Adding or changing a flow
 
-1. Edit or add the files under `infrastructure/windmill/f/...`. For a new folder, add its `folder.meta.yaml` and its line in `wmill.yaml` (`includes`). Read inputs with their default (`(flow_input.x ?? <default>)`, see [Default inputs](#from-kestra-to-windmill)).
+1. Edit or add the files under `infrastructure/windmill/f/...`. For a new folder, add its `folder.meta.yaml` (with the same `owners`/`extra_perms` as the other folders) and its line in `wmill.yaml` (`includes`). Read inputs with their default (`(flow_input.x ?? <default>)`, see [Default inputs](#from-kestra-to-windmill)).
 2. Check them: `npx windmill-cli@1.864.1 lint` from `infrastructure/windmill/` (same version as the server).
 3. When a Python script or inline step changes its imports, regenerate its `.lock` with `wmill generate-metadata` against a Windmill instance (a local one is enough: `docker run` of the same image), and commit it. Without it, the CLI warns about stale metadata.
 4. `make tags=windmill ansible`.

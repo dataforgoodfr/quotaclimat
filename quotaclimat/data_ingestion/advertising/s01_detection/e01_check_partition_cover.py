@@ -8,6 +8,8 @@ from zoneinfo import ZoneInfo
 
 from quotaclimat.data_ingestion.advertising.s01_detection.tools.program import (
     Show, get_channel_program)
+from quotaclimat.data_ingestion.advertising.s01_detection.tools.rolling_channels import (
+    is_week_finished, week_available_from)
 from quotaclimat.data_ingestion.advertising.tools.mediatree.bucket_mediatree import (
     get_s3_filesystem, list_channels, list_days_parts)
 from quotaclimat.data_ingestion.advertising.tools.segments import Segment
@@ -254,8 +256,12 @@ def _week_start_date(start_date: str) -> datetime:
     if week_start_date.weekday() != 0:
         raise ValueError("start_date must be a Monday")
 
-    if week_start_date > datetime.now(tz=tz_paris) - timedelta(days=7):
-        raise ValueError("start_date must be at least 7 days in the past")
+    # Before, the last day of the week is not in mediatree's bucket yet
+    if not is_week_finished(week_start_date.date(), datetime.now(tz=tz_paris)):
+        raise ValueError(
+            "The week of start_date is not complete in mediatree's bucket before "
+            f"{week_available_from(week_start_date.date()).isoformat()}"
+        )
 
     return week_start_date
 

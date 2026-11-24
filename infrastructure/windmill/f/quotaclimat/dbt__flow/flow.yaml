@@ -2,7 +2,7 @@ summary: quotaclimat/dbt
 description: |-
   Runs the dbt models of the barometre database (entrypoints/dbt.sh). Called as a
   subflow by barometre, barometre-catchup and dbt-analytics, so that two dbt runs
-  never overlap: they drop and rebuild the same tables. Its steps carry the `dbt`
+  never overlap: they drop and rebuild the same tables. Its steps carry the `dbt_serial`
   tag, served by a single worker (windmill-worker-dbt): one dbt container at a time,
   the others wait in the queue. The queue is per step, not per run: the steps of
   two runs started together can alternate (A dbt, B dbt, A curated, B curated).
@@ -64,7 +64,7 @@ value:
         stdout_logs:
           type: static
           value: true
-      tag_override: dbt
+      tag_override: dbt_serial
   - id: curated_and_metabase_docs
     summary: curated and metabase docs
     value:
@@ -110,7 +110,7 @@ value:
         stdout_logs:
           type: static
           value: true
-      tag_override: dbt
+      tag_override: dbt_serial
     continue_on_error: true
 schema:
   $schema: https://json-schema.org/draft/2020-12/schema
@@ -125,7 +125,7 @@ schema:
       default: false
     full_refresh:
       type: boolean
-      description: When true, rebuilds the incremental models of models/dashboards and models/homepage from the whole keywords table (about 35 minutes), instead of the last weeks only.
+      description: When true, rebuilds the incremental models of models/dashboards, models/homepage and emission_jour from the whole keywords table (about 35 minutes), instead of the last weeks only.
       default: false
   required:
   - only_analytics

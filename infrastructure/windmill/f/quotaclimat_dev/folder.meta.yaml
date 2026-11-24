@@ -1,4 +1,8 @@
 summary: OME pipelines, dev (Kestra namespace quotaclimat-dev).
 display_name: quotaclimat_dev
-owners: []
-extra_perms: {}
+owners:
+  - g/Admins
+extra_perms:
+  g/Admins: true
+  g/Devs: true
+  g/Operators: false

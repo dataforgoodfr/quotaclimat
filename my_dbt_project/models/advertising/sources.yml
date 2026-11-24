@@ -20,6 +20,15 @@ sources:
       # Inventaire_des_annonceurs Google Sheet (tab agence_entreprise), built in this schema
       - name: advertiser_agencies
         identifier: ref_annonceurs_agence_entreprise
+      # Misinformation cases linked to their targets and the targets to the ad categories they attack: dbt seeds
+      # downloaded from the Cas_de_mesinfo Google Sheet (tabs 0_cibles, 1_affirmations, 3_grille_binaire), built in
+      # this schema, read by analytics.cas_affirmation_cible, cas_categorie_visee and cas_de_mesinformation
+      - name: cas_cibles
+        identifier: ref_cas_cibles
+      - name: cas_affirmations
+        identifier: ref_cas_affirmations
+      - name: cas_grille_binaire
+        identifier: ref_cas_grille_binaire
 
   - name: public
     schema: public

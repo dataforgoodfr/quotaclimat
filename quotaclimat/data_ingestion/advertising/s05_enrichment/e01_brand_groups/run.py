@@ -28,8 +28,14 @@ the rows to BRAND_GROUPS_DRY_RUN_CSV and print them in the logs, tab-separated, 
 completed and uniformized cells only printed), BRAND_GROUPS_UNIFORMIZE_ROWS (default true),
 BRAND_GROUPS_COMPLETE_ROWS (default false), BRAND_GROUPS_COMPLETE_MAX_REQUESTS
 (registry requests of the completion step, default 1000).
+
+Options (a Scaleway cron can change the command, not the env): --airtime-start and --airtime-end (days of
+Paris, both included) write the air time of every brand of the tab in that period to its column
+temps_antenne_min (airtime.py), after the other steps; with --airtime-only, nothing else is done (no INPI,
+no registry).
 """
 
+import argparse
 import csv
 import logging
 import os
@@ -38,6 +44,9 @@ from datetime import date
 
 from quotaclimat.data_ingestion.advertising.s05_enrichment.e01_brand_groups import (
     registries,
+)
+from quotaclimat.data_ingestion.advertising.s05_enrichment.e01_brand_groups.airtime import (
+    update_airtime,
 )
 from quotaclimat.data_ingestion.advertising.s05_enrichment.e01_brand_groups.complete import (
     Registries,
@@ -211,10 +220,31 @@ def propose(
     return row
 
 
-def run() -> int:
+def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Brand company and ultimate parent proposals, brand air time")
+    parser.add_argument("--airtime-start", type=date.fromisoformat, help="first day (Paris) of the air time, YYYY-MM-DD")
+    parser.add_argument("--airtime-end", type=date.fromisoformat, help="last day (Paris) of the air time, included")
+    parser.add_argument(
+        "--airtime-only", action="store_true", help="only write the air time of the brands, no proposal"
+    )
+    args = parser.parse_args(argv)
+    if (args.airtime_start is None) != (args.airtime_end is None) or (
+        args.airtime_only and args.airtime_start is None
+    ):
+        parser.error("--airtime-start and --airtime-end go together, and --airtime-only needs them")
+    if args.airtime_start and args.airtime_start > args.airtime_end:
+        parser.error("--airtime-start is after --airtime-end")
+    return args
+
+
+def run(argv: list[str] | None = None) -> int:
+    args = parse_args(argv)
     max_brands = int(os.environ.get("BRAND_GROUPS_MAX_BRANDS", "50"))
     dry_run = os.environ.get("BRAND_GROUPS_DRY_RUN", "false").lower() == "true"
     sheet = BrandInventorySheet.open()
+    if args.airtime_only:
+        airtime(sheet, args.airtime_start, args.airtime_end, dry_run)
+        return 0
     if not dry_run:
         # values of missing columns are dropped: the rows would be appended without them
         missing = [c for c in CSV_COLUMNS if c not in sheet.header(BRANDS_TAB)]
@@ -295,7 +325,19 @@ def run() -> int:
         uniformize(sheet, dry_run, today)
     if os.environ.get("BRAND_GROUPS_COMPLETE_ROWS", "false").lower() == "true":
         complete(sheet, dry_run, int(os.environ.get("BRAND_GROUPS_COMPLETE_MAX_REQUESTS", "1000")), departments)
+    if args.airtime_start:
+        airtime(sheet, args.airtime_start, args.airtime_end, dry_run)
     return len(rows)
+
+
+def airtime(sheet: BrandInventorySheet, start: date, end: date, dry_run: bool) -> int:
+    """Air time of the brands of the tab between start and end (airtime.py)."""
+    engine = connect_to_db()
+    try:
+        with engine.connect() as connection:
+            return update_airtime(sheet, connection, start, end, dry_run)
+    finally:
+        engine.dispose()
 
 
 def uniformize(sheet: BrandInventorySheet, dry_run: bool, today: date) -> int:

@@ -16,6 +16,9 @@ fi
 # EXPORTATION_MODE: "run" (default) exports the new ads, "recompute_saved_chunks" recomputes the
 # audio chunks of the ads already exported with the current fingerprinter parameters
 # (see recompute_saved_chunks.py for MAX_ADS and CLEAN_OTHER_CHUNKS).
+# In "run" mode, EXPORT_MERGED_ADS=true exports only the merged ads (advertising.ad_merge), rebuilt
+# from the videos of their source ads when their mediatree archives are gone; false (default) exports
+# the other ads (see s02_exportation/README.md).
 EXPORTATION_MODE="${EXPORTATION_MODE:-run}"
 
 echo "============================================"

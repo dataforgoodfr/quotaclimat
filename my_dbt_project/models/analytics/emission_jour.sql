@@ -1,6 +1,8 @@
 {{
     config(
-        materialized='table',
+        materialized='incremental',
+        incremental_strategy='delete+insert',
+        unique_key='jour',
         schema='public',
         indexes=[
             {'columns': ['jour']},
@@ -33,14 +35,62 @@
     - chaine_captee: the channel was captured that day (public.time_monitored minutes, a keyword segment
       before time_monitored exists, or a validated case): false for an outage or a channel no longer broadcast but still in the grid,
       whose airtime would count as 0 % environment.
-    Days from emission_jour_start_date (dbt var) to today (Paris). -#}
+    Days from emission_jour_start_date (dbt var) to today (Paris).
+    Incremental (delete+insert by day): a run recomputes whole days from recompute_from, the oldest of
+    - the start of the window of the dashboards models (window_start() of macros/incremental_window.sql, var
+      dashboards_lookback_weeks: from the Monday of the previous week by default): late keyword segments and
+      time_monitored minutes,
+    - the oldest day whose number of cases per emission differs from the table: cases validated or changed in
+      Label Studio long after their broadcast (analytics.cas_de_mesinformation is rebuilt at each run).
+    Older days keep their values: full refresh (dbt.sh full-refresh, first day of each month) after a change of the
+    grid (channel_program.py, Programmes Google Sheet), a reprocessing of older keywords (UPDATE) or a change of
+    this model. -#}
 
 {% set start_date = var('emission_jour_start_date', '2023-01-01') %}
+{#- recompute_from: first day rebuilt by this run. Full refresh or first build: start_date (every day).
+    Incremental run: computed by a query run before the model (run_query), then written into the SQL below as a
+    plain date (a literal keeps the partition pruning of public.keywords): the earliest of
+    - the start of the window of the dashboards models (Monday of the previous week by default),
+    - the oldest day where the number of cases of an emission in cas_de_mesinformation differs from nb_cas in the
+      current table (a case validated, removed or moved since the last run). -#}
+{% set recompute_from = start_date %}
+{% if execute and is_incremental() %}
+    {% set recompute_query %}
+        WITH cas AS (
+            SELECT emission_cle, jour_programme AS jour, COUNT(*) AS nb_cas
+            FROM {{ ref('cas_de_mesinformation') }}
+            WHERE emission_cle IS NOT NULL
+              AND jour_programme >= '{{ start_date }}'::date
+            GROUP BY 1, 2
+        ),
+        existant AS (
+            SELECT emission_cle, jour, nb_cas
+            FROM {{ this }}
+            WHERE nb_cas > 0
+        ),
+        jour_cas_change AS (
+            SELECT MIN(jour) AS jour
+            FROM cas
+            FULL JOIN existant USING (emission_cle, jour)
+            WHERE COALESCE(cas.nb_cas, 0) <> COALESCE(existant.nb_cas, 0)
+        )
+        -- LEAST ignores NULL (no case changed); never before start_date
+        SELECT GREATEST(
+            LEAST(
+                ({{ window_start() }})::date,
+                (SELECT jour FROM jour_cas_change)
+            ),
+            '{{ start_date }}'::date
+        )::text
+    {% endset %}
+    {% set recompute_from = run_query(recompute_query).columns[0].values()[0] %}
+    {{ log('emission_jour: days recomputed from ' ~ recompute_from, info=True) }}
+{% endif %}
 
 WITH calendrier AS (
     SELECT jour::date AS jour
     FROM generate_series(
-        '{{ start_date }}'::date,
+        '{{ recompute_from }}'::date,
         (now() AT TIME ZONE 'Europe/Paris')::date,
         INTERVAL '1 day'
     ) AS jour
@@ -113,7 +163,7 @@ segments AS MATERIALIZED (
     CROSS JOIN LATERAL (SELECT {{ keywords_paris_time('k') }} AS paris_time) p
     WHERE k.country = 'france'
       AND k.number_of_keywords > 0
-      AND k.start >= '{{ start_date }}'::date - 1
+      AND k.start >= '{{ recompute_from }}'::date - 1
 ),
 -- candidate rows of the ingestion program: by program_metadata_id, else (segments before 2025) by channel and
 -- channel_program, as core_query_environmental_shares
@@ -172,6 +222,7 @@ cas_lignes AS (
     SELECT emission_cle, jour_programme AS jour
     FROM {{ ref('cas_de_mesinformation') }}
     WHERE emission_cle IS NOT NULL
+      AND jour_programme >= '{{ recompute_from }}'::date
 ),
 metriques AS (
     SELECT
@@ -209,7 +260,7 @@ metriques AS (
         SELECT emission_cle, jour, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1
         FROM cas_lignes
     ) m
-    WHERE jour >= '{{ start_date }}'::date
+    WHERE jour >= '{{ recompute_from }}'::date
     GROUP BY 1, 2
 ),
 -- channels captured each day: minutes in public.time_monitored, a keyword segment (time_monitored starts at the
@@ -218,6 +269,7 @@ captation AS (
     SELECT DISTINCT channel_name, start::date AS jour
     FROM {{ source('public', 'time_monitored') }}
     WHERE country = 'france' AND duration_minutes > 0
+      AND start::date >= '{{ recompute_from }}'::date
     UNION
     SELECT DISTINCT channel_name, jour_paris
     FROM segments
@@ -225,7 +277,7 @@ captation AS (
     -- a validated case was captured
     SELECT DISTINCT data_item_channel_name, jour_programme
     FROM {{ ref('cas_de_mesinformation') }}
-    WHERE jour_programme IS NOT NULL
+    WHERE jour_programme >= '{{ recompute_from }}'::date
 ),
 -- descriptive columns of each emission
 emissions AS (

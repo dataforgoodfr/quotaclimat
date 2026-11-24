@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Visionneuse</title>
+<!--
+  Visionneuse d'export Metabase (CSV ou JSON) : une carte par ligne, textes longs lisibles, termes surlignés,
+  verdict humain par carte (validé, faux positif, incertain) et compteur de précision avec IC 95 % (Wilson).
+  Rien n'est envoyé. Les verdicts sont gardés dans le navigateur (clé de la ligne et verdict, jamais le texte)
+  et s'exportent en CSV.
+  Colonnes reconnues : texte*, plaintext*, body, contenu (blocs de lecture ; « avant » en premier, « apres » en dernier),
+  terme* (termes surlignés), axe, period, channel_title, start (clé du verdict), trouve_dans (ventilation du compteur).
+-->
+<style>
+:root{--bg:#fafaf7;--fg:#1d1d1b;--mut:#6b6b66;--line:#e2e1dc;--card:#fff;--side:#f3f2ee;--mark:#ffe58a;--mark2:#b8e3ff;--mark3:#bfe8c4;--mark4:#e6d3fa;--ok:#2e7d4f;--fp:#b3261e;--inc:#a26b00}
+@media (prefers-color-scheme:dark){:root{--bg:#161615;--fg:#e8e6e1;--mut:#9a988f;--line:#33322f;--card:#1f1f1d;--side:#1a1a19;--mark:#7a6413;--mark2:#1f5574;--mark3:#2f6b3a;--mark4:#5b3a7e;--ok:#5cc28a;--fp:#f2867e;--inc:#e0b252}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:17px/1.65 Georgia,"Times New Roman",serif}
+header{position:sticky;top:0;z-index:2;background:var(--bg);border-bottom:1px solid var(--line);padding:10px 16px;display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;font:14px system-ui,sans-serif}
+header input[type=search]{flex:1;min-width:160px;padding:6px 10px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--fg);font:inherit}
+button,label.btn{padding:6px 10px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--fg);font:14px system-ui,sans-serif;cursor:pointer}
+#count{color:var(--mut)}
+main{max-width:780px;margin:0 auto;padding:16px 16px 140px}
+#drop{border:2px dashed var(--line);border-radius:10px;padding:32px 20px;text-align:center;font:15px system-ui,sans-serif;color:var(--mut)}
+#drop.over{border-color:var(--fg);color:var(--fg)}
+#drop textarea{width:100%;height:120px;margin-top:14px;padding:8px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--fg);font:13px ui-monospace,monospace}
+.card{background:var(--card);border:1px solid var(--line);border-left:5px solid var(--line);border-radius:8px;padding:14px 20px 14px;margin:0 0 20px;scroll-margin-top:70px}
+.card.cur{box-shadow:0 0 0 2px var(--mut)}
+.card.v-ok{border-left-color:var(--ok)}.card.v-fp{border-left-color:var(--fp)}.card.v-inc{border-left-color:var(--inc)}
+.meta{font:13px/1.5 system-ui,sans-serif;color:var(--mut);display:flex;flex-wrap:wrap;gap:2px 14px}
+.meta b{color:var(--fg);font-weight:600}
+.num{font:12px system-ui,sans-serif;color:var(--mut);float:right}
+.lab{font:11px system-ui,sans-serif;text-transform:uppercase;letter-spacing:.06em;color:var(--mut);margin:14px 0 2px}
+summary.lab{cursor:pointer;width:max-content;padding:2px 0}
+details:not([open]) summary.lab{margin:6px 0 0}
+.txt{white-space:pre-wrap;overflow-wrap:anywhere}
+.side{color:var(--mut);background:var(--side);padding:8px 12px;border-radius:6px;font-size:15px}
+mark{background:var(--mark);color:inherit;padding:0 2px;border-radius:2px}
+mark.q{background:var(--mark2)}
+mark.g{background:var(--mark3)}
+mark.p{background:var(--mark4)}
+.cnt{text-transform:none;letter-spacing:0;color:var(--fg);background:var(--mark);padding:0 5px;border-radius:3px;margin-left:6px}
+.cnt.p{background:var(--mark4)}.cnt.g{background:var(--mark3)}.cnt.q{background:var(--mark2)}
+.kw{font:13px/1.5 system-ui,sans-serif;color:var(--mut);margin-top:4px}
+.kw span{background:var(--mark4);color:var(--fg);padding:0 5px;border-radius:3px;margin-right:4px;display:inline-block}
+#g{flex-basis:100%;padding:6px 10px;border:1px solid var(--mark3);border-radius:6px;background:var(--card);color:var(--fg);font:inherit}
+.verdict{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
+.verdict button.on[data-v=ok]{background:var(--ok);border-color:var(--ok);color:#fff}
+.verdict button.on[data-v=fp]{background:var(--fp);border-color:var(--fp);color:#fff}
+.verdict button.on[data-v=inc]{background:var(--inc);border-color:var(--inc);color:#fff}
+.verdict input{flex:1;min-width:140px;padding:5px 8px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--fg);font:13px system-ui,sans-serif}
+#stats{position:fixed;right:16px;bottom:16px;z-index:2;max-width:calc(100vw - 32px);background:var(--card);border:1px solid var(--line);border-radius:8px;padding:10px 14px;font:13px/1.5 system-ui,sans-serif;box-shadow:0 2px 10px rgba(0,0,0,.08)}
+#stats:empty{display:none}
+#stats b{font-size:15px}
+#stats .sub{color:var(--mut)}
+.hint{font:12px system-ui,sans-serif;color:var(--mut)}
+</style>
+</head>
+<body>
+<header>
+  <label class="btn">Ouvrir un fichier<input id="file" type="file" accept=".csv,.json,.txt" hidden></label>
+  <input id="q" type="search" placeholder="Filtrer et surligner (plusieurs mots : séparés par des virgules)">
+  <span id="count"></span>
+  <button id="export" title="Tous les verdicts gardés dans ce navigateur, tous axes confondus">Exporter les verdicts</button>
+  <button id="reset">Effacer les verdicts</button>
+  <span class="hint">j / k : carte suivante / précédente · v validé · f faux positif · i incertain</span>
+  <input id="g" type="text" placeholder="Mots à surligner en vert, séparés par des virgules (sans filtrer les cartes)">
+</header>
+<main>
+  <div id="drop">
+    Glisse ici un export Metabase (CSV ou JSON), ou colle son contenu ci-dessous.
+    <textarea id="paste" placeholder="Coller le CSV ou le JSON ici"></textarea>
+  </div>
+  <div id="list"></div>
+</main>
+<div id="stats"></div>
+<script>
+const $ = s => document.querySelector(s);
+const STORE = 'visionneuse.verdicts';
+const LABELS = {ok: 'validé', fp: 'faux positif', inc: 'incertain'};
+let rows = [], longCols = [], termCols = [], kwCols = [], metaCols = [], cur = -1, fileName = 'colle';
+// mots du dictionnaire (keywords_found) : normalisés comme normalize_text du pipeline pour retrouver le texte normalisé
+const normKw = s => s.toLowerCase().replace(/œ/g, 'oe').replace(/æ/g, 'ae').normalize('NFD').replace(/[̀-ͯ]/g, '')
+  .replace(/['’‘‛ʼʹ´`′＇-]/g, ' ').trim();
+
+// clé de colonne : minuscules, sans accent, espaces en _
+const key = h => h.trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, '_');
+const fold = s => String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const reEsc = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+// verdicts : { cle: {v, c, t, axe, period, channel_title, start, trouve_dans, terme_chunk} }, sans le texte
+function readStore() { try { return JSON.parse(localStorage.getItem(STORE)) || {}; } catch (e) { return {}; } }
+function writeStore(s) { try { localStorage.setItem(STORE, JSON.stringify(s)); } catch (e) {} }
+let verdicts = readStore();
+
+// clé d'une ligne : axe, période, chaîne, heure si présents ; sinon fichier et rang
+function rowKey(r, i) {
+  const parts = ['axe', 'period', 'channel_title', 'start'].map(k => r[k] ?? '');
+  return parts.some(Boolean) ? parts.join('|') : fileName + '#' + i;
+}
+
+// CSV avec champs entre guillemets, retours à la ligne et "" échappés ; séparateur , ou ; deviné sur l'en-tête
+function parseCSV(t) {
+  const first = t.slice(0, t.indexOf('\n') + 1 || t.length);
+  const sep = (first.split(';').length > first.split(',').length) ? ';' : ',';
+  const out = []; let row = [], f = '', q = false;
+  for (let i = 0; i < t.length; i++) {
+    const c = t[i];
+    if (q) {
+      if (c === '"') { if (t[i + 1] === '"') { f += '"'; i++; } else q = false; }
+      else f += c;
+    } else if (c === '"') q = true;
+    else if (c === sep) { row.push(f); f = ''; }
+    else if (c === '\n' || c === '\r') {
+      if (c === '\r' && t[i + 1] === '\n') i++;
+      row.push(f); f = ''; if (row.length > 1 || row[0] !== '') out.push(row); row = [];
+    } else f += c;
+  }
+  if (f !== '' || row.length) { row.push(f); out.push(row); }
+  const head = out.shift() || [];
+  return out.map(r => Object.fromEntries(head.map((h, i) => [h, r[i] ?? ''])));
+}
+
+function load(text, name) {
+  text = text.replace(/^﻿/, '').trim();
+  if (!text) return;
+  let data;
+  try { data = text[0] === '[' || text[0] === '{' ? JSON.parse(text) : parseCSV(text); }
+  catch (e) { alert('Lecture impossible : ' + e.message); return; }
+  if (!Array.isArray(data)) data = data.data || data.rows || [data];
+  if (!data.length) { alert('Aucune ligne.'); return; }
+  fileName = name || 'colle';
+  const cols = Object.keys(data[0]);
+  rows = data.map(r => Object.fromEntries(cols.map(c => [key(c), r[c] == null ? '' : String(r[c])])));
+  rows.forEach((r, i) => r._key = rowKey(r, i));
+  const ks = cols.map(key);
+  const avg = k => rows.reduce((s, r) => s + r[k].length, 0) / rows.length;
+  termCols = ks.filter(k => /^terme/.test(k));
+  kwCols = ks.filter(k => k === 'keywords_found' || /^mots_/.test(k));
+  longCols = ks.filter(k => !termCols.includes(k) && !kwCols.includes(k) && (/^(texte|plaintext|text|body|contenu|content)/.test(k) || avg(k) > 200));
+  const rank = k => /avant|prec/.test(k) ? 0 : /apres|suiv/.test(k) ? 2 : 1;
+  longCols.sort((a, b) => rank(a) - rank(b));
+  metaCols = ks.filter(k => !longCols.includes(k) && !termCols.includes(k) && !kwCols.includes(k));
+  $('#drop').hidden = true;
+  render();
+}
+
+// surlignage : bleu = recherche, vert = liste du haut, jaune = termes de l'axe, violet = mots qui ont rendu le chunk
+// thématique (keywords_found) ; un mot présent dans plusieurs listes prend la première couleur de cet ordre
+function highlight(text, terms, qterms, gterms = [], pterms = []) {
+  const all = [...new Set([...terms, ...qterms, ...gterms, ...pterms].map(t => t.trim()).filter(Boolean))].sort((a, b) => b.length - a.length);
+  if (!all.length) return esc(text);
+  const re = new RegExp('(?<![\\p{L}\\p{N}])(' + all.map(reEsc).join('|') + ')(?![\\p{L}\\p{N}])', 'giu');
+  const qs = new Set(qterms.map(fold)), gs = new Set(gterms.map(fold)), ts = new Set(terms.map(fold)), ps = new Set(pterms.map(fold));
+  return text.split(re).map((p, i) => {
+    if (!(i % 2)) return esc(p);
+    const f = fold(p);
+    const c = qs.has(f) ? ' class="q"' : gs.has(f) ? ' class="g"' : ts.has(f) ? '' : ps.has(f) ? ' class="p"' : '';
+    return `<mark${c}>${esc(p)}</mark>`;
+  }).join('');
+}
+const listOf = v => v.split(',').map(s => s.trim()).filter(Boolean);
+
+function render() {
+  const qterms = listOf($('#q').value), gterms = listOf($('#g').value);
+  const shown = rows.map((r, i) => [r, i]).filter(([r]) => !qterms.length ||
+    qterms.some(q => Object.entries(r).some(([k, v]) => k !== '_key' && fold(v).includes(fold(q)))));
+  $('#count').textContent = `${shown.length} / ${rows.length}`;
+  $('#list').innerHTML = shown.map(([r, i]) => {
+    const terms = termCols.flatMap(k => r[k].split(' | '));
+    const kws = kwCols.flatMap(k => r[k].split(',').map(s => s.trim()).filter(Boolean));
+    const pterms = kws.map(normKw);
+    const kwLine = kws.length ? `<div class="kw">mots inondations : ${kws.map(w => `<span>${esc(w)}</span>`).join('')}</div>` : '';
+    const meta = metaCols.filter(k => r[k] !== '').map(k => `<span>${esc(k)} <b>${esc(r[k])}</b></span>`).join('');
+    // bloc ouvert : le chunk s'il contient un terme surligné, sinon les voisins qui en contiennent, sinon le chunk.
+    // Les autres se déplient avec la flèche. Les mots en vert n'ouvrent pas de bloc.
+    const bl = longCols.filter(k => r[k] !== '').map(k => ({k, side: /avant|apres|prec|suiv/.test(k),
+      html: highlight(r[k], terms, qterms, gterms, pterms), found: highlight(r[k], terms, qterms).includes('<mark')}));
+    const hit = b => b.found;
+    const main = bl.filter(b => !b.side);
+    const open = main.some(hit) ? main.filter(hit) : bl.some(hit) ? bl.filter(hit) : main.slice(0, 1);
+    // à côté de chaque flèche : nombre de mots surlignés par couleur, visible même bloc replié
+    const counts = html => [['', 'terme', 'termes'], ['p', 'mot inondation', 'mots inondation'], ['g', 'vert', 'verts'],
+      ['q', 'recherche', 'recherche']].map(([c, l1, l2]) => {
+      const n = (html.match(c ? new RegExp(`<mark class="${c}">`, 'g') : /<mark>/g) || []).length;
+      return n ? `<span class="cnt${c ? ' ' + c : ''}">${n} ${n > 1 ? l2 : l1}</span>` : '';
+    }).join('');
+    const blocks = bl.map(b => `<details${open.includes(b) ? ' open' : ''}><summary class="lab">${esc(b.k)} ${counts(b.html)}</summary>` +
+      `<div class="txt${b.side ? ' side' : ''}">${b.html}</div></details>`).join('');
+    const tl = termCols.filter(k => r[k] !== '').map(k => `<span>${esc(k)} <b>${esc(r[k])}</b></span>`).join('');
+    const vd = verdicts[r._key] || {};
+    const btns = Object.entries(LABELS).map(([v, l]) =>
+      `<button data-v="${v}" class="${vd.v === v ? 'on' : ''}">${l}</button>`).join('');
+    return `<article class="card${vd.v ? ' v-' + vd.v : ''}" data-i="${i}"><span class="num">${i + 1}</span>` +
+      `<div class="meta">${meta}${tl}</div>${kwLine}${blocks}` +
+      `<div class="verdict">${btns}<input placeholder="Commentaire (facultatif)" value="${esc(vd.c || '')}"></div></article>`;
+  }).join('');
+  cur = -1;
+  stats();
+}
+
+// verdict d'une ligne ; un second clic sur le même verdict l'annule
+function setVerdict(i, v) {
+  const r = rows[i], k = r._key, old = verdicts[k] || {};
+  if (old.v === v) delete verdicts[k];
+  else verdicts[k] = {...old, v, t: new Date().toISOString(), axe: r.axe ?? '', period: r.period ?? '',
+    channel_title: r.channel_title ?? '', start: r.start ?? '', trouve_dans: r.trouve_dans ?? '', terme_chunk: r.terme_chunk ?? ''};
+  writeStore(verdicts);
+  const card = document.querySelector(`.card[data-i="${i}"]`);
+  if (card) {
+    const nv = verdicts[k]?.v;
+    card.classList.remove('v-ok', 'v-fp', 'v-inc');
+    if (nv) card.classList.add('v-' + nv);
+    card.querySelectorAll('.verdict button').forEach(b => b.classList.toggle('on', b.dataset.v === nv));
+  }
+  stats();
+}
+
+function setComment(i, c) {
+  const k = rows[i]._key;
+  if (!verdicts[k]) return;            // un commentaire seul n'est gardé qu'avec un verdict
+  verdicts[k].c = c; writeStore(verdicts);
+}
+
+// intervalle de Wilson à 95 %
+function wilson(x, n) {
+  if (!n) return null;
+  const z = 1.96, p = x / n, d = 1 + z * z / n;
+  const c = (p + z * z / (2 * n)) / d, h = z * Math.sqrt(p * (1 - p) / n + z * z / (4 * n * n)) / d;
+  return [Math.max(0, c - h), Math.min(1, c + h)];
+}
+const pct = x => Math.round(100 * x);
+
+function line(list) {
+  const ok = list.filter(r => verdicts[r._key]?.v === 'ok').length;
+  const fp = list.filter(r => verdicts[r._key]?.v === 'fp').length;
+  const n = ok + fp;
+  if (!n) return '0 jugé';
+  const [lo, hi] = wilson(ok, n);
+  return `${ok} validé${ok > 1 ? 's' : ''} / ${n} jugé${n > 1 ? 's' : ''} : <b>${pct(ok / n)} %</b> <span class="sub">(IC 95 % : ${pct(lo)} à ${pct(hi)} %)</span>`;
+}
+
+function stats() {
+  if (!rows.length) { $('#stats').innerHTML = ''; return; }
+  const inc = rows.filter(r => verdicts[r._key]?.v === 'inc').length;
+  const left = rows.filter(r => !verdicts[r._key]).length;
+  const axes = [...new Set(rows.map(r => r.axe).filter(Boolean))];
+  let h = `<div>${axes.length ? esc(axes.join(', ')) + ' · ' : ''}${line(rows)}</div>`;
+  if (rows.some(r => r.trouve_dans)) {
+    for (const t of [...new Set(rows.map(r => r.trouve_dans))])
+      h += `<div class="sub">${esc(t || '(vide)')} : ${line(rows.filter(r => r.trouve_dans === t))}</div>`;
+  }
+  h += `<div class="sub">${inc} incertain${inc > 1 ? 's' : ''} (hors calcul) · ${left} restant${left > 1 ? 's' : ''}</div>`;
+  $('#stats').innerHTML = h;
+}
+
+function exportCSV() {
+  const cols = ['axe', 'period', 'channel_title', 'start', 'trouve_dans', 'terme_chunk', 'verdict', 'commentaire', 'date_verdict'];
+  const q = v => /[",;\n\r]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
+  const lines = Object.values(verdicts).map(d => [d.axe, d.period, d.channel_title, d.start, d.trouve_dans, d.terme_chunk,
+    LABELS[d.v] || d.v, d.c || '', d.t || ''].map(v => q(String(v ?? ''))).join(','));
+  if (!lines.length) { alert('Aucun verdict à exporter.'); return; }
+  const blob = new Blob(['﻿' + [cols.join(','), ...lines].join('\n')], {type: 'text/csv;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'verdicts_' + new Date().toISOString().slice(0, 10) + '.csv';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function go(d) {
+  const cards = [...document.querySelectorAll('.card')];
+  if (!cards.length) return;
+  cards[cur]?.classList.remove('cur');
+  cur = Math.max(0, Math.min(cards.length - 1, cur + d));
+  cards[cur].classList.add('cur');
+  cards[cur].scrollIntoView({behavior: 'smooth', block: 'start'});
+}
+
+$('#file').onchange = e => { const f = e.target.files[0]; if (f) f.text().then(t => load(t, f.name)); e.target.value = ''; };
+$('#paste').oninput = e => load(e.target.value, 'colle');
+$('#q').oninput = render;
+// liste verte gardée dans le navigateur d'une session à l'autre
+try { $('#g').value = localStorage.getItem('visionneuse.vert') || ''; } catch (e) {}
+$('#g').oninput = () => { try { localStorage.setItem('visionneuse.vert', $('#g').value); } catch (e) {} if (rows.length) render(); };
+$('#export').onclick = exportCSV;
+$('#reset').onclick = () => {
+  const n = Object.keys(verdicts).length;
+  if (n && confirm(`Effacer les ${n} verdicts gardés dans ce navigateur ? Exporte-les d'abord si besoin.`)) {
+    verdicts = {}; writeStore(verdicts); render();
+  }
+};
+$('#list').addEventListener('click', e => {
+  const b = e.target.closest('.verdict button'); if (!b) return;
+  const card = b.closest('.card'), cards = [...document.querySelectorAll('.card')];
+  cards[cur]?.classList.remove('cur'); cur = cards.indexOf(card); card.classList.add('cur');
+  setVerdict(+card.dataset.i, b.dataset.v);
+});
+$('#list').addEventListener('change', e => {
+  if (e.target.matches('.verdict input')) setComment(+e.target.closest('.card').dataset.i, e.target.value);
+});
+addEventListener('dragover', e => { e.preventDefault(); $('#drop').classList.add('over'); });
+addEventListener('dragleave', () => $('#drop').classList.remove('over'));
+addEventListener('drop', e => { e.preventDefault(); $('#drop').classList.remove('over'); const f = e.dataTransfer.files[0]; if (f) f.text().then(t => load(t, f.name)); });
+addEventListener('keydown', e => {
+  if (e.target.matches('input,textarea') || e.ctrlKey || e.metaKey || e.altKey) return;
+  if (e.key === 'j') go(1);
+  else if (e.key === 'k') go(-1);
+  else if (['v', 'f', 'i'].includes(e.key)) {
+    const cards = [...document.querySelectorAll('.card')];
+    if (!cards.length) return;
+    if (cur < 0) go(1);
+    setVerdict(+cards[cur].dataset.i, {v: 'ok', f: 'fp', i: 'inc'}[e.key]);
+    go(1);
+  }
+});
+</script>
+</body>
+</html>

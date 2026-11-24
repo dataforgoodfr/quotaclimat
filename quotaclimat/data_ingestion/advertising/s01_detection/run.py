@@ -33,6 +33,7 @@ from quotaclimat.data_ingestion.advertising.s01_detection.tools.rolling_channels
     is_week_finished,
     parse_channels,
     plan_week,
+    week_available_from,
 )
 from quotaclimat.utils.logger import getLogger, set_log_prefix
 from quotaclimat.utils.sentry import sentry_init
@@ -122,9 +123,14 @@ def _run_detection():
     logger.info(format_summary(statuses, week, channels_to_run))
 
     assert week.weekday() == 0, f"start_date {week} is not a Monday"
-    if not is_week_finished(week, datetime.now(tz=tz_paris).date()):
-        # Catching up is over: the week is not finished yet
-        logger.info(f"Week of {week} not finished yet, nothing to process")
+    if not is_week_finished(week, datetime.now(tz=tz_paris)):
+        # Catching up is over: the week is not finished, or its last day not delivered yet.
+        # Also with START_DATE: an incomplete week would be processed for good, the next
+        # run starting from the Monday after its last occurrence.
+        logger.info(
+            f"Week of {week} not complete in mediatree's bucket before "
+            f"{week_available_from(week).isoformat()}, nothing to process"
+        )
         return
 
     results = []

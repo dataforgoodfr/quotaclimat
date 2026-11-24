@@ -18,26 +18,29 @@ ads (automatic or manual). They only add to the session, the caller commits:
   detection recognises it when the pieces are broadcast together. It takes the classification of the source
   ads when they agree, or the one of the brand dictionary on their whole transcript, or the one of the
   pieces covering the longest duration (`inherit_classification`, see below); otherwise it has no prediction, and the exportation and
-  classification steps process it like a new ad. Idempotent (stable id from the source
+  classification steps process it like a new ad. Its video is exported by the exportation run with
+  `EXPORT_MERGED_ADS=true`, rebuilt from the videos of the source ads when its mediatree archives are gone
+  (see `s02_exportation/README.md`). Idempotent (stable id from the source
   ads). A merge reverted by `revert_merge` raises `MergeRevertedError` unless `reactivate_reverted=True`:
   the automatic script never redoes a merge a human judged wrong.
 - `inherit_classification(session, merged_ad_id, source_ads, dictionary=None)`: when every source ad is an
   advertising (`fragment_type` `AD`) with a final status whose sub-category is known (not `dict_miss`,
-  `dict_tier2_no_kw` or `dict_tier3_no_kw`, still waiting for stage 4), and they all have the same brand
+  `dict_tier2_no_kw` or `dict_tier3_no_kw`, still waiting for `e4_classify_subcat`), and they all have the same brand
   (compared without case, spaces nor punctuation, like the detection of the pieces), the merged ad gets
   `fragment_type = 'AD'` and:
   1. when the source ads have the same sector and category (an empty category included), their
      classification: `prediction_status` and `prediction_method` `merge_inherited` (a final status, shown in
      the analyses like its pieces), the brand as spelled for the longest piece, the lowest confidence;
   2. otherwise, the classification of the brand dictionary of the classification (`dictionary`, see
-     `load_brand_dictionary`), applied like stage 3 (`s03_classification/pipeline/e03_dict_match.py`) to
-     the product names and the transcripts of the pieces one after the other, when it decides the sector
+     `load_brand_dictionary`), applied like `s03_classification/sector_and_brand/e3_dict_match.py` to
+     the product names and the transcripts of the pieces one after the other, searched together (unlike
+     `e3_dict_match`, which only reads the transcript of an ad without a product name), when it decides the sector
      and the category: the brand alone (tier 1) or a product keyword (tiers 2 and 3). Each piece was
      classified on its own part of the transcript, so with its own keywords (one piece says "SUV", the
      other "hybride rechargeable"): the whole transcript holds all of them. `prediction_status` is the one
      of the dictionary (`dict_tier1`, `dict_tier2`, `dict_tier3`), `prediction_method`
      `merge_inherited+<status>`, the brand of the dictionary, no confidence, and `prediction` also gets the
-     `dict_match` entry of stage 3;
+     `dict_match` entry of `e3_dict_match`;
   3. otherwise (a tier 2 brand without keyword, the dictionary giving the sector only, a tier 3 brand
      without keyword, a brand out of the dictionary, or no dictionary), the sector and category of the
      pieces covering the longest duration; on a tie, the ones of the last piece in broadcast order.
@@ -61,11 +64,13 @@ ads (automatic or manual). They only add to the session, the caller commits:
   `inherited_from_dictionary`, `inherited_from_majority`, `piece_not_classified`,
   `piece_waiting_for_subcategory`, `other_brand`, `other_sector`: the pieces covering the longest duration
   have no sector).
-- `load_brand_dictionary(session)`: the brand dictionary of the classification, from its copy in the
-  database (dbt seeds `advertising.ref_ome_marques_type_1/2/3`, downloaded from the
-  `Dictionnaire_marques_secteurs` Google Sheet, see `my_dbt_project/external_sources.yml`): the merge job
-  runs without the Excel file of `s03_classification/reference_data/`. The rows are read in the order the
-  seeds were loaded, the order of the tabs: the first rule of a brand with a keyword hit wins, like stage 3.
+- `load_brand_dictionary(session)`: the rules of the brand dictionary of the classification
+  (`tools/brand_dictionary.py`), from their copy in the database (`advertising.ref_ome_marques_type_1/2/3`,
+  downloaded from the `Dictionnaire_marques_secteurs` Google Sheet, see `my_dbt_project/external_sources.yml`):
+  the merge job runs without the local snapshot of the sheet in `s03_classification/sector_and_brand/reference_data/`.
+  A product keyword decides like in `e3_dict_match`: the most specific one found (the most words). The tables
+  are downloaded without the check of the classification's sync: when the aliases are refused (one is another
+  brand, or the alias of two brands), the rules are used without any alias (warning) until the sheet is fixed.
   `None` when a table is missing (extended perimeter): the second case of `inherit_classification` is then
   skipped (warning).
 - `merge_occurrences(session, merged_ad_id, piece_occurrence_ids, absorbed_occurrence_ids=())`: one
@@ -190,12 +195,16 @@ the brands already predicted (with the known brands of close spelling).
 What changes in `advertising.ad`, depending on the ad:
 
 - **an advertising already classified** (`fragment_type` `AD`, final `prediction_status`, see
-  `s03_classification/prediction_status.py`): the given values replace `predicted_brand`, `predicted_sector`,
-  `predicted_product_category`; `prediction_method` becomes `manual`, `prediction_status` stays;
+  `tools/prediction_status.py`): the given values replace `predicted_brand`, `predicted_sector`,
+  `predicted_product_category`; `prediction_method` becomes `manual`, `prediction_status` stays. An ad still
+  waiting for its sub-category (`dict_miss`, `dict_tier2_no_kw`, `dict_tier3_no_kw`) is only in this case when
+  the correction gives the category: its `prediction_status` becomes `subcat_done`. Without a category, it is an
+  advertising not classified (last case), so that the sub-category stage chooses its category from the corrected
+  brand and sector;
 - **another content type** (`type_contenu` other than `AD`): the ad becomes like a content the classification
   found not to be an advertising. `fragment_type` and the `content_type` of its `ad_type` prediction take the
-  content type, `prediction_status` becomes `ad_type_done` (the dictionary stage skips a content type other than
-  `AD`), `predicted_brand`, `predicted_sector` and `predicted_product_category` are emptied (a given brand, sector
+  content type, `prediction_status` becomes `ad_type_done` (the dictionary stage then sets `not_ad`, as for
+  a content the classification found not to be an advertising), `predicted_brand`, `predicted_sector` and `predicted_product_category` are emptied (a given brand, sector
   or category is ignored, warning), `prediction_method` becomes `manual`. The ad leaves the analyses, including the
   Metabase queries reading `advertising.ad` with a filter on `prediction_status` or `predicted_brand` but not on
   `fragment_type`, and the screenshots of its new occurrences (`s05_enrichment/e02_screenshots` only takes the
@@ -206,13 +215,19 @@ What changes in `advertising.ad`, depending on the ad:
   to the classification at the dictionary stage (`prediction_status = ad_type_done`), with the corrected brand and
   sector in its `ad_type` prediction. The dictionary, then the sub-category stage, give its sector and category,
   like for any ad: a given category is ignored (warning). Without sector and without a brand of the dictionary,
-  the sub-category stage has no sector (warning).
+  the sub-category stage has no sector (warning). Its `prediction_method` is emptied, as the classification
+  stages decide.
+
+The classification stages (`s03_classification/sector_and_brand`) never rewrite an ad whose `prediction_method`
+is `manual`.
 
 The values before the correction (`fragment_type`, `prediction_status`, `prediction_method`, `predicted_*`) are
 written in `valeurs_precedentes`, and in `advertising.ad.prediction`, in an entry
 `{"stage": "manual_correction", "previous": ..., "corrected": ..., "source": {spreadsheet, tab, row}, "at": ...}`
-kept by the classification stages. The other steps treat a corrected ad like the others: the canonicalisation of
-the brands (`RECANONICALIZE_EXISTING=1`) passes on its brand too.
+kept by the classification stages. The other steps (dbt, `s05_enrichment`) treat a corrected ad like the others.
+The canonicalisation of the brands (`e5_canonicalise_brand`, even with `RECANONICALISE=1`) leaves the brand of an
+ad corrected by hand as it is; an ad sent back to the classification, without `prediction_method`, gets its
+spelling from it like any other.
 
 ### New ad from occurrences (`nouvelle_ad`)
 
@@ -328,8 +343,15 @@ How the 400k ads are compared without comparing every pair:
   the whole ad: the pairs of its chunks one after the other, shifted by the start of their chunk, so that two copies
   split differently in chunks still match.
 
-Output: the pairs with `score_min` >= `--min-score` are grouped (connected components of the pairs), and every ad
-of a group gets its own row (a group of 2 ads has 2 rows), never two ads mixed on one row:
+Output: the pairs with `score_min` >= `--min-score` are grouped, and every ad of a group is at most
+`--group-duration-tol` seconds (default 1) away from the duration of the target of its group. The connected
+components of the pairs are not enough: each pair is within `--duration-tol`, but the pairs chain the durations
+(2 s, 3 s... 11 s ads of a brand end up in one component). Each component is split again: the target is chosen among
+the ads left (as `target_ad_id` below), its group is the ads left linked to it through pairs of ads at most
+`--group-duration-tol` away from the target, and so on with the ads left. A target left alone (its matches already in
+other groups) is dropped, and the log gives the number of ads of the pairs left out of the groups. Only the pairs
+inside a group are kept in the matching columns. A negative `--group-duration-tol` keeps the plain connected
+components. Every ad of a group gets its own row (a group of 2 ads has 2 rows), never two ads mixed on one row:
 
 - the CSV (`--output`), to check the groups by hand: `group_id` (smallest ad id of the group), `group_size`,
   `mosaique` (URL of the mosaic of the ad, `advertising.ad_screenshot`), `mosaique_image` (left empty, for an image

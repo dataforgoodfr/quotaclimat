@@ -16,6 +16,67 @@ Exports the detected ads (audio/video saved in the advertising bucket, `ads/<ad_
 | Variable | Default | Purpose |
 |---|---|---|
 | `SCREENSHOT_ON_EXPORT` | `true` | Makes the screenshot mosaic of each exported ad from its local video, see `s05_enrichment/e02_screenshots/README.md` (Sources). |
+| `EXPORT_MERGED_ADS` | `false` | `false`: the ads that are not merged ads. `true`: only the merged ads of an active merge, see below. |
+| `START_DATE`, `END_DATE` | unset | Window on the first detection of the ads (Paris time). A merged ad has the first detection of its oldest source ad. |
+| `MAX_RUN_DURATION_MIN` | `300` | After this time, the run starts no new (channel, day) group, finishes the started ones and ends normally, before the 6 h timeout of the job. Each group is saved as soon as it is done (see below), so the next run goes on with the ads left. |
+| `MAX_ADS` | unset (no limit) | Stops starting new groups once this many ads were taken. |
+| `MAX_CONCURRENT_EXPORTS` | CPUs of the job (`SCW_SLS_CPU`) | Ads cut or rebuilt (ffmpeg), uploaded and screenshotted at once. The video encoding is most of the CPU of the run: more exports than CPUs only make them wait for each other and fill the memory of the job (its disk counts in it). The bucket checks have their own limit (50), so they no longer wait behind the exports. |
+| `VIDEO_PRESET` | `veryfast` | libx264 preset of the videos cut or rebuilt (was the default `medium`: ~40 % more CPU for a file of about the same size, measured on a synthetic video). |
+| `FFMPEG_THREADS` | `2` | Threads of each ffmpeg encoding. |
+
+### What is left to export (`advertising.ad.media_export`)
+
+The run only reads the ads left to export: `media_export` NULL, or an mp4 smaller than
+`(duration + 2) × 10 kB`. `media_export` is a JSON written for each ad as soon as its (channel, day)
+group is done:
+
+| Key | Content |
+|---|---|
+| `exported_at` | Upload of `raw.mp4` (UTC, ISO). For an ad found in the bucket: the `LastModified` of `raw.mp4`. |
+| `mp4_bytes` | Size of `raw.mp4`. Missing size: the ad is trusted (not exported again). |
+| `margin_sec` | Margin of the video before and after the ad: `MARGIN_ON_MEDIA_EXPORT` for an export of this run; for an ad found in the bucket, the margin of `MARGIN_ON_MEDIA_EXPORT_HISTORY` (`ad_bucket.py`) at its `exported_at` (null before the history). |
+| `method` | `mediatree_cut` (cut from the mediatree archives) or `merged_rebuild` (merged ad rebuilt from its sources). Absent for an ad found in the bucket: not known. |
+
+An ad with `media_export` NULL is looked up in the bucket (one request on `raw.mp4`): missing or too
+small, it is exported; present, its `media_export` is made from it, so the next runs no longer check it.
+The column needs no backfill: the first run after the migration checks the bucket as before and fills
+it. A folder without `raw.mp4` is not exported again (as before) and stays NULL. The new ads of the
+manual corrections (`s04_consolidation/e02_manual_corrections`) are saved without `media_export`: the
+next run finds them in the bucket.
+
+To have an ad exported again (video deleted by hand, wrong cut), set its `media_export` back to NULL.
+
+The `no_data` ads whose media are now in the bucket get `fragment_type = 'advertising'` with the same
+group commit (before, only at the end of a run, so never when the run timed out).
+
+### Merged ads (`EXPORT_MERGED_ADS=true`)
+
+A merged ad (`advertising.ad_merge`, see `s04_consolidation/README.md`) is a new ad: nothing is in the
+advertising bucket for it until it is exported. A run with `EXPORT_MERGED_ADS=false` (default) leaves out
+every merged ad, whatever the status of its merge; a run with `EXPORT_MERGED_ADS=true` takes only the
+merged ads of an active merge, without video or with a too small mp4, like the default run does for the
+other ads. Schedule both runs: a merged ad is only exported by the second one.
+
+For each merged ad (`merged_ads.py`):
+
+1. its video is cut from the mediatree archives of its most recent occurrence, like any ad;
+2. when these archives are no longer in the mediatree bucket, it is rebuilt from the videos of the ads it
+   was merged from (`ads/<source_ad_id>/raw.mp4`), placed as they were broadcast in the most recent
+   occurrence of the merged ad that still has its journal rows (`advertising.ad_merge_occurrence`): the
+   pieces, and the short segments absorbed between them. The time covered by no source video (gap
+   between two pieces, absorbed segment without video) is black and silent. Without journal rows
+   (deleted by a reprocessing of the detection), the pieces are put end to end. The video lasts the
+   duration of the merged ad, cut or padded with black at the end, with the export margin
+   (`MARGIN_ON_MEDIA_EXPORT`) of black before and after; the mp3 is made from it. The margin of each
+   source video is found from its duration, like the screenshots job does (`export_margin_sec`);
+3. a source ad without video that is itself a merged ad is rebuilt the same way, recursively (its video
+   is only used for this rebuild, not saved). A piece that has no video and can't be rebuilt makes the
+   rebuild fail: the merged ad stays in the missing ads of the log, and the next run tries again.
+
+Limits: a rebuilt video is made of the videos of the pieces, cut from other broadcasts than the one of
+the layout; where two pieces overlap (up to 1 s, see `e01_merge_split_ads`), the second one starts where
+the first one ends. The log says for each rebuilt ad its layout (`journal` with the occurrence, or
+`end_to_end`), and the progress counts `rebuilt` apart from `uploaded`.
 
 ## `recompute_saved_chunks` env vars
 

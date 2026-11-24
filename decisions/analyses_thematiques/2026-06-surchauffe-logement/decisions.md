@@ -38,9 +38,9 @@ Questions Metabase : volumétrie (AV 2275, PE 2269), mentions journalières (AV 
 | Ancien code | Axe | Catégorie | Termes (forme normalisée de l'époque) | Question Metabase | Résultat |
 |---|---|---|---|---|---|
 | Q1 | Volumétrie par été (depuis 2023 en audiovisuel, 2025-2026 en presse) | V1, V2 | corpus | 2275, 2269 | présenté |
-| Q2 | Mentions journalières 2026, face à la climatisation et à l'ITN | V2, G14 | corpus, climatisation | 2271, 2274 | présenté |
-| | Comparaison avec un sujet concurrent (surchauffe face à climatisation) | X | corpus, climatisation | 2271, 2274 | présenté |
-| | Mots les plus employés du corpus | V3 | corpus | | présenté |
+| Q2 | Mentions journalières 2026, face à la climatisation et à l'ITN | V1, T7 | corpus, climatisation | 2271, 2274 | présenté |
+| | Comparaison avec un sujet concurrent (surchauffe face à climatisation) | T | corpus, climatisation | 2271, 2274 | présenté |
+| | Mots les plus employés du corpus | V | corpus | | présenté |
 | A1 | Performance du logement | B, spécifique | `dpe`, `diagnostic de performance energetique`, `confort dete` | 2290, 2276 | présenté |
 | A2 | Caractéristiques du logement | B, spécifique | `traversant`, `dernier etage`, `rez de chaussee`, `orientation sud`, `facade sud`, `orientation ouest`, `facade ouest`, `toit`, `sous les toits` | 2290, 2276 | présenté |
 | A3 | Localisation du logement dans le quartier | B, spécifique | `icu`, `ilot de chaleur urbain`, `bruit`, `lieu refuge` | 2290, 2276 | présenté |
@@ -53,7 +53,7 @@ Questions Metabase : volumétrie (AV 2275, PE 2269), mentions journalières (AV 
 | D1 | Conditions de santé | C2 | `maladie chronique`, `cardiovasculaire`, `respiratoire`, `antipsychotiques`, `anxiolytiques`, `antidepresseurs`, `malaise`, `coup de chaleur`, `surmortalite` | 2281, 2278 | présenté |
 | D2 | Personnes vulnérables | C4 | `personne vieillissante`, `personne agee`, `aine`, `senior`, `enfant`, `bebe`, `nourrisson`, `bas age`, `vulnerable` | 2281, 2278 | présenté |
 | | Climatisation x précarité | croisement | B5 et C | 2279 | testé, non présenté |
-| | Ratio articles passoire thermique / climatisation face au nombre de jours de canicule | V2 | | | testé |
+| | Ratio articles passoire thermique / climatisation face au nombre de jours de canicule | V1 | | | testé |
 
 Résultat : « présenté » = l'axe figure dans le support remis à l'ONPE (vérifié sur le texte du support) ; « testé » = produit, sans certitude qu'il figure dans le support ; « testé, non présenté » = produit, absent du support.
 
@@ -65,4 +65,4 @@ Les termes larges (`toit`, `bruit`, `ombre`, `populaire`, `fragile`, `enfant`, `
 
 Non publiés : résultats dans la collection Metabase et le support présenté à l'ONPE (non référencé ici).
 
-**Axes remontés dans la banque** : précarité du ménage (C3), personnes vulnérables (C4), courbe des mentions face à un indicateur physique (G14). Piste non remontée : comparaison avec un sujet concurrent (surchauffe face à climatisation).
+**Axes remontés dans la banque** : précarité du ménage (C3), personnes vulnérables (C4), mentions face à un indicateur physique (piste de T7). Piste non remontée : comparaison avec un sujet concurrent (surchauffe face à climatisation).

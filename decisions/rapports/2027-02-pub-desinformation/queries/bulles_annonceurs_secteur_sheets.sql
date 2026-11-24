@@ -17,19 +17,21 @@ WITH plage AS (
 parametres AS (
     SELECT
         1::numeric AS seuil,
-        0.5::numeric AS env_heures_min,
+        0.5::numeric AS climat_heures_min,
         9 AS nb_secteurs,
         6 AS nb_points
 ),
--- émissions à fort taux sur la période
+-- émissions à fort taux sur la période : au moins seuil cas validés par heure consacrée au climat
+-- (public.emission_jour.climat_heures : fenêtres de 20 s avec au moins un mot-clé climat ; biodiversité et
+-- ressources exclues), avec au moins climat_heures_min heures de climat sur la période
 emissions_fort_taux AS (
     SELECT ej.emission_cle
     FROM public.emission_jour ej
     CROSS JOIN plage pl
     WHERE ej.jour BETWEEN pl.debut AND pl.fin
     GROUP BY ej.emission_cle
-    HAVING SUM(ej.env_heures) >= (SELECT env_heures_min FROM parametres)
-       AND SUM(ej.nb_cas) / SUM(ej.env_heures) >= (SELECT seuil FROM parametres)
+    HAVING SUM(ej.climat_heures) >= (SELECT climat_heures_min FROM parametres)
+       AND SUM(ej.nb_cas) / SUM(ej.climat_heures) >= (SELECT seuil FROM parametres)
 ),
 -- pubs des chaînes d'information en continu
 pub AS (

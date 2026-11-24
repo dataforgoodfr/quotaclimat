@@ -24,9 +24,6 @@ from quotaclimat.data_ingestion.advertising.s01_detection.e03_already_identified
 from quotaclimat.data_ingestion.advertising.s01_detection.e06_export_classification import (
     clean_pre_existing_detections,
 )
-from quotaclimat.data_ingestion.advertising.s03_classification.dictionary.matcher import (
-    BrandDictionary,
-)
 from quotaclimat.data_ingestion.advertising.s04_consolidation.e01_merge_split_ads import (
     run as merge_run,
 )
@@ -36,6 +33,7 @@ from quotaclimat.data_ingestion.advertising.s04_consolidation.e01_merge_split_ad
     fetch_pairs,
     group_by_source_ads,
 )
+from quotaclimat.data_ingestion.advertising.tools import brand_dictionary
 from quotaclimat.data_ingestion.advertising.tools.ad_merge import (
     DICTIONARY_TABLES,
     INHERITED,
@@ -476,11 +474,13 @@ DICTIONARY_TIER3 = [
 ]
 
 
-def brand_dictionary() -> BrandDictionary:
-    return BrandDictionary.from_frames(
-        pd.DataFrame(DICTIONARY_TIER1),
-        pd.DataFrame(DICTIONARY_TIER2),
-        pd.DataFrame(DICTIONARY_TIER3),
+def dictionary_rules() -> brand_dictionary.Tiers:
+    return brand_dictionary.build(
+        {
+            "marques_type_1": pd.DataFrame(DICTIONARY_TIER1),
+            "marques_type_2": pd.DataFrame(DICTIONARY_TIER2),
+            "marques_type_3": pd.DataFrame(DICTIONARY_TIER3),
+        }
     )
 
 
@@ -504,9 +504,9 @@ def test_inherited_classification_uses_the_dictionary_on_the_whole_transcript():
     ]
     # without the dictionary: the majority of the duration (p2, 20 s of 30)
     assert inherited_classification(pieces)[1] == INHERITED_FROM_MAJORITY
-    values, reason = inherited_classification(pieces, brand_dictionary())
+    values, reason = inherited_classification(pieces, dictionary_rules())
     assert reason == INHERITED_FROM_DICTIONARY
-    # the first rule of the brand with a keyword hit in the whole transcript, like stage 3
+    # the most specific keyword of the brand found in the whole transcript, like e3_dict_match
     assert {
         k: values[k]
         for k in [
@@ -564,7 +564,7 @@ def test_inherited_classification_uses_the_dictionary_on_the_whole_transcript():
 
 
 def test_inherited_classification_by_the_dictionary_needs_a_decision():
-    dictionary = brand_dictionary()
+    dictionary = dictionary_rules()
     # tier 2 without keyword: the dictionary gives the sector only, the majority of the duration decides
     no_keyword = [
         piece(predicted_product_category="AUT1", transcript="la voiture"),
@@ -632,6 +632,27 @@ def test_inherited_classification_by_the_dictionary_needs_a_decision():
     assert inherited_classification([piece(), piece()], dictionary)[1] == INHERITED
 
 
+def test_inherited_classification_searches_the_transcript_with_a_product_name():
+    # unlike e3_dict_match, the keywords are looked for in the transcripts even when a piece has a product
+    # name: "hybride rechargeable" (AUT2) is only said, the product name read is "Clio"
+    pieces = [
+        piece(predicted_product_category="AUT5", transcript="le nouveau SUV"),
+        piece(
+            predicted_product_category="AUT1",
+            transcript="hybride rechargeable",
+            prediction=[
+                {
+                    "stage": "ad_type",
+                    "raw_response": {"brand_name": "Renault", "product_name": "Clio"},
+                }
+            ],
+        ),
+    ]
+    values, reason = inherited_classification(pieces, dictionary_rules())
+    assert reason == INHERITED_FROM_DICTIONARY
+    assert values["predicted_product_category"] == "AUT2"
+
+
 @pytest.fixture
 def dictionary_tables(engine):
     with engine.begin() as connection:
@@ -653,10 +674,35 @@ def test_load_brand_dictionary_reads_the_copy_in_the_database(
 ):
     with Session(engine) as session:
         dictionary = load_brand_dictionary(session)
-    # rules in the order of the rows: "modèle électrique" (AUT1) comes before "modèle" (AUT5)
-    match = dictionary.match("Renault", None, "un modèle électrique")
-    assert (match.method, match.subcat_code) == ("dict_tier2", "AUT1")
-    assert dictionary.match("Lidl").method == "dict_tier1"
+    # "modèle électrique" (AUT1) is more specific than "modèle" (AUT5)
+    match = brand_dictionary.match(dictionary, "Renault", None, "un modèle électrique")
+    assert (match["method"], match["subcat_code"]) == ("dict_tier2", "AUT1")
+    assert (
+        brand_dictionary.match(dictionary, "Lidl", None, None)["method"] == "dict_tier1"
+    )
+
+
+def test_load_brand_dictionary_without_aliases_when_they_are_refused(
+    engine, dictionary_tables
+):
+    # "Lidl" is a brand of tier 1: it can't also be an alias of Renault
+    tier2 = [rule | {"alias_marque": "Lidl"} for rule in DICTIONARY_TIER2]
+    with engine.begin() as connection:
+        pd.DataFrame(tier2).to_sql(
+            DICTIONARY_TABLES[1],
+            connection,
+            schema="advertising",
+            index=False,
+            if_exists="replace",
+        )
+    with Session(engine) as session:
+        dictionary = load_brand_dictionary(session)
+    # the rules are still used, without the aliases
+    assert (
+        brand_dictionary.match(dictionary, "Lidl", None, None)["method"] == "dict_tier1"
+    )
+    match = brand_dictionary.match(dictionary, "Renault", None, "un SUV")
+    assert (match["method"], match["subcat_code"]) == ("dict_tier2", "AUT5")
 
 
 def test_load_brand_dictionary_without_tables(engine):

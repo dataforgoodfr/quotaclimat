@@ -278,8 +278,8 @@ if __name__ == "__main__":
     date_format_new = "%d/%m/%Y %H:%M:%S"
     month_halves = ["1-14", "15+"]
     year = "2026"
-    month = "1"
-    month_half = 0
+    month = "11"
+    month_half = 1
 
     folder_path = os.path.join("csa-belge", year, month, month_halves[month_half])
 
@@ -297,6 +297,6 @@ if __name__ == "__main__":
     # process_csv_folder_to_partitioned_parquet(folder_path_2025, output_dir,encoding=encoding_2024, date_format=date_format_2025_T2)
     # process_csv_folder_to_partitioned_parquet(folder_path_2025_T3, output_dir,encoding=encoding_2024, date_format=date_format_2025_T3)
     # process_csv_folder_to_partitioned_parquet(folder_path_2025_T4, output_dir,encoding=encoding_2024, date_format=date_format_2025_T4)
-    process_csv_folder_to_partitioned_parquet(folder_path, output_dir, encoding=encoding_2024, date_format=date_format_new)
+    process_csv_folder_to_partitioned_parquet(folder_path, output_dir, encoding=encoding_2025, date_format=date_format_new)
     s3_client = get_s3_client()
     upload_folder_to_s3(output_dir_upload, bucket, s3_root_folder, s3_client=s3_client)

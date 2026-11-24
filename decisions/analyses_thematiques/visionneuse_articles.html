@@ -1,0 +1,355 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Visionneuse articles</title>
+<!--
+  Visionneuse d'export Metabase (CSV ou JSON) pour la presse : une carte par article (titre, chapô, corps), termes surlignés
+  sur le texte d'origine, verdict humain par carte (validé, faux positif, incertain) et compteur de précision avec IC 95 %
+  (Wilson). Rien n'est envoyé. Les verdicts sont gardés dans le navigateur (clé de la ligne et verdict, jamais le texte)
+  et s'exportent en CSV.
+  Colonnes reconnues : titre (ou title), chapo (ou snippet), corps (ou body) ; terme* (termes surlignés, sous leur forme
+  normalisée) ; keywords_found (mots du dictionnaire, normalisés, séparés par des virgules) ; axe, period, an
+  (clé du verdict) ; trouve_dans (ventilation du compteur). Les autres colonnes s'affichent en en-tête de carte.
+  Les termes sont cherchés sur le texte normalisé comme dans le pipeline (minuscules, œ et æ développés, accents
+  français retirés, apostrophes et tirets en espace), puis surlignés sur le texte d'origine.
+-->
+<style>
+:root{--bg:#fafaf7;--fg:#1d1d1b;--mut:#6b6b66;--line:#e2e1dc;--card:#fff;--side:#f3f2ee;--mark:#ffe58a;--mark2:#b8e3ff;--mark3:#bfe8c4;--mark4:#e6d3fa;--ok:#2e7d4f;--fp:#b3261e;--inc:#a26b00;--cur:#d0541f}
+@media (prefers-color-scheme:dark){:root{--bg:#161615;--fg:#e8e6e1;--mut:#9a988f;--line:#33322f;--card:#1f1f1d;--side:#1a1a19;--mark:#7a6413;--mark2:#1f5574;--mark3:#2f6b3a;--mark4:#5b3a7e;--ok:#5cc28a;--fp:#f2867e;--inc:#e0b252;--cur:#f0a070}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:17px/1.65 Georgia,"Times New Roman",serif}
+header{position:sticky;top:0;z-index:2;background:var(--bg);border-bottom:1px solid var(--line);padding:10px 16px;display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;font:14px system-ui,sans-serif}
+header input[type=search]{flex:1;min-width:160px;padding:6px 10px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--fg);font:inherit}
+button,label.btn{padding:6px 10px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--fg);font:14px system-ui,sans-serif;cursor:pointer}
+#count{color:var(--mut)}
+main{max-width:780px;margin:0 auto;padding:16px 16px 140px}
+#drop{border:2px dashed var(--line);border-radius:10px;padding:32px 20px;text-align:center;font:15px system-ui,sans-serif;color:var(--mut)}
+#drop.over{border-color:var(--fg);color:var(--fg)}
+#drop textarea{width:100%;height:120px;margin-top:14px;padding:8px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--fg);font:13px ui-monospace,monospace}
+.card{background:var(--card);border:1px solid var(--line);border-left:5px solid var(--line);border-radius:8px;padding:14px 20px 14px;margin:0 0 20px;scroll-margin-top:70px}
+.card.cur{box-shadow:0 0 0 2px var(--mut)}
+.card.v-ok{border-left-color:var(--ok)}.card.v-fp{border-left-color:var(--fp)}.card.v-inc{border-left-color:var(--inc)}
+.meta{font:13px/1.5 system-ui,sans-serif;color:var(--mut);display:flex;flex-wrap:wrap;gap:2px 14px}
+.meta b{color:var(--fg);font-weight:600}
+.num{font:12px system-ui,sans-serif;color:var(--mut);float:right}
+h2{font-size:22px;line-height:1.35;margin:10px 0 4px}
+.lab{font:11px system-ui,sans-serif;text-transform:uppercase;letter-spacing:.06em;color:var(--mut);margin:14px 0 2px}
+summary.lab{cursor:pointer;width:max-content;padding:2px 0}
+details:not([open]) summary.lab{margin:6px 0 0}
+.txt{white-space:pre-wrap;overflow-wrap:anywhere}
+.chapo{font-style:italic}
+mark{background:var(--mark);color:inherit;padding:0 2px;border-radius:2px;scroll-margin:40vh 0}
+mark.q{background:var(--mark2)}
+mark.g{background:var(--mark3)}
+mark.p{background:var(--mark4)}
+mark.now{outline:2px solid var(--cur);outline-offset:1px}
+.cnt{text-transform:none;letter-spacing:0;color:var(--fg);background:var(--mark);padding:0 5px;border-radius:3px;margin-left:6px}
+.cnt.p{background:var(--mark4)}.cnt.g{background:var(--mark3)}.cnt.q{background:var(--mark2)}
+.kw{font:13px/1.5 system-ui,sans-serif;color:var(--mut);margin-top:4px}
+.kw span{background:var(--mark4);color:var(--fg);padding:0 5px;border-radius:3px;margin-right:4px;display:inline-block}
+#g{flex-basis:100%;padding:6px 10px;border:1px solid var(--mark3);border-radius:6px;background:var(--card);color:var(--fg);font:inherit}
+.verdict{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
+.verdict button.on[data-v=ok]{background:var(--ok);border-color:var(--ok);color:#fff}
+.verdict button.on[data-v=fp]{background:var(--fp);border-color:var(--fp);color:#fff}
+.verdict button.on[data-v=inc]{background:var(--inc);border-color:var(--inc);color:#fff}
+.verdict input{flex:1;min-width:140px;padding:5px 8px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--fg);font:13px system-ui,sans-serif}
+#stats{position:fixed;right:16px;bottom:16px;z-index:2;max-width:calc(100vw - 32px);background:var(--card);border:1px solid var(--line);border-radius:8px;padding:10px 14px;font:13px/1.5 system-ui,sans-serif;box-shadow:0 2px 10px rgba(0,0,0,.08)}
+#stats:empty{display:none}
+#stats b{font-size:15px}
+#stats .sub{color:var(--mut)}
+.hint{font:12px system-ui,sans-serif;color:var(--mut)}
+</style>
+</head>
+<body>
+<header>
+  <label class="btn">Ouvrir un fichier<input id="file" type="file" accept=".csv,.json,.txt" hidden></label>
+  <input id="q" type="search" placeholder="Filtrer et surligner (plusieurs mots : séparés par des virgules)">
+  <span id="count"></span>
+  <button id="export" title="Tous les verdicts gardés dans ce navigateur, tous axes confondus">Exporter les verdicts</button>
+  <button id="reset">Effacer les verdicts</button>
+  <span class="hint">j / k : article suivant / précédent · n : terme suivant dans l'article · v validé · f faux positif · i incertain</span>
+  <input id="g" type="text" placeholder="Mots à surligner en vert, séparés par des virgules (sans filtrer les cartes)">
+</header>
+<main>
+  <div id="drop">
+    Glisse ici un export Metabase (CSV ou JSON), ou colle son contenu ci-dessous.
+    <textarea id="paste" placeholder="Coller le CSV ou le JSON ici"></textarea>
+  </div>
+  <div id="list"></div>
+</main>
+<div id="stats"></div>
+<script>
+const $ = s => document.querySelector(s);
+const STORE = 'visionneuse_articles.verdicts';
+const LABELS = {ok: 'validé', fp: 'faux positif', inc: 'incertain'};
+// rôle des colonnes de texte, dans l'ordre d'affichage
+const PARTS = [['titre', ['titre', 'title']], ['chapo', ['chapo', 'snippet']], ['corps', ['corps', 'body']]];
+let rows = [], textCol = {}, termCols = [], kwCols = [], metaCols = [], cur = -1, fileName = 'colle';
+
+// clé de colonne : minuscules, sans accent, espaces en _
+const key = h => h.trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, '_');
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const reEsc = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+// normalisation du pipeline (thematic_utils.normalize_text), caractère par caractère, avec la position d'origine de
+// chaque caractère normalisé : on cherche sur le texte normalisé et on surligne le texte d'origine
+const ACC = Object.fromEntries([...'àâäéèêëîïôöùûüÿç'].map((c, i) => [c, 'aaaeeeeiioouuuyc'[i]]));
+const SEP = new Set([..."'’‘‛ʼʹ´`′＇-"]);
+function normMap(s) {
+  let out = ''; const from = [], to = []; let i = 0;
+  for (const ch of String(s)) {
+    let r = '';
+    for (const c of ch.toLowerCase())
+      r += c === 'œ' ? 'oe' : c === 'æ' ? 'ae' : ACC[c] ?? (SEP.has(c) ? ' ' : c);
+    for (let k = 0; k < r.length; k++) { from.push(i); to.push(i + ch.length); }
+    out += r; i += ch.length;
+  }
+  return {out, from, to};
+}
+const norm = s => normMap(s).out;
+
+// verdicts : { cle: {v, c, t, axe, period, media_all, an, publication_datetime, trouve_dans, terme} }, sans le texte
+function readStore() { try { return JSON.parse(localStorage.getItem(STORE)) || {}; } catch (e) { return {}; } }
+function writeStore(s) { try { localStorage.setItem(STORE, JSON.stringify(s)); } catch (e) {} }
+let verdicts = readStore();
+
+// clé d'une ligne : axe, période, identifiant Factiva de l'article si présents ; sinon fichier et rang
+function rowKey(r, i) {
+  const parts = ['axe', 'period', 'an'].map(k => r[k] ?? '');
+  return parts.some(Boolean) ? parts.join('|') : fileName + '#' + i;
+}
+
+// CSV avec champs entre guillemets, retours à la ligne et "" échappés ; séparateur , ou ; deviné sur l'en-tête
+function parseCSV(t) {
+  const first = t.slice(0, t.indexOf('\n') + 1 || t.length);
+  const sep = (first.split(';').length > first.split(',').length) ? ';' : ',';
+  const out = []; let row = [], f = '', q = false;
+  for (let i = 0; i < t.length; i++) {
+    const c = t[i];
+    if (q) {
+      if (c === '"') { if (t[i + 1] === '"') { f += '"'; i++; } else q = false; }
+      else f += c;
+    } else if (c === '"') q = true;
+    else if (c === sep) { row.push(f); f = ''; }
+    else if (c === '\n' || c === '\r') {
+      if (c === '\r' && t[i + 1] === '\n') i++;
+      row.push(f); f = ''; if (row.length > 1 || row[0] !== '') out.push(row); row = [];
+    } else f += c;
+  }
+  if (f !== '' || row.length) { row.push(f); out.push(row); }
+  const head = out.shift() || [];
+  return out.map(r => Object.fromEntries(head.map((h, i) => [h, r[i] ?? ''])));
+}
+
+function load(text, name) {
+  text = text.replace(/^﻿/, '').trim();
+  if (!text) return;
+  let data;
+  try { data = text[0] === '[' || text[0] === '{' ? JSON.parse(text) : parseCSV(text); }
+  catch (e) { alert('Lecture impossible : ' + e.message); return; }
+  if (!Array.isArray(data)) data = data.data || data.rows || [data];
+  if (!data.length) { alert('Aucune ligne.'); return; }
+  fileName = name || 'colle';
+  const cols = Object.keys(data[0]);
+  rows = data.map(r => Object.fromEntries(cols.map(c => [key(c), r[c] == null ? '' : String(r[c])])));
+  rows.forEach((r, i) => r._key = rowKey(r, i));
+  const ks = cols.map(key);
+  textCol = Object.fromEntries(PARTS.map(([p, names]) => [p, names.find(n => ks.includes(n))]).filter(([, k]) => k));
+  if (!Object.keys(textCol).length) { alert('Aucune colonne titre, chapo ou corps.'); return; }
+  const texts = Object.values(textCol);
+  termCols = ks.filter(k => /^terme/.test(k));
+  kwCols = ks.filter(k => k === 'keywords_found' || /^mots_/.test(k));
+  metaCols = ks.filter(k => !texts.includes(k) && !termCols.includes(k) && !kwCols.includes(k));
+  $('#drop').hidden = true;
+  render();
+}
+
+// surlignage sur le texte d'origine : bleu = recherche, vert = liste du haut, jaune = termes de l'axe, violet = mots qui
+// ont rendu l'article thématique (keywords_found) ; un mot présent dans plusieurs listes prend la première couleur
+function highlight(text, terms, qterms, gterms = [], pterms = []) {
+  const n = t => norm(t).trim();
+  const all = [...new Set([...terms, ...qterms, ...gterms, ...pterms].map(n).filter(Boolean))].sort((a, b) => b.length - a.length);
+  if (!all.length || !text) return {html: esc(text), n: {}};
+  const {out, from, to} = normMap(text);
+  const re = new RegExp('(?<![\\p{L}\\p{N}])(' + all.map(reEsc).join('|') + ')(?![\\p{L}\\p{N}])', 'gu');
+  const qs = new Set(qterms.map(n)), gs = new Set(gterms.map(n)), ts = new Set(terms.map(n)), ps = new Set(pterms.map(n));
+  let html = '', last = 0; const count = {};
+  for (const m of out.matchAll(re)) {
+    const a = from[m.index], b = to[m.index + m[0].length - 1], f = m[0];
+    const c = qs.has(f) ? 'q' : gs.has(f) ? 'g' : ts.has(f) ? '' : ps.has(f) ? 'p' : '';
+    count[c] = (count[c] || 0) + 1;
+    html += esc(text.slice(last, a)) + `<mark${c ? ` class="${c}"` : ''}>${esc(text.slice(a, b))}</mark>`;
+    last = b;
+  }
+  return {html: html + esc(text.slice(last)), n: count};
+}
+const listOf = v => v.split(',').map(s => s.trim()).filter(Boolean);
+
+// nombre de mots surlignés par couleur, à côté du nom de chaque partie
+const counts = n => [['', 'terme', 'termes'], ['p', 'mot du dictionnaire', 'mots du dictionnaire'], ['g', 'vert', 'verts'],
+  ['q', 'recherche', 'recherche']].map(([c, l1, l2]) =>
+  n[c] ? `<span class="cnt${c ? ' ' + c : ''}">${n[c]} ${n[c] > 1 ? l2 : l1}</span>` : '').join('');
+
+function render() {
+  const qterms = listOf($('#q').value), gterms = listOf($('#g').value);
+  const shown = rows.map((r, i) => [r, i]).filter(([r]) => !qterms.length ||
+    qterms.some(q => Object.entries(r).some(([k, v]) => k !== '_key' && norm(v).includes(norm(q).trim()))));
+  $('#count').textContent = `${shown.length} / ${rows.length}`;
+  $('#list').innerHTML = shown.map(([r, i]) => {
+    const terms = termCols.flatMap(k => r[k].split(' | ')).filter(Boolean);
+    const kws = kwCols.flatMap(k => r[k].split(',').map(s => s.trim()).filter(Boolean));
+    const kwLine = kws.length ? `<div class="kw">mots du dictionnaire : ${kws.map(w => `<span>${esc(w)}</span>`).join('')}</div>` : '';
+    const meta = metaCols.filter(k => r[k] !== '').map(k => `<span>${esc(k)} <b>${esc(r[k])}</b></span>`).join('');
+    const tl = termCols.filter(k => r[k] !== '').map(k => `<span>${esc(k)} <b>${esc(r[k])}</b></span>`).join('');
+    const h = p => textCol[p] ? highlight(r[textCol[p]], terms, qterms, gterms, kws) : null;
+    const ti = h('titre'), ch = h('chapo'), co = h('corps');
+    // titre toujours visible ; chapô et corps ouverts, repliables avec la flèche
+    const block = (lab, x, cls) => x && x.html ? `<details open><summary class="lab">${lab} ${counts(x.n)}</summary>` +
+      `<div class="txt${cls ? ' ' + cls : ''}">${x.html}</div></details>` : '';
+    const title = ti && ti.html ? `<h2>${ti.html}</h2>` + (counts(ti.n) ? `<div class="lab">titre ${counts(ti.n)}</div>` : '') : '';
+    const vd = verdicts[r._key] || {};
+    const btns = Object.entries(LABELS).map(([v, l]) =>
+      `<button data-v="${v}" class="${vd.v === v ? 'on' : ''}">${l}</button>`).join('');
+    return `<article class="card${vd.v ? ' v-' + vd.v : ''}" data-i="${i}"><span class="num">${i + 1}</span>` +
+      `<div class="meta">${meta}${tl}</div>${kwLine}${title}${block('chapô', ch, 'chapo')}${block('corps', co)}` +
+      `<div class="verdict">${btns}<button class="next" title="Terme suivant (n)">terme suivant</button>` +
+      `<input placeholder="Commentaire (facultatif)" value="${esc(vd.c || '')}"></div></article>`;
+  }).join('');
+  cur = -1;
+  stats();
+}
+
+// verdict d'une ligne ; un second clic sur le même verdict l'annule
+function setVerdict(i, v) {
+  const r = rows[i], k = r._key, old = verdicts[k] || {};
+  if (old.v === v) delete verdicts[k];
+  else verdicts[k] = {...old, v, t: new Date().toISOString(), axe: r.axe ?? '', period: r.period ?? '',
+    media_all: r.media_all ?? r.source_name ?? '', an: r.an ?? '', publication_datetime: r.publication_datetime ?? '',
+    trouve_dans: r.trouve_dans ?? '', terme: termCols.map(c => r[c]).find(Boolean) ?? ''};
+  writeStore(verdicts);
+  const card = document.querySelector(`.card[data-i="${i}"]`);
+  if (card) {
+    const nv = verdicts[k]?.v;
+    card.classList.remove('v-ok', 'v-fp', 'v-inc');
+    if (nv) card.classList.add('v-' + nv);
+    card.querySelectorAll('.verdict button[data-v]').forEach(b => b.classList.toggle('on', b.dataset.v === nv));
+  }
+  stats();
+}
+
+function setComment(i, c) {
+  const k = rows[i]._key;
+  if (!verdicts[k]) return;            // un commentaire seul n'est gardé qu'avec un verdict
+  verdicts[k].c = c; writeStore(verdicts);
+}
+
+// intervalle de Wilson à 95 %
+function wilson(x, n) {
+  if (!n) return null;
+  const z = 1.96, p = x / n, d = 1 + z * z / n;
+  const c = (p + z * z / (2 * n)) / d, h = z * Math.sqrt(p * (1 - p) / n + z * z / (4 * n * n)) / d;
+  return [Math.max(0, c - h), Math.min(1, c + h)];
+}
+const pct = x => Math.round(100 * x);
+
+function line(list) {
+  const ok = list.filter(r => verdicts[r._key]?.v === 'ok').length;
+  const fp = list.filter(r => verdicts[r._key]?.v === 'fp').length;
+  const n = ok + fp;
+  if (!n) return '0 jugé';
+  const [lo, hi] = wilson(ok, n);
+  return `${ok} validé${ok > 1 ? 's' : ''} / ${n} jugé${n > 1 ? 's' : ''} : <b>${pct(ok / n)} %</b> <span class="sub">(IC 95 % : ${pct(lo)} à ${pct(hi)} %)</span>`;
+}
+
+function stats() {
+  if (!rows.length) { $('#stats').innerHTML = ''; return; }
+  const inc = rows.filter(r => verdicts[r._key]?.v === 'inc').length;
+  const left = rows.filter(r => !verdicts[r._key]).length;
+  const axes = [...new Set(rows.map(r => r.axe).filter(Boolean))];
+  let h = `<div>${axes.length ? esc(axes.join(', ')) + ' · ' : ''}${line(rows)}</div>`;
+  if (rows.some(r => r.trouve_dans)) {
+    for (const t of [...new Set(rows.map(r => r.trouve_dans))])
+      h += `<div class="sub">${esc(t || '(vide)')} : ${line(rows.filter(r => r.trouve_dans === t))}</div>`;
+  }
+  h += `<div class="sub">${inc} incertain${inc > 1 ? 's' : ''} (hors calcul) · ${left} restant${left > 1 ? 's' : ''}</div>`;
+  $('#stats').innerHTML = h;
+}
+
+function exportCSV() {
+  const cols = ['axe', 'period', 'media_all', 'an', 'publication_datetime', 'trouve_dans', 'terme', 'verdict', 'commentaire', 'date_verdict'];
+  const q = v => /[",;\n\r]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
+  const lines = Object.values(verdicts).map(d => [d.axe, d.period, d.media_all, d.an, d.publication_datetime, d.trouve_dans,
+    d.terme, LABELS[d.v] || d.v, d.c || '', d.t || ''].map(v => q(String(v ?? ''))).join(','));
+  if (!lines.length) { alert('Aucun verdict à exporter.'); return; }
+  const blob = new Blob(['﻿' + [cols.join(','), ...lines].join('\n')], {type: 'text/csv;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'verdicts_articles_' + new Date().toISOString().slice(0, 10) + '.csv';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function go(d) {
+  const cards = [...document.querySelectorAll('.card')];
+  if (!cards.length) return;
+  cards[cur]?.classList.remove('cur');
+  cur = Math.max(0, Math.min(cards.length - 1, cur + d));
+  cards[cur].classList.add('cur');
+  cards[cur].scrollIntoView({behavior: 'smooth', block: 'start'});
+}
+
+// terme suivant de l'axe (jaune) ou de la recherche (bleu) dans un article : utile dans les corps longs
+function nextTerm(card) {
+  const ms = [...card.querySelectorAll('mark:not(.g):not(.p)')];
+  if (!ms.length) return;
+  const at = ms.findIndex(m => m.classList.contains('now'));
+  ms[at]?.classList.remove('now');
+  const m = ms[(at + 1) % ms.length];
+  m.closest('details')?.setAttribute('open', '');
+  m.classList.add('now');
+  m.scrollIntoView({behavior: 'smooth', block: 'center'});
+}
+
+$('#file').onchange = e => { const f = e.target.files[0]; if (f) f.text().then(t => load(t, f.name)); e.target.value = ''; };
+$('#paste').oninput = e => load(e.target.value, 'colle');
+$('#q').oninput = render;
+// liste verte gardée dans le navigateur d'une session à l'autre
+try { $('#g').value = localStorage.getItem('visionneuse_articles.vert') || ''; } catch (e) {}
+$('#g').oninput = () => { try { localStorage.setItem('visionneuse_articles.vert', $('#g').value); } catch (e) {} if (rows.length) render(); };
+$('#export').onclick = exportCSV;
+$('#reset').onclick = () => {
+  const n = Object.keys(verdicts).length;
+  if (n && confirm(`Effacer les ${n} verdicts gardés dans ce navigateur ? Exporte-les d'abord si besoin.`)) {
+    verdicts = {}; writeStore(verdicts); render();
+  }
+};
+$('#list').addEventListener('click', e => {
+  const b = e.target.closest('.verdict button'); if (!b) return;
+  const card = b.closest('.card'), cards = [...document.querySelectorAll('.card')];
+  cards[cur]?.classList.remove('cur'); cur = cards.indexOf(card); card.classList.add('cur');
+  if (b.classList.contains('next')) nextTerm(card);
+  else setVerdict(+card.dataset.i, b.dataset.v);
+});
+$('#list').addEventListener('change', e => {
+  if (e.target.matches('.verdict input')) setComment(+e.target.closest('.card').dataset.i, e.target.value);
+});
+addEventListener('dragover', e => { e.preventDefault(); $('#drop').classList.add('over'); });
+addEventListener('dragleave', () => $('#drop').classList.remove('over'));
+addEventListener('drop', e => { e.preventDefault(); $('#drop').classList.remove('over'); const f = e.dataTransfer.files[0]; if (f) f.text().then(t => load(t, f.name)); });
+addEventListener('keydown', e => {
+  if (e.target.matches('input,textarea') || e.ctrlKey || e.metaKey || e.altKey) return;
+  const cards = [...document.querySelectorAll('.card')];
+  if (e.key === 'j') go(1);
+  else if (e.key === 'k') go(-1);
+  else if (e.key === 'n' && cards.length) { if (cur < 0) go(1); nextTerm(cards[cur]); }
+  else if (['v', 'f', 'i'].includes(e.key) && cards.length) {
+    if (cur < 0) go(1);
+    setVerdict(+cards[cur].dataset.i, {v: 'ok', f: 'fp', i: 'inc'}[e.key]);
+    go(1);
+  }
+});
+</script>
+</body>
+</html>

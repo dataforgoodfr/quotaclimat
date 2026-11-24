@@ -13,8 +13,8 @@
     attacks or defends, from the Cas_de_mesinfo Google Sheet (seeds ref_cas_affirmations and ref_cas_cibles, see
     my_dbt_project/external_sources.yml). The tab 1_affirmations has one column per target ("attaque", "défend"
     or empty), unpivoted here; a target column added to the tab must be added to external_sources.yml and to the
-    list below. est_sens_reference: the claim goes the way of the reference direction of its target (tab 0_cibles),
-    the only one the binary grid (cas_categorie_visee) applies to. -#}
+    list below. est_sens_reference: the claim goes the most common direction of its target (tab 0_cibles), for
+    information only: the categories attacked depend on the direction of the grid rows (cas_categorie_visee). -#}
 {%- set cibles = ['enr', 'prx', 'nuc', 'fos', 've', 'vt', 'pau', 'aer', 'vel', 'trc', 'bat', 'clim', 'elv', 'agr',
                   'sci', 'mes', 'rol'] %}
 WITH affirmations AS (

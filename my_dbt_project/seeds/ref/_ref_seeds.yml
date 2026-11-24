@@ -265,13 +265,15 @@ seeds:
     config:
       column_types:
         cible_code: text
+        sens: text
         cat_code: text
         produit_vise: text
         analyse: text
     tests:
+      # one row per target, direction and category
       - unique_name_keys:
           arguments:
-            columns: ['cible_code', 'cat_code']
+            columns: ['cible_code', 'sens', 'cat_code']
     columns:
       - name: cible_code
         tests:
@@ -280,6 +282,12 @@ seeds:
               arguments:
                 to: ref('ref_cas_cibles')
                 field: cible_code
+      - name: sens
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['attaque', 'défend']
       - name: cat_code
         tests:
           - not_null

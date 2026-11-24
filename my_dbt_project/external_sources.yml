@@ -112,6 +112,9 @@ sources:
         table: ref_cas_grille_binaire
         columns:
           Cible (code): cible_code
+          # direction of the claims on the target for which the category is attacked: a claim attacks the
+          # category only when it goes this direction (cas_categorie_visee)
+          Sens de référence: sens
           Code catégorie: cat_code
           Produit visé (1 = attaqué): produit_vise
           Analyse: analyse

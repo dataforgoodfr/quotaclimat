@@ -399,9 +399,9 @@ async def callback(org: str, request: Request):
             r = await mb.http.post("/api/session", json={"username": email, "password": pw})
             r.raise_for_status()
             sid = r.json()["id"]
-        except httpx.HTTPError as e:
+        except httpx.HTTPError:
             log.exception("Metabase API error")
-            return error(f"Metabase API error: {e}", 502)
+            return error("Metabase API error. Please try again later.", 502)
 
     request.session["org"] = org
     request.session["id_token"] = tok.get("id_token")

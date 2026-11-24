@@ -12,6 +12,7 @@ description: |-
   The incremental models of models/dashboards and models/homepage recompute only
   the last weeks (1 by default: from the Monday of the previous week). With full_refresh they are rebuilt from the whole
   keywords table (dbt.sh does it by itself on the first day of each month).
+has_on_behalf_of: true
 value:
   modules:
   - id: dbt_run_transformations

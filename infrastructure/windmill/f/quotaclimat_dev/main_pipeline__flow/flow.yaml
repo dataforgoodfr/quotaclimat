@@ -4,6 +4,7 @@ description: |-
   (without clustering), runs the dev OME `barometre` pipeline, then the RRS
   flows on the barometre source. Each step is a subflow that must succeed
   before the next one starts. No schedule in dev: run it manually.
+has_on_behalf_of: true
 value:
   modules:
   - id: alert_test

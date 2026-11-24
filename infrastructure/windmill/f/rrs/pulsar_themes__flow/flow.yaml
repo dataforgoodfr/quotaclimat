@@ -5,6 +5,7 @@ description: |-
   download the themes XLS + capture the session token (login → Export → XLS),
   parse themes + topics, then fetch each theme's top posts via GraphQL and store
   searches / themes / topics / posts. Fan out over `searches`.
+has_on_behalf_of: true
 value:
   modules:
   - id: per_search

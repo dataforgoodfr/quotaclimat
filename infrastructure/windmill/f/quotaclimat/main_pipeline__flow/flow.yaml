@@ -9,6 +9,7 @@ description: |-
   `metabase-sync` failing (Metabase down, a table unknown to Metabase) only
   marks the run as WARNING. It runs with force: SQL edited in Metabase is
   overwritten by the versioned one (differences in its logs).
+has_on_behalf_of: true
 value:
   modules:
   - id: extended_perimeter

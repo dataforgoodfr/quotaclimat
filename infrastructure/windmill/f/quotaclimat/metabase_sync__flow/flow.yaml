@@ -7,6 +7,7 @@ description: |-
   with the difference in the logs; without force it is left as it is and fails
   the run. Runs at the end of main-pipeline (the queries read the dbt tables),
   or by hand.
+has_on_behalf_of: true
 value:
   modules:
   - id: sync_metabase_questions

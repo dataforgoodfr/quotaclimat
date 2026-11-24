@@ -20,6 +20,7 @@ description: >-
   `quotaclimat/utils/sentry.py`.
 
   No schedule: run it by hand.
+has_on_behalf_of: true
 value:
   modules:
     - id: send_test_logs_and_error

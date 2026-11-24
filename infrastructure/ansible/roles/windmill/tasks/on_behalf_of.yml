@@ -1,0 +1,67 @@
+---
+# Makes every flow of infrastructure/windmill/ run on behalf of the owner of WINDMILL_TOKEN (the
+# admin who deploys), whoever starts it. The secrets folder f/secrets is readable by that admin
+# only: without this, a flow started by hand by a member of Devs fails on its first secret
+# ("Variable exists but you don't have access to it").
+#
+# The flow.yaml files carry `has_on_behalf_of: true`: wmill sync push (syncBehavior v1) then keeps
+# the identity already set on the server, but it cannot set it on a flow that has none yet (a new
+# flow, or the first deploy). This task sets it on those flows only, so a second run changes nothing.
+
+- name: Read the identity of the Windmill token
+  uri:
+    url: "{{ windmill_api_url }}/users/whoami"
+    headers:
+      Authorization: "Bearer {{ windmill_token }}"
+    return_content: true
+  register: windmill_whoami
+  no_log: true
+
+- name: List the flows of the repository
+  find:
+    paths: "{{ playbook_dir }}/../windmill/f"
+    patterns: flow.yaml
+    recurse: true
+  register: windmill_flow_files
+
+# infrastructure/windmill/f/quotaclimat/dbt__flow/flow.yaml -> f/quotaclimat/dbt
+- name: Build the Windmill paths of the flows
+  set_fact:
+    windmill_flow_paths: >-
+      {{ windmill_flow_files.files
+         | map(attribute='path')
+         | map('dirname')
+         | map('regex_replace', '^.*/windmill/(f/.*)__flow$', '\1')
+         | sort }}
+
+- name: Read the flows on the server
+  uri:
+    url: "{{ windmill_api_url }}/flows/get/{{ item }}"
+    headers:
+      Authorization: "Bearer {{ windmill_token }}"
+    return_content: true
+  loop: "{{ windmill_flow_paths }}"
+  register: windmill_flows_remote
+  no_log: true
+
+# Same request as `wmill flow set-permissioned-as <path> <email>`
+- name: Run the flows on behalf of the token owner
+  uri:
+    url: "{{ windmill_api_url }}/flows/update/{{ item.item }}"
+    method: POST
+    headers:
+      Authorization: "Bearer {{ windmill_token }}"
+    body_format: json
+    body: >-
+      {{ item.json | combine({
+           'path': item.item,
+           'on_behalf_of_email': windmill_whoami.json.email,
+           'preserve_on_behalf_of': true,
+           'skip_draft_deletion': true
+         }) }}
+    status_code: [200, 201]
+  loop: "{{ windmill_flows_remote.results }}"
+  loop_control:
+    label: "{{ item.item }}"
+  when: not (item.json.on_behalf_of_email | default(''))
+  changed_when: true

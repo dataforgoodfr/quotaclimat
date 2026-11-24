@@ -4,6 +4,7 @@ description: |-
   climate keywords down to the environmental_health dictionary, builds/refreshes the RAG
   expert-model index from source documents, runs the RAG fact-checking agent against the
   filtered segments, then clusters the resulting misinformation narratives.
+has_on_behalf_of: true
 value:
   modules:
   - id: filter_keywords

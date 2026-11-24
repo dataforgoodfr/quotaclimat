@@ -1,5 +1,6 @@
 summary: quotaclimat-dev/barometre
 description: Dev pipeline for the main OME flow.
+has_on_behalf_of: true
 value:
   modules:
   - id: ingest_data_to_s3

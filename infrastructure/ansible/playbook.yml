@@ -75,19 +75,10 @@
     sso_google_client_secret: "{{ lookup('env', 'SSO_GOOGLE_CLIENT_SECRET') }}"
     sso_allowed_email_domains: "{{ lookup('env', 'SSO_ALLOWED_EMAIL_DOMAINS') | default('dataforgood.fr,quotaclimat.org', true) }}"
     # Metabase groups (exact names) an SSO login may add the user to, from the Keycloak groups of the same name.
-    # SSO_GROUPS (comma separated) overrides this list.
-    sso_groups_default:
-      - Administrators
-      - Belgique
-      - Désinformation
-      - Droit à l'info - Admin
-      - Droit à l'info - privé
-      - Droit à l'info - publique
-      - Interne OME
-      - Publicité - collaborateurs externes
-      - Quotaclimat
-      - QuotaClimat - Claude compatible
-    sso_groups: "{{ lookup('env', 'SSO_GROUPS') | default(sso_groups_default | join(','), true) }}"
+    # Default: the lines of compose/sso/groups.txt (also read by bin/keycloak_create_groups.sh);
+    # SSO_GROUPS (comma separated) overrides it.
+    sso_groups_default: "{{ lookup('file', playbook_dir ~ '/../compose/sso/groups.txt').splitlines() | select | join(',') }}"
+    sso_groups: "{{ lookup('env', 'SSO_GROUPS') | default(sso_groups_default, true) }}"
     sso_allow_any_domain: "{{ lookup('env', 'SSO_ALLOW_ANY_DOMAIN') | default('false', true) }}"
 
     # Managed Postgres

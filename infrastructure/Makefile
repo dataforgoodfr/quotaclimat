@@ -77,7 +77,13 @@ define ANSIBLE_CMD
 	mise exec -- ansible-playbook playbook.yml $(1)
 endef
 
-.PHONY: ansible
+.PHONY: ansible keycloak-groups
+
+# Creates the Keycloak groups of the Metabase SSO (names in compose/sso/groups.txt, or SSO_GROUPS); idempotent.
+# dry=1 only lists what would be created.
+keycloak-groups:
+	@source .env.secrets 2>/dev/null || true && \
+	bin/keycloak_create_groups.sh $(if $(dry),--dry-run,)
 
 ansible:
 ifdef tags

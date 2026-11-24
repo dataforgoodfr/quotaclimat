@@ -1,4 +1,32 @@
 ---
+# An empty secret would be imported as an empty value (the realm is imported once) and only show up at the first
+# login: stop here instead, naming the variable to set in .env.secrets.
+- name: Check that the required secrets are set
+  assert:
+    that: item.value | length > 0
+    fail_msg: "{{ item.key }} is empty: set it in infrastructure/.env.secrets"
+    quiet: true
+  loop: "{{ sso_required | dict2items }}"
+  loop_control:
+    label: "{{ item.key }}"
+  vars:
+    sso_required:
+      KEYCLOAK_DOMAIN: "{{ keycloak_domain }}"
+      METABASE_DOMAIN: "{{ metabase_domain }}"
+      METABASE_UPSTREAM_URL: "{{ metabase_upstream_url }}"
+      KEYCLOAK_DB_USER: "{{ keycloak_db_user }}"
+      KEYCLOAK_DB_PASSWORD: "{{ keycloak_db_password }}"
+      KEYCLOAK_DB_NAME: "{{ keycloak_db_name }}"
+      KEYCLOAK_ADMIN_USER: "{{ keycloak_admin_user }}"
+      KEYCLOAK_ADMIN_PASSWORD: "{{ keycloak_admin_password }}"
+      SSO_CLIENT_SECRET: "{{ sso_client_secret }}"
+      SSO_ADMIN_CLIENT_SECRET: "{{ sso_admin_client_secret }}"
+      SSO_SESSION_SECRET: "{{ sso_session_secret }}"
+      SSO_METABASE_ADMIN_EMAIL: "{{ sso_metabase_admin_email }}"
+      SSO_METABASE_ADMIN_PASSWORD: "{{ sso_metabase_admin_password }}"
+      SSO_GOOGLE_CLIENT_ID: "{{ sso_google_client_id }}"
+      SSO_GOOGLE_CLIENT_SECRET: "{{ sso_google_client_secret }}"
+
 - name: Create sso directory
   file:
     path: "{{ sso_service_dir }}"
@@ -46,6 +74,44 @@
   delay: 10
   until: keycloak_health.stdout == 'healthy'
   changed_when: false
+
+# The realm is imported on Keycloak's first start only: bring the Google client and the two client secrets in line
+# with .env.secrets at every deploy (compose/sso/sync_keycloak.sh runs inside the container, on localhost). The values
+# go through the environment, never the command line.
+- name: Sync the Google and client secrets into Keycloak
+  command:
+    argv:
+      - docker
+      - exec
+      - -i
+      - -e
+      - KC_ADMIN_USER
+      - -e
+      - KC_ADMIN_PASSWORD
+      - -e
+      - KC_REALM
+      - -e
+      - GOOGLE_CLIENT_ID
+      - -e
+      - GOOGLE_CLIENT_SECRET
+      - -e
+      - SSO_CLIENT_SECRET
+      - -e
+      - SSO_ADMIN_CLIENT_SECRET
+      - keycloak
+      - bash
+      - -s
+    stdin: "{{ lookup('file', playbook_dir ~ '/../compose/sso/sync_keycloak.sh') }}"
+  environment:
+    KC_ADMIN_USER: "{{ keycloak_admin_user }}"
+    KC_ADMIN_PASSWORD: "{{ keycloak_admin_password }}"
+    KC_REALM: "{{ keycloak_realm }}"
+    GOOGLE_CLIENT_ID: "{{ sso_google_client_id }}"
+    GOOGLE_CLIENT_SECRET: "{{ sso_google_client_secret }}"
+    SSO_CLIENT_SECRET: "{{ sso_client_secret }}"
+    SSO_ADMIN_CLIENT_SECRET: "{{ sso_admin_client_secret }}"
+  register: keycloak_sync
+  changed_when: "'set' in keycloak_sync.stdout"
 
 # Traefik routes to a container only once its Docker health check passes
 - name: Wait for Keycloak to be reachable at its public URL

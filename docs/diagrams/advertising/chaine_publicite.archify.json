@@ -517,7 +517,36 @@
       "viewer.feedback.star": "Mettre une Star",
       "viewer.feedback.starLabel": "Mettre une étoile à Archify sur GitHub",
       "viewer.feedback.starTitle": "Soutenir Archify sur GitHub",
-      "viewer.feedback.starBody": "Chaque étoile nous aide à continuer de le développer en open source."
+      "viewer.feedback.starBody": "Chaque étoile nous aide à continuer de le développer en open source.",
+      "viewer.diagnosis.button": "Analyse du code",
+      "viewer.diagnosis.title": "Diagnostic d'architecture",
+      "viewer.diagnosis.local": "Intégré à Archify, s'exécute en local",
+      "viewer.diagnosis.starMapTitle": "Carte en étoile",
+      "viewer.diagnosis.starMap": "Explorer les dépendances entre fichiers et fonctions sur une carte en étoile.",
+      "viewer.diagnosis.modelTitle": "Modèle 3D orientable",
+      "viewer.diagnosis.model": "Faire pivoter un modèle 3D pour voir comment les modules sont reliés.",
+      "viewer.diagnosis.countsTitle": "Problèmes par composant",
+      "viewer.diagnosis.counts": "Voir le nombre de problèmes de chaque composant du schéma, dont les zones les plus chargées, les cycles de dépendances et les dépendances que le schéma ne montre pas.",
+      "viewer.diagnosis.findingsTitle": "Source et corrections par IA",
+      "viewer.diagnosis.findings": "Ouvrir le code source de chaque constat et le confier à une IA comme tâche de correction.",
+      "viewer.diagnosis.ask": "Demandez à votre assistant IA :",
+      "viewer.diagnosis.prompt": "Utilise Archify pour créer un schéma d'architecture de ce projet et lancer le diagnostic d'architecture.",
+      "viewer.diagnosis.copy": "Copier la consigne",
+      "viewer.guide.credit": "Archify vous est utile ? Une étoile sur GitHub aide",
+      "viewer.guide.star": "Étoile",
+      "viewer.passport.explain": "Expliquer",
+      "viewer.passport.explain.show": "Afficher l'explication de ce nœud",
+      "viewer.passport.explanation": "Explication",
+      "viewer.passport.explanation.back": "Explication de {label}. Activer pour revenir à la fiche",
+      "viewer.passport.explanation.backLink": "Retour à la fiche",
+      "viewer.passport.drilldowns": "Schémas détaillés",
+      "viewer.passport.drilldowns.list": "Ouvrir un schéma détaillé",
+      "viewer.passport.drilldowns.hint": "Ctrl+clic ou double-clic ouvre la première entrée",
+      "viewer.passport.drilldowns.open": "Ouvrir {label}",
+      "viewer.passport.back": "Retour au schéma parent",
+      "viewer.passport.back.aria": "Revenir au schéma parent",
+      "viewer.nav.back": "Retour",
+      "viewer.nav.back.title": "Revenir au schéma parent"
     },
     "quality_profile": "showcase",
     "output": "docs/diagrams/advertising/chaine_publicite.html",
@@ -570,12 +599,7 @@
     "exp1",
     "cla1",
     "fus1",
-    "cor",
-    "exp2",
-    "cla2",
-    "fus2",
-    "shots",
-    "dbt"
+    "cor"
   ],
   "nodes": [
     {
@@ -932,7 +956,8 @@
       "from": "cor",
       "to": "exp2",
       "label": "fusionnées sans classement",
-      "variant": "emphasis"
+      "variant": "emphasis",
+      "role": "return"
     },
     {
       "id": "exp2-cla2",

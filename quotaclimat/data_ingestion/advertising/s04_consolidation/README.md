@@ -8,6 +8,10 @@ step, each with its own entry point:
 - `e02_manual_corrections`: corrections listed by humans in a Google Sheet, for instance after a check of the
   screenshots (`entrypoints/ad_s04e02_manual_corrections.sh`).
 
+Their place in the run order of the advertising jobs (the merge runs again after the exportation and the
+classification of the merged ads left without classification) is drawn in
+`docs/diagrams/advertising/chaine_publicite.html`.
+
 ## Merging ads
 
 The database operations of a merge are in `tools/ad_merge.py`, to be reused by every script that merges

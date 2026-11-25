@@ -15,6 +15,9 @@
 incendies:
   periodes:
     france:
+      - id: ete_2025
+        start: 2025-07-01
+        end: 2025-09-01
       - id: ete_2026
         start: 2026-07-01
         end: 2026-09-01

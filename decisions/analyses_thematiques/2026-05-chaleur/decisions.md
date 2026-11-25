@@ -41,7 +41,7 @@ Questions Metabase : « Base Presse écrite » (1993), « Presse écrite - liens
 | Croisement Lien CC x causes, par média (presse) | banque | | 1994 | testé |
 | Croisement Comparaison entre épisodes (chaleur vs incendies) | banque | | | publié |
 
-La collection contient aussi des questions paramétrées sur le second épisode de 2026 (19 au 30 juin) : liens causaux (2023), mots-clés (2024), conséquences sectorielles en presse (2061). Elles ont servi au Bilan OMÉ S1 2026, pas à cet article.
+La collection contient aussi des questions paramétrées sur le second épisode de 2026 (19 au 30 juin) : liens causaux (2023), mots-clés (2024), mots-clés en presse (2070), conséquences sectorielles en presse (2061). Elles ont servi au Bilan OMÉ S1 2026, pas à cet article : voir §5.
 
 **Axes de la banque non exploités** : non recensés, l'analyse est antérieure au recensement des axes.
 
@@ -67,3 +67,58 @@ La collection contient aussi des questions paramétrées sur le second épisode 
 **Limites** : pas d'encadré méthodologique dans l'article (voir méthode commune §3.9).
 
 **Axes remontés dans la banque** : adaptation individuelle ou systémique (généralisée en « solutions individuelles ou systémiques »).
+
+## 5. Épisode de juin 2026 (Bilan OMÉ S1 2026)
+
+Section reconstituée le 24/11/2026 à partir des questions Metabase 2023, 2024, 2070 et 2061. Selon le §3, elles ont servi au Bilan OMÉ S1 2026 (à vérifier sur le bilan). Aucun résultat ici.
+
+### Méthode
+
+**Audiovisuel, maillons (2023, 2024).** Même corpus qu'en mai (thème conséquences du dictionnaire OME, France). Différence : un axe est compté quand un de ses mots figure dans le segment ou dans un segment de la même chaîne qui commence dans les 2 minutes avant ou après (fenêtre, et non plus segments situés exactement à ±2 minutes). Ce voisin doit lui aussi appartenir au corpus. 2024 classe les chaînes en info en continu (BFM TV, LCI, France Info TV, CNews, France 24, FranceinfoRadio), radio généraliste et TV généraliste, et garde les dix mots les plus fréquents par chaîne et maillon.
+
+**Presse, maillons (2070).** Version juin de 1996 : même corpus et même recherche `LIKE` qu'en mai, avec les variantes regroupées en libellés (ci-dessous) et les dix premiers libellés par média et maillon.
+
+**Presse, conséquences par secteur (2061).**
+
+- Corpus propre, par regex sur le titre et le corps (chapô non lu), insensible à la casse, avec limites de mot : `canicules?`, `vagues? de chaleur`, `fortes chaleurs`, `chaleurs extrêmes`, `dôme de chaleur`. Hors articles supprimés et `DUP`, 100 mots et plus.
+- Un article relève d'un secteur quand les termes du secteur y apparaissent au moins 2 ou 3 fois au total (seuil par secteur, ci-dessous), pour écarter les mentions en passant.
+- Médias regroupés par `source_classification.media_all` ; seuls les médias d'au moins 20 articles du corpus sont gardés.
+
+**Périodes.** Valeurs par défaut des questions : du 19 au 30 juin 2026 pour 2023, 2024 et 2061 ; du 17 au 29 juin pour 2070. Écart non expliqué ; la période retenue pour le bilan n'est pas vérifiée.
+
+### Axes
+
+| Axe | Origine | Question Metabase | Seuil par article | Résultat |
+|---|---|---|---|---|
+| Constat | banque A1, termes propres | 2023, 2024 (AV), 2070 (PE) | 1 | testé |
+| Causes | banque B1, termes propres | 2023, 2024 (AV), 2070 (PE) | 1 | testé |
+| Adaptation (individuelle et systémique réunies) | banque D2 | 2023, 2024 (AV), 2070 (PE) | 1 | testé |
+| Enfance et écoles | banque C1 (secteur) et C4 | 2061 (PE) | 3 | testé |
+| Vieillesse | banque C4 | 2061 (PE) | 2 | testé |
+| Alimentation | banque C1 (secteur) | 2061 (PE) | 2 | testé |
+| Agriculture | banque T3 | 2061 (PE) | 3 | testé |
+| Santé | banque C2 | 2061 (PE) | 3 | testé |
+| Travail | banque C1 (secteur) | 2061 (PE) | 2 | testé |
+
+Résultat : « testé » faute d'avoir vérifié ce que le bilan a repris.
+
+### Termes
+
+**Maillons** : ceux du §3, avec ces écarts.
+
+- 2023 cherche `s hydrater`, 2024 et 2070 `hydrater` : un seul des deux correspond au mot du dictionnaire.
+- 2070 écrit `îlot` et `fraîcheur` avec accents (`ilot`, `fraicheur` en audiovisuel), retire `réchauffement climatique` et `changement climatique` (trouvés par `climatique` avec `LIKE`) et `co deux`.
+- Libellés regroupés dans 2070 : carbone (`carbone`, `bilan carbone`, `empreinte carbone`) ; énergie fossile (`énergie fossile`, `combustibles fossiles`) ; productivisme (`productivisme`, `productiviste`) ; agriculture intensive (`agriculture intensive`, `agriculture conventionnelle`, `agriculture industrielle`) ; hydratation (`hydratation`, `hydrater`, `boire`) ; climatisation (`climatiseur`, `climatisation`) ; îlot de fraîcheur (`îlot`, `fraîcheur`) ; végétalisation (`végétalisation`, `arbre planté`, `permis de végétaliser`) ; rénovation thermique (`rénovation thermique`, `isolation`).
+
+**Secteurs (2061)**, regex sur le texte brut :
+
+- **Enfance et écoles** : `école`, `écoles`, `scolaire`, `scolaires`, `élèves`, `crèche`, `crèches`, `cantine`, `collège`, `collèges`, `lycée`, `lycées`, `brevet`, `baccalauréat`, `enfant`, `enfants`, `nourrisson`, `nourrissons`, `cour de récréation`, `bâti scolaire`
+- **Vieillesse** : `personnes âgées`, `personne âgée`, `EHPAD`, `maison de retraite`, `maisons de retraite`, `résidence senior`, `gériatri\w+`, `isolement des aînés`, `registre canicule`, `plan bleu`, `octogénaire`, `nonagénaire`
+- **Alimentation** : `prix alimentaires?`, `fruits et légumes`, `rayon frais`, `chaîne du froid`, `supermarchés?`, `consommateurs?`, `restauration`, `pénuries? alimentaires?`, `sécurité alimentaire`, `gaspillage alimentaire`
+- **Agriculture** : `agricult\w+`, `récoltes?`, `moissons?`, `élevages?`, `éleveurs?`, `bétail`, `irrigation`, `rendements? agricoles?`, `vendanges?`, `maraîch\w+`
+- **Santé** : `urgences`, `hôpital`, `hôpitaux`, `mortalité`, `décès`, `surmortalité`, `déshydratation`, `coup de chaleur`, `hyperthermie`, `Santé publique France`, `SAMU`
+- **Travail** : `chantiers?`, `BTP`, `travailleurs?`, `salariés?`, `droit de retrait`, `conditions de travail`, `horaires décalés`, `travail en extérieur`, `inspection du travail`
+
+Termes larges, qui peuvent compter des articles hors sujet malgré le seuil : `enfant`, `brevet`, `restauration`, `consommateurs`, `urgences`, `décès`, `salariés`.
+
+**Axes remontés dans la banque** (24/11/2026) : conséquences par secteur (C1 : enfance et écoles, alimentation, travail), santé (C2, effets de la chaleur), personnes âgées (C4), agriculture (T3).

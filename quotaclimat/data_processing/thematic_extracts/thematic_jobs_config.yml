@@ -15,9 +15,12 @@
 incendies:
   periodes:
     france:
-      - id: ete_2025
-        start: 2025-07-01
-        end: 2025-09-01
+      - id: marseille_narbonne_2025
+        start: 2025-06-30
+        end: 2025-07-13
+      - id: aude_2025
+        start: 2025-08-05
+        end: 2025-08-18
       - id: ete_2026
         start: 2026-07-01
         end: 2026-09-01

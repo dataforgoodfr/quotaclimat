@@ -4,8 +4,9 @@ namespace: quotaclimat
 description: |
   Exports the data of a report to Google Sheets: runs the SQL queries of the
   report's queries/ folder on the barometre database (read-only user, read-only
-  transactions) and writes each query <q>.sql to the tab <q>_sheet of the Google
-  Sheet named like the report, plus a tab _export with the date of the export.
+  transactions) and writes each query <tab>_sheet.sql to the tab <tab> of the
+  Google Sheet named like the report (the other queries are not exported), plus
+  a tab _export with the date of the export.
   No configuration file (decisions/rapports/export_report_data.md). The report is
   the name of its folder decisions/rapports/<AAAA-MM>-<sujet>/; the spreadsheet is
   looked up by name in the folder "Rapports" of the shared Drive folder
@@ -21,7 +22,7 @@ labels:
 inputs:
   - id: report
     type: STRING
-    # also checked by the job, which lists the reports having queries when the folder is unknown
+    # also checked by the job, which lists the reports having _sheet queries when the folder has none
     validator: "^[0-9]{4}-(0[1-9]|1[0-2])-[a-z0-9]+(-[a-z0-9]+)*$"
     description: "Folder of the report in decisions/rapports/, e.g. 2027-02-pub-desinformation."
   - id: apply

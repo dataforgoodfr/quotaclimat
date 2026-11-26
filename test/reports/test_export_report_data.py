@@ -23,8 +23,10 @@ SECRET_NUMBER = 98765.4321
 def write_report(tmp_path: Path, report: str = REPORT) -> Path:
     queries = tmp_path / report / "queries"
     queries.mkdir(parents=True)
-    (queries / "bulles.sql").write_text("-- bulles\nSELECT 1 AS etiquette;\n")
-    (queries / "secteurs.sql").write_text("SELECT 'a' AS secteur")
+    (queries / "bulles_sheet.sql").write_text("-- bulles\nSELECT 1 AS etiquette;\n")
+    (queries / "secteurs_sheet.sql").write_text("SELECT 'a' AS secteur")
+    # not exported: no _sheet suffix, or not a query
+    (queries / "exploration.sql").write_text("SELECT 'exploration'")
     (queries / "notes.md").write_text("not a query")
     return tmp_path
 
@@ -33,7 +35,8 @@ def write_report(tmp_path: Path, report: str = REPORT) -> Path:
 
 
 def test_load_config_from_the_naming_conventions(tmp_path):
-    """No configuration file: the Sheet is named like the report, each query <q>.sql goes to the tab <q>_sheet."""
+    """No configuration file: the Sheet is named like the report, queries/<tab>_sheet.sql goes to the tab <tab>, the
+    other queries are not exported."""
     config = export.load_config(REPORT, write_report(tmp_path))
     assert config.report == REPORT
     assert config.queries_dir == tmp_path / REPORT / "queries"
@@ -41,8 +44,8 @@ def test_load_config_from_the_naming_conventions(tmp_path):
         export.SheetOutput(
             spreadsheet=REPORT,
             tabs=(
-                export.TabExport("bulles_sheet", "bulles.sql"),
-                export.TabExport("secteurs_sheet", "secteurs.sql"),
+                export.TabExport("bulles", "bulles_sheet.sql"),
+                export.TabExport("secteurs", "secteurs_sheet.sql"),
             ),
         ),
     )
@@ -65,35 +68,37 @@ def test_invalid_report_id(tmp_path, report):
         export.load_config(report, tmp_path)
 
 
-def test_report_without_queries_lists_available_reports(tmp_path):
+def test_report_without_queries_to_export_lists_available_reports(tmp_path):
     write_report(tmp_path)
-    (tmp_path / "2027-03-autre" / "queries").mkdir(parents=True)
+    queries = tmp_path / "2027-03-autre" / "queries"
+    queries.mkdir(parents=True)
+    (queries / "exploration.sql").write_text("SELECT 1")
     with pytest.raises(
         export.ExportError,
-        match=r"no query in 2027-03-autre/queries/.*\['2027-02-pub-exemple'\]",
+        match=r"no query to export in 2027-03-autre/queries/.*\['2027-02-pub-exemple'\]",
     ):
         export.load_config("2027-03-autre", tmp_path)
-    with pytest.raises(export.ExportError, match="no query"):
+    with pytest.raises(export.ExportError, match="no query to export"):
         export.load_config("2027-04-absent", tmp_path)
 
 
-@pytest.mark.parametrize("name", ["_cachee", "a b", "é", "x" * 95])
-def test_invalid_query_name(tmp_path, name):
+@pytest.mark.parametrize("name", ["_cachee", "a b", "é", "x" * 101])
+def test_invalid_tab_name(tmp_path, name):
     write_report(tmp_path)
-    (tmp_path / REPORT / "queries" / f"{name}.sql").write_text("SELECT 1")
-    with pytest.raises(export.ExportError, match=r"query name|too long"):
+    (tmp_path / REPORT / "queries" / f"{name}_sheet.sql").write_text("SELECT 1")
+    with pytest.raises(export.ExportError, match=r"tab name|too long"):
         export.load_config(REPORT, tmp_path)
 
 
 def test_tab_name():
     assert (
-        export.tab_name("bulles_annonceurs_secteur.sql")
-        == "bulles_annonceurs_secteur_sheet"
+        export.tab_name("part_exposee_par_annonceur_sheet.sql")
+        == "part_exposee_par_annonceur"
     )
 
 
 def test_report_queries_of_the_repository_are_valid():
-    """Every report of decisions/rapports/ with queries gives valid tab names, and each query is a single
+    """Every report of decisions/rapports/ with queries to export gives valid tab names, and each query is a single
     statement."""
     reports = export.available_reports()
     assert "2027-02-pub-desinformation" in reports
@@ -379,7 +384,7 @@ class FakeSession:
                     {
                         "properties": {
                             "sheetId": 0,
-                            "title": "bulles_sheet",
+                            "title": "bulles",
                             "sheetType": "GRID",
                             "gridProperties": {"rowCount": 1000, "columnCount": 26},
                         }
@@ -454,7 +459,7 @@ def test_export_report_writes_all_tabs_in_one_request(tmp_path, monkeypatch, cap
     writes = [
         r["updateCells"] for r in body["requests"] if "rows" in r.get("updateCells", {})
     ]
-    assert writes[0]["start"]["sheetId"] == 0  # existing tab bulles_sheet
+    assert writes[0]["start"]["sheetId"] == 0  # existing tab bulles
     # only the 2 columns of the result (A:B) are cleared: a chart on their right is kept
     assert {
         "updateCells": {
@@ -478,7 +483,7 @@ def test_export_report_writes_all_tabs_in_one_request(tmp_path, monkeypatch, cap
         if "addSheet" in r
     ]
     assert added == [
-        "secteurs_sheet",
+        "secteurs",
         "_export",
     ]  # missing tabs created, graphique untouched
     assert all(
@@ -497,7 +502,7 @@ def test_export_report_writes_all_tabs_in_one_request(tmp_path, monkeypatch, cap
     assert len(connection.executed) == 2
     assert connection.closed
     assert (
-        "query bulles.sql -> 2 rows, 2 columns for the tab 'bulles_sheet'"
+        "query bulles_sheet.sql -> 2 rows, 2 columns for the tab 'bulles'"
         in caplog.text
     )
     assert_no_data_logged(caplog)
@@ -511,8 +516,8 @@ def test_export_report_check_only_writes_nothing(tmp_path, monkeypatch, caplog):
         is True
     )
     assert session.posts == []
-    assert "check only, tab 'bulles_sheet' would be replaced" in caplog.text
-    assert "check only, tab 'secteurs_sheet' would be created" in caplog.text
+    assert "check only, tab 'bulles' would be replaced" in caplog.text
+    assert "check only, tab 'secteurs' would be created" in caplog.text
     assert_no_data_logged(caplog)
 
 
@@ -524,7 +529,10 @@ def test_export_report_query_error_logs_no_data(tmp_path, monkeypatch, caplog):
     session = FakeSession()
     assert run_export(tmp_path, session, FakeConnection(error=error)) is False
     assert session.posts == []  # nothing written when a query fails
-    assert "query bulles.sql: database error InvalidTextRepresentation" in caplog.text
+    assert (
+        "query bulles_sheet.sql: database error InvalidTextRepresentation"
+        in caplog.text
+    )
     assert_no_data_logged(caplog)
 
 

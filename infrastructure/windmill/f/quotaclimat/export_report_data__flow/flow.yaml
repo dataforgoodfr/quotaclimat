@@ -2,8 +2,9 @@ summary: quotaclimat/export_report_data
 description: |-
   Exports the data of a report to Google Sheets: runs the SQL queries of the
   report's queries/ folder on the barometre database (read-only user, read-only
-  transactions) and writes each query <q>.sql to the tab <q>_sheet of the Google
-  Sheet named like the report, plus a tab _export with the date of the export.
+  transactions) and writes each query <tab>_sheet.sql to the tab <tab> of the
+  Google Sheet named like the report (the other queries are not exported), plus
+  a tab _export with the date of the export.
   No configuration file (decisions/rapports/export_report_data.md). The report is
   the name of its folder decisions/rapports/<AAAA-MM>-<sujet>/; the spreadsheet is
   looked up by name in the folder "Rapports" of the shared Drive folder

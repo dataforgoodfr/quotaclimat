@@ -10,8 +10,9 @@ quotaclimat/export-report-data):
 The report is the name of its folder decisions/rapports/<AAAA-MM>-<sujet>/. No configuration file, only naming
 conventions (decisions/rapports/export_report_data.md):
 - the Google Sheet is named like the report (2027-02-pub-desinformation);
-- every file <query>.sql of its queries/ folder goes to the tab <query>_sheet. The queries are plain SQL without
-  Metabase variables, one SELECT (or WITH ... SELECT) per file.
+- only the queries whose name ends with _sheet are exported: queries/<tab>_sheet.sql goes to the tab <tab> (the other
+  queries of the folder are left out). The queries are plain SQL without Metabase variables, one SELECT (or
+  WITH ... SELECT) per file.
 
 Google Sheets: never named by id (the repository is public), looked up by exact name in the folder "Rapports"
 (REPORTS_DRIVE_FOLDER_NAME) of the shared Drive folder of the reference data (EXTERNAL_SOURCES_DRIVE_FOLDER, the
@@ -61,9 +62,9 @@ REPORTS_DIR = Path("decisions/rapports")
 QUERIES_DIR = "queries"
 # <AAAA-MM>-<sujet>: 2027-02-pub-desinformation
 REPORT_ID_PATTERN = re.compile(r"^[0-9]{4}-(0[1-9]|1[0-2])-[a-z0-9]+(-[a-z0-9]+)*$")
-# query file name (without .sql) -> tab name: <query>_sheet
-QUERY_NAME_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]*$")
-TAB_SUFFIX = "_sheet"
+# queries/<tab>_sheet.sql is exported to the tab <tab>; the other queries are not exported
+EXPORTED_QUERY_SUFFIX = "_sheet.sql"
+TAB_NAME_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]*$")
 CREDENTIALS_ENV = "GOOGLE_SHEETS_EDITOR_SERVICE_ACCOUNT_JSON"
 # shared Drive folder of the reference data (my_dbt_project/external_sources.yml), holding the folder of the reports
 FOLDER_ENV = "EXTERNAL_SOURCES_DRIVE_FOLDER"
@@ -91,7 +92,7 @@ class ExportError(Exception):
 
 @dataclass(frozen=True)
 class TabExport:
-    tab: str  # <query>_sheet
+    tab: str  # name of the query without _sheet.sql
     query: str  # file name in queries/
 
 
@@ -135,44 +136,46 @@ def check_report_id(report: str) -> str:
 
 
 def available_reports(reports_dir: Path = REPORTS_DIR) -> list[str]:
-    """Reports whose folder has queries to export."""
+    """Reports whose folder has queries to export (queries/*_sheet.sql)."""
     return sorted(
         p.parent.name
         for p in reports_dir.glob(f"*/{QUERIES_DIR}")
-        if any(p.glob("*.sql"))
+        if any(p.glob(f"*{EXPORTED_QUERY_SUFFIX}"))
     )
 
 
 def tab_name(query_file: str) -> str:
-    """'bulles_annonceurs_secteur.sql' -> 'bulles_annonceurs_secteur_sheet'."""
-    return query_file.removesuffix(".sql") + TAB_SUFFIX
+    """'part_exposee_par_annonceur_sheet.sql' -> 'part_exposee_par_annonceur'."""
+    return query_file.removesuffix(EXPORTED_QUERY_SUFFIX)
 
 
 def load_config(report: str, reports_dir: Path = REPORTS_DIR) -> ExportConfig:
-    """What the export writes, from the naming conventions alone: the Google Sheet named like the report, and one
-    tab <query>_sheet per file <query>.sql of its queries/ folder."""
+    """What the export writes, from the naming conventions alone: the Google Sheet named like the report, and, for
+    each query queries/<tab>_sheet.sql, the tab <tab>. The other queries of the folder are not exported.
+    """
     report = check_report_id(report)
     queries_dir = reports_dir / report / QUERIES_DIR
     query_files = (
-        sorted(p.name for p in queries_dir.glob("*.sql"))
+        sorted(p.name for p in queries_dir.glob(f"*{EXPORTED_QUERY_SUFFIX}"))
         if queries_dir.is_dir()
         else []
     )
     if not query_files:
         raise ExportError(
-            f"no query in {report}/{QUERIES_DIR}/; reports with queries: {available_reports(reports_dir)}"
+            f"no query to export in {report}/{QUERIES_DIR}/ (name ending with {EXPORTED_QUERY_SUFFIX}); "
+            f"reports with some: {available_reports(reports_dir)}"
         )
     tabs = []
     for query in query_files:
-        stem = query.removesuffix(".sql")
-        if not QUERY_NAME_PATTERN.match(stem):
+        tab = tab_name(query)
+        if not TAB_NAME_PATTERN.match(tab):
             raise ExportError(
-                f"{QUERIES_DIR}/{query}: a query name is made of letters, digits, _ and -, and starts with a "
-                "letter or a digit (it becomes the name of a tab)"
+                f"{QUERIES_DIR}/{query}: the tab name before {EXPORTED_QUERY_SUFFIX} is made of letters, digits, _ "
+                "and -, and starts with a letter or a digit"
             )
-        if len(tab_name(query)) > MAX_TAB_NAME_LENGTH:
+        if len(tab) > MAX_TAB_NAME_LENGTH:
             raise ExportError(f"{QUERIES_DIR}/{query}: name too long for a tab name")
-        tabs.append(TabExport(tab=tab_name(query), query=query))
+        tabs.append(TabExport(tab=tab, query=query))
     return ExportConfig(
         report=report,
         queries_dir=queries_dir,

@@ -11,8 +11,7 @@
 --   taille : racine carrée des minutes de pub (surface de la bulle proportionnelle aux minutes) ; 4 pour les moyennes ;
 --   secteur, rang_secteur, pub_min : pour vérifier.
 WITH plage AS (
-    SELECT GREATEST(DATE '2025-09-29', (m.fin - INTERVAL '1 year')::date + 1) AS debut, m.fin
-    FROM (SELECT LEAST(MAX(jour), DATE '2026-12-31') AS fin FROM curated.publicite) m
+    SELECT DATE '2026-01-01' AS debut, DATE '2026-12-31' AS fin
 ),
 parametres AS (
     SELECT

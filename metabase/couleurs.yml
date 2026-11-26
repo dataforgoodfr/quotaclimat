@@ -104,10 +104,11 @@ groupes:
   secteurs_publicite:
     description: >-
       Secteurs des annonceurs (colonne secteur de advertising.pub_annonceur_emission_jour), en série des graphiques à
-      bulles du rapport pub et désinformation (Metabase et Google Sheets). « Moyenne du secteur » : bulle de la
-      moyenne de chaque secteur. Les autres secteurs gardent la couleur automatique.
+      bulles et des barres de la partie 4.2 du rapport pub et désinformation (Metabase et Google Sheets).
+      « Moyenne du secteur » : bulle de la moyenne de chaque secteur. Les autres secteurs gardent la couleur automatique.
     reference:
       - 2500 # bulles, part de la pub près d'émissions à fort taux de mésinformation, par secteur
+      - 2593 # barres, pub des catégories visées autour d'émissions à fort taux contre elles (rapport, partie 4.2)
     couleurs:
       Automobile et transport: "#509EE3"
       Alimentation: "#88BF4D"

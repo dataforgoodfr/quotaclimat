@@ -200,3 +200,46 @@ def test_margin_sec_at():
     assert export.margin_sec_at(datetime(2026, 5, 1, tzinfo=timezone.utc)) == 0.1
     assert export.margin_sec_at(datetime(2024, 1, 1)) is None
     assert export.margin_sec_at(datetime(2026, 4, 27) + timedelta(hours=1)) == 0.1
+
+
+def test_groups_are_taken_day_by_day(session):
+    """Oldest days first, every channel of a day before the next day."""
+    for ad_id, channel, day in [
+        ("a1", "arte", 2),
+        ("a2", "arte", 1),
+        ("t1", "tf1", 1),
+        ("b2", "bfmtv", 2),
+        ("b1", "bfmtv", 1),
+    ]:
+        session.add(
+            Ad(
+                id=ad_id,
+                first_detection_date=T0,
+                duration_sec=10.0,
+                chunks=[],
+                fragment_type="AD",
+            )
+        )
+        session.add(
+            Ad_Occurrence(
+                id=f"{ad_id}-1",
+                occurrence_date=T0 + timedelta(days=day),
+                channel_name=channel,
+                ad_id=ad_id,
+            )
+        )
+    session.commit()
+
+    groups = [
+        (channel, day.day, [ad.id for ad, _ in ads])
+        for (channel, day), ads in export.iter_ads_by_channel_day(
+            session, None, None, 100
+        )
+    ]
+    assert groups == [
+        ("arte", 2, ["a2"]),
+        ("bfmtv", 2, ["b1"]),
+        ("tf1", 2, ["t1"]),
+        ("arte", 3, ["a1"]),
+        ("bfmtv", 3, ["b2"]),
+    ]

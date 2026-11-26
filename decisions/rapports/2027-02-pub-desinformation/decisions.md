@@ -14,7 +14,7 @@ Chaîne de données :
 1. **Publicités** : détection, classification et consolidation (`quotaclimat/data_ingestion/advertising/`, voir les README des étapes s03 à s05), puis dbt : `analytics.publicites` (une diffusion), `advertising.pub_annonceur_emission_jour` (secondes de pub de chaque marque autour de chaque émission, par jour ; [`my_dbt_project/models/analytics/pub_annonceur_emission_jour.sql`](../../../my_dbt_project/models/analytics/pub_annonceur_emission_jour.sql)). Les colonnes `secteur`, `categorie`, `entreprise`, `agence_media`, `groupe_agence`, `fiabilite_agence` viennent de là.
 2. **Mésinformation et climat par émission** : `public.emission_jour` (une ligne par émission et par jour : `climat_heures`, `nb_cas` validés ; [`my_dbt_project/models/analytics/emission_jour.sql`](../../../my_dbt_project/models/analytics/emission_jour.sql)). Jointure avec la pub sur `emission_cle`.
 3. **Chaînes** : `curated.chaine` (`est_info_continue` sépare chaînes d'information en continu et généralistes). **Plage de dates** : `curated.publicite` (dernier jour de pub extrait).
-4. **Google Sheets puis Google Doc** : les résultats des requêtes de `queries/` vont dans le Google Sheet `2027-02-pub-desinformation` (dossier Drive `Rapports`, un onglet par graphique, données en colonnes A à H et graphique dans le même onglet), dont les graphiques sont collés dans le Google Doc du rapport. L'export se fait avec le flow `export_report_data` (Windmill), lancé à la main avec `report=2027-02-pub-desinformation` ; [`export_data.yml`](export_data.yml) dit quelle requête va dans quel onglet. Procédure de rafraîchissement (Sheet puis Google Doc) : [`../export_data.md`](../export_data.md).
+4. **Google Sheets puis Google Doc** : les résultats des requêtes de `queries/` vont dans le Google Sheet `2027-02-pub-desinformation` (dossier Drive `Rapports`, un onglet `<requête>_sheet` par requête, données en colonnes A à H et graphique à droite dans le même onglet), dont les graphiques sont collés dans le Google Doc du rapport. L'export se fait avec le flow `export_report_data` (Windmill), lancé à la main avec `report=2027-02-pub-desinformation`. Procédure de rafraîchissement (Sheet puis Google Doc) : [`../export_report_data.md`](../export_report_data.md).
 
 ## 2. Règles de calcul
 
@@ -62,11 +62,11 @@ Dans l'ordre du plan du rapport.
 | 1.4 | Zooms par catégorie de produit : Automobile et transport, Alimentation, Établissements financiers et assurances | Pour l'instant dans Metabase |
 | 2.1 | Fréquence de mésinformation par chaîne | Pour l'instant dans Metabase |
 | 2.2 | Fréquence de mésinformation par émission (au moins 2 h de climat) | Pour l'instant dans Metabase |
-| 3 | Part exposée par annonceur, chaînes d'info (graphique à bulles) | [`queries/bulles_annonceurs_secteur_sheets.sql`](queries/bulles_annonceurs_secteur_sheets.sql), onglet `part_temps_de_pub_prox_mesinfo_par_annonceurs` du Sheet |
+| 3 | Part exposée par annonceur, chaînes d'info (graphique à bulles) | [`queries/bulles_annonceurs_secteur.sql`](queries/bulles_annonceurs_secteur.sql), onglet `bulles_annonceurs_secteur_sheet` du Sheet |
 | 3 | Pub des 15 principaux annonceurs autour d'émissions à fort taux, par émission, tri par pub exposée puis par pub totale | Pour l'instant dans Metabase |
 | 3 | Principaux annonceurs exposés et leurs agences média | Pour l'instant dans Metabase |
 | 3 | Part de CNews dans la pub achetée par chaque groupe d'agences, parmi BFM TV, CNews et LCI | Pour l'instant dans Metabase |
-| 4.1 | Part exposée par catégorie de produit, trois premiers secteurs, chaînes d'info (graphique à bulles) | [`queries/bulles_categories_secteur_sheets.sql`](queries/bulles_categories_secteur_sheets.sql), onglet `part_temps_de_pub_prox_mesinfo_par_categ` du Sheet |
+| 4.1 | Part exposée par catégorie de produit, trois premiers secteurs, chaînes d'info (graphique à bulles) | [`queries/bulles_categories_secteur.sql`](queries/bulles_categories_secteur.sql), onglet `bulles_categories_secteur_sheet` du Sheet |
 | 4.2 | Pubs automobiles à proximité d'une mésinformation sur l'automobile | Pour l'instant dans Metabase |
 
 ## 6. Où vivent les requêtes
@@ -74,4 +74,4 @@ Dans l'ordre du plan du rapport.
 - **Les requêtes de `queries/` font foi** : ce sont elles qui produisent les chiffres du rapport. SQL brut, sans variable Metabase : leurs paramètres sont les constantes du CTE `parametres`.
 - **Metabase sert à l'exploration préliminaire** (tableau de bord 228) : ses questions ne sont ni dans `metabase/` ni synchronisées, et peuvent diverger des règles de ce fichier. Avant de publier un graphique « Pour l'instant dans Metabase », rapatrier son SQL dans `queries/` en appliquant les règles ci-dessus, et mettre à jour la carte des graphiques.
 - Une règle modifiée se reporte dans toutes les requêtes de `queries/` qui l'appliquent.
-- Une requête ajoutée pour un graphique Google Sheets se déclare aussi dans [`export_data.yml`](export_data.yml) (onglet, colonnes), puis la carte des graphiques ci-dessus dit dans quel onglet du Sheet elle va.
+- Toute requête de `queries/` est exportée dans l'onglet `<requête>_sheet` du Sheet : la carte des graphiques ci-dessus donne cet onglet.

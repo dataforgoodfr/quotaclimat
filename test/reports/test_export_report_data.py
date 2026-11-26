@@ -8,59 +8,41 @@ from pathlib import Path
 import psycopg2
 import pytest
 import requests
-import yaml
 
 from quotaclimat.reports import export_report_data as export
 from quotaclimat.utils.google_sheets import DRIVE_FILES_API_URL, SHEETS_API_URL
 
 REPORT = "2027-02-pub-exemple"
-SPREADSHEET = "Rapport 2027-02 pub : données"
+# the Google Sheet is named like the report
+SPREADSHEET = REPORT
 # values that must never reach the logs
 SECRET_TEXT = "Annonceur confidentiel SECRET_42"
 SECRET_NUMBER = 98765.4321
-EXAMPLE_CONFIG = {
-    "outputs": [
-        {
-            "type": "sheet",
-            "spreadsheet": SPREADSHEET,
-            "tabs": [
-                # the chart sits in the same tab, next to the data: only A:H is replaced
-                {"tab": "donnees", "query": "bulles.sql", "columns": "A:H"},
-                {"tab": "copie", "query": "bulles.sql"},
-                {"tab": "secteurs", "query": "secteurs.sql"},
-            ],
-        }
-    ]
-}
 
 
-def write_report(tmp_path: Path, config=EXAMPLE_CONFIG, report: str = REPORT) -> Path:
-    report_dir = tmp_path / report
-    (report_dir / "queries").mkdir(parents=True)
-    (report_dir / "queries" / "bulles.sql").write_text(
-        "-- bulles\nSELECT 1 AS etiquette;\n"
-    )
-    (report_dir / "queries" / "secteurs.sql").write_text("SELECT 'a' AS secteur")
-    (report_dir / "export_data.yml").write_text(
-        yaml.safe_dump(config, allow_unicode=True)
-    )
+def write_report(tmp_path: Path, report: str = REPORT) -> Path:
+    queries = tmp_path / report / "queries"
+    queries.mkdir(parents=True)
+    (queries / "bulles.sql").write_text("-- bulles\nSELECT 1 AS etiquette;\n")
+    (queries / "secteurs.sql").write_text("SELECT 'a' AS secteur")
+    (queries / "notes.md").write_text("not a query")
     return tmp_path
 
 
 # ------------------------------------------------------------------ configuration
 
 
-def test_load_config(tmp_path):
+def test_load_config_from_the_naming_conventions(tmp_path):
+    """No configuration file: the Sheet is named like the report, each query <q>.sql goes to the tab <q>_sheet."""
     config = export.load_config(REPORT, write_report(tmp_path))
     assert config.report == REPORT
     assert config.queries_dir == tmp_path / REPORT / "queries"
     assert config.outputs == (
         export.SheetOutput(
-            spreadsheet=SPREADSHEET,
+            spreadsheet=REPORT,
             tabs=(
-                export.TabExport("donnees", "bulles.sql", columns=(0, 8)),
-                export.TabExport("copie", "bulles.sql"),
-                export.TabExport("secteurs", "secteurs.sql"),
+                export.TabExport("bulles_sheet", "bulles.sql"),
+                export.TabExport("secteurs_sheet", "secteurs.sql"),
             ),
         ),
     )
@@ -83,111 +65,42 @@ def test_invalid_report_id(tmp_path, report):
         export.load_config(report, tmp_path)
 
 
-def test_missing_config_lists_available_reports(tmp_path):
+def test_report_without_queries_lists_available_reports(tmp_path):
     write_report(tmp_path)
+    (tmp_path / "2027-03-autre" / "queries").mkdir(parents=True)
     with pytest.raises(
-        export.ExportError, match=r"no export_data.yml.*\['2027-02-pub-exemple'\]"
+        export.ExportError,
+        match=r"no query in 2027-03-autre/queries/.*\['2027-02-pub-exemple'\]",
     ):
         export.load_config("2027-03-autre", tmp_path)
+    with pytest.raises(export.ExportError, match="no query"):
+        export.load_config("2027-04-absent", tmp_path)
 
 
-def sheet_output(**changes) -> dict:
-    output = {
-        "type": "sheet",
-        "spreadsheet": SPREADSHEET,
-        "tabs": [{"tab": "donnees", "query": "bulles.sql"}],
-    }
-    output.update(changes)
-    return output
-
-
-@pytest.mark.parametrize(
-    "config, message",
-    [
-        ([], "expected a mapping"),
-        ({"outputs": []}, "non-empty list"),
-        ({"outputs": [sheet_output()], "autre": 1}, "unknown keys"),
-        ({"outputs": [sheet_output(type="csv")]}, "type must be one of"),
-        (
-            {"outputs": [{"spreadsheet": SPREADSHEET, "tabs": []}]},
-            "type must be one of",
-        ),
-        ({"outputs": [sheet_output(id="1AbCdEf")]}, "unknown keys"),
-        ({"outputs": [sheet_output(spreadsheet="")]}, "exact name"),
-        ({"outputs": [sheet_output(spreadsheet=" Rapport")]}, "exact name"),
-        ({"outputs": [sheet_output(tabs=[])]}, "tabs must be a non-empty list"),
-        (
-            {
-                "outputs": [
-                    sheet_output(tabs=[{"tab": "_export", "query": "bulles.sql"}])
-                ]
-            },
-            "for humans",
-        ),
-        (
-            {
-                "outputs": [
-                    sheet_output(tabs=[{"tab": "x" * 101, "query": "bulles.sql"}])
-                ]
-            },
-            "invalid tab name",
-        ),
-        (
-            {"outputs": [sheet_output(tabs=[{"tab": "a", "query": "../bulles.sql"}])]},
-            "name of a .sql file",
-        ),
-        (
-            {"outputs": [sheet_output(tabs=[{"tab": "a", "query": "bulles.txt"}])]},
-            "name of a .sql file",
-        ),
-        (
-            {"outputs": [sheet_output(tabs=[{"tab": "a", "query": "absente.sql"}])]},
-            "not found",
-        ),
-        (
-            {
-                "outputs": [
-                    sheet_output(
-                        tabs=[{"tab": "a", "query": "bulles.sql", "range": "A1"}]
-                    )
-                ]
-            },
-            "unknown keys",
-        ),
-        (
-            {
-                "outputs": [
-                    sheet_output(
-                        tabs=[
-                            {"tab": "a", "query": "bulles.sql"},
-                            {"tab": "a", "query": "secteurs.sql"},
-                        ]
-                    )
-                ]
-            },
-            "unique",
-        ),
-        ({"outputs": [sheet_output(), sheet_output()]}, "one output per spreadsheet"),
-    ],
-)
-def test_invalid_config(tmp_path, config, message):
+@pytest.mark.parametrize("name", ["_cachee", "a b", "é", "x" * 95])
+def test_invalid_query_name(tmp_path, name):
     write_report(tmp_path)
-    with pytest.raises(export.ExportError, match=message):
-        export.parse_config(REPORT, config, tmp_path / REPORT / "queries")
-
-
-def test_invalid_yaml(tmp_path):
-    write_report(tmp_path)
-    (tmp_path / REPORT / "export_data.yml").write_text("outputs: [")
-    with pytest.raises(export.ExportError, match="not valid YAML"):
+    (tmp_path / REPORT / "queries" / f"{name}.sql").write_text("SELECT 1")
+    with pytest.raises(export.ExportError, match=r"query name|too long"):
         export.load_config(REPORT, tmp_path)
 
 
-def test_report_configs_of_the_repository_are_valid():
-    """Every export_data.yml of decisions/rapports/ is valid and its queries are single statements."""
-    for report in export.available_reports():
+def test_tab_name():
+    assert (
+        export.tab_name("bulles_annonceurs_secteur.sql")
+        == "bulles_annonceurs_secteur_sheet"
+    )
+
+
+def test_report_queries_of_the_repository_are_valid():
+    """Every report of decisions/rapports/ with queries gives valid tab names, and each query is a single
+    statement."""
+    reports = export.available_reports()
+    assert "2027-02-pub-desinformation" in reports
+    for report in reports:
         config = export.load_config(report)
         for output in config.outputs:
+            assert output.spreadsheet == report
             for tab in output.tabs:
                 export.single_statement(
                     (config.queries_dir / tab.query).read_text(encoding="utf-8")
@@ -410,20 +323,6 @@ def test_build_requests_columns_only():
     }
 
 
-@pytest.mark.parametrize(
-    "value, columns",
-    [(None, None), ("A:H", (0, 8)), ("C:C", (2, 3)), ("A:AB", (0, 28))],
-)
-def test_parse_columns(value, columns):
-    assert export.parse_columns(value, "tab") == columns
-
-
-@pytest.mark.parametrize("value", ["H:A", "A1:H10", "a:h", "A", 8, "A:AAA"])
-def test_parse_columns_refuses(value):
-    with pytest.raises(export.ExportError, match="columns"):
-        export.parse_columns(value, "tab")
-
-
 def test_build_requests_refuses_chart_sheet():
     with pytest.raises(export.ExportError, match="not a grid"):
         export.build_requests(
@@ -480,7 +379,7 @@ class FakeSession:
                     {
                         "properties": {
                             "sheetId": 0,
-                            "title": "donnees",
+                            "title": "bulles_sheet",
                             "sheetType": "GRID",
                             "gridProperties": {"rowCount": 1000, "columnCount": 26},
                         }
@@ -547,7 +446,7 @@ def test_export_report_writes_all_tabs_in_one_request(tmp_path, monkeypatch, cap
         checked and checked[0]["id"] == "SHEET_ID_1234567890"
     )  # privacy checked before writing
     assert session.gets[0][1]["q"].startswith(
-        "'FOLDER_ID_123' in parents and name = 'Rapport 2027-02 pub : données'"
+        "'FOLDER_ID_123' in parents and name = '2027-02-pub-exemple'"
     )
     assert len(session.posts) == 1  # one batchUpdate: all the tabs or none
     url, body = session.posts[0]
@@ -555,11 +454,11 @@ def test_export_report_writes_all_tabs_in_one_request(tmp_path, monkeypatch, cap
     writes = [
         r["updateCells"] for r in body["requests"] if "rows" in r.get("updateCells", {})
     ]
-    assert writes[0]["start"]["sheetId"] == 0  # existing tab donnees
-    # columns A:H of donnees only: the chart next to them is kept
+    assert writes[0]["start"]["sheetId"] == 0  # existing tab bulles_sheet
+    # only the 2 columns of the result (A:B) are cleared: a chart on their right is kept
     assert {
         "updateCells": {
-            "range": {"sheetId": 0, "startColumnIndex": 0, "endColumnIndex": 8},
+            "range": {"sheetId": 0, "startColumnIndex": 0, "endColumnIndex": 2},
             "fields": "userEnteredValue",
         }
     } in body["requests"]
@@ -579,8 +478,7 @@ def test_export_report_writes_all_tabs_in_one_request(tmp_path, monkeypatch, cap
         if "addSheet" in r
     ]
     assert added == [
-        "copie",
-        "secteurs",
+        "secteurs_sheet",
         "_export",
     ]  # missing tabs created, graphique untouched
     assert all(
@@ -595,10 +493,13 @@ def test_export_report_writes_all_tabs_in_one_request(tmp_path, monkeypatch, cap
     assert export_rows[-1]["values"][2] == {
         "userEnteredValue": {"numberValue": 1.0}
     }  # rows of secteurs
-    # the query feeding two tabs ran once, each in its own read-only transaction
+    # each query in its own read-only transaction
     assert len(connection.executed) == 2
     assert connection.closed
-    assert "query bulles.sql -> 2 rows, 2 columns for the tab 'donnees'" in caplog.text
+    assert (
+        "query bulles.sql -> 2 rows, 2 columns for the tab 'bulles_sheet'"
+        in caplog.text
+    )
     assert_no_data_logged(caplog)
 
 
@@ -610,8 +511,8 @@ def test_export_report_check_only_writes_nothing(tmp_path, monkeypatch, caplog):
         is True
     )
     assert session.posts == []
-    assert "check only, tab 'donnees' would be replaced" in caplog.text
-    assert "check only, tab 'secteurs' would be created" in caplog.text
+    assert "check only, tab 'bulles_sheet' would be replaced" in caplog.text
+    assert "check only, tab 'secteurs_sheet' would be created" in caplog.text
     assert_no_data_logged(caplog)
 
 
@@ -696,34 +597,6 @@ def test_export_tab_values():
     )
     assert values[0] == ["Dernier export (heure de Paris)", "2026-11-17 10:05:00"]
     assert values[-1] == ["donnees", "queries/bulles.sql", 3]
-
-
-def test_export_report_refuses_query_wider_than_its_columns(tmp_path, caplog):
-    config = {
-        "outputs": [
-            {
-                "type": "sheet",
-                "spreadsheet": SPREADSHEET,
-                "tabs": [{"tab": "donnees", "query": "bulles.sql", "columns": "A:A"}],
-            }
-        ]
-    }
-    write_report(tmp_path, config)
-    session = FakeSession()
-    assert (
-        export.export_report(
-            REPORT,
-            reports_dir=tmp_path,
-            connect_db=lambda: FakeConnection(query_results()),
-            open_session=lambda: session,
-            folder_id="FOLDER_ID_123",
-            check_public=lambda spreadsheet: None,
-        )
-        is False
-    )
-    assert session.posts == []
-    assert "2 columns, more than the 1 of its range columns" in caplog.text
-    assert_no_data_logged(caplog)
 
 
 def test_export_report_finds_the_reports_folder(tmp_path, monkeypatch):

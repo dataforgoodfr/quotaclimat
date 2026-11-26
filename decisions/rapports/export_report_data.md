@@ -4,37 +4,24 @@ Le flow `export_report_data` (Windmill `f/quotaclimat/export_report_data`, Kestr
 
 **Où sont les Sheets** : dans le dossier Drive `Rapports` du dossier partagé des données de référence (celui des Google Sheets importés par dbt, dont l'identifiant est le secret `EXTERNAL_SOURCES_DRIVE_FOLDER`). Le flow trouve ce dossier par son nom, puis chaque Sheet par son nom : aucun identifiant de plus à gérer.
 
-## Fichier `export_data.yml`
+## Conventions de nommage (pas de fichier de configuration)
 
-Il se trouve dans le dossier du rapport, à côté de `queries/` :
+| Quoi | Nom | Exemple |
+|---|---|---|
+| Google Sheet | le nom du dossier du rapport | `2027-02-pub-desinformation` |
+| Onglet | le nom de la requête suivi de `_sheet` | `queries/bulles_annonceurs_secteur.sql` → onglet `bulles_annonceurs_secteur_sheet` |
 
-```yaml
-# Exportation des données du rapport (flow export_report_data)
-outputs:
-  - type: sheet                                   # seul type pour l'instant
-    spreadsheet: 2027-02-pub-desinformation       # nom exact du Google Sheet dans le dossier Rapports
-    tabs:
-      - tab: part_temps_de_pub_prox_mesinfo_par_annonceurs   # onglet écrit à chaque export
-        query: bulles_annonceurs_secteur_sheets.sql   # fichier de queries/
-        columns: A:H                              # facultatif : seules ces colonnes sont remplacées
-      - tab: part_temps_de_pub_prox_mesinfo_par_categ
-        query: bulles_categories_secteur_sheets.sql
-        columns: A:H
-```
-
-- `outputs` : une sortie par Google Sheet. `type` est obligatoire (`sheet` aujourd'hui ; une autre sortie, un fichier par exemple, aura son propre type).
-- `spreadsheet` : nom exact du Google Sheet dans le dossier `Rapports`. **Jamais d'identifiant ni d'adresse de Sheet** : le dépôt est public, seul l'identifiant du dossier partagé est un secret.
-- `tabs` : un onglet par requête. Une même requête peut alimenter plusieurs onglets. Les noms d'onglet commençant par `_` sont réservés (onglets pour les humains et `_export`).
-- `query` : nom d'un fichier `.sql` de `queries/`. SQL brut, **une seule requête `SELECT`** (ou `WITH ... SELECT`) par fichier, sans variable Metabase : ses paramètres sont des constantes dans la requête.
-- `columns` (facultatif) : les colonnes écrites par l'export, par exemple `A:H`. Seules ces colonnes sont effacées (sur toutes les lignes) puis réécrites à partir de la ligne 1 ; le reste de l'onglet (graphique, notes) ne bouge pas. Une requête qui renvoie plus de colonnes que la plage fait échouer l'export. Sans `columns`, toutes les valeurs de l'onglet sont remplacées.
-
-Une clé inconnue, un fichier absent ou deux sorties vers le même Sheet font échouer le flow avant toute écriture.
+- **Toutes les requêtes `.sql` de `queries/` sont exportées**, chacune dans son onglet. Un fichier qui n'est pas en `.sql` est ignoré.
+- Une requête : SQL brut, **une seule requête `SELECT`** (ou `WITH ... SELECT`) par fichier, sans variable Metabase (ses paramètres sont des constantes dans la requête). Son nom est fait de lettres, chiffres, `_` et `-`, commence par une lettre ou un chiffre, et fait au plus 94 caractères (un nom d'onglet en fait au plus 100).
+- **Colonnes remplacées** : celles du résultat de la requête, à partir de A (8 colonnes → A à H), sur toutes les lignes. Ce qui est à droite (graphique, notes) ne bouge pas. Si une requête perd une colonne, l'ancienne colonne reste dans le Sheet : la vider à la main.
+- **Jamais d'identifiant ni d'adresse de Sheet** dans le dépôt, qui est public : seul l'identifiant du dossier partagé est un secret.
+- Renommer une requête renomme son onglet : l'export suivant crée un nouvel onglet, l'ancien (et son graphique) reste. Déplacer le graphique dans le nouvel onglet ou renommer l'onglet à la main avant l'export.
 
 ## Ce que fait le flow
 
-1. Il cherche le dossier `Rapports`, puis le Sheet par son nom dans ce dossier, et refuse un Sheet lisible sans identifiant (« Tous les utilisateurs disposant du lien », publié sur le web).
-2. Il exécute les requêtes du Sheet, chacune dans une transaction en lecture seule, avec un utilisateur Postgres en lecture seule.
-3. Il remplace, en une seule requête à Google (tout ou rien), le contenu de chaque onglet, en-têtes compris : les valeurs (de tout l'onglet, ou des colonnes de `columns`) sont effacées puis réécrites depuis la ligne 1. Les formats, les graphiques et les autres onglets ne bougent pas. Un onglet absent est créé.
+1. Il cherche le dossier `Rapports`, puis le Sheet nommé comme le rapport dans ce dossier, et refuse un Sheet lisible sans identifiant (« Tous les utilisateurs disposant du lien », publié sur le web).
+2. Il exécute toutes les requêtes de `queries/`, chacune dans une transaction en lecture seule, avec un utilisateur Postgres en lecture seule.
+3. Il remplace, en une seule requête à Google (tout ou rien), le contenu de chaque onglet `<requête>_sheet`, en-têtes compris : les valeurs des colonnes du résultat sont effacées puis réécrites depuis la ligne 1. Les formats, les graphiques et les autres onglets ne bougent pas. Un onglet absent est créé.
 4. Il écrit dans l'onglet `_export` la date et l'heure de l'export (heure de Paris), le rapport, la version du pipeline et le nombre de lignes de chaque onglet. La date est dans un onglet à part pour ne pas décaler les plages de données des graphiques.
 
 Les nombres restent des nombres dans le Sheet ; un texte n'est jamais lu comme une formule ; une valeur vide (NULL) donne une cellule vide ; les dates sont écrites en texte `AAAA-MM-JJ`.
@@ -43,11 +30,11 @@ Les journaux ne contiennent que les noms (rapport, Sheet, onglets, requêtes) et
 
 ## Mettre en place l'export d'un rapport
 
-1. Créer le Google Sheet **à la main** dans le dossier `Rapports` du dossier partagé (le flow n'en crée pas), avec le nom écrit dans `export_data.yml`. Partage restreint à l'équipe, sans lien public.
+1. Créer le Google Sheet **à la main** dans le dossier `Rapports` du dossier partagé (le flow n'en crée pas), nommé comme le dossier du rapport (par exemple `2027-02-pub-desinformation`). Partage restreint à l'équipe, sans lien public.
 2. Une seule fois : partager le dossier `Rapports` en **éditeur** avec le compte de service d'écriture (adresse `...@....iam.gserviceaccount.com`, la même que pour `Inventaire_des_marques`). Le compte doit voir le dossier pour le trouver, et les Sheets créés dedans héritent du partage. Ne jamais partager tout le dossier partagé avec ce compte.
-3. Ajouter `export_data.yml` et les requêtes de `queries/` dans le dossier du rapport, et les fusionner dans `main` : le flow tourne sur l'image construite depuis `main`.
+3. Ajouter les requêtes dans `queries/` du dossier du rapport, et les fusionner dans `main` : le flow tourne sur l'image construite depuis `main`.
 4. Lancer le flow `f/quotaclimat/export_report_data` dans Windmill avec `report` = nom du dossier du rapport (par exemple `2027-02-pub-desinformation`). Pour vérifier sans écrire : `apply` à `false` (les requêtes tournent et le Sheet est contrôlé, rien n'est écrit).
-5. Faire les graphiques dans un onglet à part, ou dans l'onglet des données à condition de donner `columns` et de placer le graphique hors de ces colonnes. Ne rien écrire à la main dans les colonnes exportées : tout y est remplacé au prochain export.
+5. Faire le graphique dans l'onglet `<requête>_sheet`, à droite des colonnes de la requête, ou dans un autre onglet. Ne rien écrire à la main dans les colonnes exportées : tout y est remplacé au prochain export.
 6. **Plage du graphique** : le flow ne modifie pas les graphiques (l'API ne permet pas de les réécrire sans perdre les réglages faits à la main). Pour que le graphique suive le nombre de lignes, lui donner une plage ouverte, sans numéro de ligne de fin, par exemple `A1:E` au lieu de `A1:E73`. Les lignes vides sous les données sont effacées à chaque export. À vérifier une fois sur le graphique : il ne doit pas afficher de point vide.
 
 En local : `poetry run python -m quotaclimat.reports.export_report_data --report <dossier> [--check]`, avec les variables `POSTGRES_*`, `EXTERNAL_SOURCES_DRIVE_FOLDER` et `GOOGLE_SHEETS_EDITOR_SERVICE_ACCOUNT_JSON` (et `REPORTS_DRIVE_FOLDER_NAME` si le dossier des Sheets ne s'appelle pas `Rapports`).

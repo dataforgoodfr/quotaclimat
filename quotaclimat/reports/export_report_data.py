@@ -1,15 +1,17 @@
-"""Export the data of a report to Google Sheets: runs the SQL queries of the report on the barometre database and
-writes each result to a tab of a Google Sheet, replacing the whole tab, or only its columns given in
-export_data.yml (e.g. A:H, a chart next to them being kept), headers included.
+"""Export the data of a report to Google Sheets: runs every SQL query of the report on the barometre database and
+writes each result to a tab of the report's Google Sheet, replacing the columns of the result, headers included
+(a chart or notes on the right of them are kept).
 
 Run by hand by the flow export_report_data (Windmill f/quotaclimat/export_report_data, Kestra
 quotaclimat/export-report-data):
 
     python -m quotaclimat.reports.export_report_data --report 2027-02-pub-desinformation [--check]
 
-The report is the name of its folder decisions/rapports/<AAAA-MM>-<sujet>/. Its file export_data.yml lists the
-outputs (format: decisions/rapports/export_data.md); the queries are the files of its
-queries/ folder, plain SQL without Metabase variables, one SELECT (or WITH ... SELECT) per file.
+The report is the name of its folder decisions/rapports/<AAAA-MM>-<sujet>/. No configuration file, only naming
+conventions (decisions/rapports/export_report_data.md):
+- the Google Sheet is named like the report (2027-02-pub-desinformation);
+- every file <query>.sql of its queries/ folder goes to the tab <query>_sheet. The queries are plain SQL without
+  Metabase variables, one SELECT (or WITH ... SELECT) per file.
 
 Google Sheets: never named by id (the repository is public), looked up by exact name in the folder "Rapports"
 (REPORTS_DRIVE_FOLDER_NAME) of the shared Drive folder of the reference data (EXTERNAL_SOURCES_DRIVE_FOLDER, the
@@ -43,7 +45,6 @@ from zoneinfo import ZoneInfo
 import psycopg2
 import requests
 import tomllib
-import yaml
 
 from quotaclimat.utils.google_sheets import (
     SHEETS_API_URL,
@@ -57,13 +58,12 @@ from quotaclimat.utils.google_sheets import (
 )
 
 REPORTS_DIR = Path("decisions/rapports")
-CONFIG_FILE = "export_data.yml"
 QUERIES_DIR = "queries"
 # <AAAA-MM>-<sujet>: 2027-02-pub-desinformation
 REPORT_ID_PATTERN = re.compile(r"^[0-9]{4}-(0[1-9]|1[0-2])-[a-z0-9]+(-[a-z0-9]+)*$")
-QUERY_FILE_PATTERN = re.compile(r"^[A-Za-z0-9_-]+\.sql$")
-COLUMNS_PATTERN = re.compile(r"^([A-Z]{1,2}):([A-Z]{1,2})$")
-OUTPUT_TYPES = {"sheet"}
+# query file name (without .sql) -> tab name: <query>_sheet
+QUERY_NAME_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]*$")
+TAB_SUFFIX = "_sheet"
 CREDENTIALS_ENV = "GOOGLE_SHEETS_EDITOR_SERVICE_ACCOUNT_JSON"
 # shared Drive folder of the reference data (my_dbt_project/external_sources.yml), holding the folder of the reports
 FOLDER_ENV = "EXTERNAL_SOURCES_DRIVE_FOLDER"
@@ -91,10 +91,8 @@ class ExportError(Exception):
 
 @dataclass(frozen=True)
 class TabExport:
-    tab: str
+    tab: str  # <query>_sheet
     query: str  # file name in queries/
-    # columns written, 0-based, end excluded: None = the whole tab; (0, 8) = A:H, the other columns untouched
-    columns: tuple[int, int] | None = None
 
 
 @dataclass(frozen=True)
@@ -137,138 +135,49 @@ def check_report_id(report: str) -> str:
 
 
 def available_reports(reports_dir: Path = REPORTS_DIR) -> list[str]:
-    """Reports whose folder has an export_data.yml."""
-    return sorted(p.parent.name for p in reports_dir.glob(f"*/{CONFIG_FILE}"))
-
-
-def _require(condition: bool, message: str) -> None:
-    if not condition:
-        raise ExportError(message)
-
-
-def column_index(letters: str) -> int:
-    """A -> 0, Z -> 25, AA -> 26."""
-    index = 0
-    for letter in letters:
-        index = index * 26 + ord(letter) - ord("A") + 1
-    return index - 1
-
-
-def parse_columns(value: object, where: str) -> tuple[int, int] | None:
-    """'A:H' -> (0, 8): columns written by the export, the other ones left as they are."""
-    if value is None:
-        return None
-    match = COLUMNS_PATTERN.match(value) if isinstance(value, str) else None
-    _require(match is not None, f"{where}: columns must be a range of columns like A:H")
-    start, end = column_index(match.group(1)), column_index(match.group(2))
-    _require(start <= end, f"{where}: columns {value}: first column after the last one")
-    return start, end + 1
-
-
-def _check_keys(item: dict, allowed: set[str], where: str) -> None:
-    unknown = set(item) - allowed
-    _require(
-        not unknown,
-        f"{where}: unknown keys {sorted(unknown)}, expected {sorted(allowed)}",
+    """Reports whose folder has queries to export."""
+    return sorted(
+        p.parent.name
+        for p in reports_dir.glob(f"*/{QUERIES_DIR}")
+        if any(p.glob("*.sql"))
     )
 
 
-def parse_config(report: str, config: object, queries_dir: Path) -> ExportConfig:
-    """Validates the content of export_data.yml (see decisions/rapports/decisions.md)."""
-    where = f"{report}/{CONFIG_FILE}"
-    _require(
-        isinstance(config, dict), f"{where}: expected a mapping with the key outputs"
-    )
-    _check_keys(config, {"outputs"}, where)
-    outputs_config = config.get("outputs")
-    _require(
-        isinstance(outputs_config, list) and outputs_config,
-        f"{where}: outputs must be a non-empty list",
-    )
-
-    outputs = []
-    for index, output in enumerate(outputs_config, start=1):
-        output_where = f"{where}, output {index}"
-        _require(isinstance(output, dict), f"{output_where}: expected a mapping")
-        output_type = output.get("type")
-        _require(
-            output_type in OUTPUT_TYPES,
-            f"{output_where}: type must be one of {sorted(OUTPUT_TYPES)}",
-        )
-        _check_keys(output, {"type", "spreadsheet", "tabs"}, output_where)
-
-        spreadsheet = output.get("spreadsheet")
-        _require(
-            isinstance(spreadsheet, str)
-            and spreadsheet.strip() == spreadsheet
-            and spreadsheet,
-            f"{output_where}: spreadsheet must be the exact name of the Google Sheet, without spaces around it",
-        )
-        tabs_config = output.get("tabs")
-        _require(
-            isinstance(tabs_config, list) and tabs_config,
-            f"{output_where}: tabs must be a non-empty list",
-        )
-
-        tabs = []
-        for tab_config in tabs_config:
-            _require(
-                isinstance(tab_config, dict),
-                f"{output_where}: each tab must be a mapping with tab and query",
-            )
-            _check_keys(tab_config, {"tab", "query", "columns"}, f"{output_where}, tab")
-            tab, query = tab_config.get("tab"), tab_config.get("query")
-            _require(
-                isinstance(tab, str)
-                and tab.strip() == tab
-                and 0 < len(tab) <= MAX_TAB_NAME_LENGTH,
-                f"{output_where}: invalid tab name {tab!r}",
-            )
-            _require(
-                not tab.startswith("_"),
-                f"{output_where}: tab {tab!r}: names starting with _ are for humans and for {EXPORT_TAB}",
-            )
-            _require(
-                isinstance(query, str) and QUERY_FILE_PATTERN.match(query),
-                f"{output_where}, tab {tab!r}: query must be the name of a .sql file of {QUERIES_DIR}/",
-            )
-            _require(
-                (queries_dir / query).is_file(),
-                f"{output_where}, tab {tab!r}: {QUERIES_DIR}/{query} not found",
-            )
-            columns = parse_columns(
-                tab_config.get("columns"), f"{output_where}, tab {tab!r}"
-            )
-            tabs.append(TabExport(tab=tab, query=query, columns=columns))
-
-        names = [t.tab for t in tabs]
-        _require(
-            len(set(names)) == len(names), f"{output_where}: tab names must be unique"
-        )
-        outputs.append(SheetOutput(spreadsheet=spreadsheet, tabs=tuple(tabs)))
-
-    spreadsheets = [o.spreadsheet for o in outputs]
-    _require(
-        len(set(spreadsheets)) == len(spreadsheets),
-        f"{where}: one output per spreadsheet (group its tabs in one output)",
-    )
-    return ExportConfig(report=report, queries_dir=queries_dir, outputs=tuple(outputs))
+def tab_name(query_file: str) -> str:
+    """'bulles_annonceurs_secteur.sql' -> 'bulles_annonceurs_secteur_sheet'."""
+    return query_file.removesuffix(".sql") + TAB_SUFFIX
 
 
 def load_config(report: str, reports_dir: Path = REPORTS_DIR) -> ExportConfig:
+    """What the export writes, from the naming conventions alone: the Google Sheet named like the report, and one
+    tab <query>_sheet per file <query>.sql of its queries/ folder."""
     report = check_report_id(report)
-    config_path = reports_dir / report / CONFIG_FILE
-    if not config_path.is_file():
+    queries_dir = reports_dir / report / QUERIES_DIR
+    query_files = (
+        sorted(p.name for p in queries_dir.glob("*.sql"))
+        if queries_dir.is_dir()
+        else []
+    )
+    if not query_files:
         raise ExportError(
-            f"no {CONFIG_FILE} for the report {report}; reports with one: {available_reports(reports_dir)}"
+            f"no query in {report}/{QUERIES_DIR}/; reports with queries: {available_reports(reports_dir)}"
         )
-    try:
-        config = yaml.safe_load(config_path.read_text(encoding="utf-8"))
-    except yaml.YAMLError as e:
-        raise ExportError(
-            f"{report}/{CONFIG_FILE} is not valid YAML ({type(e).__name__})"
-        ) from None
-    return parse_config(report, config, reports_dir / report / QUERIES_DIR)
+    tabs = []
+    for query in query_files:
+        stem = query.removesuffix(".sql")
+        if not QUERY_NAME_PATTERN.match(stem):
+            raise ExportError(
+                f"{QUERIES_DIR}/{query}: a query name is made of letters, digits, _ and -, and starts with a "
+                "letter or a digit (it becomes the name of a tab)"
+            )
+        if len(tab_name(query)) > MAX_TAB_NAME_LENGTH:
+            raise ExportError(f"{QUERIES_DIR}/{query}: name too long for a tab name")
+        tabs.append(TabExport(tab=tab_name(query), query=query))
+    return ExportConfig(
+        report=report,
+        queries_dir=queries_dir,
+        outputs=(SheetOutput(spreadsheet=report, tabs=tuple(tabs)),),
+    )
 
 
 # ------------------------------------------------------------------ queries
@@ -604,14 +513,10 @@ def export_output(
         values = tab_values(result)
         try:
             check_size(values)
-            if tab.columns and len(result.columns) > tab.columns[1] - tab.columns[0]:
-                raise ExportError(
-                    f"{len(result.columns)} columns, more than the "
-                    f"{tab.columns[1] - tab.columns[0]} of its range columns"
-                )
         except ExportError as e:
             raise ExportError(f"tab {tab.tab!r}: {e}") from None
-        contents[tab.tab] = TabContent(values, tab.columns)
+        # only the columns of the result are cleared and written: a chart on their right stays
+        contents[tab.tab] = TabContent(values, (0, len(result.columns)))
         counts.append((tab.tab, tab.query, len(result.rows)))
         logger.info(
             "%s: query %s -> %s rows, %s columns for the tab %r",

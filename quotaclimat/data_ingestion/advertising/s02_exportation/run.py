@@ -10,7 +10,7 @@ from zoneinfo import ZoneInfo
 
 import s3fs
 from sentry_sdk.crons import monitor
-from sqlalchemy import BigInteger, exists, func, or_, select, update
+from sqlalchemy import BigInteger, Date, cast, exists, func, or_, select, update
 from sqlalchemy.orm import aliased
 
 from postgres.database_connection import get_db_session
@@ -232,15 +232,21 @@ def _grouped_ads_query(
     merged_ads: bool = False,
 ):
     """Same rows as `_base_ads_query`, but read back out of its DISTINCT ON result so
-    they can be ordered by channel/date -- Postgres requires DISTINCT ON's own ORDER BY
+    they can be ordered by day/channel -- Postgres requires DISTINCT ON's own ORDER BY
     to start with the distinct-on expression (Ad.id here), so this order has to be
     applied on top of it rather than combined into the same query.
+
+    Day first: a run stopped by MAX_RUN_DURATION_MIN or MAX_ADS has caught up the oldest
+    days of every channel, and the next run goes on with the following days. The day is the
+    UTC calendar date of the occurrence, the key of the groups (iter_ads_by_channel_day).
     """
     inner = _base_ads_query(start_date, end_date, merged_ads).subquery()
     ad_alias = aliased(Ad, inner)
     occurrence_alias = aliased(Ad_Occurrence, inner)
     return select(ad_alias, occurrence_alias).order_by(
-        occurrence_alias.channel_name, occurrence_alias.occurrence_date
+        cast(occurrence_alias.occurrence_date, Date),
+        occurrence_alias.channel_name,
+        occurrence_alias.occurrence_date,
     )
 
 
@@ -252,7 +258,7 @@ def iter_ads_by_channel_day(
     merged_ads: bool = False,
 ):
     """Stream (Ad, Ad_Occurrence) rows from Postgres via a server-side cursor, ordered
-    by channel and occurrence date, yielding one (channel, day) group -- where day is
+    by occurrence day and channel, yielding one (channel, day) group -- where day is
     the occurrence's UTC calendar date, matching how mediatree lays out its S3 bucket --
     at a time as the sorted stream progresses. Only one group is ever held in memory,
     rather than every ad inside the start and end dates.

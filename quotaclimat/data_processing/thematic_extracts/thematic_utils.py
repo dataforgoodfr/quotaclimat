@@ -133,12 +133,19 @@ def get_periods(yml_file: str, thematic: str, country: str) -> list[dict]:
 def configure_barometre_source(con: duckdb.DuckDBPyConnection, source_table: str,
                                postgres_user: str, postgres_password: str, 
                                postgres_host: str, postgres_port: str, 
-                               postgres_db: str) -> None:
-    """Attach the Barometre database (once: serves both as source and destination)."""
+                               postgres_db: str, use_ctid_scan: bool = True) -> None:
+    """Attach the Barometre database (once: serves both as source and destination).
+
+    use_ctid_scan=False: by default duckdb splits a Postgres scan into ctid ranges of
+    pg_pages_per_task pages, so a filtered read goes through every page of the table and
+    Postgres cannot use an index on the filtered column. Without it, duckdb sends one query
+    with the filters, which uses the index (scan on one connection only)."""
     barometre_dsn=f"postgresql://{postgres_user}:{postgres_password}@{postgres_host}:{postgres_port}/{postgres_db}"
     try:
         # Install and load the Postgres extension for DuckDB
         con.execute("INSTALL postgres; LOAD postgres;")
+        if not use_ctid_scan:
+            con.execute("SET pg_use_ctid_scan = false")
         con.execute(f"ATTACH '{barometre_dsn}' AS {postgres_db} (TYPE POSTGRES);")
         logging.info(f"[{source_table}] CONNECTION OK")
 

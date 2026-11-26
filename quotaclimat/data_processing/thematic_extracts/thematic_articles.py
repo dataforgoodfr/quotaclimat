@@ -103,10 +103,13 @@ def run() -> None:
     ### Connection and source
     _con = duckdb.connect()
     _con.execute("SET TimeZone='Europe/Paris'")
+    # no ctid scan: each daily read must use the index on factiva_articles.publication_datetime
+    # instead of going through the whole table (25 to 95 s per day with the ctid scan)
     utils.configure_barometre_source(_con, SOURCE_TABLE,
                                     POSTGRES_USER, POSTGRES_PASSWORD,
-                                    POSTGRES_HOST, POSTGRES_PORT, POSTGRES_DB)
-    
+                                    POSTGRES_HOST, POSTGRES_PORT, POSTGRES_DB,
+                                    use_ctid_scan=False)
+
     ### Check existence BEFORE creating the table
     table_exists = utils.destination_table_exists(_con, destination_table, POSTGRES_DB, DESTINATION_SCHEMA)
 

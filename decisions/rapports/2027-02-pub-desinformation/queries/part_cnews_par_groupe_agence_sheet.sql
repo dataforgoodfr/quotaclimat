@@ -1,6 +1,6 @@
 -- 3 Un biais pro CNews de certaines agences ? Part du temps de pub de chaque groupe d'agences média diffusée sur
 -- CNews, parmi les chaînes d'information en continu privées (BFM TV, CNews, LCI), comparée à celle de toute la pub de
--- ces chaînes (ligne « Toutes les publicités », en gris dans le graphique).
+-- ces chaînes (ligne « Toutes les publicités », toujours en première ligne pour être en gris dans le graphique).
 -- Barres horizontales, une par groupe d'agences.
 -- SQL brut, sans variable : la période est le CTE plage, les paramètres le CTE parametres.
 --
@@ -51,4 +51,4 @@ SELECT
     ROUND(pub_min::numeric) AS pub_min,
     nb_diffusions
 FROM lignes
-ORDER BY part_cnews_pct DESC
+ORDER BY groupe_agence = 'Toutes les publicités' DESC, part_cnews_pct DESC

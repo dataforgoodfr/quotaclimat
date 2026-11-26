@@ -2,18 +2,19 @@
 writes each result to a tab of a Google Sheet, replacing the whole tab, or only its columns given in
 export_data.yml (e.g. A:H, a chart next to them being kept), headers included.
 
-Run by hand by the Kestra flow quotaclimat/report-export-data (infrastructure/kestra/flows/
-main_quotaclimat_reportexportdata.yaml):
+Run by hand by the flow export_report_data (Windmill f/quotaclimat/export_report_data, Kestra
+quotaclimat/export-report-data):
 
-    python -m quotaclimat.reports.export_data --report 2027-02-pub-desinformation [--check]
+    python -m quotaclimat.reports.export_report_data --report 2027-02-pub-desinformation [--check]
 
 The report is the name of its folder decisions/rapports/<AAAA-MM>-<sujet>/. Its file export_data.yml lists the
-outputs (format: decisions/rapports/decisions.md, "Exporter les données"); the queries are the files of its
+outputs (format: decisions/rapports/export_data.md); the queries are the files of its
 queries/ folder, plain SQL without Metabase variables, one SELECT (or WITH ... SELECT) per file.
 
-Google Sheets: never named by id (the repository is public), looked up by exact name in the Drive folder whose id
-is in REPORT_EXPORT_DRIVE_FOLDER, and refused when readable without credentials. They are created by hand in that
-folder and shared as editor with the service account of GOOGLE_SHEETS_EDITOR_SERVICE_ACCOUNT_JSON; the job never
+Google Sheets: never named by id (the repository is public), looked up by exact name in the folder "Rapports"
+(REPORTS_DRIVE_FOLDER_NAME) of the shared Drive folder of the reference data (EXTERNAL_SOURCES_DRIVE_FOLDER, the
+only id kept in a secret), and refused when readable without credentials. They are created by hand in that folder,
+which is shared as editor with the service account of GOOGLE_SHEETS_EDITOR_SERVICE_ACCOUNT_JSON; the job never
 creates a spreadsheet, but creates a missing tab. All the tabs of one spreadsheet, and its tab _export (date of the
 export, row counts), are written in a single request: either all of them change, or none.
 
@@ -49,6 +50,7 @@ from quotaclimat.utils.google_sheets import (
     TIMEOUT_SEC,
     GoogleSheetsError,
     ensure_not_public,
+    find_folder,
     find_spreadsheet,
     parse_folder_id,
     service_account_session,
@@ -63,7 +65,10 @@ QUERY_FILE_PATTERN = re.compile(r"^[A-Za-z0-9_-]+\.sql$")
 COLUMNS_PATTERN = re.compile(r"^([A-Z]{1,2}):([A-Z]{1,2})$")
 OUTPUT_TYPES = {"sheet"}
 CREDENTIALS_ENV = "GOOGLE_SHEETS_EDITOR_SERVICE_ACCOUNT_JSON"
-FOLDER_ENV = "REPORT_EXPORT_DRIVE_FOLDER"
+# shared Drive folder of the reference data (my_dbt_project/external_sources.yml), holding the folder of the reports
+FOLDER_ENV = "EXTERNAL_SOURCES_DRIVE_FOLDER"
+REPORTS_FOLDER_NAME_ENV = "REPORTS_DRIVE_FOLDER_NAME"
+REPORTS_FOLDER_NAME = "Rapports"
 SCOPES = [
     "https://www.googleapis.com/auth/drive.metadata.readonly",  # find the spreadsheet in the folder
     "https://www.googleapis.com/auth/spreadsheets",  # write its tabs
@@ -335,7 +340,7 @@ def connect():
         dbname=os.environ.get("POSTGRES_DB", "barometre"),
         user=os.environ.get("POSTGRES_USER", "user"),
         password=os.environ.get("POSTGRES_PASSWORD", "password"),
-        application_name="report-export-data",
+        application_name="export_report_data",
         options=f"-c default_transaction_read_only=on -c statement_timeout={STATEMENT_TIMEOUT_MS}",
     )
 
@@ -634,6 +639,13 @@ def export_output(
     logger.info("%s: tabs %s replaced", label, list(contents))
 
 
+def reports_folder_id(session) -> str:
+    """Id of the folder "Rapports" (REPORTS_DRIVE_FOLDER_NAME) of the shared folder EXTERNAL_SOURCES_DRIVE_FOLDER."""
+    parent_id = parse_folder_id(os.environ.get(FOLDER_ENV, ""))
+    name = os.environ.get(REPORTS_FOLDER_NAME_ENV, "").strip() or REPORTS_FOLDER_NAME
+    return find_folder(session, parent_id, name)["id"]
+
+
 def export_report(
     report: str,
     apply: bool = True,
@@ -645,13 +657,13 @@ def export_report(
 ) -> bool:
     """Exports every output of the report. Returns True when all of them were exported."""
     config = load_config(report, reports_dir)
-    if folder_id is None:
-        folder_id = parse_folder_id(os.environ.get(FOLDER_ENV, ""))
     session = (
         open_session()
         if open_session
         else service_account_session(CREDENTIALS_ENV, SCOPES)
     )
+    if folder_id is None:
+        folder_id = reports_folder_id(session)
     logger.info(
         "Report %s: %s output(s), %s",
         report,

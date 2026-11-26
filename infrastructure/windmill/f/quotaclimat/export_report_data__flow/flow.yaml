@@ -1,13 +1,15 @@
-summary: quotaclimat/report-export-data
+summary: quotaclimat/export_report_data
 description: |-
   Exports the data of a report to Google Sheets: runs the SQL queries of the
   report's queries/ folder on the barometre database (read-only user, read-only
   transactions) and replaces each tab listed in its export_data.yml, plus a tab
   _export with the date of the export. The report is the name of its folder
   decisions/rapports/<AAAA-MM>-<sujet>/ (format of export_data.yml:
-  decisions/rapports/export_data.md). Runs by hand, from the quotaclimat_base
-  image built on main: the report's export_data.yml and queries must be merged
-  first. No row of the results is logged.
+  decisions/rapports/export_data.md). The spreadsheets are looked up by name in
+  the folder "Rapports" of the shared Drive folder EXTERNAL_SOURCES_DRIVE_FOLDER.
+  Runs by hand, from the quotaclimat_base image built on main: the report's
+  export_data.yml and queries must be merged first. No row of the results is
+  logged.
 value:
   modules:
   - id: export_report_data
@@ -21,7 +23,7 @@ value:
           value: rg.fr-par.scw.cloud/namespace-barometre/quotaclimat_base:latest
         entrypoint:
           type: javascript
-          expr: '["/bin/sh", "-c", `cd /app && python -m quotaclimat.reports.export_data ${flow_input.apply ? '''' : ''--check''}`]'
+          expr: '["/bin/sh", "-c", `cd /app && python -m quotaclimat.reports.export_report_data ${(flow_input.apply ?? true) ? '''' : ''--check''}`]'
         env:
           type: javascript
           expr: |-
@@ -37,7 +39,7 @@ value:
             POSTGRES_HOST: f/secrets/POSTGRES_HOST
             POSTGRES_USER: f/secrets/RRS_BAROMETRE_READ_USER
             POSTGRES_PASSWORD: f/secrets/RRS_BAROMETRE_READ_PASSWORD
-            REPORT_EXPORT_DRIVE_FOLDER: f/secrets/REPORT_EXPORT_DRIVE_FOLDER
+            EXTERNAL_SOURCES_DRIVE_FOLDER: f/secrets/EXTERNAL_SOURCES_DRIVE_FOLDER
             GOOGLE_SHEETS_EDITOR_SERVICE_ACCOUNT_JSON: f/secrets/GOOGLE_SHEETS_EDITOR_SERVICE_ACCOUNT_JSON
         registry:
           type: static
@@ -69,4 +71,3 @@ schema:
       default: true
   required:
   - report
-  - apply

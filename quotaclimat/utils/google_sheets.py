@@ -4,7 +4,7 @@ The spreadsheets are never named by id in the repository (it is public): they ar
 Google Drive folder whose id is kept in an env variable (find_spreadsheet), and a spreadsheet readable without
 credentials is refused (ensure_not_public). Used by the dbt reference data import
 (quotaclimat/data_ingestion/external_sources), the advertising jobs that write to their Sheets and the export of
-the report data (quotaclimat/reports/export_data.py).
+the report data (quotaclimat/reports/export_report_data.py).
 """
 
 import json
@@ -19,6 +19,7 @@ from google.oauth2 import service_account
 SHEETS_API_URL = "https://sheets.googleapis.com/v4/spreadsheets"
 DRIVE_FILES_API_URL = "https://www.googleapis.com/drive/v3/files"
 SPREADSHEET_MIME_TYPE = "application/vnd.google-apps.spreadsheet"
+FOLDER_MIME_TYPE = "application/vnd.google-apps.folder"
 # Drive permission ids of the "anyone" permissions (public on the web / anyone with the link)
 PUBLIC_PERMISSION_IDS = {"anyone", "anyoneWithLink"}
 ANONYMOUS_EXPORT_URL = (
@@ -66,18 +67,18 @@ def service_account_session(
     return AuthorizedSession(credentials)
 
 
-def find_spreadsheet(
-    session: AuthorizedSession, folder_id: str, spreadsheet_name: str
+def _find_in_folder(
+    session: AuthorizedSession, folder_id: str, name: str, mime_type: str, kind: str
 ) -> dict:
-    """Drive file (id, name, permissionIds) of the spreadsheet named exactly spreadsheet_name in the
-    folder (not in sub-folders)."""
+    """Drive file (id, name, permissionIds) named exactly name, of this mime type, directly in the folder
+    (not in sub-folders). Exactly one match expected."""
     response = session.get(
         DRIVE_FILES_API_URL,
         params={
             "q": (
                 f"{drive_query_literal(folder_id)} in parents"
-                f" and name = {drive_query_literal(spreadsheet_name)}"
-                f" and mimeType = '{SPREADSHEET_MIME_TYPE}' and trashed = false"
+                f" and name = {drive_query_literal(name)}"
+                f" and mimeType = '{mime_type}' and trashed = false"
             ),
             "fields": "files(id,name,permissionIds)",
             "supportsAllDrives": "true",
@@ -89,9 +90,24 @@ def find_spreadsheet(
     files = response.json().get("files", [])
     if len(files) != 1:
         raise GoogleSheetsError(
-            f"{len(files)} spreadsheets named {spreadsheet_name!r} in the folder, expected exactly 1"
+            f"{len(files)} {kind} named {name!r} in the folder, expected exactly 1"
         )
     return files[0]
+
+
+def find_spreadsheet(
+    session: AuthorizedSession, folder_id: str, spreadsheet_name: str
+) -> dict:
+    """Drive file (id, name, permissionIds) of the spreadsheet named exactly spreadsheet_name in the
+    folder (not in sub-folders)."""
+    return _find_in_folder(
+        session, folder_id, spreadsheet_name, SPREADSHEET_MIME_TYPE, "spreadsheets"
+    )
+
+
+def find_folder(session: AuthorizedSession, folder_id: str, folder_name: str) -> dict:
+    """Drive folder named exactly folder_name directly in the folder folder_id."""
+    return _find_in_folder(session, folder_id, folder_name, FOLDER_MIME_TYPE, "folders")
 
 
 def ensure_not_public(spreadsheet: dict, anonymous_get=None) -> None:

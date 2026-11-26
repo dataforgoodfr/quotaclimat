@@ -269,16 +269,15 @@ The `barometre-i18n` flow runs the misinformation job for every country on the V
 
 Build it once with `jq -n -c --arg ...` (so values are escaped), store it as one entry in the `Quotaclimat - Orchestrator/` collection, then `make sync-secrets` and `make tags=kestra ansible`. Check each code with `echo "$I18N_COUNTRY_SECRETS" | jq -e '.bel.bucket_access'` before deploying. Adding a country adds one key here, no playbook change. The key is already declared in `kestra_secrets` (`ansible/playbook.yml`); add `export I18N_COUNTRY_SECRETS=` to `.env.secrets.dist`.
 
-### Report export secrets (`report-export-data`)
+### Report export secrets (`export_report_data`)
 
-The flow `report-export-data` (`docs/kestra_flows.md`) writes the data of a report to Google Sheets. Besides secrets already provisioned (`POSTGRES_HOST`, `RRS_BAROMETRE_READ_USER`, `RRS_BAROMETRE_READ_PASSWORD`, `SCW_SECRET`), it needs two Kestra (and Windmill) secrets, declared in `kestra_secrets` (`ansible/playbook.yml`):
+The flow `export_report_data` (`docs/kestra_flows.md`, "export-report-data") writes the data of a report to Google Sheets. It finds the spreadsheets by name in the folder `Rapports` (name hard-coded, `REPORTS_DRIVE_FOLDER_NAME` to change it) of the shared Drive folder `EXTERNAL_SOURCES_DRIVE_FOLDER`, the secret already used by the dbt reference data import: no folder id of its own. Besides secrets already provisioned (`EXTERNAL_SOURCES_DRIVE_FOLDER`, `POSTGRES_HOST`, `RRS_BAROMETRE_READ_USER`, `RRS_BAROMETRE_READ_PASSWORD`, `SCW_SECRET`), it needs one Kestra (and Windmill) secret, declared in `kestra_secrets` (`ansible/playbook.yml`):
 
 | Secret | Value |
 |---|---|
-| `REPORT_EXPORT_DRIVE_FOLDER` | id of the Google Drive folder holding the report spreadsheets (last part of `https://drive.google.com/drive/folders/<id>`). A folder of its own, not the one of `EXTERNAL_SOURCES_DRIVE_FOLDER`: the read-only import account does not need the report data |
-| `GOOGLE_SHEETS_EDITOR_SERVICE_ACCOUNT_JSON` | JSON key (one line) of the Google service account that writes to Google Sheets, the one already used by the advertising jobs (`e01_brand_groups`, `e02_manual_corrections`). It needs no access to the folder: each export spreadsheet is shared with it as **editor**, one by one |
+| `GOOGLE_SHEETS_EDITOR_SERVICE_ACCOUNT_JSON` | JSON key (one line) of the Google service account that writes to Google Sheets, the one already used by the advertising jobs (`e01_brand_groups`, `e02_manual_corrections`). The folder `Rapports` is shared with it as **editor** (it must see the folder to find it, and write its spreadsheets); never the whole shared folder |
 
-Store them in the `Quotaclimat - Orchestrator/` collection, add `export REPORT_EXPORT_DRIVE_FOLDER=` and `export GOOGLE_SHEETS_EDITOR_SERVICE_ACCOUNT_JSON=` to `.env.secrets.dist`, then `make sync-secrets`, `make tags=kestra ansible` and `make tags=windmill ansible`.
+Store it in the `Quotaclimat - Orchestrator/` collection, add `export GOOGLE_SHEETS_EDITOR_SERVICE_ACCOUNT_JSON=` to `.env.secrets.dist`, then `make sync-secrets`, `make tags=windmill ansible` and `make tags=kestra ansible`.
 
 The database user is `rrs-read-<env>` (`readonly` privilege, `live/barometre/template/database.tf`), shared with RRS; the job also runs every query in a read-only transaction. A dedicated readonly user (e.g. `report-export-<env>`, added to `readonly_users` in `grants.tf` and to the dbt grants) would separate the two uses if needed.
 

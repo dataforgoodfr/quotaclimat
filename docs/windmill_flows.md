@@ -10,7 +10,7 @@ One workspace (`WINDMILL_WORKSPACE`), one folder per Kestra namespace:
 
 | Folder | Kestra namespace | Contents |
 |---|---|---|
-| `f/quotaclimat` | `quotaclimat` | `barometre`, `barometre_catchup`, `barometre_i18n`, `dbt`, `dbt_analytics`, `main_pipeline`, `metabase_sync`, `report_export_data` |
+| `f/quotaclimat` | `quotaclimat` | `barometre`, `barometre_catchup`, `barometre_i18n`, `dbt`, `dbt_analytics`, `main_pipeline`, `metabase_sync`, `export_report_data` |
 | `f/quotaclimat_dev` | `quotaclimat-dev` | `barometre`, `main_pipeline`, `alert_test`, `glitchtip_log_test` |
 | `f/rrs` | `rrs` | `extended_perimeter`, `rrs_climate`, `rrs_insecurity`, `rrs_pollution`, `pulsar_themes` |
 | `f/rrs_dev` | `rrs-dev` | same as `f/rrs` |

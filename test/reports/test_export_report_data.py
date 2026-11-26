@@ -1,4 +1,4 @@
-"""Export of the report data to Google Sheets (quotaclimat/reports/export_data.py), without database nor Google."""
+"""Export of the report data to Google Sheets (quotaclimat/reports/export_report_data.py), without database nor Google."""
 
 import logging
 from datetime import date, datetime
@@ -10,7 +10,7 @@ import pytest
 import requests
 import yaml
 
-from quotaclimat.reports import export_data as export
+from quotaclimat.reports import export_report_data as export
 from quotaclimat.utils.google_sheets import DRIVE_FILES_API_URL, SHEETS_API_URL
 
 REPORT = "2027-02-pub-exemple"
@@ -464,12 +464,15 @@ class FakeSession:
             else files
         )
         self.post_status = post_status
+        self.folders = [{"id": "REPORTS_FOLDER_123", "name": "Rapports"}]
         self.gets = []
         self.posts = []
 
     def get(self, url, params=None, timeout=None):
         self.gets.append((url, params))
         if url == DRIVE_FILES_API_URL:
+            if "application/vnd.google-apps.folder" in params["q"]:
+                return FakeResponse({"files": self.folders})
             return FakeResponse({"files": self.files})
         return FakeResponse(
             {
@@ -721,3 +724,44 @@ def test_export_report_refuses_query_wider_than_its_columns(tmp_path, caplog):
     assert session.posts == []
     assert "2 columns, more than the 1 of its range columns" in caplog.text
     assert_no_data_logged(caplog)
+
+
+def test_export_report_finds_the_reports_folder(tmp_path, monkeypatch):
+    """Without folder_id, the spreadsheets are looked up in the folder "Rapports" of the shared folder of
+    EXTERNAL_SOURCES_DRIVE_FOLDER."""
+    monkeypatch.setenv("EXTERNAL_SOURCES_DRIVE_FOLDER", "SHARED_FOLDER_123")
+    monkeypatch.delenv("REPORTS_DRIVE_FOLDER_NAME", raising=False)
+    write_report(tmp_path)
+    session = FakeSession()
+    assert (
+        export.export_report(
+            REPORT,
+            reports_dir=tmp_path,
+            connect_db=lambda: FakeConnection(query_results()),
+            open_session=lambda: session,
+            check_public=lambda spreadsheet: None,
+        )
+        is True
+    )
+    folder_query, sheet_query = session.gets[0][1]["q"], session.gets[1][1]["q"]
+    assert folder_query == (
+        "'SHARED_FOLDER_123' in parents and name = 'Rapports'"
+        " and mimeType = 'application/vnd.google-apps.folder' and trashed = false"
+    )
+    assert sheet_query.startswith("'REPORTS_FOLDER_123' in parents and name = ")
+
+
+def test_reports_folder_name_from_env(monkeypatch):
+    monkeypatch.setenv("EXTERNAL_SOURCES_DRIVE_FOLDER", "SHARED_FOLDER_123")
+    monkeypatch.setenv("REPORTS_DRIVE_FOLDER_NAME", "Autres rapports")
+    session = FakeSession()
+    assert export.reports_folder_id(session) == "REPORTS_FOLDER_123"
+    assert "name = 'Autres rapports'" in session.gets[0][1]["q"]
+
+
+def test_reports_folder_missing(monkeypatch):
+    monkeypatch.setenv("EXTERNAL_SOURCES_DRIVE_FOLDER", "SHARED_FOLDER_123")
+    session = FakeSession()
+    session.folders = []
+    with pytest.raises(export.GoogleSheetsError, match="0 folders named 'Rapports'"):
+        export.reports_folder_id(session)

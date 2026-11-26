@@ -1,4 +1,4 @@
-id: report-export-data
+id: export-report-data
 namespace: quotaclimat
 
 description: |
@@ -7,9 +7,11 @@ description: |
   transactions) and replaces each tab listed in its export_data.yml, plus a tab
   _export with the date of the export. The report is the name of its folder
   decisions/rapports/<AAAA-MM>-<sujet>/ (format of export_data.yml:
-  decisions/rapports/export_data.md). Runs by hand, from the quotaclimat_base
-  image built on main: the report's export_data.yml and queries must be merged
-  first. No row of the results is logged.
+  decisions/rapports/export_data.md). The spreadsheets are looked up by name in
+  the folder "Rapports" of the shared Drive folder EXTERNAL_SOURCES_DRIVE_FOLDER.
+  Runs by hand, from the quotaclimat_base image built on main: the report's
+  export_data.yml and queries must be merged first. No row of the results is
+  logged. Windmill copy: f/quotaclimat/export_report_data.
 
 labels:
   pipeline: ome
@@ -41,7 +43,7 @@ tasks:
       - -c
       # the report is passed in REPORT_ID, never in the command line
       - >-
-        cd /app && python -m quotaclimat.reports.export_data
+        cd /app && python -m quotaclimat.reports.export_report_data
         {{ inputs.apply ? '' : '--check' }}
     env:
       REPORT_ID: "{{ inputs.report }}"
@@ -52,5 +54,6 @@ tasks:
       # rrs-read-prod: readonly privilege on barometre (infrastructure/live/barometre/template/database.tf)
       POSTGRES_USER: "{{ secret('RRS_BAROMETRE_READ_USER') }}"
       POSTGRES_PASSWORD: "{{ secret('RRS_BAROMETRE_READ_PASSWORD') }}"
-      REPORT_EXPORT_DRIVE_FOLDER: "{{ secret('REPORT_EXPORT_DRIVE_FOLDER') }}"
+      # shared Drive folder of the reference data; the spreadsheets are in its folder "Rapports"
+      EXTERNAL_SOURCES_DRIVE_FOLDER: "{{ secret('EXTERNAL_SOURCES_DRIVE_FOLDER') }}"
       GOOGLE_SHEETS_EDITOR_SERVICE_ACCOUNT_JSON: "{{ secret('GOOGLE_SHEETS_EDITOR_SERVICE_ACCOUNT_JSON') }}"

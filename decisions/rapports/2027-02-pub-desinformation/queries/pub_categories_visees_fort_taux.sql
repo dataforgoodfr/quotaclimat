@@ -2,7 +2,7 @@
 -- produit visée par des cas, temps de pub de la catégorie diffusé autour d'émissions à fort taux de mésinformation
 -- contre cette catégorie, sur les chaînes d'information en continu.
 -- Barres horizontales : une barre par catégorie (pub_exposee_min), triées par minutes décroissantes.
--- SQL brut, sans variable : les paramètres sont les constantes du CTE parametres.
+-- SQL brut, sans variable : la période est le CTE periode, les paramètres les constantes du CTE parametres.
 --
 -- Règles (decisions.md) :
 --   - catégorie visée : un cas vise une catégorie quand une de ses affirmations porte sur une cible, dans le sens
@@ -13,7 +13,7 @@
 --   - émission à fort taux contre une catégorie : sur la période, au moins seuil cas validés par heure de climat
 --     (tous cas confondus, public.emission_jour) et au moins climat_heures_min heures de climat, et au moins
 --     nb_cas_groupe_min cas contre le groupe de la catégorie ;
---   - période : la plage du rapport, à partir du premier jour des cas rattachés aux cibles (debut_cibles) ;
+--   - période : l'année 2026 (CTE periode ; les cas ne sont rattachés aux cibles qu'à partir de 2026) ;
 --   - pub autour d'une émission : advertising.pub_annonceur_emission_jour (rattachement par l'émission, sans notion
 --     de jour : la pub et les cas peuvent tomber des jours différents).
 --
@@ -25,20 +25,14 @@
 --   nb_emissions : émissions à fort taux contre la catégorie où elle a de la pub ;
 --   nb_cas : cas distincts contre la catégorie dans ces émissions ;
 --   principaux_annonceurs : les 3 entreprises qui ont le plus de pub exposée, avec leurs minutes.
-WITH plage AS (
-    SELECT GREATEST(DATE '2025-09-29', (m.fin - INTERVAL '1 year')::date + 1) AS debut, m.fin
-    FROM (SELECT LEAST(MAX(jour), DATE '2026-12-31') AS fin FROM curated.publicite) m
+WITH periode AS (
+    SELECT DATE '2026-01-01' AS debut, DATE '2026-12-31' AS fin
 ),
 parametres AS (
     SELECT
         1::numeric AS seuil,
         0.5::numeric AS climat_heures_min,
-        2 AS nb_cas_groupe_min,
-        DATE '2026-01-01' AS debut_cibles
-),
-periode AS (
-    SELECT GREATEST(pl.debut, pa.debut_cibles) AS debut, pl.fin
-    FROM plage pl CROSS JOIN parametres pa
+        2 AS nb_cas_groupe_min
 ),
 -- catégorie -> couples cible et sens qui la visent
 cat_cibles AS (

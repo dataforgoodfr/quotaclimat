@@ -14,7 +14,7 @@ Chaîne de données :
 1. **Publicités** : détection, classification et consolidation (`quotaclimat/data_ingestion/advertising/`, voir les README des étapes s03 à s05), puis dbt : `analytics.publicites` (une diffusion), `advertising.pub_annonceur_emission_jour` (secondes de pub de chaque marque autour de chaque émission, par jour ; [`my_dbt_project/models/analytics/pub_annonceur_emission_jour.sql`](../../../my_dbt_project/models/analytics/pub_annonceur_emission_jour.sql)). Les colonnes `secteur`, `categorie`, `entreprise`, `agence_media`, `groupe_agence`, `fiabilite_agence` viennent de là.
 2. **Mésinformation et climat par émission** : `public.emission_jour` (une ligne par émission et par jour : `climat_heures`, `nb_cas` validés ; [`my_dbt_project/models/analytics/emission_jour.sql`](../../../my_dbt_project/models/analytics/emission_jour.sql)). Jointure avec la pub sur `emission_cle`.
 3. **Chaînes** : `curated.chaine` (`est_info_continue` sépare chaînes d'information en continu et généralistes). **Plage de dates** : `curated.publicite` (dernier jour de pub extrait).
-4. **Google Sheets puis Google Doc** : les résultats des requêtes de `queries/` vont dans le Google Sheet `2027-02-pub-desinformation` (un onglet par graphique, données et graphique dans le même onglet), dont les graphiques sont collés dans le Google Doc du rapport.
+4. **Google Sheets puis Google Doc** : les résultats des requêtes de `queries/` vont dans le Google Sheet `2027-02-pub-desinformation` (dossier Drive `Rapports`, un onglet par graphique, données en colonnes A à H et graphique dans le même onglet), dont les graphiques sont collés dans le Google Doc du rapport. L'export se fait avec le flow `export_report_data` (Windmill), lancé à la main avec `report=2027-02-pub-desinformation` ; [`export_data.yml`](export_data.yml) dit quelle requête va dans quel onglet. Procédure de rafraîchissement (Sheet puis Google Doc) : [`../export_data.md`](../export_data.md).
 
 ## 2. Règles de calcul
 
@@ -44,7 +44,7 @@ Chaîne de données :
 - On ne montre pas tous les secteurs dans les graphiques par entreprise : illisible.
 - On ne trace pas la moyenne des chaînes d'info dans les graphiques à bulles : un point par secteur à la même hauteur, peu lisible ; seules les moyennes de secteur restent.
 - On ne fait pas de bulles par catégorie dans le graphique de la partie 3, qui porte sur les annonceurs : les catégories ont leur propre graphique (partie 4.1).
-- Pas de lien public Metabase lu par `IMPORTDATA` pour alimenter le Sheet : il publierait sur internet des données de suivi non publiées. Un flow Kestra d'export des requêtes de `queries/`, lancé à la main, est en cours de développement.
+- Pas de lien public Metabase lu par `IMPORTDATA` pour alimenter le Sheet : il publierait sur internet des données de suivi non publiées. Le Sheet est rempli par le flow `export_report_data`, lancé à la main (voir § 1).
 - Les pubs ne sont cherchées qu'à ±15 min des programmes suivis : les généralistes ne sont vues qu'autour de leurs JT et matinales, ne jamais les comparer aux chaînes d'info en niveau. France Télévisions, Arte et France Médias Monde : surtout des parrainages.
 - Une pub « autour » d'une émission ne dit pas qu'elle a été diffusée pendant le passage mésinformant, ni le même jour que lui (le fort taux porte sur toute la plage).
 
@@ -74,3 +74,4 @@ Dans l'ordre du plan du rapport.
 - **Les requêtes de `queries/` font foi** : ce sont elles qui produisent les chiffres du rapport. SQL brut, sans variable Metabase : leurs paramètres sont les constantes du CTE `parametres`.
 - **Metabase sert à l'exploration préliminaire** (tableau de bord 228) : ses questions ne sont ni dans `metabase/` ni synchronisées, et peuvent diverger des règles de ce fichier. Avant de publier un graphique « Pour l'instant dans Metabase », rapatrier son SQL dans `queries/` en appliquant les règles ci-dessus, et mettre à jour la carte des graphiques.
 - Une règle modifiée se reporte dans toutes les requêtes de `queries/` qui l'appliquent.
+- Une requête ajoutée pour un graphique Google Sheets se déclare aussi dans [`export_data.yml`](export_data.yml) (onglet, colonnes), puis la carte des graphiques ci-dessus dit dans quel onglet du Sheet elle va.

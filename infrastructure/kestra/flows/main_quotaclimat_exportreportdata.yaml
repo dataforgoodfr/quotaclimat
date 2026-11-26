@@ -1,0 +1,60 @@
+id: export-report-data
+namespace: quotaclimat
+
+description: |
+  Exports the data of a report to Google Sheets: runs the SQL queries of the
+  report's queries/ folder on the barometre database (read-only user, read-only
+  transactions) and writes each query <tab>_sheet.sql to the tab <tab> of the
+  Google Sheet named like the report (the other queries are not exported), plus
+  a tab _export with the date of the export.
+  No configuration file (decisions/rapports/export_report_data.md). The report is
+  the name of its folder decisions/rapports/<AAAA-MM>-<sujet>/; the spreadsheet is
+  looked up by name in the folder "Rapports" of the shared Drive folder
+  EXTERNAL_SOURCES_DRIVE_FOLDER. Runs by hand, from the quotaclimat_base image
+  built on main: the report's queries must be merged first. No row of the results is
+  logged. Windmill copy: f/quotaclimat/export_report_data.
+
+labels:
+  pipeline: ome
+  environment: prod
+  scope: france
+
+inputs:
+  - id: report
+    type: STRING
+    # also checked by the job, which lists the reports having _sheet queries when the folder has none
+    validator: "^[0-9]{4}-(0[1-9]|1[0-2])-[a-z0-9]+(-[a-z0-9]+)*$"
+    description: "Folder of the report in decisions/rapports/, e.g. 2027-02-pub-desinformation."
+  - id: apply
+    type: BOOLEAN
+    defaults: true
+    description: "When false, runs the queries and checks the spreadsheets (found, not public) without writing anything."
+
+tasks:
+  - id: export_report_data
+    type: io.kestra.plugin.docker.Run
+    containerImage: "rg.fr-par.scw.cloud/namespace-barometre/quotaclimat_base:latest"
+    pullPolicy: ALWAYS
+    credentials:
+      registry: rg.fr-par.scw.cloud/namespace-barometre
+      username: nologin
+      password: "{{ secret('SCW_SECRET') }}"
+    entryPoint:
+      - /bin/sh
+      - -c
+      # the report is passed in REPORT_ID, never in the command line
+      - >-
+        cd /app && python -m quotaclimat.reports.export_report_data
+        {{ inputs.apply ? '' : '--check' }}
+    env:
+      REPORT_ID: "{{ inputs.report }}"
+      LOGLEVEL: INFO
+      POSTGRES_DB: barometre
+      POSTGRES_PORT: 22737
+      POSTGRES_HOST: "{{ secret('POSTGRES_HOST') }}"
+      # rrs-read-prod: readonly privilege on barometre (infrastructure/live/barometre/template/database.tf)
+      POSTGRES_USER: "{{ secret('RRS_BAROMETRE_READ_USER') }}"
+      POSTGRES_PASSWORD: "{{ secret('RRS_BAROMETRE_READ_PASSWORD') }}"
+      # shared Drive folder of the reference data; the spreadsheets are in its folder "Rapports"
+      EXTERNAL_SOURCES_DRIVE_FOLDER: "{{ secret('EXTERNAL_SOURCES_DRIVE_FOLDER') }}"
+      GOOGLE_SHEETS_EDITOR_SERVICE_ACCOUNT_JSON: "{{ secret('GOOGLE_SHEETS_EDITOR_SERVICE_ACCOUNT_JSON') }}"

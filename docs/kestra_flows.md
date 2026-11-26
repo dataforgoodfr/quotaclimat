@@ -38,6 +38,7 @@ Each flow has its own diagram. Read it top to bottom: every horizontal lane is o
 | [`metabase-sync`](#metabase-sync) | `quotaclimat` | `main_quotaclimat_metabasesync.yaml` | `main-pipeline` step 9, or by hand |
 | [`dbt`](#dbt) | `quotaclimat` | `main_quotaclimat_dbt.yaml` | step 4 of `barometre` and `barometre-catchup`, `dbt-analytics` |
 | [`dbt-analytics`](#dbt-analytics) | `quotaclimat` | `main_quotaclimat_dbtanalytics.yaml` | by hand |
+| [`export-report-data`](#export-report-data) | `quotaclimat` | `main_quotaclimat_exportreportdata.yaml` | by hand |
 | [`barometre-catchup`](#barometre-catchup) | `quotaclimat` | `main_quotaclimat_barometrecatchup.yaml` | cron 03:00 |
 | [`barometre-i18n`](#barometre-i18n) | `quotaclimat` | `main_quotaclimat_barometrei18n.yaml` | cron 04:07 |
 | [`pulsar-themes`](#pulsar-themes) | `rrs` | `main_rrs_pulsarthemes.yml` | cron 00:30 |
@@ -201,6 +202,20 @@ Quick rebuild, by hand, of the tables read by the Metabase questions, for instan
 2. `metabase_sync`: [`metabase-sync`](#metabase-sync) with `apply=true`, `force=true`; its failure only marks the run as WARNING.
 
 It runs the `quotaclimat_base:latest` image, so the code must be merged and deployed first. Started during a `barometre` or `barometre-catchup` dbt run, its dbt step waits for the end of that run.
+
+## export-report-data
+
+Exports the data of a report to Google Sheets, by hand: runs the SQL queries `<tab>_sheet.sql` of the report folder `decisions/rapports/<AAAA-MM>-<sujet>/queries/` and writes each one to the tab `<tab>` of the Google Sheet named like the report (the other queries are not exported). No configuration file: naming conventions and procedure, in French, in [`decisions/rapports/export_report_data.md`](../decisions/rapports/export_report_data.md). One `io.kestra.plugin.docker.Run` task: `python -m quotaclimat.reports.export_report_data` in the `quotaclimat_base` image, so the report's queries must be merged to `main` first. Windmill copy: `f/quotaclimat/export_report_data`. (No diagram yet.)
+
+| Input | Default | Effect |
+|---|---|---|
+| `report` | (required) | Folder of the report in `decisions/rapports/`, e.g. `2027-02-pub-desinformation`. Checked by a `validator` regex, passed to the job in `REPORT_ID` (never in the command line); the job lists the reports having `_sheet` queries when the folder has none |
+| `apply` | `true` | `false` (`--check`) runs the queries and checks the spreadsheets without writing anything |
+
+- **What happens:** the job finds the spreadsheet named like the report in the folder `Rapports` (`REPORTS_DRIVE_FOLDER_NAME` to change it) of the shared Drive folder `EXTERNAL_SOURCES_DRIVE_FOLDER` (the folder of the reference data, `my_dbt_project/external_sources.yml`), and refuses it when it is readable without credentials (`ensure_not_public`, `quotaclimat/utils/google_sheets.py`, shared with the dbt reference data import). Then it runs the `_sheet` queries, each in a read-only transaction through a server-side cursor (a single `SELECT` per file, checked before), and replaces all its tabs in one `spreadsheets.batchUpdate` (all or nothing): values cleared then written from row 1, headers included, only in the columns of the result (8 columns: `A:H`; a chart or notes on their right stay as they are), formats and charts kept, missing tabs created. Charts are never edited: a chart whose range is open-ended (`A1:E`) follows the number of rows. The tab `_export` gets the date of the export (Europe/Paris), the report, the pipeline version and the row count of each tab. A failing query leaves the spreadsheet untouched and fails the run.
+- **Logs:** only names (report, spreadsheet, tab, query file) and row counts. The results are unpublished monitoring data: no row is logged, errors are reduced to their type, SQLSTATE or HTTP status (Postgres and Google error messages can quote values), and Sentry is not initialized.
+- **Technologies:** Postgres (`psycopg2`), Google Drive and Sheets APIs with the editor service account `GOOGLE_SHEETS_EDITOR_SERVICE_ACCOUNT_JSON`, shared as editor on the folder `Rapports` only.
+- **Reads:** `barometre` (any table its queries read), as `rrs-read-prod` (secrets `RRS_BAROMETRE_READ_USER`, `RRS_BAROMETRE_READ_PASSWORD`, `readonly` privilege). **Writes:** the tabs of the report's Google Sheets.
 
 ## extended-perimeter
 

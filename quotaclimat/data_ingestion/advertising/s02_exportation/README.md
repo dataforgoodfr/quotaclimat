@@ -23,6 +23,9 @@ Exports the detected ads (audio/video saved in the advertising bucket, `ads/<ad_
 | `MAX_CONCURRENT_EXPORTS` | CPUs of the job (`SCW_SLS_CPU`) | Ads cut or rebuilt (ffmpeg), uploaded and screenshotted at once. The video encoding is most of the CPU of the run: more exports than CPUs only make them wait for each other and fill the memory of the job (its disk counts in it). The bucket checks have their own limit (50), so they no longer wait behind the exports. |
 | `VIDEO_PRESET` | `veryfast` | libx264 preset of the videos cut or rebuilt (was the default `medium`: ~40 % more CPU for a file of about the same size, measured on a synthetic video). |
 | `FFMPEG_THREADS` | `2` | Threads of each ffmpeg encoding. |
+| `MAX_CONCURRENT_REBUILDS` | a third of `MAX_CONCURRENT_EXPORTS`, at least 1 | Merged ads rebuilt from their sources at once (`EXPORT_MERGED_ADS=true`), within the exports. A rebuild decodes every source video in one ffmpeg: 6 at once ran the job out of memory, the kernel killed some ffmpeg (error with no message) and the run froze. |
+| `REBUILD_TIMEOUT_SEC` | `900` | A rebuild (sources downloaded, ffmpeg, upload, screenshots) still running after this time is cancelled: the ad goes to the missing ads, the next run tries again. |
+| `REBUILD_FFMPEG_TIMEOUT_SEC` | `300` | Each ffmpeg/ffprobe of a rebuild is killed after this time. The error of a failed ffmpeg gives its exit code, or the signal that killed it (SIGKILL: likely out of memory). |
 
 ### What is left to export (`advertising.ad.media_export`)
 
@@ -55,7 +58,9 @@ A merged ad (`advertising.ad_merge`, see `s04_consolidation/README.md`) is a new
 advertising bucket for it until it is exported. A run with `EXPORT_MERGED_ADS=false` (default) leaves out
 every merged ad, whatever the status of its merge; a run with `EXPORT_MERGED_ADS=true` takes only the
 merged ads of an active merge, without video or with a too small mp4, like the default run does for the
-other ads. Schedule both runs: a merged ad is only exported by the second one.
+other ads. Schedule both runs: a merged ad is only exported by the second one. The second one is its own Scaleway job
+definition (same image and entrypoint, `EXPORT_MERGED_ADS=true` in its environment), updated by
+`deploy-main.yml` when the GitHub secret `SCALEWAY_JOB_ADVERTISING_EXPORTATION_MERGED_ADS` holds its id.
 
 For each merged ad (`merged_ads.py`):
 

@@ -55,6 +55,8 @@ jobs:
     runs-on: ubuntu-latest
     env:
       PROJECT_VERSION: ${{ needs.bump.outputs.version }}
+      # id of the job definition of the merged ads exportation (EXPORT_MERGED_ADS=true)
+      SCALEWAY_JOB_ADVERTISING_EXPORTATION_MERGED_ADS: ${{ secrets.SCALEWAY_JOB_ADVERTISING_EXPORTATION_MERGED_ADS }}
     steps:
     - uses: actions/checkout@v4
       with:
@@ -189,6 +191,22 @@ jobs:
       with:
         args: >-
           jobs definition update ${{ secrets.SCALEWAY_JOB_ADVERTISING_EXPORTATION }}
+          image-uri=${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/quotaclimat_with_media_tools:${{ env.PROJECT_VERSION }}
+          startup-command.0=./entrypoints/ad_s02_run_exportation.sh
+
+    # Same image and entrypoint as ad_s02_run_exportation: the job definition sets EXPORT_MERGED_ADS=true
+    # (and its own resources), which this update leaves as they are. Skipped until the secret exists.
+    - name: Update ad_s02_run_exportation_merged_ads scaleway job
+      if: ${{ env.SCALEWAY_JOB_ADVERTISING_EXPORTATION_MERGED_ADS != '' }}
+      uses: jawher/action-scw@v2.54.0
+      env:
+        SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
+        SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
+        SCW_ORGANIZATION_ID: ${{ secrets.SCW_ORGANIZATION_ID }}
+        SCW_ZONE: ${{ secrets.SCW_ZONE }}
+      with:
+        args: >-
+          jobs definition update ${{ env.SCALEWAY_JOB_ADVERTISING_EXPORTATION_MERGED_ADS }}
           image-uri=${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/quotaclimat_with_media_tools:${{ env.PROJECT_VERSION }}
           startup-command.0=./entrypoints/ad_s02_run_exportation.sh
 

@@ -58,6 +58,40 @@ MAX_MERGE_DEPTH = 10
 
 # Format of the rebuilt video when the sources can't tell it (no readable video stream).
 DEFAULT_WIDTH, DEFAULT_HEIGHT, DEFAULT_FPS = 1280, 720, "25"
+
+# An ffmpeg/ffprobe of a rebuild handles a few seconds of video: one still running after this time is
+# stuck (seen when the job ran out of memory: the run froze for good). It is killed and the rebuild
+# fails, so the run goes on with the next ads.
+FFMPEG_TIMEOUT_SEC = int(os.environ.get("REBUILD_FFMPEG_TIMEOUT_SEC") or 300)
+
+
+async def _communicate(process, timeout_sec: float, what: str) -> tuple[bytes, bytes]:
+    """process.communicate() with a timeout. The process is killed on timeout, and when the calling
+    task is cancelled (timeout of the whole rebuild in run.py), so that no ffmpeg is left running."""
+    try:
+        return await asyncio.wait_for(process.communicate(), timeout_sec)
+    except asyncio.TimeoutError:
+        process.kill()
+        await process.wait()
+        raise RuntimeError(f"{what}: no answer after {timeout_sec:.0f}s, killed")
+    except asyncio.CancelledError:
+        if process.returncode is None:
+            process.kill()
+            await process.wait()
+        raise
+
+
+def _exit_reason(returncode: int) -> str:
+    """Exit code of ffmpeg, or the signal that killed it: SIGKILL with no error message is most often
+    the kernel freeing memory (the disk of a Scaleway job counts in its memory)."""
+    if returncode < 0:
+        reason = f"killed by signal {-returncode}"
+        if -returncode == 9:
+            reason += " (SIGKILL, likely out of memory)"
+        return reason
+    return f"exit code {returncode}"
+
+
 AUDIO_SAMPLE_RATE = 48000
 
 
@@ -244,7 +278,7 @@ async def _probe(video_path: str) -> dict:
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE,
     )
-    stdout, _ = await process.communicate()
+    stdout, _ = await _communicate(process, FFMPEG_TIMEOUT_SEC, f"ffprobe {video_path}")
     if process.returncode != 0:
         return {"streams": []}
     return json.loads(stdout or b"{}")
@@ -261,10 +295,13 @@ async def _run_ffmpeg(args: list[str], output_path: str) -> None:
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE,
     )
-    _, stderr = await process.communicate()
+    _, stderr = await _communicate(
+        process, FFMPEG_TIMEOUT_SEC, f"ffmpeg writing {output_path}"
+    )
     if process.returncode != 0:
         raise RuntimeError(
-            f"ffmpeg failed to write {output_path}: {stderr.decode(errors='replace')}"
+            f"ffmpeg failed to write {output_path} ({_exit_reason(process.returncode)}): "
+            f"{stderr.decode(errors='replace')}"
         )
 
 

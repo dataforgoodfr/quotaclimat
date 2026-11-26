@@ -1,4 +1,5 @@
 import asyncio
+import contextlib
 import logging
 import math
 import os
@@ -30,9 +31,7 @@ from quotaclimat.data_ingestion.advertising.s05_enrichment.e02_screenshots.run i
     save_results,
     screenshot_ad_from_video,
 )
-from quotaclimat.data_ingestion.advertising.tools.ad_merge import (
-    MERGE_STATUS_ACTIVE,
-)
+from quotaclimat.data_ingestion.advertising.tools.ad_merge import MERGE_STATUS_ACTIVE
 from quotaclimat.data_ingestion.advertising.tools.interactive_tqdm import (
     interactive_tqdm,
 )
@@ -40,10 +39,12 @@ from quotaclimat.data_ingestion.advertising.tools.mediatree.bucket_mediatree imp
     cleanup_day_media_parts,
     download_media_parts,
     extract_segment,
-    required_part_starts,
 )
 from quotaclimat.data_ingestion.advertising.tools.mediatree.bucket_mediatree import (
     get_s3_filesystem as get_mediatree_s3_filesystem,
+)
+from quotaclimat.data_ingestion.advertising.tools.mediatree.bucket_mediatree import (
+    required_part_starts,
 )
 from quotaclimat.utils.logger import getLogger
 from quotaclimat.utils.sentry import sentry_init
@@ -98,6 +99,16 @@ PAGE_SIZE = 100
 # Ads cut/rebuilt (ffmpeg), uploaded and screenshotted at once. The encoding is most of the CPU of the
 # run: more exports than CPUs only made them wait for each other and filled the memory of the job.
 MAX_CONCURRENT_EXPORTS = _env_int("MAX_CONCURRENT_EXPORTS") or _job_cpus()
+# Merged ads rebuilt from their sources at once (EXPORT_MERGED_ADS), within the exports above. A rebuild
+# decodes every source video in one ffmpeg and keeps their frames in memory: 6 at once ran the job
+# out of memory, which killed some ffmpeg and froze the run.
+MAX_CONCURRENT_REBUILDS = _env_int("MAX_CONCURRENT_REBUILDS") or max(
+    1, MAX_CONCURRENT_EXPORTS // 3
+)
+# A rebuild (download of the sources, ffmpeg, upload, screenshots) still running after this time is
+# cancelled: the ad goes to the missing ads and the next run tries again. Each ffmpeg has its own
+# timeout too (REBUILD_FFMPEG_TIMEOUT_SEC, merged_ads.py).
+REBUILD_TIMEOUT_SEC = _env_int("REBUILD_TIMEOUT_SEC") or 900
 # Ads checked in the bucket at once (one HEAD request each): apart from the exports, so that the
 # checks of a group don't wait behind the ffmpeg of the other groups.
 MAX_CONCURRENT_CHECKS = 50
@@ -443,6 +454,7 @@ async def _process_group(
     plan_merged=None,
     exported: dict | None = None,
     check_semaphore: asyncio.Semaphore | None = None,
+    rebuild_semaphore: asyncio.Semaphore | None = None,
 ) -> None:
     """Check, download and export every ad in one (channel, day) group. Groups are
     independent of each other (own local_dir, own downloaded parts), so this is meant
@@ -451,7 +463,9 @@ async def _process_group(
     With plan_merged (EXPORT_MERGED_ADS), an ad whose mediatree archives are missing is
     rebuilt from the videos of its source ads instead (see _rebuild_merged_ad).
     `exported` gets the media_export of every ad exported or found in the bucket ({ad id: value}),
-    for the caller to save. The checks take `check_semaphore` (`semaphore` when not given).
+    for the caller to save. The checks take `check_semaphore` (`semaphore` when not given), the
+    rebuilds `rebuild_semaphore` too (no limit other than `semaphore` when not given), and each rebuild
+    is cancelled after REBUILD_TIMEOUT_SEC.
     """
     group_start = time.monotonic()
     if exported is None:
@@ -546,9 +560,22 @@ async def _process_group(
                             "rebuilding it from its sources"
                         )
                         sizes = {}
-                        screenshot = await _rebuild_merged_ad(
-                            ad, plan_merged, local_dir, fs, media_sizes=sizes
-                        )
+                        async with rebuild_semaphore or contextlib.nullcontext():
+                            try:
+                                screenshot = await asyncio.wait_for(
+                                    _rebuild_merged_ad(
+                                        ad,
+                                        plan_merged,
+                                        local_dir,
+                                        fs,
+                                        media_sizes=sizes,
+                                    ),
+                                    REBUILD_TIMEOUT_SEC,
+                                )
+                            except asyncio.TimeoutError:
+                                raise RuntimeError(
+                                    f"rebuild not done after {REBUILD_TIMEOUT_SEC}s, cancelled"
+                                )
                         method = "merged_rebuild"
                         progress.count("rebuilt")
                     exported[ad.id] = media_export_info(
@@ -663,11 +690,18 @@ async def run(start_date: datetime | None, end_date: datetime | None):
         semaphore = asyncio.Semaphore(MAX_CONCURRENT_EXPORTS)
         check_semaphore = asyncio.Semaphore(MAX_CONCURRENT_CHECKS)
         group_semaphore = asyncio.Semaphore(MAX_CONCURRENT_GROUPS)
+        rebuild_semaphore = asyncio.Semaphore(MAX_CONCURRENT_REBUILDS)
         progress = interactive_tqdm(total=total, desc="Exporting ads")
         run_start = time.monotonic()
         deadline = run_start + MAX_RUN_DURATION.total_seconds()
         logger.info(
-            f"{MAX_CONCURRENT_EXPORTS} exports at once, new groups started for "
+            f"{MAX_CONCURRENT_EXPORTS} exports at once"
+            + (
+                f" ({MAX_CONCURRENT_REBUILDS} rebuilds at most, {REBUILD_TIMEOUT_SEC}s each)"
+                if EXPORT_MERGED_ADS
+                else ""
+            )
+            + ", new groups started for "
             f"{MAX_RUN_DURATION}" + (f", up to {MAX_ADS} ads" if MAX_ADS else "")
         )
 
@@ -688,6 +722,7 @@ async def run(start_date: datetime | None, end_date: datetime | None):
                     plan_merged,
                     exported,
                     check_semaphore,
+                    rebuild_semaphore,
                 )
             finally:
                 _save_screenshots(write_session, screenshots)

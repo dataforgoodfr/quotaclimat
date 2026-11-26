@@ -412,3 +412,66 @@ def test_process_group_without_flag_records_nothing(monkeypatch):
     exported = {}
     _run_group(monkeypatch, None, exported)
     assert exported == {}
+
+
+def test_stuck_process_is_killed():
+    # a process that never ends stands for a stuck ffmpeg
+    async def _run():
+        process = await asyncio.create_subprocess_exec(
+            "sleep",
+            "60",
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        try:
+            await merged_ads._communicate(process, 0.5, "sleep")
+        finally:
+            assert process.returncode is not None  # killed, not left running
+
+    with pytest.raises(RuntimeError, match="no answer after"):
+        asyncio.run(_run())
+
+
+def test_exit_reason_names_the_signal():
+    assert merged_ads._exit_reason(1) == "exit code 1"
+    assert "out of memory" in merged_ads._exit_reason(-9)
+    assert merged_ads._exit_reason(-15) == "killed by signal 15"
+
+
+def test_process_group_cancels_a_stuck_rebuild(monkeypatch):
+    async def _needs_export(ad, fs):
+        return True, None
+
+    async def _no_archives(*args, **kwargs):
+        raise RuntimeError("archives gone")
+
+    async def _stuck_rebuild(ad, plan, local_dir, fs, media_sizes=None):
+        await asyncio.sleep(60)
+
+    monkeypatch.setattr(export, "_check_in_bucket", _needs_export)
+    monkeypatch.setattr(export, "download_media_parts", _no_archives)
+    monkeypatch.setattr(export, "_rebuild_merged_ad", _stuck_rebuild)
+    monkeypatch.setattr(export, "REBUILD_TIMEOUT_SEC", 0.2)
+    ad = Ad(id="m", duration_sec=5.0, fragment_type="advertising")
+    occurrence = Ad_Occurrence(id="m-1", occurrence_date=T0, channel_name="tf1")
+    progress, missing, exported = _Progress(), [], {}
+    asyncio.run(
+        export._process_group(
+            "tf1",
+            T0.date(),
+            [(ad, occurrence)],
+            None,
+            asyncio.Semaphore(2),
+            progress,
+            missing,
+            [],
+            [],
+            lambda ad_id: None,
+            exported,
+            None,
+            asyncio.Semaphore(1),
+        )
+    )
+    assert progress.counts == {"error": 1}
+    assert missing == ["m"]
+    assert exported == {}

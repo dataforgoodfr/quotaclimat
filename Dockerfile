@@ -11,7 +11,7 @@ WORKDIR /app
 COPY pyproject.toml poetry.lock ./
 RUN sed -i 's/^version = .*/version = "0.0.0"/' pyproject.toml
 
-FROM python:3.12.10 as builder
+FROM python:3.12.10 AS builder
 
 ENV VIRTUAL_ENV=/app/.venv
 
@@ -48,7 +48,6 @@ WORKDIR /app
 
 ENV VIRTUAL_ENV=/app/.venv 
 ENV PATH="/app/.venv/bin:$PATH"
-ENV PATH="$PYENV_ROOT/bin:$PATH"
 ENV PYTHONPATH=/app
 ENV DBT_PROFILES_DIR=/app/my_dbt_project/dbt
 ENV DBT_PROJECT_DIR=/app/my_dbt_project

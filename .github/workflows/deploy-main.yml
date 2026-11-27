@@ -62,7 +62,7 @@ jobs:
       with:
         ref: ${{ needs.bump.outputs.sha }}
     - name: Login to Scaleway Container Registry
-      uses: docker/login-action@v3
+      uses: docker/login-action@v4
       with:
         username: nologin
         password: ${{ secrets.SCALEWAY_API_KEY }}
@@ -70,7 +70,7 @@ jobs:
 
     # No cleanup: removing the builder at the end of the job takes ~20 s on a runner
     # that is thrown away anyway
-    - uses: docker/setup-buildx-action@v3
+    - uses: docker/setup-buildx-action@v4
       with:
         cleanup: false
 
@@ -83,7 +83,7 @@ jobs:
     # every deployment (mode=max also caches the builder stage, where poetry install runs).
     # A cache error doesn't fail the deployment: the build just runs without cache.
     - name: Build and push quotaclimat_base image
-      uses: docker/build-push-action@v6
+      uses: docker/build-push-action@v7
       with:
         context: .
         file: Dockerfile
@@ -97,7 +97,7 @@ jobs:
 
     # Same Dockerfile, with ffmpeg installed before the code (runtime-media stage)
     - name: Build and push quotaclimat_with_media_tools image
-      uses: docker/build-push-action@v6
+      uses: docker/build-push-action@v7
       with:
         context: .
         file: Dockerfile
@@ -317,7 +317,7 @@ jobs:
           ref: ${{ needs.bump.outputs.sha }}
 
       - name: Login to Scaleway Container Registry
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           username: nologin
           password: ${{ secrets.SCALEWAY_API_KEY }}
@@ -325,13 +325,13 @@ jobs:
 
       # No cleanup: removing the builder at the end of the job takes ~20 s on a runner
       # that is thrown away anyway
-      - uses: docker/setup-buildx-action@v3
+      - uses: docker/setup-buildx-action@v4
         with:
           cleanup: false
 
       # Same registry layer cache as quotaclimat_base, one buildcache tag per image
       - name: Build and push factiva_to_s3 image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: Dockerfile_factiva_to_s3
@@ -343,7 +343,7 @@ jobs:
           cache-to: type=registry,ref=${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/factiva_to_s3:buildcache,mode=max,image-manifest=true,oci-mediatypes=true,ignore-error=true
 
       - name: Build and push s3_factiva_to_postgre image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: Dockerfile_s3_factiva_to_postgre
@@ -355,7 +355,7 @@ jobs:
           cache-to: type=registry,ref=${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/s3_factiva_to_postgre:buildcache,mode=max,image-manifest=true,oci-mediatypes=true,ignore-error=true
 
       - name: Build and push lemonde_web image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: Dockerfile_lemonde_web

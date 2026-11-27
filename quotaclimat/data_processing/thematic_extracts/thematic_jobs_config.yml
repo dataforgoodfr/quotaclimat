@@ -7,10 +7,15 @@
 ###     - periods of a country must not overlap
 ###     - every period goes into one table per media and country: {thematic}_keywords_{country_short}, {thematic}_articles_{country_short}
 ###     - adding a period: MODE=resume. Changing the dates or id of an ingested period: MODE=reset
-### - keywords: [language][audiovisuel|presse] keywords to look for
-###     - audiovisuel: exact match on public.keywords.keywords_with_timestamp (spelling and accents as in that column)
-###     - presse: whole expressions searched in factiva title, snippet and body, after normalization on both sides
-###       (lower, French accents and œ/æ removed, apostrophes and hyphen replaced by a space)
+### - keywords: [language] keywords to look for, one list for audiovisuel and presse
+###     - core_terms: every form to keep (gender, number). Used two ways:
+###         - audiovisuel: exact match on public.keywords.keywords_with_timestamp (spelling and accents as in that column),
+###           extra forms (plurals) do not select more chunks as long as they are not keywords of the main dictionary
+###         - presse: whole expressions searched in factiva title, snippet and body, after normalization on both sides
+###           (lower, French accents and œ/æ removed, apostrophes and hyphen replaced by a space)
+###     - exclusions (optional): expressions masked before searching the core_terms again (e.g. "cessez le feu" for "feu"):
+###       a chunk or an article whose core_terms only appear inside exclusions is dropped. Every form to list.
+###       Must not be equal to one of the core_terms.
 
 incendies:
   periodes:
@@ -30,21 +35,11 @@ incendies:
         end: 2026-07-10
   keywords:
     french:
-      audiovisuel:
-        - incendie
-        - incendie de forêt
-        - feux de forêt
-        - forêt brûle
-        - forêts brûlent
-        - forêt ravagée
-        - forêt ravagé
-        - forêt ont été détruites
-      presse:
+      core_terms:
         - incendie
         - incendies
         - incendie de forêt
         - incendies de forêt
-        - feux
         - feu de forêt
         - feux de forêt
         - forêt brule
@@ -56,6 +51,7 @@ incendies:
         - forêts ravagées
         - forêt ont été détruites
         - forêts ont été détruites
+      exclusions:
 
 inondations:
   periodes:
@@ -102,18 +98,7 @@ inondations:
 
   keywords:
     french:
-      audiovisuel:
-        - inondation
-        - augmentation du risque inondation
-        - inondations à répétition
-        - gestion des inondations
-        - anticiper les risques d'inondation
-        - anticiper les inondations
-        - prévention des inondations
-        - crue
-        - crue centennale
-        - coulée de boue
-      presse:
+      core_terms:
         - inondation
         - inondations
         - augmentation du risque inondation
@@ -132,7 +117,7 @@ inondations:
         - coulées de boue
 
 ## Analyse : decisions/analyses_thematiques/2026-11-cop31/decisions.md
-## Audiovisuel uniquement : pas de clé `presse` (le job thematic_articles ne doit pas être lancé sur cette entrée).
+## Audiovisuel uniquement : le job thematic_articles ne doit pas être lancé sur cette entrée.
 ## Fenêtres : une semaine avant l'ouverture officielle, une semaine après la clôture effective (fin exclue ci-dessous).
 ## COP31 : fin provisoire calée sur une clôture le 20/11/2026. Si la clôture glisse, corriger `end` et relancer en MODE=reset.
 
@@ -159,7 +144,7 @@ cop_climat:
         end: 2026-11-28
   keywords:
     french:
-      audiovisuel:
+      core_terms:
         - cop28
         - cop29
         - cop30
@@ -180,7 +165,7 @@ cop_climat:
         - conférence des nations unies sur les changements climatiques
         - conférence climat
     dutch:
-      audiovisuel:
+      core_terms:
         - cop28
         - cop29
         - cop30

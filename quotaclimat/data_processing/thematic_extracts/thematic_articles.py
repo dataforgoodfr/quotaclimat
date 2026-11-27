@@ -1,6 +1,7 @@
 ### Fills a thematic table {thematic}_articles_{country} (e.g. incendies_articles_fr) with,
 ### for every period of the thematic and country in thematic_jobs_config.yml (column period):
-### - factiva articles whose title, snippet or body contain given keywords
+### - factiva articles whose title, snippet or body contain given keywords,
+###   outside the exclusion expressions of the yaml (e.g. "cessez le feu" for "feu")
 
 ### given following environment variables
 ### - THEMATIC (mandatory): keywords and periods fetched in yaml (period start included, end excluded)
@@ -96,10 +97,12 @@ def run() -> None:
     periods = utils.get_periods(THEMATIC_YML, THEMATIC, COUNTRY)
     logging.info("[RUN] Periods: " + ", ".join(f"{p['id']} ({p['start']} -> {p['end']})" for p in periods))
 
-    kw_list = utils.get_keywords(THEMATIC_YML, THEMATIC, MEDIA_TYPE, COUNTRY_CONF["language"])
+    kw_list = utils.get_keywords(THEMATIC_YML, THEMATIC, COUNTRY_CONF["language"])
     if not kw_list:
         raise ValueError(f"No keywords found for '{THEMATIC}' in {THEMATIC_YML}.")
-    
+    exclusions = utils.get_exclusions(THEMATIC_YML, THEMATIC, COUNTRY_CONF["language"])
+    logging.info(f"[RUN] Exclusions: {exclusions or 'none'}")
+
     ### Connection and source
     _con = duckdb.connect()
     _con.execute("SET TimeZone='Europe/Paris'")
@@ -143,6 +146,7 @@ def run() -> None:
             art_utils.create_thematic_articles_table(_con, DRY_RUN, destination_table, POSTGRES_DB, DESTINATION_SCHEMA, USERS_TO_GRANT)
 
     counter_to_ingest = 0
+    n_excluded = 0  # articles dropped: keywords only inside exclusions
     ingested = 0
     stopped_day = None
     
@@ -169,11 +173,13 @@ def run() -> None:
             try:
                 logging.info(f"[RUN] ------ Processing day {day} ------")
                 logging.info(f"[{SOURCE_TABLE}] {day}: reading source table")
-                articles_day = art_utils.read_factiva_articles(
+                articles_day, n_excluded_day = art_utils.read_factiva_articles(
                                                                 _con, kw_list,
                                                                 day, day + timedelta(days=1),
-                                                                SOURCE_TABLE, POSTGRES_DB)
-                    
+                                                                SOURCE_TABLE, POSTGRES_DB,
+                                                                exclusions=exclusions)
+                n_excluded += n_excluded_day
+
             except Exception:
                 logging.exception(f"[{SOURCE_TABLE}] {day}: failed")
                 stopped_day = day
@@ -231,7 +237,8 @@ def run() -> None:
             break
 
     if DRY_RUN:
-        logging.info(f"[END] DRY_RUN: {counter_to_ingest} articles would have been ingested")
+        logging.info(f"[END] DRY_RUN: {counter_to_ingest} articles would have been ingested, "
+                     f"{n_excluded} dropped (keywords only inside exclusions)")
     else:
         logging.info(f"[END] {ingested} articles inserted or ignored (already present rows are ignored)")
     if stopped_day:
@@ -244,7 +251,7 @@ def run() -> None:
 
     ### Checking results (in dry run the table may not exist)
     if not DRY_RUN:
-        art_utils.check_articles(_con, POSTGRES_DB, destination_table, DESTINATION_SCHEMA)
+        art_utils.check_articles(_con, POSTGRES_DB, destination_table, DESTINATION_SCHEMA, n_excluded)
 
 
 

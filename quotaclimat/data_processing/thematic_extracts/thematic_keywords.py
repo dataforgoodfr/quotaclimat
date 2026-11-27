@@ -1,6 +1,7 @@
 ### Fills a thematic table {thematic}_keywords_{country} (e.g. incendies_keywords_fr) with,
 ### for every period of the thematic and country in thematic_jobs_config.yml (column period),
-### one row per chunk of the keywords table that contains given keywords (primary key: id of the keywords table),
+### one row per chunk of the keywords table that contains given keywords (primary key: id of the keywords table)
+### outside the exclusion expressions of the yaml (e.g. "cessez le feu" for "feu"),
 ### with the normalized plaintext of its previous and next chunks of the same channel fetched in s3
 ### (closest within GAP, NULL if none): plaintext_normalized_prev / plaintext_normalized_next,
 ### and their start: start_prev / start_next (to count once a chunk that is the neighbour of two thematic chunks).
@@ -122,9 +123,11 @@ def run() -> None:
     logging.info("[RUN] Periods: " + ", ".join(f"{p['id']} ({p['start']} -> {p['end']})" for p in periods))
 
     ## Getting kw
-    kw_list = utils.get_keywords(THEMATIC_YML, THEMATIC, MEDIA_TYPE, COUNTRY_CONF["language"])
+    kw_list = utils.get_keywords(THEMATIC_YML, THEMATIC, COUNTRY_CONF["language"])
     if not kw_list:
         raise ValueError(f"No keywords found for '{THEMATIC}' in {THEMATIC_YML}.")
+    exclusions = utils.get_exclusions(THEMATIC_YML, THEMATIC, COUNTRY_CONF["language"])
+    logging.info(f"[RUN] Exclusions: {exclusions or 'none'}")
 
     ### Connection and source
     _con = duckdb.connect()
@@ -170,6 +173,7 @@ def run() -> None:
     kw_utils._configure_s3(_con, S3_ENDPOINT_URL, S3_REGION, S3_ACCESS_KEY, S3_SECRET_KEY)
 
     counter_to_ingest = 0
+    n_excluded = 0  # thematic chunks dropped: keywords only inside exclusions
     n_plaintext_mismatch = {}  # thematic chunks whose plaintext differs from S3: {channel: count}
     n_missing_s3 = {}  # thematic chunks missing from S3: {channel: count}
     ingested = 0
@@ -205,6 +209,15 @@ def run() -> None:
                                                              day, day + timedelta(days=1),
                                                              COUNTRY_CONF["country"], COUNTRY_CONF["channels"],
                                                              SOURCE_TABLE, POSTGRES_DB)
+                # before S3: a dropped chunk does not need its neighbours
+                n_read = len(keywords_day_df)
+                keywords_day_df = kw_utils.drop_chunks_with_only_exclusions(
+                    keywords_day_df, kw_list, exclusions)
+                n_excluded_day = n_read - len(keywords_day_df)
+                if n_excluded_day:
+                    logging.info(f"[{SOURCE_TABLE}] {day}: {n_excluded_day} chunks dropped "
+                                 "(keywords only inside exclusions)")
+                n_excluded += n_excluded_day
             except Exception:
                 logging.exception(f"[{SOURCE_TABLE}] {day}: failed")
                 stopped_day = day
@@ -297,7 +310,7 @@ def run() -> None:
     
     ### Checking results
     kw_utils.check_keywords(_con, POSTGRES_DB, destination_table, DESTINATION_SCHEMA, DRY_RUN, SOURCE_TABLE,
-                            n_plaintext_mismatch, n_missing_s3)
+                            n_plaintext_mismatch, n_missing_s3, n_excluded)
     
 
 if __name__ == "__main__":

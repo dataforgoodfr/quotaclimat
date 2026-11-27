@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 import duckdb
 from datetime import date
 import pandas as pd
+import re
 
 import quotaclimat.data_processing.thematic_extracts.thematic_utils as utils
 
@@ -54,7 +55,33 @@ def read_barometre_keywords(con: duckdb.DuckDBPyConnection,
         logging.error(f"[{source_table}] ERROR READING KEYWORDS TABLE:")
         logging.error(e)
         raise e
-    
+
+
+def has_keyword_outside_exclusions(plaintext: str | None, keywords_regex: str, exclusions_regex: str) -> bool:
+    """True if a keyword is still found once the exclusions are masked in the normalized plaintext.
+    Keywords and exclusions are searched literally, in the forms written in the yaml.
+    A chunk without any exclusion is kept as is."""
+    text = utils.normalize_text(plaintext)
+    if text is None or not re.search(exclusions_regex, text):
+        return True
+    return bool(re.search(keywords_regex, utils.mask_exclusions(text, exclusions_regex)))
+
+
+def drop_chunks_with_only_exclusions(keywords_day_df: pd.DataFrame, keywords: list[str],
+                                     exclusions: list[str]) -> pd.DataFrame:
+    """Drops the thematic chunks whose plaintext contains an exclusion expression and no keyword
+    outside exclusions (e.g. "feu" only in "cessez le feu"). keywords: the "core_terms" keywords
+    of the yaml, searched in the forms written there ("crue" does not find "crues").
+    keywords_found and themes are left as read from the keywords table."""
+    if not exclusions or keywords_day_df.empty:
+        return keywords_day_df
+    keywords_regex = utils.expressions_pattern(keywords)
+    exclusions_regex = utils.expressions_pattern(exclusions)
+    keep = keywords_day_df["plaintext"].map(
+        lambda p: has_keyword_outside_exclusions(p, keywords_regex, exclusions_regex)
+    ).astype(bool)
+    return keywords_day_df[keep].reset_index(drop=True)
+
     
 ### DESTINATION ### 
 def get_max_start_from_thematic_keywords(con: duckdb.DuckDBPyConnection, 
@@ -274,11 +301,6 @@ def add_adjacent_plaintexts_day(keywords_day_df: pd.DataFrame, s3_day_df: pd.Dat
             plaintext_normalized_prev=kw["plaintext_prev"].map(_normalize_or_none),
             plaintext_normalized_next=kw["plaintext_next"].map(_normalize_or_none),
         )
-        logging.info(
-            f"[ADJACENT_PLAINTEXTS] {len(out)} thematic chunks: "
-            f"{out['plaintext_normalized_prev'].isna().sum()} without previous chunk, "
-            f"{out['plaintext_normalized_next'].isna().sum()} without next chunk in S3 (within {gap})"
-        )
         cols = ["id", "channel_name", "channel_title", "start", "keywords_found", "themes",
                 "plaintext_normalized", "plaintext_normalized_prev", "plaintext_normalized_next",
                 "start_prev", "start_next"]
@@ -294,7 +316,8 @@ def add_adjacent_plaintexts_day(keywords_day_df: pd.DataFrame, s3_day_df: pd.Dat
 def check_keywords(con: duckdb.DuckDBPyConnection, postgres_db: str, destination_table: str,
                    schema: str, dry_run: bool, source_table: str,
                    n_plaintext_mismatch: dict[str, int] | None = None,
-                   n_missing_s3: dict[str, int] | None = None) -> pd.DataFrame | None:
+                   n_missing_s3: dict[str, int] | None = None,
+                   n_excluded: int = 0) -> pd.DataFrame | None:
     """Per channel report on the destination table (one row per thematic chunk):
     - missing_prev / missing_next: thematic chunks without previous / next chunk plaintext (no S3 chunk within gap)
     - n_missing_adj (missing_prev + missing_next) / pct_missing_adj: out of the 2 sides of every thematic chunk.
@@ -303,8 +326,10 @@ def check_keywords(con: duckdb.DuckDBPyConnection, postgres_db: str, destination
       only this run: a resumed run does not count the days ingested before
     - n_plaintext_mismatch: thematic chunks of this run whose plaintext differs from S3 (counted per channel by
       add_adjacent_plaintexts_day), only this run as well
-    Both counts are logged even in dry run, with a per channel table. The table report needs the rows
+    - n_excluded: thematic chunks of this run dropped by the exclusions (keywords only inside exclusions)
+    These counts are logged even in dry run, with a per channel table for the S3 ones. The table report needs the rows
     of this run in the table: skipped in dry run (returns None)"""
+    logging.info(f"[CHECK] {n_excluded} thematic chunks dropped during this run (keywords only inside exclusions)")
     n_plaintext_mismatch = n_plaintext_mismatch or {}
     if n_plaintext_mismatch:
         logging.warning(
@@ -365,7 +390,8 @@ def check_keywords(con: duckdb.DuckDBPyConnection, postgres_db: str, destination
         f"missing neighbours: {total['n_missing_adj']} / {2 * total['n_chunks']} sides ({pct_total} %). Up to ~105 per day (France) can be program edges, "
         f"and chunks can be missing in S3.\n"
         f"thematic chunks missing from S3 (this run): {total['n_missing_s3']}\n"
-        f"plaintext mismatch with S3 (this run): {total['n_plaintext_mismatch']}"
+        f"plaintext mismatch with S3 (this run): {total['n_plaintext_mismatch']}\n"
+        f"thematic chunks dropped, keywords only inside exclusions (this run): {n_excluded}"
     )
     with_missing = report[(report["n_missing_adj"] > 0) | (report["n_missing_s3"] > 0)
                           | (report["n_plaintext_mismatch"] > 0)]

@@ -81,7 +81,7 @@ class RunEnv:
         self.s3_rows, self.read_days, self.failing_days, self._n = [], [], set(), 0
 
         self.yml = tmp_path / "thematic.yml"
-        self.keywords = {"keywords": {"french": {"audiovisuel": ["inondation", "crue"]}}}
+        self.keywords = {"keywords": {"french": {"core_terms": ["inondation", "crue"]}}}
         monkeypatch.setattr(tk, "THEMATIC_YML", self.yml)
         monkeypatch.setattr(tk.duckdb, "connect", lambda *a, **k: con)
         monkeypatch.setattr(tk.utils, "configure_barometre_source", lambda *a, **k: None)
@@ -185,6 +185,19 @@ def test_read_barometre_keywords_dedups_keywords_and_themes(con):
     assert out.loc["b", "themes"] == "adaptation_climatique_solutions_indirectes"
     assert out.loc["c", "keywords_found"] == "crue,inondation"
     assert out.loc["c", "themes"] == "adaptation_climatique_solutions_indirectes,changement_climatique_constat"
+
+
+def test_drop_chunks_with_only_exclusions():
+    """Verify that a chunk with an exclusion and a keyword is kept, and one with only an exclusion is dropped."""
+    chunks = pd.DataFrame([
+        {"id": "kept", "plaintext": "le cessez-le-feu et un feu de forêt"},
+        {"id": "dropped", "plaintext": "le cessez-le-feu tient"},
+        {"id": "dropped_twice", "plaintext": "le cessez-le-feu tient mais le cessez-le-feu reste fragile"},
+    ])
+
+    out = kw_utils.drop_chunks_with_only_exclusions(chunks, ["feu"], ["cessez le feu"])
+
+    assert list(out["id"]) == ["kept"]
 
 
 # ───────────────────────── add_adjacent_plaintexts_day ─────────────────────────

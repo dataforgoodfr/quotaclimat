@@ -133,6 +133,28 @@ def test_render_steps_pads_the_end():
     ]
 
 
+def test_render_steps_drops_float_residues():
+    # merged ad 381b34eb: 0.96 + 3.5199999809 is short of 4.48 by 2e-8 s. A step of that length was
+    # written d=0.000 in the filter, which ffmpeg reads as an endless black step.
+    segments = [
+        Segment("a", 0.0, 1.0900001525878906, "piece"),
+        Segment("b", 0.96, 3.5199999809265137, "piece"),
+        Segment("c", 4.4800000001, 1.0, "piece"),  # starts 1e-10 s after the end of b
+    ]
+    steps = render_steps(segments, 5.48)
+    assert all(s.duration_sec >= merged_ads.MIN_STEP_SEC for s in steps)
+    assert [s.segment.source_ad_id if s.segment else None for s in steps] == [
+        "a",
+        "b",
+        "c",
+    ]
+    steps = render_steps(segments[:2], 4.48)
+    assert [s.segment.source_ad_id if s.segment else None for s in steps] == [
+        "a",
+        "b",
+    ]
+
+
 def test_plan_from_journal_of_most_recent_occurrence(session):
     _ad(session, "a", 5.0)
     _ad(session, "b", 4.0)

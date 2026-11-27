@@ -247,7 +247,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # No cleanup: removing the builder at the end of the job takes ~20 s on a runner
+      # that is thrown away anyway
       - uses: docker/setup-buildx-action@v3
+        with:
+          cleanup: false
 
       - name: Login to Scaleway Container Registry
         uses: docker/login-action@v3

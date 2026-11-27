@@ -68,7 +68,11 @@ jobs:
         password: ${{ secrets.SCALEWAY_API_KEY }}
         registry: ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}
 
+    # No cleanup: removing the builder at the end of the job takes ~20 s on a runner
+    # that is thrown away anyway
     - uses: docker/setup-buildx-action@v3
+      with:
+        cleanup: false
 
     # Current month, part of the cache key of the apt-get layers (see Dockerfile)
     - name: Compute apt refresh month
@@ -319,7 +323,11 @@ jobs:
           password: ${{ secrets.SCALEWAY_API_KEY }}
           registry: ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}
 
+      # No cleanup: removing the builder at the end of the job takes ~20 s on a runner
+      # that is thrown away anyway
       - uses: docker/setup-buildx-action@v3
+        with:
+          cleanup: false
 
       # Same registry layer cache as quotaclimat_base, one buildcache tag per image
       - name: Build and push factiva_to_s3 image

@@ -3,7 +3,7 @@
 # pyproject.toml with its version replaced by a fixed one: the version is bumped on main
 # at every merge, and it would otherwise invalidate the cache of poetry install below.
 # The real pyproject.toml is copied into the runtime image.
-FROM python:3.12.10 AS deps
+FROM python:3.12.10-slim AS deps
 WORKDIR /app
 COPY pyproject.toml poetry.lock ./
 RUN sed -i 's/^version = .*/version = "0.0.0"/' pyproject.toml
@@ -20,7 +20,7 @@ WORKDIR /app
 
 COPY --from=deps /app/pyproject.toml /app/poetry.lock ./
 RUN pip install poetry==2.1.3
-RUN poetry install --no-root --without dev
+RUN poetry install --no-root --without dev && rm -rf $POETRY_CACHE_DIR
 
 FROM python:3.12.10-slim AS runtime
 
@@ -30,11 +30,13 @@ ENV VIRTUAL_ENV=/app/.venv
 ENV PATH="/app/.venv/bin:$PATH"
 ENV PYTHONPATH=/app
 
-COPY --from=builder ${VIRTUAL_ENV} ${VIRTUAL_ENV}
+# From here on, only COPY --link and no RUN: each layer is built on its own, so a code
+# change doesn't need the venv layer below it to be downloaded from the registry cache.
+COPY --link --from=builder ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 
-COPY quotaclimat ./quotaclimat
-COPY postgres ./postgres
-COPY pyproject.toml ./pyproject.toml
+COPY --link quotaclimat ./quotaclimat
+COPY --link postgres ./postgres
+COPY --link pyproject.toml ./pyproject.toml
 
 EXPOSE 5050
 

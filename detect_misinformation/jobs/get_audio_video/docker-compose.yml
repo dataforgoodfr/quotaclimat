@@ -1,0 +1,52 @@
+services:
+  app:
+    build:
+      context: ../../../
+      dockerfile: detect_misinformation/jobs/get_audio_video/Dockerfile
+    environment:
+      # Database
+      POSTGRES_HOST: postgres_db
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: labelstudio
+      # GCP (for GCS)
+      GCS_BUCKET_NAME: bucket
+      GCP_CREDENTIALS_JSON_FILE: /run/secrets/gcp_credentials_json
+      # Google Drive (personal account)
+      GDRIVE_FOLDER_PATH: germany_videos
+      GDRIVE_API_KEY: /run/secrets/gdrive_credentials_json
+      # Labelstudio
+      LABEL_STUDIO_URL: http://labelstudio:8080
+      API_LABEL_STUDIO_KEY: /run/secrets/labelstudio_api_key
+    secrets:
+      - gcp_credentials_json
+      - gdrive_credentials_json
+      - labelstudio_api_key
+    depends_on:
+      - postgres_db
+
+  postgres_db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: labelstudio
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+
+secrets:
+  gcp_credentials_json:
+    file: secrets/gcp_credentials_json
+  gdrive_credentials_json:
+    file: secrets/gdrive_credentials_json
+  labelstudio_api_key:
+    file: secrets/labelstudio_api_key

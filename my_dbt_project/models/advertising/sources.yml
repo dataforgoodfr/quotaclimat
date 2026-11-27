@@ -12,10 +12,23 @@ sources:
         identifier: ref_ome_secteurs
       - name: ad_categories
         identifier: ref_ome_categories
-      # Brand inventory: dbt seed downloaded from the Inventaires_des_marques Google Sheet (tab Marques),
+      # Brand inventory: dbt seed downloaded from the Inventaire_des_marques Google Sheet (tab Marques),
       # built in this schema
       - name: brand_inventory
         identifier: ref_inventaire_marques
+      # Media agency of each company, or of a brand of it: dbt seed downloaded from the
+      # Inventaire_des_annonceurs Google Sheet (tab agence_entreprise), built in this schema
+      - name: advertiser_agencies
+        identifier: ref_annonceurs_agence_entreprise
+      # Misinformation cases linked to their targets and the targets to the ad categories they attack: dbt seeds
+      # downloaded from the Cas_de_mesinfo Google Sheet (tabs 0_cibles, 1_affirmations, 3_grille_binaire), built in
+      # this schema, read by analytics.cas_affirmation_cible, cas_categorie_visee and cas_de_mesinformation
+      - name: cas_cibles
+        identifier: ref_cas_cibles
+      - name: cas_affirmations
+        identifier: ref_cas_affirmations
+      - name: cas_grille_binaire
+        identifier: ref_cas_grille_binaire
 
   - name: public
     schema: public

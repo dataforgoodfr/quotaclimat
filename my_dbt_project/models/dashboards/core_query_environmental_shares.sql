@@ -1,5 +1,6 @@
 {{ config(
     materialized='incremental'
+    ,incremental_strategy='delete+insert'
     ,unique_key=['start','"Program Metadata - Channel Name__channel_title"']
   )
 }}
@@ -255,6 +256,7 @@ FROM
             )
           )
           WHERE "public"."keywords"."country" = 'france'
+            AND {{ in_window('"public"."keywords"."start"') }}
       ) AS "source"
    
 GROUP BY

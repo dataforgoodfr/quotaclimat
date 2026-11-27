@@ -1,7 +1,9 @@
-import json
-import os
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta
+
+from quotaclimat.data_processing.mediatree.program_metadata import (
+    build_program_metadata,
+)
 
 
 @dataclass
@@ -42,35 +44,24 @@ class Show:
 
 
 def get_program() -> list[Show]:
-    program_metadata_path = os.path.join(
-        os.path.dirname(__file__),
-        "..",
-        "..",
-        "..",
-        "..",
-        "..",
-        "postgres",
-        "program_metadata.json",
-    )
-    with open(program_metadata_path, "r", encoding="utf-8") as f:
-        for program in json.load(f):
-            start = datetime.strptime(
-                str(program["weekday"]) + " " + program["start"], "%d %H:%M"
-            )
-            end = datetime.strptime(
-                str(program["weekday"]) + " " + program["end"], "%d %H:%M"
-            )
-            # Shows crossing midnight (e.g. 23:45 -> 00:45) end the next day
-            if end <= start:
-                end += timedelta(days=1)
-            yield Show(
-                channel_name=program["channel_name"],
-                start=start,
-                end=end,
-                program_name=program.get("program_name") or "",
-                grid_start=_parse_grid_date(program.get("program_grid_start")),
-                grid_end=_parse_grid_date(program.get("program_grid_end")),
-            )
+    for program in build_program_metadata():
+        start = datetime.strptime(
+            str(program["weekday"]) + " " + program["start"], "%d %H:%M"
+        )
+        end = datetime.strptime(
+            str(program["weekday"]) + " " + program["end"], "%d %H:%M"
+        )
+        # Shows crossing midnight (e.g. 23:45 -> 00:45) end the next day
+        if end <= start:
+            end += timedelta(days=1)
+        yield Show(
+            channel_name=program["channel_name"],
+            start=start,
+            end=end,
+            program_name=program.get("program_name") or "",
+            grid_start=_parse_grid_date(program.get("program_grid_start")),
+            grid_end=_parse_grid_date(program.get("program_grid_end")),
+        )
 
 
 def _parse_grid_date(value: str | None) -> date | None:
@@ -81,7 +72,7 @@ def get_channel_program(
     channel_name: str, week_start_date: datetime | None = None
 ) -> list[Show]:
     # With week_start_date, only keep shows whose program grid is valid during that week:
-    # program_metadata.json keeps the old grids of a channel next to the current one.
+    # The program grid keeps the old grids of a channel next to the current one.
     return [
         program
         for program in get_program()

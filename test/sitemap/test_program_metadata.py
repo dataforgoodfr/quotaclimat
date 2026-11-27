@@ -348,3 +348,11 @@ def test_update_programs_and_filter_out_of_scope_programs_from_df():
     # Assert the results match the expected DataFrame
     debug_df(result_df)
     pd.testing.assert_frame_equal(result_df, expected_df, check_dtype=False)
+
+def test_update_programs_and_filter_out_of_scope_programs_from_df_empty():
+    # all subtitles filtered out by keyword detection: must not raise
+    df = pd.DataFrame(columns=['start', 'channel_name', 'channel_program', 'channel_program_type', 'id'])
+
+    result_df = update_programs_and_filter_out_of_scope_programs_from_df(df, get_programs())
+
+    assert result_df.empty

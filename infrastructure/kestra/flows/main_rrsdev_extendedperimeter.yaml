@@ -130,6 +130,7 @@ tasks:
       LOGLEVEL: INFO
       MEDIATREE_AUTH_URL: https://keywords.mediatree.fr/api/auth/token/
       MEDIATREE_USER: quotaclimat
+      LLM_CONCURRENCY: "10"
       LLM_PROVIDER: openai
       MODEL_NAME: ft:gpt-4o-mini-2024-07-18:personal::B1xWiJRm
       MIN_MISINFORMATION_SCORE: 8

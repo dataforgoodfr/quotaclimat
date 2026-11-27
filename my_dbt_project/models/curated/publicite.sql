@@ -51,6 +51,8 @@ SELECT
     (CASE
         WHEN p.prediction_status IN ('dict_tier1', 'dict_tier2', 'dict_tier3') THEN 'dictionnaire'
         WHEN p.prediction_status = 'subcat_done' THEN 'modèle de langage'
+        -- ad split by the detection, merged, with the classification of its pieces
+        WHEN p.prediction_status = 'merge_inherited' THEN 'repris des morceaux'
         ELSE 'en cours'
     END)::text AS classement_par,
     p.inside_program AS est_dans_programme,

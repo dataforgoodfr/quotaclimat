@@ -154,7 +154,10 @@ def transform_raw_keywords(
     ) -> Optional[pd.DataFrame]: 
     try:
         if(df is not None):
-            df: pd.DataFrame = filter_and_tag_by_theme(df=df, stop_words=stop_words, country=country)    
+            df: pd.DataFrame = filter_and_tag_by_theme(df=df, stop_words=stop_words, country=country)
+            if df is None or df.empty:
+                logging.info("No subtitle left after keyword filtering, nothing to save")
+                return None
             df['keywords_with_timestamp'] = df['keywords_with_timestamp'].apply(lambda x: x.tolist() if isinstance(x, np.ndarray) else x)
             df['srt'] = df['srt'].apply(lambda x: x.tolist() if isinstance(x, np.ndarray) else x)
             

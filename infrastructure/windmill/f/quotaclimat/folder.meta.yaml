@@ -1,0 +1,8 @@
+summary: OME pipelines, prod (Kestra namespace quotaclimat).
+display_name: quotaclimat
+owners:
+  - g/Admins
+extra_perms:
+  g/Admins: true
+  g/Devs: true
+  g/Operators: false

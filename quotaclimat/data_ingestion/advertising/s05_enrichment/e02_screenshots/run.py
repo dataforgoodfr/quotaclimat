@@ -12,13 +12,18 @@ from sqlalchemy import exists, func, select
 from sqlalchemy.dialects.postgresql import insert
 
 from postgres.database_connection import get_db_session
-from postgres.schemas.advertising.models import Ad, Ad_Occurrence, Ad_Screenshot
+from postgres.schemas.advertising.models import (
+    Ad,
+    Ad_Merge,
+    Ad_Occurrence,
+    Ad_Screenshot,
+)
 from quotaclimat.data_ingestion.advertising.s02_exportation.ad_bucket import (
     MARGIN_ON_MEDIA_EXPORT_HISTORY,
     ad_media_s3_key,
     get_margin_from_detection_date,
 )
-from quotaclimat.data_ingestion.advertising.s03_classification.prediction_status import (
+from quotaclimat.data_ingestion.advertising.tools.prediction_status import (
     FINAL_PREDICTION_STATUSES,
 )
 from quotaclimat.data_ingestion.advertising.s05_enrichment.e02_screenshots.frames import (
@@ -52,8 +57,8 @@ SCREENSHOT_ACL = os.environ.get("SCREENSHOT_ACL", "public-read")
 
 MAX_CONCURRENT_JOBS = 10
 BATCH_SIZE = 50
-# Occurrences are processed by batches of ads, the most broadcast first: within a batch, the occurrences
-# sharing the same mediatree archives are still processed together.
+# Occurrences are processed by batches of ads, the longest cumulated broadcast time first: within a batch,
+# the occurrences sharing the same mediatree archives are still processed together.
 ADS_PER_OCCURRENCE_BATCH = int(os.environ.get("ADS_PER_OCCURRENCE_BATCH", 20))
 LOCAL_CACHE_DIR = "./.cache/screenshots"
 
@@ -71,6 +76,18 @@ class Filters:
     occurrences_from: datetime | None = None
     # also redo the targets already marked missing_source (errors are always retried)
     retry_missing: bool = False
+    # a merged ad (advertising.ad_merge) without its own video: mosaic from the videos of the ads
+    # it was merged from (see screenshot_merged_ad_from_sources)
+    merged_from_sources: bool = False
+
+
+@dataclass
+class SourceAd:
+    """An ad a merged ad was made from, in broadcast order."""
+
+    ad_id: str
+    duration_sec: float
+    first_detection_date: datetime
 
 
 @dataclass
@@ -106,7 +123,8 @@ def _not_already_done(target_type: str, target_id_column, retry_missing: bool):
 
 
 def _ad_filters(filters: Filters) -> list:
-    conditions = []
+    # a soft deleted ad (manual fusion) has no live occurrence and is left out of the visual checks
+    conditions = [Ad.deleted_at.is_(None)]
     if filters.ad_ids:
         conditions.append(Ad.id.in_(filters.ad_ids))
     if filters.prediction_statuses is not None:
@@ -115,8 +133,8 @@ def _ad_filters(filters: Filters) -> list:
 
 
 def _occurrence_counts(filters: Filters):
-    """Number of occurrences of each ad (on the channel and from occurrences_from when set): the
-    priority of the ads, the most broadcast first."""
+    """Number of occurrences of each ad (on the channel and from occurrences_from when set), from
+    which the priority of the ads is computed (see _most_broadcast_first)."""
     query = select(Ad_Occurrence.ad_id, func.count().label("nb_occurrences")).where(
         Ad_Occurrence.deleted_at.is_(None)
     )
@@ -127,8 +145,20 @@ def _occurrence_counts(filters: Filters):
     return query.group_by(Ad_Occurrence.ad_id).subquery()
 
 
+def _most_broadcast_first(counts) -> list:
+    """Order of the ads: the longest cumulated broadcast time first (duration of the ad x number of
+    occurrences), so that a long ad broadcast less often is not left behind short ones broadcast
+    more; then the number of occurrences, and the id for a stable order."""
+    broadcast_sec = counts.c.nb_occurrences * func.coalesce(Ad.duration_sec, 0)
+    return [
+        broadcast_sec.desc().nulls_last(),
+        counts.c.nb_occurrences.desc().nulls_last(),
+        Ad.id,
+    ]
+
+
 def ads_query(filters: Filters):
-    """Ads to screenshot, the most broadcast first. With a channel or occurrences_from, only the ads
+    """Ads to screenshot, the longest cumulated broadcast time first. With a channel or occurrences_from, only the ads
     broadcast there."""
     counts = _occurrence_counts(filters)
     query = select(Ad.id, Ad.duration_sec, Ad.first_detection_date).join(
@@ -144,20 +174,18 @@ def ads_query(filters: Filters):
         query = query.where(Ad.first_detection_date >= filters.start_date)
     if filters.end_date:
         query = query.where(Ad.first_detection_date < filters.end_date)
-    return query.order_by(counts.c.nb_occurrences.desc().nulls_last(), Ad.id).limit(
-        filters.limit
-    )
+    return query.order_by(*_most_broadcast_first(counts)).limit(filters.limit)
 
 
 def ranked_ad_ids_query(filters: Filters):
-    """Ids of the ads having occurrences, the most broadcast first: the order of the occurrence
-    batches."""
+    """Ids of the ads having occurrences, the longest cumulated broadcast time first: the order of
+    the occurrence batches."""
     counts = _occurrence_counts(filters)
     return (
         select(Ad.id)
         .join(counts, counts.c.ad_id == Ad.id)
         .where(*_ad_filters(filters))
-        .order_by(counts.c.nb_occurrences.desc(), Ad.id)
+        .order_by(*_most_broadcast_first(counts))
     )
 
 
@@ -276,28 +304,135 @@ def export_margin_sec(
     return margin.total_seconds() if margin is not None else 0.0
 
 
-async def screenshot_ad(
-    fs: s3fs.S3FileSystem,
-    ad_id: str,
-    duration_sec: float,
-    first_detection_date: datetime,
-) -> ScreenshotResult:
-    """Mosaic of the ad, from the video saved by the exportation (s02): ads/<ad_id>/raw.mp4."""
-    offsets = frame_offsets(duration_sec)
-    result = ScreenshotResult(
+def _ad_result(ad_id: str, duration_sec: float) -> ScreenshotResult:
+    return ScreenshotResult(
         target_type="ad",
         target_id=ad_id,
         ad_id=ad_id,
         status="done",
         source="ad_export",
-        frame_offsets_sec=offsets,
+        frame_offsets_sec=frame_offsets(duration_sec),
     )
+
+
+async def screenshot_ad_from_video(
+    fs: s3fs.S3FileSystem,
+    ad_id: str,
+    duration_sec: float,
+    video_path: str,
+    margin_sec: float,
+    work_dir: str,
+) -> ScreenshotResult:
+    """Mosaic of the ad from a local copy of its exported video (raw.mp4), which starts margin_sec
+    before the ad. Used by the exportation (s02) right after it cuts the video, and by screenshot_ad.
+
+    Never raises: a failure gives an `error` result, so that the caller's own work goes on.
+    work_dir receives the frames and the mosaic; the caller deletes it.
+    """
+    result = _ad_result(ad_id, duration_sec)
+    try:
+        frames = [
+            (video_path, margin_sec + offset) for offset in result.frame_offsets_sec
+        ]
+        result.image_url, result.nb_frames = await _mosaic_from_frames(
+            fs, frames, work_dir, "ad", ad_id
+        )
+        result.details = {"margin_sec": margin_sec}
+    except Exception as e:
+        logger.error(f"Failed to screenshot ad {ad_id}: {e}")
+        result.status = "error"
+        result.details = {"error": str(e)[:2000]}
+    return result
+
+
+def source_positions(
+    offsets: list[float], merged_duration_sec: float, sources: list[SourceAd]
+) -> list[tuple[int, float]]:
+    """(index of the source, offset in the source) of each offset of the merged ad. The sources are
+    put end to end, scaled to the duration of the merged ad: the gaps between the pieces (short
+    segments of the merge) are not known, so a frame can be off by as much as them."""
+    total = sum(s.duration_sec for s in sources)
+    scale = total / merged_duration_sec if merged_duration_sec > 0 else 1.0
+    positions = []
+    for offset in offsets:
+        t = min(offset * scale, total)
+        start = 0.0
+        for i, source in enumerate(sources):
+            if t < start + source.duration_sec or i == len(sources) - 1:
+                positions.append((i, min(t - start, source.duration_sec)))
+                break
+            start += source.duration_sec
+    return positions
+
+
+async def screenshot_merged_ad_from_sources(
+    fs: s3fs.S3FileSystem,
+    ad_id: str,
+    duration_sec: float,
+    sources: list[SourceAd],
+    work_dir: str,
+) -> ScreenshotResult:
+    """Mosaic of a merged ad from the videos of the ads it was merged from (ads/<id>/raw.mp4 of each
+    piece), for a merged ad without its own video: the frames are taken at the same offsets as for
+    any ad of this duration (frame_offsets), mapped to the pieces by source_positions. A piece
+    without video gives black tiles; no video at all gives missing_source."""
+    result = _ad_result(ad_id, duration_sec)
+    result.source = "merged_sources"
+    videos: dict[int, tuple[str, float]] = {}  # source index -> (video path, margin)
+    missing = []
+    for i, source in enumerate(sources):
+        video_path = os.path.join(work_dir, f"source_{i}.mp4")
+        try:
+            await fs._get_file(ad_media_s3_key(source.ad_id, "mp4"), video_path)
+        except FileNotFoundError:
+            missing.append(source.ad_id)
+            continue
+        margin = export_margin_sec(
+            source.duration_sec,
+            source.first_detection_date,
+            await video_duration(video_path),
+        )
+        videos[i] = (video_path, margin)
+    result.details = {
+        "sources": [s.ad_id for s in sources],
+        "missing_sources": missing,
+    }
+    if not videos:
+        result.status = "missing_source"
+        return result
+    frames = []
+    for i, offset in source_positions(result.frame_offsets_sec, duration_sec, sources):
+        frames.append((videos[i][0], videos[i][1] + offset) if i in videos else None)
+    result.image_url, result.nb_frames = await _mosaic_from_frames(
+        fs, frames, work_dir, "ad", ad_id
+    )
+    return result
+
+
+async def screenshot_ad(
+    fs: s3fs.S3FileSystem,
+    ad_id: str,
+    duration_sec: float,
+    first_detection_date: datetime,
+    sources: list[SourceAd] | None = None,
+) -> ScreenshotResult:
+    """Mosaic of the ad, from the video saved by the exportation (s02): ads/<ad_id>/raw.mp4.
+
+    The exportation makes the mosaic of the ads it exports; this catches up the others (exported
+    before, or whose mosaic failed). With sources (a merged ad, Filters.merged_from_sources), an ad
+    without its own video gets the mosaic of the videos of its pieces.
+    """
     work_dir = tempfile.mkdtemp(dir=LOCAL_CACHE_DIR)
     try:
         video_path = os.path.join(work_dir, "raw.mp4")
         try:
             await fs._get_file(ad_media_s3_key(ad_id, "mp4"), video_path)
         except FileNotFoundError:
+            if sources:
+                return await screenshot_merged_ad_from_sources(
+                    fs, ad_id, duration_sec, sources, work_dir
+                )
+            result = _ad_result(ad_id, duration_sec)
             result.status = "missing_source"
             result.details = {"missing": ad_media_s3_key(ad_id, "mp4")}
             return result
@@ -306,18 +441,17 @@ async def screenshot_ad(
         margin = export_margin_sec(
             duration_sec, first_detection_date, await video_duration(video_path)
         )
-        frames = [(video_path, margin + offset) for offset in offsets]
-        result.image_url, result.nb_frames = await _mosaic_from_frames(
-            fs, frames, work_dir, "ad", ad_id
+        return await screenshot_ad_from_video(
+            fs, ad_id, duration_sec, video_path, margin, work_dir
         )
-        result.details = {"margin_sec": margin}
     except Exception as e:
         logger.error(f"Failed to screenshot ad {ad_id}: {e}")
+        result = _ad_result(ad_id, duration_sec)
         result.status = "error"
         result.details = {"error": str(e)[:2000]}
+        return result
     finally:
         shutil.rmtree(work_dir, ignore_errors=True)
-    return result
 
 
 async def _screenshot_occurrence(
@@ -451,9 +585,36 @@ def _log_counts(label: str, statuses: list[str]) -> None:
     logger.info(f"{label}: {counts}")
 
 
+def merge_sources(session, ad_ids: list[str]) -> dict[str, list[SourceAd]]:
+    """Merged ad id -> the ads it was merged from, in broadcast order (advertising.ad_merge, whatever
+    the status of the merge)."""
+    merges = session.execute(
+        select(Ad_Merge.merged_ad_id, Ad_Merge.source_ad_ids).where(
+            Ad_Merge.merged_ad_id.in_(ad_ids)
+        )
+    ).all()
+    source_ids = {i for _, ids in merges for i in ids}
+    ads = {
+        a.id: SourceAd(a.id, a.duration_sec, a.first_detection_date)
+        for a in session.execute(
+            select(Ad.id, Ad.duration_sec, Ad.first_detection_date).where(
+                Ad.id.in_(source_ids)
+            )
+        ).all()
+    }
+    return {
+        merged_ad_id: [ads[i] for i in ids if i in ads] for merged_ad_id, ids in merges
+    }
+
+
 async def run_ads(session, fs: s3fs.S3FileSystem, filters: Filters) -> None:
     ads = session.execute(ads_query(filters)).all()
     logger.info(f"{len(ads)} ads to screenshot")
+    sources = (
+        merge_sources(session, [ad[0] for ad in ads])
+        if filters.merged_from_sources and ads
+        else {}
+    )
 
     semaphore = asyncio.Semaphore(MAX_CONCURRENT_JOBS)
     progress = interactive_tqdm(total=len(ads), desc="Screenshots of ads")
@@ -461,7 +622,9 @@ async def run_ads(session, fs: s3fs.S3FileSystem, filters: Filters) -> None:
 
     async def _limited(ad_id, duration_sec, first_detection_date):
         async with semaphore:
-            result = await screenshot_ad(fs, ad_id, duration_sec, first_detection_date)
+            result = await screenshot_ad(
+                fs, ad_id, duration_sec, first_detection_date, sources.get(ad_id)
+            )
             progress.count(result.status)
             progress.update(1)
             return result
@@ -480,8 +643,9 @@ async def run_ads(session, fs: s3fs.S3FileSystem, filters: Filters) -> None:
 async def run_occurrences(
     read_session, write_session, fs: s3fs.S3FileSystem, filters: Filters
 ) -> None:
-    """Screenshot the occurrences by batches of ADS_PER_OCCURRENCE_BATCH ads, the most broadcast
-    first, so that their checks are complete first. Within a batch, one (channel, day) group at a time.
+    """Screenshot the occurrences by batches of ADS_PER_OCCURRENCE_BATCH ads, the longest cumulated
+    broadcast time first, so that their checks are complete first. Within a batch, one (channel, day)
+    group at a time.
     """
     total = write_session.execute(
         select(func.count()).select_from(occurrences_query(filters).subquery())
@@ -527,6 +691,27 @@ async def run_occurrences(
     _log_counts("Occurrences", all_results)
 
 
+async def run_ads_by_ids(
+    ad_ids: list[str], merged_from_sources: bool = False, batch_size: int = 1000
+) -> None:
+    """Mosaics of these ads, whatever their classification, the missing_source ones retried: for a
+    script that needs the mosaics of a list of ads (s04_consolidation/duplicate_ads)."""
+    os.makedirs(LOCAL_CACHE_DIR, exist_ok=True)
+    fs = get_s3_filesystem()
+    with get_db_session() as session:
+        for start in range(0, len(ad_ids), batch_size):
+            await run_ads(
+                session,
+                fs,
+                Filters(
+                    ad_ids=ad_ids[start : start + batch_size],
+                    prediction_statuses=None,
+                    retry_missing=True,
+                    merged_from_sources=merged_from_sources,
+                ),
+            )
+
+
 async def run(filters: Filters, targets: set[str]) -> None:
     os.makedirs(LOCAL_CACHE_DIR, exist_ok=True)
     # The mediatree bucket and the advertising bucket share the endpoint and credentials
@@ -567,6 +752,8 @@ def filters_from_env() -> Filters:
         limit=int(limit) if limit else None,
         occurrences_from=_parse_date("OCCURRENCES_FROM"),
         retry_missing=os.environ.get("RETRY_MISSING", "false").lower() == "true",
+        merged_from_sources=os.environ.get("MERGED_FROM_SOURCES", "false").lower()
+        == "true",
     )
 
 

@@ -3,6 +3,7 @@
    from being deleted if a run ever rebuilds only part of the data (e.g. with is_incremental()). #}
 {{ config(
     materialized='incremental',
+    incremental_strategy='delete+insert',
     unique_key=['week','channel_title','country'],
     on_schema_change='append_new_columns'
   )
@@ -65,9 +66,10 @@ weekly_program_durations AS (
 		DATE_TRUNC('week', tm.start::timestamp)::date as week,
 		SUM(tm.duration_minutes) weekly_duration_minutes
 	from time_monitored tm 
-	where tm.country='belgium' 
+	where (tm.country='belgium' 
     or tm.channel_name='zdf' 
-    or tm.channel_name='daserste'
+    or tm.channel_name='daserste')
+    and {{ in_window('tm.start') }}
 	group by
 		channel_title,
 		tm.country,
@@ -112,6 +114,7 @@ keyword_occurrences AS (
   , json_array_elements(k.keywords_with_timestamp::json) AS kw
   WHERE
     LOWER(kw ->> 'theme') NOT LIKE '%indirect%'
+    AND {{ in_window('k.start') }}
 )
 SELECT
   ko.channel_title,

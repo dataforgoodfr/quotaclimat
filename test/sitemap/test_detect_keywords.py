@@ -352,8 +352,10 @@ def test_filter_high_risk_false_positive_with_hrfp():
     assert result == []
 
 def test_three_get_themes_keywords_duration():
+    # "dérèglement climatique" (changement_climatique_constat) is not filtered by "adaptation au dérèglement climatique":
+    # "dérèglement" is not in the test subtitles, so its timestamp falls back to 0 (same window as the others)
     themes = set([
-     "adaptation_climatique_solutions", 'changement_climatique_consequences'
+     "adaptation_climatique_solutions", 'changement_climatique_consequences', 'changement_climatique_constat'
     ])
 
     (themes_output, keywords_output, 
@@ -387,7 +389,7 @@ def test_three_get_themes_keywords_duration():
     assert set(themes_output)== themes
     logging.info(f"Got keywords:  {keywords_output}")
     assert number_of_keywords == 1
-    assert number_of_changement_climatique_constat == 0
+    assert number_of_changement_climatique_constat == 1
     assert number_of_changement_climatique_causes_directes == 0
     assert number_of_changement_climatique_consequences == 1
     assert number_of_attenuation_climatique_solutions_directes == 0
@@ -398,7 +400,7 @@ def test_three_get_themes_keywords_duration():
     assert number_of_biodiversite_causes_directes == 0
     assert number_of_biodiversite_consequences == 0
     assert number_of_biodiversite_solutions_directes == 0
-    assert number_of_changement_climatique_constat_no_hrfp == 0
+    assert number_of_changement_climatique_constat_no_hrfp == 1
     assert number_of_changement_climatique_causes_no_hrfp == 0
     assert number_of_changement_climatique_consequences_no_hrfp == 1
     assert number_of_attenuation_climatique_solutions_no_hrfp == 0

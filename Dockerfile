@@ -42,6 +42,7 @@ COPY alembic_factiva.ini ./alembic_factiva.ini
 COPY alembic_factiva/ ./alembic_factiva
 COPY alembic.ini ./alembic.ini
 COPY alembic/ ./alembic
+COPY decisions/rapports/ ./decisions/rapports
 COPY entrypoints/ ./entrypoints
 COPY i8n/ ./i8n
 COPY metabase/ ./metabase
@@ -49,7 +50,6 @@ COPY my_dbt_project/ ./my_dbt_project
 COPY postgres ./postgres
 COPY pyproject.toml pyproject.toml
 COPY quotaclimat ./quotaclimat
-COPY transform_program.py ./transform_program.py
 
 # healthcheck
 EXPOSE 5050

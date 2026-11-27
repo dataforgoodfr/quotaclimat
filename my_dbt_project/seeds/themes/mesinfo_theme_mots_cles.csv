@@ -6,7 +6,11 @@ automobile,voiture thermique,\m(voiture|v[ée]hicule|moteur|auto)s?\s+thermiques
 automobile,fin du thermique,\mfin\s+(du|des)\s+(moteurs?\s+)?thermiques?\M|\minterdiction\s+(du|des)\s+(moteurs?\s+|voitures?\s+)?thermiques?\M,fort,false
 automobile,ZFE,\mZFE\M|\mzones?\s+([àa]\s+)?faibles?\s+[ée]missions?,fort,false
 automobile,leasing social,\mleasing\s+social\M,fort,false
-automobile,constructeur,\m(Tesla|Stellantis)\M|\mindustrie\s+automobile|\mconstructeurs?\s+automobiles?,fort,false
+automobile,constructeur,\m(Tesla|Stellantis|Volkswagen|BYD|Renault|Peugeot|Citro[ëe]n|Toyota|Dacia|BMW|Mercedes|Clio)\M|\mindustrie\s+automobile|\mconstructeurs?\s+automobiles?,fort,false
+automobile,voiture,\m(voitures?|v[ée]hicules?|automobiles?|automobilistes?|bagnoles?)\M,fort,false
+automobile,SUV / 4x4,\m(SUV|4x4)\M,fort,false
+automobile,Crit'Air,\mcrit\W?air\M,fort,false
+automobile,pot d'échappement,\m(pots?|gaz)\s+d\W?[ée]chappement\M,fort,false
 automobile,voiture essence / diesel,\mvoitures?\s+(essence|diesel)\M,fort,false
 automobile,hybride rechargeable,\mhybrides?\s+rechargeables?\M,fort,false
 automobile,carburant alternatif,\mbio-?carburants?\M|\mcarburants?\s+(de\s+synth[èe]se|alternatifs?)\M|(super-?)?[ée]thanol\M|\mE85\M|\mGPL\M,fort,false

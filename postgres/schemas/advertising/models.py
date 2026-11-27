@@ -11,6 +11,7 @@ from sqlalchemy import (
     Text,
     func,
 )
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship
 
 from postgres.schemas.advertising.base import AdvertisingBase
@@ -38,6 +39,7 @@ class Ad(AdvertisingBase):
 
     fragment_type = Column(String, nullable=False)  # "advertising" or "jingle" ...
     transcript = Column(Text, nullable=True)
+    ocr_transcript = Column(Text, nullable=True)
     prediction = Column(JSON, nullable=True)
     prediction_status = Column(String, nullable=True)
     prediction_confidence = Column(Double, nullable=True)
@@ -46,6 +48,24 @@ class Ad(AdvertisingBase):
 
     predicted_brand = Column(String, nullable=True)
     prediction_method = Column(String, nullable=True)
+
+    # A soft deleted ad is kept for its history but left out of every step: the detection no longer matches its
+    # fingerprints, the exportation, classification, screenshots and duplicate search skip it. Set by a manual
+    # fusion (s04_consolidation/e02_manual_corrections), with the ad that took its occurrences.
+    deleted_at = Column(DateTime(), nullable=True)
+    replaced_by_ad_id = Column(Text, nullable=True)
+
+    # Export of the ad's media (ads/<ad_id>/raw.mp3 and raw.mp4 in the advertising bucket), written by the
+    # exportation (s02_exportation) so that its next runs read in the database which ads are left to export
+    # instead of checking every ad in the bucket. NULL: not known yet, the exportation checks the bucket.
+    # {
+    #     "exported_at": "2026-11-24T09:12:03+00:00",  # upload of raw.mp4 (its LastModified when found in the bucket)
+    #     "mp4_bytes": 1234567,  # size of raw.mp4
+    #     "margin_sec": 0.1,  # margin of the video before and after the ad
+    #     "method": "mediatree_cut" or "merged_rebuild",  # absent when found in the bucket: not known
+    # }
+    # Set it back to NULL to have the ad checked (and exported if missing) again.
+    media_export = Column(JSONB(none_as_null=True), nullable=True)
 
     def attributes(self):
         return {

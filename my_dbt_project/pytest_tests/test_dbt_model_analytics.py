@@ -1,3 +1,4 @@
+import csv
 import datetime
 import logging
 import os
@@ -10,8 +11,14 @@ import pytest
 import yaml
 
 from my_dbt_project.pytest_tests.test_dbt_model_homepage import run_dbt_command
-from quotaclimat.data_ingestion.advertising.s03_classification.dictionary.normalize import normalize, nospace
-from quotaclimat.data_ingestion.external_sources.download_external_sources import SEEDS_DIR, download_source
+from quotaclimat.data_ingestion.advertising.tools.normalize import (
+    normalize,
+    nospace,
+)
+from quotaclimat.data_ingestion.external_sources.download_external_sources import (
+    SEEDS_DIR,
+    download_source,
+)
 from quotaclimat.metabase.questions import load_queries, read_query, render
 
 
@@ -103,6 +110,36 @@ def programmes_test_source() -> dict:
     return production_source("programmes")
 
 
+def advertiser_inventory_test_source() -> dict:
+    """Production advertiser inventory (media agencies) source settings."""
+    return production_source("inventaire_des_annonceurs")
+
+
+def cas_de_mesinfo_test_source() -> dict:
+    """Production settings of the misinformation cases / targets / ad categories source."""
+    return production_source("cas_de_mesinfo")
+
+
+# validated misinformation cases of the labelstudio seeds (see test_cas_de_mesinformation)
+CAS_FRANCEINFOTV = "70ff0eebb0d606feacde156e1584139ef1bea0d3a5f6b100dec9cb437617a23a"
+CAS_SUD_RADIO = "8c3c2001a96d3c2e2ede323a6115fd7948229baa56385f69cfbaa5555f0a13e0"
+CAS_EUROPE1 = "000dee7a4b8ef6cd99d8f9b58dc85505ddcee214fc7f756b569f4d1477e52c5a"
+CAS_TARGET_HEADERS = [
+    "ENR", "Prix élec.", "Nucléaire", "Fossiles", "VE", "Thermique", "Politiques auto", "Aérien",
+    "Vélo / mobilités douces", "Train / collectifs", "Rénovation", "Clim", "Élevage", "Pesticides / irrigation",
+    "Science", "Messagers", "Rôle FR / politiques",
+]
+
+
+def cas_affirmation_row(affirmation_id: str, cas: str, targets: dict[str, str]) -> list[str]:
+    """A row of the tab 1_affirmations: one column per target, then columns left out by the download."""
+    return (
+        [affirmation_id, cas, "2025-04-05", "France Info TV", "Pytest émission", "invité", f"affirmation {affirmation_id}"]
+        + [targets.get(h, "") for h in CAS_TARGET_HEADERS]
+        + ["VE", "oui", "transcription not downloaded", f"explication {affirmation_id}", "https://example.org"]
+    )
+
+
 def fake_fetch(sheets: dict[str, list[list]], source: dict | None = None):
     """Stands for the Google Drive / Sheets API calls: returns the rows the API would return."""
     def fetch(folder_id, spreadsheet_name):
@@ -143,6 +180,23 @@ def create_advertising_tables(db_connection):
                 occurrence_date timestamp NOT NULL,
                 channel_name varchar NOT NULL,
                 ad_id text REFERENCES advertising.ad (id)
+            )
+        """)
+        # read by the Metabase queries only (written by the screenshots job, not by dbt)
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS advertising.ad_screenshot (
+                target_type varchar NOT NULL,
+                target_id text NOT NULL,
+                ad_id text NOT NULL,
+                status varchar NOT NULL,
+                source varchar,
+                image_url text,
+                frame_offsets_sec double precision[],
+                nb_frames integer,
+                details json,
+                created_at timestamp NOT NULL DEFAULT now(),
+                updated_at timestamp NOT NULL DEFAULT now(),
+                PRIMARY KEY (target_type, target_id)
             )
         """)
         cur.execute("DELETE FROM advertising.ad_occurrence WHERE id LIKE 'pytest_%' OR id LIKE 'mesinfo_pytest_%' OR id LIKE 'program_pytest_%' OR id LIKE 'emission_pytest_%'")
@@ -253,16 +307,21 @@ def load_test_external_sources():
         "Marques": [
             [
                 "marque", "entreprise", "e_statut", "societe_mere_ultime", "smu_statut",
-                "actionnaire_maj_ultime", "amu_statut", "commentaires",
+                "actionnaire_maj_ultime", "amu_statut", "commentaires", "siren", "departement_siege_social",
+                "pays_siege_social", "smu_pays", "smu_siren", "smu_departement",
             ],
-            # same key as the predicted brand "Pytest Škoda": the verified row wins
+            # same key as the predicted brand "Pytest Škoda": the verified row wins. SIREN and department
+            # read as numbers by the sheet (leading zeros lost)
             [
                 "PYTEST SKODA", "Pytest Volkswagen", "non vérifié", "Pytest Porsche SE", "vérifié",
-                "Pytest Porsche Piëch", "non vérifié",
+                "Pytest Porsche Piëch", "non vérifié", "", "5520135", "1", "fr", "DE", "", "",
             ],
             ["pytest-škoda", "Pytest Wrong Company", "non vérifié", "Pytest Wrong Parent", "à vérifier"],
             # ultimate parent to check: not used, the company instead
-            ["Pytest Biscuits", "Pytest Biscuits Company", "non vérifié", "Pytest Holding", "à vérifier"],
+            [
+                "Pytest Biscuits", "Pytest Biscuits Company", "non vérifié", "Pytest Holding", "à vérifier", "",
+                "", "", "552 081 317", "2a", "FR", "FR", "775670417", "75",
+            ],
             # listed but company not filled in yet
             ["Pytest Brand Without Group"],
             # company to check: not used; numeric looking brand stays text
@@ -299,7 +358,95 @@ def load_test_external_sources():
         programmes_test_source(), SEEDS_DIR, fetch=fake_fetch(emission_sheets, programmes_test_source())
     )
     assert results == {"ref_programmes_emissions_infos_en_continue": True}
-    run_dbt_command(["seed", "--full-refresh", "--select", "path:seeds/ref"])
+    agency_sheets = {
+        "agence_entreprise": [
+            [
+                "entreprise", "agence_media", "groupe_agence", "fiabilite", "perimetre_geo", "perimetre_media",
+                "autres_agences", "agence_precedente", "date_info", "verifie_le", "note", "source_1",
+            ],
+            # company of "Pytest Škoda" (Pytest Volkswagen), spelled differently: compared with name_key
+            [
+                "PYTEST VOLKSWAGEN", "Pytest Agence Groupe", "WPP", "confirmee", "Europe", "", "", "", "2025-11",
+                "2026-11-04", "Pytest note", "https://example.org/pytest-vw",
+            ],
+            # company of "Pytest Biscuits"
+            ["Pytest Biscuits Company", "Pytest Agence Biscuits", "Dentsu", "indice", "", "partiel"],
+            # company without ads: no row in ad_brand_agencies
+            ["Pytest Absente", "", "", "inconnue"],
+        ],
+        "_readme": [["note"], ["for humans only"]],
+    }
+    results = download_source(
+        advertiser_inventory_test_source(), SEEDS_DIR,
+        fetch=fake_fetch(agency_sheets, advertiser_inventory_test_source()),
+    )
+    assert results == {"ref_annonceurs_agence_entreprise": True}
+    cas_sheets = {
+        "Lisez-moi": [["Rattachement des cas"], ["for humans only"]],
+        "0_cibles": [
+            [
+                "Code", "Cible", "Famille", "Catégorie OMÉ (rapport 2025)", "Ce qu'elle couvre", "Sens le plus courant",
+                "Affirmations « attaque »", "Affirmations « défend »", "Cas concernés",
+            ],
+            ["VE", "Véhicule électrique", "Cible produit", "Solutions – Mobilité", "Voitures électriques", "attaque",
+             "3", "1", "2"],
+            ["VT", "Véhicule thermique et carburants", "Cible produit", "Solutions – Mobilité", "Diesel", "défend"],
+            ["ELV", "Élevage, viande et lait", "Cible produit", "Solutions – Agriculture", "Élevage", "défend"],
+        ],
+        "1_affirmations": [
+            ["id affirmation", "Identifiant du cas", "Date", "Chaîne", "Émission", "Locuteurs", "Affirmation"]
+            + CAS_TARGET_HEADERS
+            + ["Cibles par mots-clés (pour info)", "Accord avec les mots-clés", "Transcription du cas",
+               "Explication (debunk)", "Extrait"],
+            # attacks the electric vehicle, its reference direction: PYTEST_AUTO_EV attacked
+            cas_affirmation_row("0", CAS_FRANCEINFOTV, {"VE": "attaque"}),
+            # defends the combustion car (nothing attacked in the grid) and the electric one: PYTEST_AUTO_ICE
+            # attacked through the grid row VE défend (not through VE attaque)
+            cas_affirmation_row("1", CAS_FRANCEINFOTV, {"Thermique": "défend", "VE": "défend"}),
+            # defends livestock farming: PYTEST_FOOD_SNACK attacked (plant-based substitutes)
+            cas_affirmation_row("2", CAS_FRANCEINFOTV, {"Élevage": "défend"}),
+            # spaces and case ignored: VE défend, PYTEST_AUTO_ICE attacked
+            cas_affirmation_row("3", CAS_SUD_RADIO, {"VE": " Défend "}),
+            # case not validated in Label Studio: in cas_categorie_visee only
+            cas_affirmation_row("4", "pytest_cas_non_valide", {"VE": "attaque"}),
+            # in the sheet, direction without any grid row: targets but no category
+            cas_affirmation_row("5", CAS_EUROPE1, {"Thermique": "attaque"}),
+        ],
+        "3_grille_binaire": [
+            [
+                "Cible (code)", "Cible", "Famille", "Sens de référence", "Code catégorie", "Catégorie de pub", "Secteur",
+                "Note fine (copie de l'onglet 2_grille)", "Produit visé (1 = attaqué)", "Analyse", "À discuter",
+            ],
+            ["VE", "Véhicule électrique", "Cible produit", "attaque", "PYTEST_AUTO_EV", "Voiture électrique",
+             "Automobile", "-3", "1", "Gardé : cible directe."],
+            ["VE", "Véhicule électrique", "Cible produit", "attaque", "PYTEST_AUTO_ICE", "Voiture thermique",
+             "Automobile", "-1", "0", "Retiré : lien indirect."],
+            # the same target in the other direction: defending the electric car attacks the combustion one
+            ["VE", "Véhicule électrique", "Cible produit", "défend", "PYTEST_AUTO_ICE", "Voiture thermique",
+             "Automobile", "-2", "1", "Gardé."],
+            ["VT", "Véhicule thermique et carburants", "Cible produit", "défend", "PYTEST_AUTO_ICE",
+             "Voiture thermique", "Automobile", "3", "0", "Retiré : la cible conforte ce produit."],
+            ["ELV", "Élevage, viande et lait", "Cible produit", "défend", "PYTEST_FOOD_SNACK", "Snacks",
+             "Alimentation", "-2", "1", "Gardé.", "oui"],
+        ],
+        # computed tabs, not downloaded
+        "2_grille": [["Cible (code)", "Note"], ["VE", "-3"]],
+        "2_matrice": [["Catégorie", "VE"], ["PYTEST_AUTO_EV", "-3"]],
+        "3_matrice_binaire": [["Catégorie", "VE"], ["PYTEST_AUTO_EV", "1"]],
+        "par_cas": [["Identifiant du cas", "Cibles"], [CAS_FRANCEINFOTV, "VE"]],
+        "4_cas_categories": [["Identifiant du cas", "PYTEST_AUTO_EV"], [CAS_FRANCEINFOTV, "1"]],
+    }
+    results = download_source(
+        cas_de_mesinfo_test_source(), SEEDS_DIR, fetch=fake_fetch(cas_sheets, cas_de_mesinfo_test_source())
+    )
+    assert results == {"ref_cas_cibles": True, "ref_cas_affirmations": True, "ref_cas_grille_binaire": True}
+    # only the configured columns, renamed: no transcript
+    with open(SEEDS_DIR / "ref_cas_affirmations.csv", encoding="utf-8") as f:
+        header = next(csv.reader(f))
+    assert header[:3] == ["affirmation_id", "task_aggregate_id", "affirmation"]
+    assert header[-1] == "explication" and len(header) == 21
+    # as entrypoints/dbt.sh: without --no-partial-parse, the column_types of the CSV files just written are ignored
+    run_dbt_command(["seed", "--full-refresh", "--no-partial-parse", "--select", "path:seeds/ref"])
     run_dbt_command(["test", "--select", "path:seeds/ref"])
     yield
     os.environ.pop("EXTERNAL_SOURCES_DRIVE_FOLDER", None)
@@ -324,6 +471,10 @@ def run_analytics(create_test_roles, create_advertising_tables, load_test_extern
             "path:models/advertising",
             "--exclude",
             "cas_de_mesinformation",
+            "--exclude",
+            "cas_affirmation_cible",
+            "--exclude",
+            "cas_categorie_visee",
             "--exclude",
             "publicites",
             "--exclude",
@@ -356,6 +507,10 @@ def run_analytics(create_test_roles, create_advertising_tables, load_test_extern
             "run",
             "--select",
             "path:models/advertising",
+            "--select",
+            "cas_affirmation_cible",
+            "--select",
+            "cas_categorie_visee",
             "--select",
             "cas_de_mesinformation",
             "--select",
@@ -635,25 +790,82 @@ def test_cas_de_mesinformation_emission(db_connection):
         assert sum(r[2] for r in par_emission) == 5
 
 
-def test_cas_theme(db_connection):
-    """Themes of the cases by keywords in the claim and the explanation: forte, moyenne or faible."""
+def test_cas_categorie_visee(db_connection):
+    """Ad categories attacked by the claims of the cases: same target and same direction as a row of the binary grid
+    of the Cas_de_mesinfo sheet with produit_vise = 1."""
     with db_connection.cursor() as cur:
         cur.execute("""
-            INSERT INTO analytics.cas_de_mesinformation (task_aggregate_id, country, claims, explanations)
+            SELECT affirmation_id, cible_code, sens, est_sens_reference
+            FROM analytics.cas_affirmation_cible
+            ORDER BY affirmation_id, cible_code
+        """)
+        assert cur.fetchall() == [
+            ("0", "VE", "attaque", True),
+            ("1", "VE", "défend", False),
+            ("1", "VT", "défend", True),
+            ("2", "ELV", "défend", True),
+            ("3", "VE", "défend", False),
+            ("4", "VE", "attaque", True),
+            ("5", "VT", "attaque", False),
+        ]
+        cur.execute("""
+            SELECT task_aggregate_id, cat_code, categorie, secteur, cibles, cibles_sens, nb_affirmations
+            FROM analytics.cas_categorie_visee
+            ORDER BY task_aggregate_id, cat_code
+        """)
+        assert cur.fetchall() == [
+            (CAS_FRANCEINFOTV, "PYTEST_AUTO_EV", "Voiture électrique", "Automobile", ["VE"], ["VE attaque"], 1),
+            # VE défend only: not through the row VE attaque of PYTEST_AUTO_ICE (produit_vise = 0)
+            (CAS_FRANCEINFOTV, "PYTEST_AUTO_ICE", "Voiture thermique", "Automobile", ["VE"], ["VE défend"], 1),
+            (CAS_FRANCEINFOTV, "PYTEST_FOOD_SNACK", "Snacks", "Alimentation", ["ELV"], ["ELV défend"], 1),
+            (CAS_SUD_RADIO, "PYTEST_AUTO_ICE", "Voiture thermique", "Automobile", ["VE"], ["VE défend"], 1),
+            ("pytest_cas_non_valide", "PYTEST_AUTO_EV", "Voiture électrique", "Automobile", ["VE"], ["VE attaque"], 1),
+        ]
+        cur.execute("""
+            SELECT task_aggregate_id, cibles, cibles_sens, categories_visees
+            FROM analytics.cas_de_mesinformation
+            WHERE task_aggregate_id IN (%s, %s, %s)
+            ORDER BY task_aggregate_id
+        """, (CAS_FRANCEINFOTV, CAS_SUD_RADIO, CAS_EUROPE1))
+        assert cur.fetchall() == [
+            # in the sheet without any attacked category: empty, not NULL
+            (CAS_EUROPE1, ["VT"], ["VT attaque"], []),
+            (CAS_FRANCEINFOTV, ["ELV", "VE", "VT"], ["ELV défend", "VE attaque", "VE défend", "VT défend"],
+             ["PYTEST_AUTO_EV", "PYTEST_AUTO_ICE", "PYTEST_FOOD_SNACK"]),
+            (CAS_SUD_RADIO, ["VE"], ["VE défend"], ["PYTEST_AUTO_ICE"]),
+        ]
+        # the cases not in the sheet: NULL
+        cur.execute("""
+            SELECT COUNT(*) FROM analytics.cas_de_mesinformation
+            WHERE cibles IS NULL AND cibles_sens IS NULL AND categories_visees IS NULL
+        """)
+        assert cur.fetchone()[0] == 2
+
+
+def test_cas_theme(db_connection):
+    """Themes of the cases by keywords in the claim only: forte (a strong keyword) or moyenne (weak ones only)."""
+    with db_connection.cursor() as cur:
+        cur.execute("""
+            INSERT INTO analytics.cas_de_mesinformation (task_aggregate_id, country, claims, explanations,
+                                                         data_item_plaintext_whisper)
             VALUES
                 -- strong keyword in the claim, accents and plural
-                ('pytest_theme_fort', 'france', 'Les voitures électriques polluent plus que les thermiques', NULL),
-                -- strong keyword in the explanation only: the context of the debate
-                ('pytest_theme_contexte', 'france', 'Les ENR coûtent cher', 'Comme pour les véhicules électriques'),
+                ('pytest_theme_fort', 'france', 'Les voitures électriques polluent plus que les thermiques', NULL,
+                 NULL),
+                -- strong keyword in the explanation or the transcript only: the context of the debate, left out
+                ('pytest_theme_contexte', 'france', 'Les ENR coûtent cher', 'Comme pour les véhicules électriques',
+                 'les ENR, et la voiture électrique, coûtent cher'),
+                -- car alone, Crit'Air with a typographic apostrophe
+                ('pytest_theme_critair', 'france', 'Les véhicules Crit’Air 3 ne polluent pas', NULL, NULL),
                 -- weak keyword in the claim
-                ('pytest_theme_faible_affirmation', 'france', 'On ne sait pas recycler les batteries', NULL),
-                -- weak keyword in the explanation only
-                ('pytest_theme_faible_explication', 'france', 'Les ENR coûtent cher', 'stockage par batteries'),
+                ('pytest_theme_faible_affirmation', 'france', 'On ne sait pas recycler les batteries', NULL, NULL),
+                -- weak keyword in the explanation only: left out
+                ('pytest_theme_faible_explication', 'france', 'Les ENR coûtent cher', 'stockage par batteries', NULL),
                 -- VE: upper case only; "ve" inside a word does not count
-                ('pytest_theme_ve', 'france', 'Le VE est cher', NULL),
-                ('pytest_theme_rien', 'france', 'Le reve est nave', 'trouvé dans la cave'),
+                ('pytest_theme_ve', 'france', 'Le VE est cher', NULL, NULL),
+                ('pytest_theme_rien', 'france', 'Le reve est nave', 'trouvé dans la cave', NULL),
                 -- other countries left out
-                ('pytest_theme_belgique', 'belgium', 'Les voitures électriques polluent', NULL)
+                ('pytest_theme_belgique', 'belgium', 'Les voitures électriques polluent', NULL, NULL)
         """)
     db_connection.commit()
     try:
@@ -672,10 +884,9 @@ def test_cas_theme(db_connection):
         db_connection.commit()
         run_dbt_command(["run", "--select", "cas_theme"])
     assert rows == [
-        ("pytest_theme_contexte", "automobile", "moyenne", None, "voiture électrique"),
+        ("pytest_theme_critair", "automobile", "forte", "Crit'Air, voiture", None),
         ("pytest_theme_faible_affirmation", "automobile", "moyenne", "batterie", None),
-        ("pytest_theme_faible_explication", "automobile", "faible", None, "batterie"),
-        ("pytest_theme_fort", "automobile", "forte", "voiture électrique", None),
+        ("pytest_theme_fort", "automobile", "forte", "voiture, voiture électrique", None),
         ("pytest_theme_ve", "automobile", "moyenne", "VE", None),
     ]
 
@@ -705,7 +916,7 @@ def test_emission_jour_environment(db_connection):
         """, {"program": programs[0][0]})
     db_connection.commit()
     try:
-        run_dbt_command(["run", "--select", "emission_jour"])
+        run_dbt_command(["run", "--select", "emission_jour", "--full-refresh"])  # older keyword segments: full refresh
         with db_connection.cursor() as cur:
             cur.execute("""
                 SELECT emission_cle, env_heures
@@ -717,7 +928,7 @@ def test_emission_jour_environment(db_connection):
         with db_connection.cursor() as cur:
             cur.execute("DELETE FROM public.keywords WHERE id LIKE 'pytest_env_%'")
         db_connection.commit()
-        run_dbt_command(["run", "--select", "emission_jour"])
+        run_dbt_command(["run", "--select", "emission_jour", "--full-refresh"])  # older keyword segments: full refresh
     # in seconds
     assert env == {
         "bfmtv|émission|BFM Première|false": 180,
@@ -739,7 +950,7 @@ def test_emission_jour_themes_legacy_segments_and_capture(db_connection):
         """)
     db_connection.commit()
     try:
-        run_dbt_command(["run", "--select", "emission_jour"])
+        run_dbt_command(["run", "--select", "emission_jour", "--full-refresh"])  # older keyword segments: full refresh
         with db_connection.cursor() as cur:
             cur.execute("""
                 SELECT env_heures, climat_heures, biodiversite_heures, climat_constat_heures, ressources_heures,
@@ -757,7 +968,7 @@ def test_emission_jour_themes_legacy_segments_and_capture(db_connection):
         with db_connection.cursor() as cur:
             cur.execute("DELETE FROM public.keywords WHERE id = 'pytest_env_legacy'")
         db_connection.commit()
-        run_dbt_command(["run", "--select", "emission_jour"])
+        run_dbt_command(["run", "--select", "emission_jour", "--full-refresh"])  # older keyword segments: full refresh
     # in seconds; the subjects of a 20 s window do not add up to the environment
     assert [round(float(v) * 3600) for v in row[:5]] == [80, 60, 40, 20, 0]
     assert row[5] is True
@@ -1088,10 +1299,60 @@ def test_publicites_brand_companies(db_connection):
     ]
 
 
+def test_ad_brand_agencies(db_connection):
+    """Each brand takes the agency of its company in the agency sheet, companies compared with name_key, companies
+    without ads left out."""
+    with db_connection.cursor() as cur:
+        cur.execute("""
+            SELECT brand_name, brand_company, agency, agency_group, reliability, geographic_scope, media_scope,
+                info_date
+            FROM advertising.ad_brand_agencies
+            WHERE brand_company LIKE 'Pytest%'
+        """)
+        # sorted in Python: the order of ORDER BY depends on the database collation (CI: en_US.utf8)
+        rows = sorted(cur.fetchall())
+    assert rows == [
+        ("PYTEST SKODA", "Pytest Volkswagen", "Pytest Agence Groupe", "WPP", "confirmee", "Europe", None, "2025-11"),
+        ("Pytest Biscuits", "Pytest Biscuits Company", "Pytest Agence Biscuits", "Dentsu", "indice", None, "partiel", None),
+    ]
+
+
+def test_pub_annonceur_emission_jour_agency(db_connection):
+    """The agency of the company of the brand (ad_brand_agencies) is passed through, NULL for the brands without agency."""
+    with db_connection.cursor() as cur:
+        cur.execute("""
+            SELECT DISTINCT marque, agence_media, groupe_agence, fiabilite_agence, perimetre_media_agence
+            FROM advertising.pub_annonceur_emission_jour
+            WHERE channel_name IN ('bfmtv', 'france2')
+        """)
+        assert cur.fetchall() == [("PYTEST SKODA", "Pytest Agence Groupe", "WPP", "confirmee", None)]
+
+
+def test_ad_brands_siren_and_department(db_connection):
+    with db_connection.cursor() as cur:
+        cur.execute("""
+            SELECT brand, company_country, company_siren, company_head_office_department,
+              ultimate_parent_country, ultimate_parent_siren, ultimate_parent_head_office_department
+            FROM advertising.ad_brands
+            WHERE brand IN ('PYTEST SKODA', 'Pytest Biscuits', '1664')
+        """)
+        assert sorted(cur.fetchall()) == [
+            ("1664", None, None, None, None, None, None),
+            ("PYTEST SKODA", "FR", "005520135", "01", "DE", None, None),
+            ("Pytest Biscuits", "FR", "552081317", "2A", "FR", "775670417", "75"),
+        ]
+
+
 def test_brand_inventory_loaded_as_text(db_connection):
     with db_connection.cursor() as cur:
         cur.execute("SELECT marque, entreprise FROM advertising.ref_inventaire_marques WHERE marque = '1664'")
         assert cur.fetchall() == [("1664", "Pytest Carlsberg")]
+        # a column with digits only (smu_siren) stays text: column_types applied
+        cur.execute("""
+            SELECT data_type FROM information_schema.columns
+            WHERE table_schema = 'advertising' AND table_name = 'ref_inventaire_marques' AND column_name = 'smu_siren'
+        """)
+        assert cur.fetchall() == [("text",)]
 
 
 @pytest.mark.parametrize(
@@ -1100,6 +1361,7 @@ def test_brand_inventory_loaded_as_text(db_connection):
         "L’Oréal Paris", "L'OREAL  PARIS", "Cœur de Lion", "CŒUR DE LION", "Škoda", "Coca-Cola®",
         "Leclerc — E.Leclerc", "Kronenbourg 1664", "Ça c'est Paris !", "Bière_Æther", "Größe",
         "Øresund", "Mc Donald's™", "Intermarché\u00a0", "« Franprix »", "Łódź", "3M", "élan 50€", "",
+        "CO₂ Neutre", "Œnobiol", "Mæsk",
     ],
 )
 def test_name_key_matches_python(db_connection, name):
@@ -1213,7 +1475,9 @@ def test_external_source_without_folder_is_skipped(tmp_path, monkeypatch):
 
 
 def test_download_external_sources_removes_previous_seeds(tmp_path, monkeypatch):
-    from quotaclimat.data_ingestion.external_sources import download_external_sources as downloader
+    from quotaclimat.data_ingestion.external_sources import (
+        download_external_sources as downloader,
+    )
 
     monkeypatch.delenv("EXTERNAL_SOURCES_DRIVE_FOLDER", raising=False)
     (tmp_path / "ref_ome_old_tab.csv").write_text("a\nb\n")
@@ -1254,7 +1518,9 @@ class FakeResponse:
 
 def test_fetch_google_sheet_api_calls(monkeypatch):
     """Checks the Drive / Sheets API requests with a fake authorized session."""
-    from quotaclimat.data_ingestion.external_sources import download_external_sources as loader
+    from quotaclimat.data_ingestion.external_sources import (
+        download_external_sources as loader,
+    )
 
     calls = []
 
@@ -1290,7 +1556,9 @@ def test_fetch_google_sheet_api_calls(monkeypatch):
 
 
 def test_fetch_google_sheet_requires_exactly_one_file(monkeypatch):
-    from quotaclimat.data_ingestion.external_sources import download_external_sources as loader
+    from quotaclimat.data_ingestion.external_sources import (
+        download_external_sources as loader,
+    )
 
     class FakeSession:
         def get(self, url, params, timeout):
@@ -1302,7 +1570,9 @@ def test_fetch_google_sheet_requires_exactly_one_file(monkeypatch):
 
 
 def test_get_session_requires_credentials(monkeypatch):
-    from quotaclimat.data_ingestion.external_sources import download_external_sources as loader
+    from quotaclimat.data_ingestion.external_sources import (
+        download_external_sources as loader,
+    )
 
     monkeypatch.delenv(loader.CREDENTIALS_ENV, raising=False)
     with pytest.raises(loader.ExternalSourceError, match="no Google service account credentials"):
@@ -1329,7 +1599,9 @@ class FakeAnonymousResponse:
     ],
 )
 def test_ensure_not_public_accepts_private_spreadsheet(status, headers):
-    from quotaclimat.data_ingestion.external_sources.download_external_sources import ensure_not_public
+    from quotaclimat.data_ingestion.external_sources.download_external_sources import (
+        ensure_not_public,
+    )
 
     calls = []
 
@@ -1596,7 +1868,7 @@ def test_curated_cas_mesinformation(db_connection):
             WHERE chaine_id = 'sud-radio' AND jour = '2025-04-02'
         """)
         rows = cur.fetchall()
-    # 2025-04-02 09:10 UTC
+    # 2025-04-02 09:10 UTC; automobile: "les voitures crit'air 3" in the claim
     assert rows == [(
         datetime.datetime(2025, 4, 2, 11, 10), "Sud Radio", "France",
         "sud-radio|programme|Mettez-vous d'accord|false|2025-04-02", "invité", True, False, "non renseignée",
@@ -1671,6 +1943,53 @@ def test_fixture_seeds_disabled_in_production():
 
     test_seeds = list_enabled_seeds(DBT_ENABLE_FIXTURE_SEEDS="true")
     assert "seeds/fixtures/keywords.csv" in test_seeds
+
+
+def test_emission_jour_incremental(db_connection):
+    """An incremental run recomputes the days whose cases changed and leaves the older days as they are;
+    a full refresh gives back the table of the first build (run last: rebuilds the model)."""
+    # end the transaction left open by the previous SELECTs: its lock on the table would block dbt
+    db_connection.rollback()
+    query = "SELECT * FROM public.emission_jour ORDER BY emission_cle, jour"
+    with db_connection.cursor() as cur:
+        cur.execute(query)
+        full = cur.fetchall()
+        cur.execute("SELECT emission_cle, jour, nb_cas FROM public.emission_jour WHERE nb_cas > 0 ORDER BY jour LIMIT 1")
+        cas_cle, cas_jour, nb_cas = cur.fetchone()
+        cur.execute("SELECT emission_cle, jour FROM public.emission_jour WHERE jour < %s ORDER BY jour LIMIT 1", (cas_jour,))
+        ancien_cle, ancien_jour = cur.fetchone()
+        # an older day changed by hand (kept by the incremental run), a case lost on a later day (recomputed)
+        cur.execute(
+            "UPDATE public.emission_jour SET env_heures = -1 WHERE emission_cle = %s AND jour = %s",
+            (ancien_cle, ancien_jour),
+        )
+        cur.execute(
+            "UPDATE public.emission_jour SET nb_cas = 0 WHERE emission_cle = %s AND jour = %s",
+            (cas_cle, cas_jour),
+        )
+    db_connection.commit()
+
+    run_dbt_command(["run", "--select", "emission_jour"])
+    with db_connection.cursor() as cur:
+        cur.execute(
+            "SELECT env_heures FROM public.emission_jour WHERE emission_cle = %s AND jour = %s",
+            (ancien_cle, ancien_jour),
+        )
+        assert cur.fetchone()[0] == -1
+        cur.execute(
+            "SELECT nb_cas FROM public.emission_jour WHERE emission_cle = %s AND jour = %s",
+            (cas_cle, cas_jour),
+        )
+        assert cur.fetchone()[0] == nb_cas
+        cur.execute("SELECT COUNT(*) FROM public.emission_jour")
+        assert cur.fetchone()[0] == len(full)
+    db_connection.rollback()
+
+    run_dbt_command(["run", "--select", "emission_jour", "--full-refresh"])
+    with db_connection.cursor() as cur:
+        cur.execute(query)
+        assert cur.fetchall() == full
+    db_connection.rollback()
 
 
 def test_publicites_start_date(db_connection):

@@ -217,18 +217,49 @@ docker compose build test # or ingest_to_db, mediatree etc
 docker build -f Dockerfile -t quotaclimat_base:latest .
 docker build -f Dockerfile.ffmpeg -t quotaclimat_base_ffmpeg:latest .
 ```
-In CI, it's built `FROM` the freshly pushed `quotaclimat_base:${PROJECT_VERSION}` image and pushed as `quotaclimat_base_ffmpeg`, which is what the `advertising_detection` Scaleway job runs.
+In CI, it's built `FROM` the freshly pushed `quotaclimat_base:${PROJECT_VERSION}` image and pushed as `quotaclimat_base_ffmpeg`, which is what the `ad_s01_run_detection` Scaleway job runs.
 
 ### Check what is missing in Mediatree's bucket (advertising detection)
 Before running the detection, you can check which 2-minutes files of a week are missing in Mediatree's bucket, for every channel of the bucket. It only lists the bucket (nothing is downloaded), so it takes a few seconds:
 ```
 COVER_CHECK_ONLY=true START_DATE=2026-10-12 poetry run python quotaclimat/data_ingestion/advertising/s01_detection/run.py
 ```
-- `START_DATE` is the Monday of the week (at least 7 days ago). `COVER_CHECK_CHANNELS=tf1,france2` limits the check to some channels.
-- The expected files are the shows of `postgres/program_metadata.json` whose program grid is valid that week, with margins of 15 minutes before and after (`PROGRAM_MARGIN_BEFORE_MINUTES`, `PROGRAM_MARGIN_AFTER_MINUTES`), rounded up to Mediatree's even minutes.
+- `START_DATE` is the Monday of the week, complete in Mediatree's bucket (from the Tuesday after it, 6 a.m. Paris time, see `MEDIATREE_DATA_DELAY_HOURS` below). `COVER_CHECK_CHANNELS=tf1,france2` limits the check to some channels.
+- The expected files are the shows of the program grid (see "Program Metadata table") whose grid is valid that week, with margins of 15 minutes before and after (`PROGRAM_MARGIN_BEFORE_MINUTES`, `PROGRAM_MARGIN_AFTER_MINUTES`), rounded up to Mediatree's even minutes.
 - The report gives a table per channel (missing time, shows entirely missing, partly missing, or complete but with missing margins), then for each channel the shows not fully received and the missing time slots, grouped by time of day (a slot missing every day is written once, `every day`).
 
 The same summary is written in the text report of a normal detection run.
+
+### Run the advertising detection
+`entrypoints/ad_s01_run_detection.sh` (Scaleway job `ad_s01_run_detection`) processes one week (Monday to Sunday, Paris time) of every channel that needs it, one channel after the other, then stops:
+
+1. it reads the date of the last occurrence of every channel of `ROLLING_CHANNELS` in `advertising.ad_occurrence` and logs a summary (`State of the channels`): last occurrence and next week to process (the Monday after it) of each channel;
+2. the week to process is the oldest of these next weeks;
+3. the channels to run are the ones whose next week is this one (the others have already been processed on it);
+4. these channels are processed one by one, in the order of `ROLLING_CHANNELS`. A channel that fails does not stop the others: the job fails at the end, and the next run takes this channel again (it is still on the oldest week). The same goes for a run stopped by the job's timeout. The logs end with the status and the duration of every channel (`Result of the week of ...`).
+
+So each run moves the late channels one week forward, and once every channel is on the same week, each run processes one week of all of them. The job's timeout has to cover a week of every channel.
+
+A week in which a channel gets no occurrence at all (no file in Mediatree's bucket, for instance) does not move its last occurrence: the next runs take the same week of this channel again, and the other channels wait. Run the following week by hand for this channel (`CHANNEL`, `START_DATE`) to get out of it.
+
+Only the 2-minutes files of the shows of the program grid (see "Program Metadata table") (with the same margins as the cover check) are downloaded and analysed: files of the bucket outside the program are skipped, missing ones are reported in the text report. The job's disk is 1 GB while a week of audio weighs several GB (up to ~7 GB for a 24h news channel): files are downloaded, split in chunks and deleted by batches of 100 (`DOWNLOAD_BATCH_SIZE` in `e00_download_audio.py`). When a run processes several channels, each channel runs in its own Python process (`_run_in_subprocess` of `run.py`, spawn): Python does not give back to the system the memory of the objects it freed, so without it the memory of the job rose from channel to channel. A channel whose process fails (exit code in the logs, `-9` when it is killed) is marked `FAILED` and the next channels still run. The local caches (`.cache`: chunks, reports, audio) are deleted after each channel.
+
+| Variable | Purpose |
+|---|---|
+| `ROLLING_CHANNELS` | Channels of the job, e.g. `tf1,itele,arte` |
+| `CHANNEL` | Processes this channel only, instead of `ROLLING_CHANNELS` |
+| `START_DATE` | Monday of the week to process, for every channel of the run (already processed or not). Empty: the oldest "Monday after the last week with occurrences" of the channels |
+| `MINIMAL_START_DATE` | Monday to start from for a channel without any occurrence. A channel added to `ROLLING_CHANNELS` starts from it: it is the only one to run until it has caught up with the others |
+| `MEDIATREE_DATA_DELAY_HOURS` | Hours after the end of the week (Monday midnight, Paris time) before processing it, for Mediatree to deliver its last day (default: 30, Tuesday 6 a.m.) |
+| `AUDIO_WORKERS` | Number of worker processes of the CPU bound steps: audio processing, `chunk_identification` and `chunk_grouping` (default: Scaleway CPUs minus 1, the main process downloading the audio and reading the database) |
+
+Every log line of a channel starts with its name (`tf1 | INFO - ...`, `set_log_prefix` of `quotaclimat/utils/logger.py`, worker processes included). The logs give the start and the duration of every step (`Step <name>: start`, `Step <name>: done in <n>s`): `audio_listing`, `audio_download_and_processing`, `chunk_identification`, `chunk_grouping`, `fragment_classification`, `clean_pre_existing_occurrences`, `database_storage`. The start of a step gives the memory used, its end the peak during the step (sampled every 5 seconds, `s01_detection/tools/memory.py`): `job` is the memory of the container (cgroup, page cache included), the one compared to the job's limit, `main process` the resident memory of the process of the channel (without its workers). `After <channel>, memory: ...` gives the memory of the job once the process of the channel has ended. `chunk_identification` compares the chunks of the week to the fingerprints of every ad of `advertising.ad`, so it grows with the table: it logs its progress every 30 seconds (ads compared out of the total, fingerprints, candidate and matching chunks).
+
+There is no default value: without channels, or without a start date for a channel that has no occurrence, the job fails before processing anything. When the week to process is not complete in Mediatree's bucket yet, the job stops without doing anything, so a scheduled catch-up stops by itself. Mediatree delivers a day about 24 hours after it ends, and the last Sunday show (with its margin) can end on Monday morning: a week is processed from the Monday after it, midnight Paris time, plus `MEDIATREE_DATA_DELAY_HOURS` (default 30, so from Tuesday 6 a.m.). The check also applies with `START_DATE`: a week processed with its last day missing would not be taken again, the next run starting from the Monday after its last occurrence.
+
+The chunks of the week are first compared with the ads already in `advertising.ad` (`e03_already_identified_advertising.py`). Only the ads detected less than 3 months before the Monday of the processed week are searched for (`KNOWN_AD_MAX_AGE`): first detection or last occurrence not deleted, on any channel. An older ad that is broadcast again is detected as a new ad.
+
+The comparisons of fingerprints of `chunk_identification` (a task per page of 1000 ads of the database) and `chunk_grouping` (a task per range of 500 chunks of the week, candidate search and comparison) run in the `AUDIO_WORKERS` processes (`s01_detection/tools/parallel.py`). The fingerprints of the week are given to them once, packed in numpy arrays (with the fork start method, the workers share them without copy). The garbage collector is frozen (`gc.freeze()`, `frozen_gc` of `parallel.py`) while a pool of workers lives, the audio processing pool included: otherwise the full collections of each worker write in the Python objects inherited from the main process (the chunks of the week), and each worker gets its own copy of them. `fragment_classification` stays in one process: its merges of groups that follow each other (`Classification: merging <n> couples of groups` in the logs) only visit the fragments of the two groups.
 
 ### Explore postgres data using Metabase - a BI tool
 ```
@@ -280,14 +311,19 @@ Every push on any branch also builds `quotaclimat_base` and pushes it to the dev
 Learn [more here.](https://www.scaleway.com/en/docs/tutorials/use-container-registry-github-actions/)
 
 ## Monitoring
-With Sentry, with env variable `SENTRY_DSN`.
+With Sentry or [GlitchTip](https://glitchtip.com) (Sentry-compatible, hosted on the orchestrator, see `infrastructure/Readme.md`), with env variable `SENTRY_DSN`. The jobs call `sentry_init()` (`quotaclimat/utils/sentry.py`), which tags events and logs with `country` (`COUNTRY`), `service` (`SERVICE_NAME`, or the name of the entry script) and sets `environment` from `ENV`.
 
 Learn more here : https://docs.sentry.io/platforms/python/configuration/options/
 
-### Send logs to Sentry
-By setting `SENTRY_LOGGING` to `"true"` we can send the job logs to sentry (as Scaleway Cockpit is not always reliable).
+### Log format
+The jobs that call `getLogger()` (`quotaclimat/utils/logger.py`) write `LEVEL - file.py:line | message`, without the time: Scaleway Cockpit and Kestra already put it in front of each line. The level stays in the line because Cockpit reads it from there (a line without it shows as `UNK`). `LOG_TIME=true` puts the time back, to run a script locally. Lines are colored only when stdout is a terminal (`LOG_COLOR=true`/`false` forces it): Cockpit (Grafana) takes as level the first level word of the line, and a color code glued to `INFO` hides it, so the line showed as `UNK`, or as `ERROR` when the message contained `error` (e.g. `error=23` in a progress line). `set_log_prefix("tf1")` (or `getLogger(prefix="tf1")`) starts every following line with `tf1 | `, `set_log_prefix(None)` removes it.
 
-Be aware that the first 5GB/month of logs are free, after that it's 0,5$/GB.
+### Send logs to Sentry
+By setting `SENTRY_LOGGING` to `"true"` we can send the job logs (`INFO` and above) to sentry or GlitchTip (as Scaleway Cockpit is not always reliable). The Kestra flows `barometre`, `barometre-catchup` and `barometre-i18n` (and the dev one) set it.
+
+With Sentry, be aware that the first 5GB/month of logs are free, after that it's 0,5$/GB. GlitchTip, self-hosted, has no such fee: its retention is set by `GLITCHTIP_LOG_HOT_DAYS` and `GLITCHTIP_RETENTION_DAYS`, with older data archived to S3 (cold storage).
+
+To check that logs reach GlitchTip, run the dev Kestra flow `glitchtip-log-test` (see `docs/kestra_flows.md`).
 
 ## Mediatree - Import data
 Mediatree Documentation API : https://keywords.mediatree.fr/docs/
@@ -436,28 +472,21 @@ poetry run python3 transform_excel_to_json.py
 ```
 
 ## Program Metadata table
-The media perimeter is defined here : "quotaclimat/data_processing/mediatree/channel_program_data.py"
+The media perimeter is defined per country in `quotaclimat/data_processing/mediatree/i8n/<country>/channel_program.py` (France: `i8n/france/channel_program.py`).
 
-To evolve the media perimeter, we use `program_grid_start` and `program_grid_end` columns to version all evolutions.
+To evolve the media perimeter, we use `program_grid_start` and `program_grid_end` columns to version all evolutions. Never delete or modify a line used by past data: close it with a `program_grid_end` (the day before the change) and add a new line starting the next day (`program_grid_start`). The program id is computed from the channel, weekday, program name and `program_grid_start`, so closed lines keep their id.
 
-To calculate the right total duration for each channel, after updating "quotaclimat/data_processing/mediatree/channel_program_data.py" you need to execute this command to update `postgres/program_metadata.json` 
-```
-poetry run python3 transform_program.py
-```
-The SQL queries are based on this file that generate the Program Metadata table.
+The France grid follows the perimeter Mediatree records for us (contract annex). The times are those of the shows, without the 15 minutes margins Mediatree adds before and after each block (see "Check what is missing in Mediatree's bucket" above).
+
+`quotaclimat/data_processing/mediatree/program_metadata.py` builds the grid from these files (one entry per weekday, with its duration and an id), and `create_tables()` (`postgres/schemas/models.py`) writes it into the Program Metadata table at each import: there is no file to regenerate after updating a `channel_program.py`. The SQL queries and the advertising detection read this grid.
 
 Program data will not be updated to avoid lock concurrent issues when using `UPDATE=true` for keywords logic. Note: The default case will update them.
-
-**With the docker-entrypoint.sh this command is done automatically, so for production uses, you will not have to run this command.**
 
 ### Extended perimeter (Droit à l'info)
 For the "Droit à l'info" scope, we track an extended set of France programs (`tf1`, `france2`, `fr3-idf`, `rtl`, `france5`, `tmc`, `lcp`) on top of the regular France perimeter, defined in `quotaclimat/data_processing/mediatree/i8n/extended_france/`. This uses the country code `ext-fra` (`EXTENDED_FRANCE` in `country.py`), which shares the `french` language and subtitle format with `fra`/`bel` - subtitle matching in `detect_keywords.py` is routed by `country.language == "french"`, not by a per-country code allowlist, so extended perimeter automatically reuses the same French subtitle matching logic.
 
 The `EXTENDED_PERIMETER` env variable (`"true"`/`"false"`, default `"false"`) toggles extended perimeter behaviour across the pipeline:
-* `transform_program.py`: also includes the extended perimeter programs in `postgres/program_metadata.json`.
-  ```
-  EXTENDED_PERIMETER=true poetry run python3 transform_program.py
-  ```
+* `quotaclimat/data_processing/mediatree/program_metadata.py`: also includes the extended perimeter programs in the Program Metadata table.
 * `quotaclimat/data_ingestion/labelstudio/ingest_labelstudio.py`: uses `db_config_extended_perimeter` (`quotaclimat/data_ingestion/labelstudio/configs.py`) instead of the regular `db_config`, to only ingest the extended perimeter's Label Studio project into the aggregate tables.
 * `my_dbt_project/dbt_project.yml`: the `analytics`/`dashboards` model grants only select to the `rrs-read` user matching `DBT_ENV` (`rrs-read-dev` or `rrs-read-prod`) instead of the regular grant list, since the extended-perimeter database has no `climateguard-reader-user`.
 
@@ -548,6 +577,23 @@ UPDATE stop_word set validated=false WHERE id = 'MY_ID';
 poetry version minor
 ```
 
+## Misinformation detection - `detect_misinformation/`
+Code migrated from the `climateguard` repository:
+- `detect_misinformation/jobs/`: the `label_misinformation` job (LLM misinformation labelling → Label Studio) and the `get_audio_video` job (Germany audio/video collector). See [detect_misinformation/jobs/README.md](detect_misinformation/jobs/README.md).
+- `detect_misinformation/experiments/`: fine-tuning and research experiments, not deployed. See [detect_misinformation/experiments/README.md](detect_misinformation/experiments/README.md).
+- `detect_misinformation/labelstudio/`: Label Studio labelling interfaces (XML) of the misinformation review projects. See [detect_misinformation/labelstudio/README.md](detect_misinformation/labelstudio/README.md).
+
+Their dependencies are optional Poetry groups of the root `pyproject.toml`, so they are not installed by a plain `poetry install`:
+
+| Group | Used by |
+|---|---|
+| `misinformation` | `label_misinformation` image |
+| `germany-audio-video-collector` | `get_audio_video` image |
+| `misinformation-dev` | experiments (`poetry install --with misinformation-dev`) |
+| `misinformation-dev-cuda` | experiments on GPU (unsloth, bitsandbytes) |
+
+The `label_misinformation` job keeps its own version (bump2version) and is built and pushed by `.github/workflows/label-misinformation.yml` (`dev` tag on pull requests, `<version>` and `latest` on main). `deploy-main.yml` ignores `detect_misinformation/**`.
+
 ## Materialized view - dbt
 We can define some slow queries to make them efficient with materialized views using [DBT](https://www.getdbt.com/), used via docker :
 ```
@@ -586,6 +632,22 @@ docker compose exec testconsole bash
 #### Run belgium
 Only for belgian data using .csv
 
+The partner sends either weekly `.csv` files or, since October 2026, `.srt` files (one folder per channel, one file per day). The SRT files are first converted to the partner `.csv` layout, then processed like any other `.csv`.
+
+**Step 1 (only for `.srt` deliveries)**: put the delivery in `i8n/csa-belge/` (e.g. `i8n/csa-belge/tv Bel fr octobre 2026/<CHANNEL>/<YYYYMMDDHHMMSS>.srt`) and run from `i8n/`:
+```bash
+poetry run python3 srt-channel-to-csv.py "csa-belge/tv Bel fr octobre 2026"
+# only some channels:
+poetry run python3 srt-channel-to-csv.py "csa-belge/tv Bel fr octobre 2026" --channels ACTV BX1
+```
+- Every channel folder containing `.srt` files is converted. The file name is the start of the recording, the cue timestamps are offsets from it.
+- Rows are split by month half and written to `csa-belge/<year>/<month>/<1-14|15+>/<first day>_<last day>_<FileName>.csv` (existing files are overwritten), with no header and `;` as separator: `channel;program;DD/MM/YYYY HH:MM:SS;text`.
+- The srt folder name is mapped to the partner file name by `FILE_NAMES` in the script (e.g. `CANALC` → `Boukè`, `RTC` → `Qu4tre`, `RTL` → `RTLTVi`). A new channel keeps its folder name: add it to `FILE_NAMES` if the partner uses another name.
+- The first column is the folder name in upper case (`CanalZoom` → `CANALZOOM`).
+- Only the cues inside the program grid of the channel are kept (`PROGRAM_GRID` in the script: program, weekdays, start and end time per channel, from the partner grid); the program column is filled with the program name. Where two programs overlap (e.g. `QR Débat` and `#Investigations`), the one that started last wins. A channel absent from `PROGRAM_GRID` is skipped: add it there when the partner grid changes.
+
+**Step 2**:
+
 Warning: this job is not automated as the process depending on getting the data is manual (emails), so we have to modify [the script here](https://github.com/dataforgoodfr/quotaclimat/blob/01e5ede5152d4113c68bcf994f13c7b2baa30dd6/i8n/srt-to-mediatree-format.py#L259-L262).
 ```
 docker compose up testconsole -d
@@ -614,14 +676,14 @@ The models for the two tables can be found in `quotaclimat/data_ingestion/labels
 The sources for the Labelstudio ingestion can be found in `quotaclimat/data_ingestion/labelstudio/configs.py`. The `db_config` variable consists of a list of record (python dictionaries) with the source database name and a mapping of the project ids to countries:
 ```python
 db_config = [
-  {
-    "database": "<labelstudio_db>", 
-    "countries": {
-      1: "<country_1>", 
-      2: "<country_2>", 
-      3: "<country_3>",
-    }
-  },
+    {
+        "database": "<labelstudio_db>",
+        "countries": {
+            1: "<country_1>",
+            2: "<country_2>",
+            3: "<country_3>",
+        },
+    },
 ]
 ```
 When a new source is added (if a new Labelstudio instance is deployed) it suffices to add the source to the record list. (This assumes that all sources are on the same DB instace, as is the case at the time of writing).

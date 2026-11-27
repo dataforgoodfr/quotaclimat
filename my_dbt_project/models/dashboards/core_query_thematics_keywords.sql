@@ -1,5 +1,6 @@
 {{ config(
     materialized='incremental',
+    incremental_strategy='delete+insert',
     unique_key=['week','channel_title'],
     on_schema_change='append_new_columns'
   )
@@ -88,6 +89,7 @@ keyword_occurrences AS (
   WHERE
     LOWER(kw ->> 'theme') NOT LIKE '%indirect%'
     AND k.country = 'france'
+    AND {{ in_window('k.start') }}
 )
 SELECT
   ko.channel_title,

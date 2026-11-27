@@ -47,9 +47,7 @@ poetry run python3 transform_excel_to_json.py
 ```
 
 ### Program/Channel Metadata Update
-```bash
-poetry run python3 transform_program.py
-```
+Edit `quotaclimat/data_processing/mediatree/i8n/<country>/channel_program.py` (never delete a line: close it with `program_grid_end` and add a new one). `quotaclimat/data_processing/mediatree/program_metadata.py` builds the grid from these files; `create_tables()` loads it into `program_metadata` at each import, there is no file to regenerate.
 
 ## Architecture
 
@@ -74,7 +72,7 @@ After detection, keywords are classified into macro categories and stored with c
 ### 3. Database Layer (`postgres/`)
 PostgreSQL via SQLAlchemy ORM. Key tables:
 - `keywords`: Detected keyword occurrences with counts and theme classification
-- `program_metadata`: TV/radio program schedule grid (~1.2MB JSON source)
+- `program_metadata`: TV/radio program schedule grid (built from `i8n/<country>/channel_program.py`)
 - `channel_metadata`: Channel configuration and broadcast hours
 - `sitemap_table`: Scraped web articles
 - `stop_word`: Advertising/repetitive phrases to filter out
@@ -88,22 +86,25 @@ SQL transformations over the PostgreSQL data to produce materialized analytics v
 Intermediate and raw data is partitioned and stored in **Scaleway Object Storage** (S3-compatible) via `s3fs`/`boto3`, organized by `country/year/month/day/channel`.
 
 ### 6. Advertising Detection & Classification (`quotaclimat/data_ingestion/advertising/`)
-Ads detected around TV/radio programs go through a separate 5-stage LLM pipeline (`s03_classification/`: transcribe → classify ad type/brand/sector → dictionary match → sub-category classify → canonicalise brand), then consolidation (`s04_consolidation/`: `e01_merge_split_ads` merges ads split into several detected pieces, `e02_manual_corrections` applies the corrections listed by humans in the `Corrections_publicites` Google Sheet: ad brand/sector/category/content type, occurrences moved to a new or an existing ad, junk occurrences) and enrichment (`s05_enrichment/`: `e01_brand_groups` proposes brand → company → ultimate parent company via INPI/GLEIF/Wikidata, written to a Google Sheet for human review; `e02_screenshots` stores mosaics of frames of every ad and occurrence in the advertising bucket, listed in `advertising.ad_screenshot`, to check ads and their metadata by eye in Metabase). dbt then builds `advertising.publicites`/`pub_annonceur_emission_jour` from the classified occurrences (see `my_dbt_project/README.md`). See the per-stage READMEs for env vars and status-flow details.
+Ads detected around TV/radio programs are exported to the advertising bucket by `s02_exportation` (merged ads only with `EXPORT_MERGED_ADS=true`, rebuilt from the videos of their source ads when the mediatree archives are gone), then go through a separate model-based classification (`s03_classification/`, run by hand, dependencies in the optional Poetry group `advertising`, model calls through the shared `utils/llm_runner.py`): `transcription/` (speech-to-text first; the on-screen text is read by OCR, run as `sector_and_brand/e2_ocr`), `sector_and_brand/` (classify ad type/sector/brand → OCR → dictionary match → sub-category → canonicalise brand) and `environmental_content/` (work in progress), configured by `.advertising.env`; then consolidation (`s04_consolidation/`: `e01_merge_split_ads` merges ads split into several detected pieces, `e02_manual_corrections` applies the corrections listed by humans in the `Corrections_publicites` Google Sheet: ad brand/sector/category/content type, occurrences moved to a new or an existing ad, junk occurrences, merge of two ads, the wrong one soft deleted (`advertising.ad.deleted_at`) after its fingerprints are copied to the other one, skipped by every step from the detection on) and enrichment (`s05_enrichment/`: `e01_brand_groups` proposes brand → company → ultimate parent company via INPI/GLEIF/Wikidata, written to a Google Sheet for human review, plus, with `--airtime-start/--airtime-end` (`--airtime-only` for a cron of its own), the air time of each brand over a period in its column `temps_antenne_min`, to prioritise the reviews; `e02_screenshots` stores mosaics of frames of every ad and occurrence in the advertising bucket, listed in `advertising.ad_screenshot`, to check ads and their metadata by eye in Metabase; the ad mosaics are made by the exportation `s02_exportation` from the video it has just cut, the job catches up the others and makes the occurrence mosaics). dbt then builds `advertising.publicites`/`pub_annonceur_emission_jour` from the classified occurrences (see `my_dbt_project/README.md`). See the per-stage READMEs for env vars and status-flow details.
 
 ### 7. RRS — Risk Response System (`rrs/`)
 A separate module/database that detects, clusters and tracks **disinformation narratives** (not just environmental keyword coverage) per topic ("subject": climate, insecurity, environmental_health). Reuses climate keyword segments already detected by the main pipeline (imported via DuckDB `ATTACH`), re-scans S3 transcripts for other subjects, classifies misinformation risk with an LLM (Mistral), and clusters recurring narrative claims with a 3-step LLM pipeline (Mistral/Claude Haiku). Own PostgreSQL database and Alembic project (`rrs/alembic.ini`, run from repo root). See `rrs/README.md`.
 
-### Extended perimeter ("Droit à l'info")
-On top of the regular France TV perimeter, a wider set of French channels (`tf1`, `france2`, `fr3-idf`, `rtl`, `france5`, `tmc`, `lcp`) is tracked under country code `ext-fra` in its own isolated `extended-perimeter` database, S3 buckets and Label Studio project — toggled by the `EXTENDED_PERIMETER` env var and threading through `transform_program.py`, dbt grants, and the RRS `source=extended` flows. It shares all the regular French-language detection/subtitle logic. See the root README's "Extended perimeter" section, `infrastructure/Readme.md`'s RRS section, and `rrs/README.md`'s "Extended perimeter" section for the full picture across app/infra/RRS.
+### 8. Misinformation detection jobs (`detect_misinformation/`)
+Migrated from the `climateguard` repository. `jobs/label_misinformation` labels misinformation in transcripts with an LLM (Mistral/OpenAI) and pushes extracts to Label Studio; `jobs/get_audio_video` collects German audio/video for annotation; `experiments/` holds non-deployed fine-tuning/research code. Dependencies are optional Poetry groups of the root `pyproject.toml`: `misinformation`, `germany-audio-video-collector`, `misinformation-dev`, `misinformation-dev-cuda` (torch is the CPU build for every group: one `poetry.lock`). Job images are built from the repo root (`docker build -f detect_misinformation/jobs/<job>/Dockerfile .`, `poetry install --only <group>`). `label_misinformation` keeps its own bump2version version and CI (`.github/workflows/label-misinformation.yml`: `dev` image on PR, `<version>`/`latest` on main); `deploy-main.yml` ignores `detect_misinformation/**`. See `detect_misinformation/jobs/README.md`. Its Scaleway infrastructure (Label Studio, bucket, secrets and `label-misinformation-<country>-<env>` job per country, project `climate-safeguards-<env>`) is the Terragrunt target `infrastructure/live/misinformation`, with countries as a `for_each` map in one state per environment; never rename a country key (it recreates its resources). See `infrastructure/Readme.md`, "Misinformation (climate safeguards)".
 
-### Orchestration — Kestra
-Production runs are scheduled by Kestra flows in `infrastructure/kestra/flows/`. The `main-pipeline` flow runs twice daily (01:10 and 12:30 Europe/Paris) and chains, in order: `extended-perimeter` → `rrs-climate` (extended, no clustering) → `rrs-insecurity` (extended, no clustering) → `rrs-pollution` (extended, no RAG fact-checking, no clustering) → `barometre` → `rrs-climate` (barometre, with clustering) → `rrs-insecurity` (barometre, with clustering) → `rrs-pollution` (barometre, with RAG fact-checking and clustering) → `metabase-sync` (`force=true`: pushes the versioned `metabase/*/*.sql` queries to their Metabase questions, overwriting SQL edited in Metabase). Each step fails the whole chain if it fails (`transmitFailed: true`), except the last one, `metabase-sync` (`allowFailure: true`), whose failure only marks the run as WARNING; it can also be run by hand. Dev mirrors prod in the `*-dev` namespaces/flows, with no schedule (run manually).
+### Extended perimeter ("Droit à l'info")
+On top of the regular France TV perimeter, a wider set of French channels (`tf1`, `france2`, `fr3-idf`, `rtl`, `france5`, `tmc`, `lcp`) is tracked under country code `ext-fra` in its own isolated `extended-perimeter` database, S3 buckets and Label Studio project — toggled by the `EXTENDED_PERIMETER` env var and threading through the program grid (`program_metadata.py`), dbt grants, and the RRS `source=extended` flows. It shares all the regular French-language detection/subtitle logic. See the root README's "Extended perimeter" section, `infrastructure/Readme.md`'s RRS section, and `rrs/README.md`'s "Extended perimeter" section for the full picture across app/infra/RRS.
+
+### Orchestration — Windmill (Kestra kept for rollback)
+Production runs are scheduled by Windmill (`infrastructure/windmill/`, schedules `*.schedule.yaml`, see `docs/windmill_flows.md`), which runs a copy of the Kestra flows of `infrastructure/kestra/flows/`. The Kestra triggers are disabled (`disabled: true`) but Kestra stays deployed for a rollback: a change to a flow goes into both copies. In Windmill, a flow input read in an expression must fall back to its default (`(flow_input.x ?? <default>)`): Windmill applies defaults only in its UI, not for schedules, subflows or API runs. The `main-pipeline` flow runs twice daily (01:10 and 12:30 Europe/Paris) and chains, in order: `extended-perimeter` → `rrs-climate` (extended, no clustering) → `rrs-insecurity` (extended, no clustering) → `rrs-pollution` (extended, no RAG fact-checking, no clustering) → `barometre` → `rrs-climate` (barometre, with clustering) → `rrs-insecurity` (barometre, with clustering) → `rrs-pollution` (barometre, with RAG fact-checking and clustering) → `metabase-sync` (`force=true`: pushes the versioned `metabase/*/*.sql` queries to their Metabase questions, overwriting SQL edited in Metabase). Each step fails the whole chain if it fails (`transmitFailed: true`), except the last one, `metabase-sync` (`allowFailure: true`), whose failure only marks the run as WARNING; it can also be run by hand. Dev mirrors prod in the `*-dev` namespaces/flows, with no schedule (run manually).
 
 ### Main Entry Points
 - `quotaclimat/data_processing/mediatree/api_import.py` — main daily import job
 - `quotaclimat/data_ingestion/ingest_db/ingest_sitemap_in_db.py` — web scraping
 - `quotaclimat/data_processing/mediatree/stop_word/main.py` — stop word detection
-- `docker-entrypoint.sh` — full pipeline: migrate → transform program metadata → import → ingest labelstudio → dbt
+- `docker-entrypoint.sh` — full pipeline: migrate → import (loads the program grid) → ingest labelstudio → dbt
 
 ## Docker Services
 
@@ -128,9 +129,10 @@ Secrets (API credentials) are mounted from `secrets/` directory as Docker secret
 | `CHANNEL` | Limit processing to a specific channel |
 | `UPDATE` | Reprocess existing data |
 | `MODIN_ENGINE` | Set to `ray` for distributed pandas |
-| `EXTENDED_PERIMETER` | `true`/`false` — toggles the extended France perimeter ("Droit à l'info") across `transform_program.py`, Label Studio ingestion and dbt grants |
+| `EXTENDED_PERIMETER` | `true`/`false` — toggles the extended France perimeter ("Droit à l'info") across the program grid (`program_metadata.py`), Label Studio ingestion and dbt grants |
 | `RRS_PG_*` | RRS PostgreSQL connection (separate database from `barometre`) |
-| `ANTHROPIC_API_KEY`, `MISTRAL_API_KEY` | LLM providers used by RRS clustering/misinformation classification and the advertising classification VLM/ASR pipeline |
+| `ANTHROPIC_API_KEY`, `MISTRAL_API_KEY` | LLM providers used by RRS clustering/misinformation classification |
+| `VLM_*` (endpoint, model, sampling), `OCR_*`, `ASR_*` | Vision LLM, OCR and speech-to-text endpoints of the advertising classification (`s03_classification`, see its README and `.advertising.env.example`) |
 
 ## CI/CD (GitHub Actions)
 
@@ -150,19 +152,28 @@ Each README below is the authoritative source for its area — read it instead o
 | File | Covers |
 |---|---|
 | `README.md` (root) | Full dev setup (pyenv/poetry/docker), Mediatree import/replay/update workflows, stop words, Alembic migrations, channel/program metadata, extended perimeter ("Droit à l'info"), SRT-to-Mediatree conversion, dbt materialized views, Label Studio ingestion, analytics layer |
-| `infrastructure/Readme.md` | Infra stack (OpenTofu/Terragrunt/Ansible/mise), project layout, Vaultwarden secrets, `make` targets, orchestrator (Kestra/GlitchTip) deployment, RRS extended-perimeter infra, full per-target resource inventory (advertising/barometre/rrs/orchestrator) |
+| `infrastructure/Readme.md` | Infra stack (OpenTofu/Terragrunt/Ansible/mise), project layout, Vaultwarden secrets, `make` targets, orchestrator (Kestra/GlitchTip) deployment, RRS extended-perimeter infra, misinformation target (climateguard migration), full per-target resource inventory (advertising/barometre/misinformation/rrs/orchestrator) |
 | `metabase/README.md` | Versioned Metabase SQL questions: folder layout, `questions.yml` manifests, variable substitution rules, Kestra sync flow (`metabase-sync`), how to add/modify a query |
 | `my_dbt_project/README.md` | dbt project layout, model-by-model docs (`homepage/`, `dashboards/`, `analytics/`, `advertising/`, `metadata/`), profiles/targets, external Google Sheets sources, access grants, seeds, tests |
 | `mockwebsite/README.md` | One-liner: folder served via nginx docker image for local sitemap-scraping tests |
-| `quotaclimat/data_ingestion/advertising/s03_classification/README.md` | 5-stage ad classification pipeline (transcribe → classify → dict match → subcat → canonicalise brand): env vars, LLM/ASR endpoint requirements, threaded runner architecture, `prediction_status` reference |
-| `quotaclimat/data_ingestion/advertising/s04_consolidation/README.md` | Consolidation stage: merge of split ads (`ad_merge.py` DB operations, merge/revert semantics), manual corrections from the `Corrections_publicites` Google Sheet (tab kinds and columns, what each correction changes), env vars |
+| `quotaclimat/data_ingestion/advertising/s02_exportation/README.md` | Ad exportation job: `EXPORTATION_MODE` (`run` / `recompute_saved_chunks`), env vars of the chunk recomputation (`MAX_ADS`, `CLEAN_OTHER_CHUNKS`) |
+| `quotaclimat/data_ingestion/advertising/s03_classification/README.md` | Ad classification with speech-to-text, OCR and vision models: stage order (ASR → sector and brand, with OCR as `e2_ocr`; environmental content: work in progress), how the shared runner saves each answer, `.advertising.env` env vars, model endpoints |
+| `quotaclimat/data_ingestion/advertising/s03_classification/sector_and_brand/README.md` | Each sector-and-brand stage (what it selects, sends and writes), the brand dictionary (tiers, aliases, keywords, `FULL_RERUN`), brand canonicalisation and the review tabs (verdicts, `brand_overrides`), status reference |
+| `quotaclimat/data_ingestion/advertising/s04_consolidation/README.md` | Consolidation stage: merge of split ads (`ad_merge.py` DB operations, merge/revert semantics), manual corrections from the `Corrections_publicites` Google Sheet (tab kinds and columns, what each correction changes), env vars, exploration script of the duplicate ads from their fingerprints (`duplicate_ads/`) |
 | `quotaclimat/data_ingestion/advertising/s05_enrichment/README.md` | One-liner pointers to `e01_brand_groups/` and `e02_screenshots/` |
-| `quotaclimat/data_ingestion/advertising/s05_enrichment/e01_brand_groups/README.md` | Brand company/ultimate-parent enrichment job: `Inventaires_des_marques` Google Sheet tab format, INPI/GLEIF/Wikidata lookup steps, env vars |
-| `quotaclimat/data_ingestion/advertising/s05_enrichment/e02_screenshots/README.md` | Screenshot mosaics of ads and occurrences for visual checks: sources (ad export with its margin history, mediatree archives), `advertising.ad_screenshot`, public-read storage, env vars |
+| `quotaclimat/data_ingestion/advertising/s05_enrichment/e01_brand_groups/README.md` | Brand company/ultimate-parent enrichment job: `Inventaire_des_marques` Google Sheet tab format, INPI/GLEIF/Wikidata lookup steps, env vars |
+| `quotaclimat/data_ingestion/advertising/s05_enrichment/e02_screenshots/README.md` | Screenshot mosaics of ads and occurrences for visual checks: sources (ad mosaic made at the exportation, catch-up from the ad export with its margin history, mediatree archives), `advertising.ad_screenshot`, public-read storage, env vars |
 | `rrs/README.md` | RRS (Risk Response System) disinformation clustering: architecture, directory structure, dictionaries/subjects, keyword detection, misinformation classification, clustering pipeline, DB schema, extended perimeter, env vars, local Docker dev, CI/CD |
 | `rrs/clustering/README.md` | LLM clustering internals (`cluster_llm.py`, `cluster_llm_timeseries.py`): label generation/merge/classification steps, timeseries incremental mode, usage/flags, env vars |
+| `decisions/rapports/export_report_data.md` | Export of a report's data to Google Sheets (flow `export_report_data`): no configuration file, naming conventions (Sheet named like the report, only the queries `<tab>_sheet.sql` exported, each to the tab `<tab>`, only the result's columns replaced), what the flow writes (tab `_export`), setup of a spreadsheet (created by hand in the folder `Rapports` of the shared Drive folder, shared as editor with the service account), refresh of a report's Sheets and Google Doc, building a bubble chart in Sheets, security (read-only, nothing logged) |
+| `detect_misinformation/jobs/README.md` | Misinformation jobs (`label_misinformation`, `get_audio_video`): Poetry groups, building images from the repo root, docker compose services, env vars, CI/versioning |
+| `detect_misinformation/experiments/README.md` | Misinformation experiments: `misinformation-dev`/`misinformation-dev-cuda` groups, installing CUDA torch by hand |
+| `detect_misinformation/labelstudio/README.md` | Label Studio interfaces (XML) of the misinformation review projects (all countries / France), how to deploy them, tag names read by dbt |
 | `docs/data_tiers.md` | Data tiers (raw / syndicated / curated): which schema and table belongs to which tier, sources → raw, dbt lineage, curated tables, how to regenerate the Archify diagrams |
+| `docs/diagrams/advertising/README.md` | Archify diagrams of the advertising pipeline: run order of the jobs (second pass opened by the merge, optional third pass of manual corrections), life of a merged ad (inheritance or own classification), flows to run after the manual corrections, what a brand dictionary change recomputes and what it does not reach, how to regenerate them |
 | `docs/kestra_flows.md` | Every production Kestra flow step by step: what code runs, what it reads/writes, which technologies are involved, plus where Kestra itself is hosted (shared Elastic Metal orchestrator, see `infrastructure/Readme.md`) |
+| `decisions/rapports/decisions.md` | Conventions of the report folders (`decisions/rapports/<AAAA-MM>-<sujet>/`): decisions markdown (calculation rules, presentation choices, remarks, chart map), authoritative SQL in `queries/` (Metabase is only for exploration), public repo so no unpublished figures |
+| `docs/windmill_flows.md` | Windmill flows running production (`infrastructure/windmill/`): folders, Ansible deploy (secrets sync, `wmill sync push`), schedules and Kestra rollback, default inputs (`?? <default>`), Kestra → Windmill mapping, `f/shared/docker_run` arguments, dbt worker, adding a flow or secret. Keep a Kestra flow change mirrored there |
 
 ## Keeping docs in sync when opening a PR
 
@@ -171,6 +182,7 @@ Before opening a PR (or when asked to update docs for one already opened), check
 1. **Find what changed.** `git diff main...HEAD --stat` (or the PR's file list) to see which files moved.
 2. **Map changed files to docs** using the table above — not just by folder name, but by what actually changed:
    - A new/changed Kestra flow (`infrastructure/kestra/flows/*.yaml`) → update `docs/kestra_flows.md`: the flow's own section (steps, inputs, env vars, reads/writes), the flow table near the top, and `main-pipeline`'s step list if the flow is chained from it. If it's a genuinely new flow with no section yet, add one — don't leave it undocumented just because the diagram doesn't exist yet (diagrams are a separate, optional Archify pass; note "(No diagram yet)" instead of skipping the writeup).
+   - The same change goes into its Windmill copy (`infrastructure/windmill/f/...`, which runs production): steps, inputs with their `?? <default>` fallbacks, schedules (`*.schedule.yaml`), and `docs/windmill_flows.md` when the mapping, schedules or deployment change.
    - A change under `rrs/` → `rrs/README.md` (and `rrs/clustering/README.md` for clustering internals).
    - A change under `quotaclimat/data_ingestion/advertising/` → that stage's `README.md`.
    - A change under `my_dbt_project/` → `my_dbt_project/README.md`.
@@ -226,7 +238,7 @@ Les codes couleur des objets affichés (crises, maillons de la chaîne causale..
 
 ## Tables dbt lues par les requêtes
 
-- `analytics` : `program`, `cas_de_mesinformation`, `cas_theme`, `publicites`, `task_global_completion`, `dbt_objects`.
+- `analytics` : `program`, `cas_de_mesinformation`, `cas_theme`, `cas_affirmation_cible`, `cas_categorie_visee`, `publicites`, `task_global_completion`, `dbt_objects`.
 - `public` : `emission_jour`, `environmental_shares_with_desinfo_counts`, `mesinfo_theme_mots_cles` (seed), `pollution_chimique_mots_cles` et `chaine_communaute_belgique` (seeds, tableaux de bord « Belgique - Pollution chimique »).
 - `advertising` : `pub_annonceur_emission_jour`, `ad_*`, seeds `ref_*`.
 - `curated` : `chaine`, `publicite`, `cas_mesinformation`, `emission_jour` (voir « Schéma curated »).
@@ -284,6 +296,19 @@ Les questions Metabase, les tableaux de bord et les analyses des équipes lisent
 - `quotaclimat/metabase/sync_curated.py` écrit dans Metabase, pour chaque table et colonne : le libellé, la description (avec l'unité et l'agrégation), le type sémantique et la clé étrangère. dbt fait référence : une modification faite dans Metabase est écrasée. Les mêmes descriptions sont écrites dans Postgres (`persist_docs`).
 - Les bases Metabase mises à jour sont dans `METABASE_CURATED_DATABASES` (tâche Kestra). En local : `poetry run python -m quotaclimat.metabase.sync_curated --database 2` (aperçu, après `dbt parse`), `--apply` pour écrire.
 - Un nouveau modèle demande sa documentation dans `_curated.yml` et un test de ses données dans `my_dbt_project/pytest_tests/test_dbt_model_analytics.py`.
+
+## Analyses thématiques
+
+- **Méthode commune** : lire d'abord le chapeau de `decisions/analyses_thematiques/decisions.md` (démarche, conventions Metabase, modèle pour une nouvelle analyse).
+- **Exemple** : la dernière analyse, `decisions/analyses_thematiques/2026-10-inondations/decisions.md`.
+- Ne modifier aucun `decisions.md` sans consigne explicite dans ce sens.
+
+## Rapports
+
+- Un rapport qui s'appuie sur les données a son dossier `decisions/rapports/<AAAA-MM>-<sujet>/` : lire d'abord `decisions/rapports/decisions.md` (conventions), puis le `decisions.md` du rapport (règles de calcul, remarques, carte des graphiques).
+- Les requêtes de `queries/` font foi ; Metabase ne sert qu'à l'exploration. Une règle modifiée se reporte dans toutes les requêtes de `queries/` qui l'appliquent.
+- Le dépôt est public : aucun chiffre ni résultat non publié dans ces fichiers.
+- Ne modifier aucun `decisions.md` sans consigne explicite dans ce sens.
 
 ## Tests
 

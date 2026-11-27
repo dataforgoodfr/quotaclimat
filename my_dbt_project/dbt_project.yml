@@ -36,6 +36,13 @@ on-run-end:
 # files using the `{{ config(...) }}` macro.
 models:
   my_dbt_project:
+    # memory of each sort / hash of the dbt queries: the database default (work_mem, 12 MB in prod, see
+    # infrastructure/live/barometre/template/database.tf) is sized for its 200 connections and makes the large
+    # models (ad_occurrence_tunnels, publicites, emission_jour...) spill to disk. SET LOCAL: the transaction of
+    # the model only, the other connections keep the default. Prod node db-dev-l (8 GB): 4 dbt threads x a few
+    # sorts / hashes each stay within the memory left by shared_buffers.
+    +pre-hook:
+      - "SET LOCAL work_mem = '{{ var('dbt_work_mem', '128MB') }}'"
     # Config indicated by + and applies to all files under models/example/
     analytics:
       +grants: &analytics_grants
@@ -82,7 +89,7 @@ models:
 seeds:
   my_dbt_project:
     # reference data downloaded from Google Sheets (quotaclimat/data_ingestion/external_sources),
-    # always loaded with `dbt seed --full-refresh --select path:seeds/ref`
+    # always loaded with `dbt seed --full-refresh --no-partial-parse --select path:seeds/ref`
     ref:
       +quote_columns: true
       # next to the advertising models, see macros/generate_schema_name.sql
@@ -110,7 +117,7 @@ seeds:
 vars:
   # final values of advertising.ad.prediction_status: the classification gives a brand and a sector usable in the
   # analyses (analytics.publicites, through macros/final_prediction_statuses.sql). Same list as
-  # FINAL_PREDICTION_STATUSES in quotaclimat/data_ingestion/advertising/s03_classification/prediction_status.py,
+  # FINAL_PREDICTION_STATUSES in quotaclimat/data_ingestion/advertising/tools/prediction_status.py,
   # checked by test/advertising_classification/test_prediction_status.py
   final_prediction_statuses:
     - dict_miss
@@ -120,3 +127,4 @@ vars:
     - dict_tier3
     - dict_tier3_no_kw
     - subcat_done
+    - merge_inherited

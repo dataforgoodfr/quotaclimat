@@ -18,9 +18,11 @@ Dépendances : aucune (stdlib uniquement)
 """
 
 import json
+import os
 from collections import defaultdict
 from pathlib import Path
 from typing import Optional
+from urllib.parse import quote
 
 from quotaclimat.data_ingestion.advertising.s01_detection.e05_classify_fragments import (
     Fragment,
@@ -30,13 +32,25 @@ from quotaclimat.data_ingestion.advertising.s01_detection.tools.common_objects i
 )
 
 TEMPLATE_PATH = Path(__file__).parent / "weekly_viewer.html"
-S3_BASE_URL = "https://console.scaleway.com/object-storage/buckets/fr-par/test-advertising-detection/files/ads/"
+AD_S3_PREFIX = "ads"
 
 AD_CLASSIFICATIONS = {"already_known_ad", "new_ad", "jingle"}
 
 
 def _build_s3_url(ad_id: str) -> str:
-    return f"{S3_BASE_URL}{ad_id}/"
+    # Same bucket and console URL as the job's uploads (e07_export_raw_data), read
+    # at call time so that the link points to the bucket of the environment
+    bucket_name = os.environ.get("ADVERTISING_BUCKET_NAME")
+    region = os.environ.get("ADVERTISING_BUCKET_REGION", "fr-par")
+    url_template = os.environ.get(
+        "S3_FOLDER_ACCESS_URL",
+        "https://console.scaleway.com/object-storage/buckets/{REGION}/{BUCKET_NAME}/files/{ENCODED_KEY}/",
+    )
+    return url_template.format(
+        REGION=region,
+        BUCKET_NAME=bucket_name,
+        ENCODED_KEY=quote(f"{AD_S3_PREFIX}/{ad_id}", safe="/"),
+    )
 
 
 def _build_player_url(channel: str, start_epoch: float, end_epoch: float) -> str:

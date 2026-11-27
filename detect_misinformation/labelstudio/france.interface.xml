@@ -1,0 +1,215 @@
+<View>
+  <Header value="News Content Review" style="font-size: 20px; margin-bottom: 20px; color: #2c3e50;"/>
+  
+  <!-- Channel and Model Information Section -->
+  <View style="display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap;">
+    <View style="flex: 1; min-width: 300px; padding: 15px; background: #f5f7fa; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+      <Header value="Channel Information" size="small"/>
+      <Text name="channel_info" value="$item.channel_title"/>
+      <Text name="program_info" value="$item.channel_program"/>
+      <Text name="keyword_id" value="$item.id"/>
+	  <Hypertext name="video_link" value="&lt;a href='$item.url_mediatree' target='_blank' style='color: blue; text-decoration: underline;'&gt;See media on MediaTree&lt;/a&gt;"/>
+	  <Audio name="audio" value="$item.media"/>
+    </View>
+    
+    <View style="flex: 1; min-width: 300px; padding: 15px; background: #f5f7fa; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+      <Header name="test" value="Date and Model"/>
+      <Text name="start_time" value="$item.start"/>
+      <Text name="model_info" value="$item.model_name"/>
+      <Text name="model_result" value="$item.model_result"/>
+    </View>
+  </View>
+  
+  
+  <!-- Misinformation Section -->
+   <View style="padding: 20px; background: #f8f9fa; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+    <Header value="Misinformation Assessment" size="small" style="margin-bottom: 15px; color: #2c3e50;"/>
+    
+    
+     <View style="display: flex; gap: 8px; margin-bottom: 15px; flex-wrap: wrap;">
+     	<Labels name="misinformation" toName="text_to_review_misinformation" showInline="true">
+        	<Label value="Factually Incorrect" alias="misinformation" hotkey="1" hint="Global warming is not happing. Climate change is NOT leading to melting ice (such as glaciers, sea ice, and permafrost), increased extreme weather, or rising sea levels. Cold weather also shows that climate change is not happening." background="#ff8000"/>
+    		<Label value="High-Impact Misleading" alias="misleading" hotkey="1" hint="Misleading statement with high stakes for climate information" background="#AE24CA"/>
+       	</Labels>
+     </View>
+    
+    <Text name="text_to_review_misinformation" value="$item.plaintext_whisper" granularity="word"/>
+    
+    <View>
+      <View style="display: flex;font-style: italic; gap: 15px; margin-top: 15px; flex-wrap: wrap;">
+  		  <Text name="text_to_review_contains_misinformation" value="Does the above text contain misinformation (unchallenged)?"/>
+      </View>
+      <View style="display: flex; gap: 15px; margin-bottom: 15px; flex-wrap: wrap;">
+        <Choices name="choice" toName="table" required="true" showInline="false">
+          <Choice value="Correct" html="&lt;span style='color:green'&gt;✓&lt;/span&gt; Contains Misinformation" hotkey="m"/>
+          <Choice value="Incorrect" html="&lt;span style='color:red'&gt;✗&lt;/span&gt; Does Not Contain Misinformation" hotkey="n"/>
+        </Choices>
+      </View>
+    </View>
+    
+    <View visibleWhen="choice-selected" whenTagName="choice" whenChoiceValue="Incorrect">
+       <View style="display: flex;">
+  		<Text name="misinfo_correction_text" value="Did the text not contain  misinformation or was it challenged ?"/>
+       </View>
+       <View style="display: flex;">
+        <Choices name="Was Misinformation Corrected?" toName="table" required="false" showInline="true">>
+          <Choice value="not_corrected" html="No Misinformation"/>
+          <Choice value="corrected" html="Challenged"/>
+        </Choices>
+       </View>
+    </View>
+     
+    <View visibleWhen="choice-selected" whenTagName="choice" whenChoiceValue="Correct">
+       <View style="display: flex;">
+  		<Text name="misinfo_emblematic_text" value="Is this an emblematic misinformation case for the narrative ?"/>
+       </View>
+       <View style="display: flex;">
+        <Choices name="Is emblematicfor narrative ?" toName="table" required="false" showInline="true">>
+          <Choice value="is_emblematic_narrative" html="Yes"/>
+          <Choice value="is_not_emblematic_narrative" html="No"/>
+        </Choices>
+       </View>
+    </View>
+     
+     <Header name="claim_header" value="Claims" granularity="word"/>
+     <TextArea 
+               name="claim"
+               toName="table" 
+               placeholder="Write down the misinformation claim(s) that you have identified. Separate each claim by ';' and place each claim on a new line." 
+               style="width: 100%; border-radius: 4px; border: 1px solid #ddd; padding: 8px; margin-bottom: 10px;" 
+               rows="3" 
+               maxSubmissions="1" 
+               editable="true" 
+               required="false"
+     />
+     <View style="margin-bottom: 30px;">
+       <Text name="speaker_title" value="Who made the claim ?" granularity="paragraph"/>
+         <View style="display: flex; gap: 3px; margin-bottom: 3px; flex-wrap: wrap;">
+           <Choices name="speaker_choice" toName="table" required="false" showInline="true" choice="multiple">
+             <Choice value="Journalist" html="Journalist" hotkey="j"/>
+             <Choice value="Commentator" html="Commentator" hotkey="c"/>
+             <Choice value="Guest" html="Guest (Non Politician)" hotkey="g"/>
+             <Choice value="Politician" html="Politician" hotkey="p"/>
+             <Choice value="Audience" html="Listener/Viewer" hotkey="l"/>
+             <Choice value="Unknown" html="Non Identifiable" hotkey="u"/>
+           </Choices>
+         </View>
+
+        <Collapse bordered="true">
+        <Panel value="Definitions">
+          <HyperText name="html_text" >
+              <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif; font-size: 14px; line-height: 1.5; color: #333;">
+                <ul style="padding-left: 16px;">
+                  <li><strong>Journalist [j]</strong>: Media professional involved in creating and presenting media content.</li>
+                  <li><strong>Commentator [c]</strong>: Regularly offers personal opinions and analysis on current events.</li>
+                  <li><strong>Guest [g]</strong>: Invited to present external perspectives or expertise relevant to the topic.</li>
+                  <li><strong>Politician [p]</strong>: Officially represents or promotes a political group, including elected officials and party staff.</li>
+                  <li><strong>Listener/Viewer [l]</strong>: Invited on broadcast to share personal experiences, opinions, or eyewitness accounts.</li>
+                  <li><strong>Unknown [u]</strong>: Cannot identify speaker.</li>
+                </ul>
+              </div>
+          </HyperText>
+        </Panel>
+      </Collapse>
+     </View>
+	
+     <Header name="explain_header" value="Debunk" granularity="word"/>
+     <TextArea name="explanation" toName="table" placeholder="Explain your assessment (why is this misinformation)" style="width: 100%; border-radius: 4px; border: 1px solid #ddd; padding: 8px; margin-bottom: 10px;" rows="3" maxSubmissions="1" editable="true" required="false"/>
+
+     <Header value="Add references for your debunk:"/>
+     <TextArea name="references" toName="table" placeholder="Add reference URL..." style="width: 100%; border-radius: 4px; border: 1px solid #ddd; padding: 8px; margin-bottom: 10px;" rows="2" maxSubmissions="3" editable="true" required="false"/>
+
+
+     
+    <View style="display: flex;">
+      <!-- Left side -->
+      <View style="flex: 70%">
+        <Header value="Add extra comments:"/>
+        <TextArea name="comments" toName="table" placeholder="Other comments (gravity of the case, comments on the annotation system...)" style="width: 100%; border-radius: 4px; border: 1px solid #ddd; padding: 8px;" rows="2" maxSubmissions="1" editable="true" required="false"/>
+      </View>
+      <!-- Right side -->
+      <View style="flex: 30%; margin-left: 1em">
+        <Choices name="Salient choice" toName="table" required="false" showInline="true">
+          <Choice value="Salient" html="&lt;span style='color:orange'&gt;⚠️&lt;/span&gt; (optional) This is an important misinformation case" hotkey="s"/>
+        </Choices>
+      </View>
+    </View>  
+  </View>
+   
+  <View visibleWhen="choice-selected" whenTagName="choice" >
+    <View><Header value="(Optional) Do you agree with the annotation?" /></View>
+    <Choices name="Double Annotation" toName="table" required="false" showInline="true">
+      <Choice value="corrected" html="I agree"/>
+      <Choice value="not_corrected" html="I disagree"/>
+    </Choices>
+    <TextArea 
+    	name="double_annotation_comments" 
+		toName="table" 
+		placeholder="Add any comment you might have on the annotation (Optional)" 
+		style="width: 100%; border-radius: 4px; border: 1px solid #ddd; padding: 8px;"
+		rows="2"
+		maxSubmissions="1" 
+		editable="true" 
+		required="false"
+	/>
+  </View>
+   
+  <!-- legacy 1870 and 1 868 Added Case Relevancy -->
+  <Collapse>
+    <Panel value="LEGACY">
+      <View style="display: none;">  
+        <Choices name="Case relevancy (optional)" toName="table" required="false" showInline="true">
+          <Choice value="Salient" html="DO NOT USE &lt;span style='color:orange'&gt;⚠️&lt;/span&gt; (optional) This case is considered salient for review" hotkey="r"/>
+        </Choices>
+      </View>
+      <View>
+         <Header value="Legacy plaintext (mediatree)"/> 
+         <Text name="legacy_plaintext" value="$item.plaintext" granularity="word"/>
+
+      </View>
+<!-- CARDS Section -->
+  <View style="padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px; margin-bottom: 20px; background: white; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+    <Header 
+            value="Narrative Assessment (CARDS)" 
+            size="small" 
+    />
+    <Collapse>
+      <Panel value="More information on CARDS">
+        <View>
+          <Text value="The CARDS framework defines eight categories of inaction narratives. 
+                       Some of these align directly with verified instances of climate disinformation, 
+                       while others only partially overlap." name="cards_def"/>
+          <HyperText 
+            clickableLinks="true" 
+            name="link"
+            target="_blank"
+          >
+            <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif; font-size: 14px; line-height: 1.5; color: #333;">
+              Detailed information <a href="https://quotaclimat.org/app/uploads/2025/04/Desinformation-climatique_avril2025_UK_NEW_DEF-1.pdf#page=14">here</a> 
+            </div>
+          </HyperText>
+        </View>
+      </Panel>
+    </Collapse>
+    
+    <View style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 15px;">
+    <Labels name="cards" toName="table" showInline="true">
+      <Label value="1. It's not happening" alias="1_its_not_happening" hotkey="1" hint="Global warming is not happing. Climate change is NOT leading to melting ice (such as glaciers, sea ice, and permafrost), increased extreme weather, or rising sea levels. Cold weather also shows that climate change is not happening." background="#FF0000"/>
+      <Label value="2. Humans are not the cause" alias="2_humans_are_not_the_cause" hotkey="2" hint="Greenhouse gases from humans are not the causing climate change." background="#FFFF00"/>
+      <Label value="3. Impacts are not bad" alias="3_impacts_are_not_bad" hotkey="3" hint="The impacts of climate change will not be bad and might even be beneficial." background="#00FF00"/>
+      <Label value="4. Solutions are ineffective or harmful" alias="4_solutions_are_ineffective_or_harmful" hotkey="4" hint="Climate solutions are harmful or unnecessary." background="#00FFFF"/>
+      <Label value="5. Science is uncertain" alias="5_science_is_uncertain" hotkey="5" hint="Climate science is uncertain, unsound, unreliable, or biased." background="#0000FF"/>
+      <Label value="6. Advocates are biased" alias="6_advocates_are_biased" hotkey="6" hint="Climate scientists and proponents of climate action are alarmist, biased, wrong, hypocritical, corrupt, and/or politically motivated." background="#FF00FF"/>
+      <Label value="7. Fossil fuels are needed" alias="7_fossil_fuels_are_needed" hotkey="7" hint="We need fossil fuels for economic growth, prosperity, and to maintain our standard of living." background="#000000"/>
+      <Label value="8. Others" alias="8_others" hotkey="8" hint="Complete this by writting inside the text area" background="#ff8000"/>
+      </Labels>
+     </View>
+    
+      <TextArea name="comments_others" toName="table" placeholder="If '8. others' is selected, please comment here" rows="2" maxSubmissions="1" editable="true" required="false"/>
+    <Text name="table" value="$item.plaintext_whisper" granularity="word"/>
+  </View>
+  
+    </Panel>
+  </Collapse>
+ 
+</View>

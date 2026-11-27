@@ -25,7 +25,10 @@
     - groupe: brand_ultimate_parent, its ultimate parent company (the company, else the brand, when unknown).
     secteur, categorie: the predicted sector and product category of the ads (French label, else code; NULL when
     not predicted), also in the grain, a brand having ads in several sectors and categories; a category belongs
-    to a sector. -#}
+    to a sector.
+    agence_media, groupe_agence, fiabilite_agence, perimetre_media_agence: media agency of the company of the brand,
+    with its group, reliability and media scope ('partiel' when it buys only part of the media) (see ad_brand_agencies, from the Inventaire_des_annonceurs Google Sheet), NULL when unknown; a
+    function of marque and entreprise, so not in the grain. -#}
 
 {% set window_minutes = var('ad_emission_window_minutes', 15) %}
 
@@ -87,7 +90,13 @@ SELECT
     g.nom,
     g.rediffusion,
     SUM(pl.secondes) AS pub_secondes,
-    COUNT(*) AS nb_occurrences
+    COUNT(*) AS nb_occurrences,
+    ag.agency AS agence_media,
+    ag.agency_group AS groupe_agence,
+    ag.reliability AS fiabilite_agence,
+    ag.media_scope AS perimetre_media_agence
 FROM pubs_lignes pl
 JOIN grille g ON g.id = pl.program_id
-GROUP BY pl.marque, pl.entreprise, pl.groupe, pl.secteur, pl.categorie, g.emission_cle, pl.jour, g.channel_name, g.type, g.nom, g.rediffusion
+LEFT JOIN {{ ref('ad_brand_agencies') }} ag ON ag.brand_name = pl.marque AND ag.brand_company = pl.entreprise
+GROUP BY pl.marque, pl.entreprise, pl.groupe, pl.secteur, pl.categorie, g.emission_cle, pl.jour, g.channel_name, g.type, g.nom, g.rediffusion,
+    ag.agency, ag.agency_group, ag.reliability, ag.media_scope

@@ -11,6 +11,7 @@
     traefik_domain: "{{ lookup('env', 'TRAEFIK_DOMAIN') }}"
     kestra_domain: "{{ lookup('env', 'KESTRA_DOMAIN') }}"
     glitchtip_domain: "{{ lookup('env', 'GLITCHTIP_DOMAIN') }}"
+    windmill_domain: "{{ lookup('env', 'WINDMILL_DOMAIN') }}"
 
     # Traefik
     traefik_dashboard_auth: "{{ lookup('env', 'TRAEFIK_DASHBOARD_AUTH') }}"
@@ -26,6 +27,27 @@
     glitchtip_db_password: "{{ lookup('env', 'GLITCHTIP_DB_PASSWORD') }}"
     glitchtip_db_name: "{{ lookup('env', 'GLITCHTIP_DB_NAME') }}"
     glitchtip_secret_key: "{{ lookup('env', 'GLITCHTIP_SECRET_KEY') }}"
+    glitchtip_s3_access_key: "{{ lookup('env', 'GLITCHTIP_S3_ACCESS_KEY') }}"
+    glitchtip_s3_secret_key: "{{ lookup('env', 'GLITCHTIP_S3_SECRET_KEY') }}"
+    glitchtip_s3_bucket: "{{ lookup('env', 'GLITCHTIP_S3_BUCKET') }}"
+    glitchtip_s3_endpoint: "{{ lookup('env', 'GLITCHTIP_S3_ENDPOINT') | default('https://s3.fr-par.scw.cloud', true) }}"
+    glitchtip_s3_region: "{{ lookup('env', 'GLITCHTIP_S3_REGION') | default('fr-par', true) }}"
+    # GlitchTip email (Brevo SMTP); leave BREVO_SMTP_* empty to keep console emails
+    brevo_smtp_login: "{{ lookup('env', 'BREVO_SMTP_LOGIN') }}"
+    brevo_smtp_key: "{{ lookup('env', 'BREVO_SMTP_KEY') }}"
+    brevo_smtp_host: "{{ lookup('env', 'BREVO_SMTP_HOST') | default('smtp-relay.brevo.com', true) }}"
+    brevo_smtp_port: "{{ lookup('env', 'BREVO_SMTP_PORT') | default('587', true) }}"
+    brevo_from_email: "{{ lookup('env', 'GLITCHTIP_FROM_EMAIL') | default('glitchtip@quotaclimat.org', true) }}"
+
+    # Windmill
+    windmill_db_user: "{{ lookup('env', 'WINDMILL_DB_USER') }}"
+    windmill_db_password: "{{ lookup('env', 'WINDMILL_DB_PASSWORD') }}"
+    windmill_db_name: "{{ lookup('env', 'WINDMILL_DB_NAME') }}"
+    # API token of a superadmin, used to push the secrets, the flows and the instance SMTP settings
+    windmill_token: "{{ lookup('env', 'WINDMILL_TOKEN') }}"
+    windmill_workspace: "{{ lookup('env', 'WINDMILL_WORKSPACE') }}"
+    # Windmill email (instance SMTP, same BREVO_SMTP_* credentials as GlitchTip); skipped when they are empty
+    windmill_from_email: "{{ lookup('env', 'WINDMILL_FROM_EMAIL') | default('windmill@quotaclimat.org', true) }}"
 
     # Managed Postgres
     postgres_host: "{{ lookup('env', 'POSTGRES_HOST') }}"
@@ -35,16 +57,21 @@
     kestra_secrets:
       EXTERNAL_SOURCES_DRIVE_FOLDER: "{{ lookup('env', 'EXTERNAL_SOURCES_DRIVE_FOLDER') }}"
       GOOGLE_SHEETS_SERVICE_ACCOUNT_JSON: "{{ lookup('env', 'GOOGLE_SHEETS_SERVICE_ACCOUNT_JSON') }}"
+      # export_report_data: the service account that writes the report spreadsheets (folder "Rapports" of
+      # EXTERNAL_SOURCES_DRIVE_FOLDER)
+      GOOGLE_SHEETS_EDITOR_SERVICE_ACCOUNT_JSON: "{{ lookup('env', 'GOOGLE_SHEETS_EDITOR_SERVICE_ACCOUNT_JSON') }}"
       API_LABEL_STUDIO_KEY: "{{ lookup('env', 'API_LABEL_STUDIO_KEY') }}"
       ANTHROPIC_API_KEY: "{{ lookup('env', 'ANTHROPIC_API_KEY') }}"
       CLIMATESAFEGUARDS_SCW_ACCESS: "{{ lookup('env', 'CLIMATESAFEGUARDS_SCW_ACCESS') }}"
       CLIMATESAFEGUARDS_SCW_SECRET: "{{ lookup('env', 'CLIMATESAFEGUARDS_SCW_SECRET') }}"
       LABELSTUDIO_INGESTION_POSTGRES_USER: "{{ lookup('env', 'LABELSTUDIO_INGESTION_POSTGRES_USER') }}"
       LABELSTUDIO_INGESTION_POSTGRES_PASSWORD: "{{ lookup('env', 'LABELSTUDIO_INGESTION_POSTGRES_PASSWORD') }}"
+      I18N_COUNTRY_SECRETS: "{{ lookup('env', 'I18N_COUNTRY_SECRETS') }}"
       MEDIATREE_USER: "{{ lookup('env', 'MEDIATREE_USER') }}"
       METABASE_API_KEY: "{{ lookup('env', 'METABASE_API_KEY') }}"
       METABASE_URL: "{{ lookup('env', 'METABASE_URL') }}"
       MEDIATREE_PASSWORD: "{{ lookup('env', 'MEDIATREE_PASSWORD') }}"
+      MATTERMOST_WEBHOOK_URLS: "{{ lookup('env', 'MATTERMOST_WEBHOOK_URLS') }}"
       MISTRAL_API_KEY: "{{ lookup('env', 'MISTRAL_API_KEY') }}"
       OPENAI_API_KEY: "{{ lookup('env', 'OPENAI_API_KEY') }}"
       POSTGRES_HOST: "{{ lookup('env', 'BAROMETRE_POSTGRES_HOST') }}"
@@ -98,3 +125,5 @@
       tags: [kestra]
     - role: glitchtip
       tags: [glitchtip]
+    - role: windmill
+      tags: [windmill]

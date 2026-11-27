@@ -1,0 +1,24 @@
+{#- Turn terminator is eos_token, not a literal "<|im_end|>" string - the
+    model needs to actually predict the tokenizer's real eos_token to make
+    generate()'s default stopping check fire; a mismatched literal turn
+    marker trains the model to emit a token that doesn't end generation,
+    letting it run on and hallucinate a new turn. #}
+{{- bos_token -}}
+{%- for message in messages -%}
+	{%- set content = message["content"] -%}
+	{%- if content is not string -%}
+		{%- set content = content | tojson -%}
+	{%- endif -%}
+	{%- if message["role"] == "system" -%}
+		{{- "<|im_start|>system\n" + content + eos_token + "\n" -}}
+	{%- elif message["role"] == "user" -%}
+		{{- "<|im_start|>user\n" + content + eos_token + "\n" -}}
+	{%- elif message["role"] == "assistant" -%}
+		{% generation %}
+		{{- "<|im_start|>assistant\n" + content + eos_token + "\n" -}}
+		{% endgeneration %}
+	{%- endif -%}
+{%- endfor -%}
+{%- if add_generation_prompt -%}
+	{{- "<|im_start|>assistant\n" -}}
+{%- endif -%}

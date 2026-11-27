@@ -1,0 +1,22 @@
+{{- bos_token -}}
+{%- if messages[0]['role'] == 'system' -%}
+	{%- set system_message = messages[0]['content'] -%}
+	{%- set loop_messages = messages[1:] -%}
+{%- else -%}
+	{%- set system_message = "" -%}
+	{%- set loop_messages = messages -%}
+{%- endif -%}
+{%- if system_message -%}
+	{{- '[SYSTEM_PROMPT]' + system_message + '[/SYSTEM_PROMPT]' -}}
+{%- endif -%}
+{%- for message in loop_messages -%}
+	{%- if message['role'] == 'user' -%}
+		{{- '[INST]' + message['content'] + '[/INST]' -}}
+	{%- elif message['role'] == 'assistant' -%}
+		{% generation %}
+		{{- message['content'] + eos_token -}}
+		{% endgeneration %}
+	{%- else -%}
+		{{- raise_exception('Only user, system and assistant roles are supported by this template') -}}
+	{%- endif -%}
+{%- endfor -%}

@@ -179,7 +179,11 @@ class FingerprintGenerator:
 
     def params(self) -> dict:
         return {
-            "generator_version": 1,
+            # Part of the hash stored with each ad's chunks (Ad.chunks[].hash) and used to
+            # match them. Bump it to invalidate the stored chunks: 2 drops the chunks
+            # written by recompute_saved_chunks before its run_on_audio_file kept the
+            # ad's own edges as chunk boundaries (empty or incomplete fingerprints).
+            "generator_version": 2,
             "sr": self.sr,
             "hop_length": self.hop_length,
             "n_fft": self.n_fft,

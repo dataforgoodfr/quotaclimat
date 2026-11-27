@@ -13,6 +13,10 @@ labels:
   scope: france
 
 inputs:
+  - id: test_alert
+    type: BOOLEAN
+    defaults: false
+    description: "When true, the first step is a subflow that always fails, to test the Mattermost alert. Nothing else runs."
   - id: with_rrs
     type: BOOLEAN
     defaults: true
@@ -26,7 +30,28 @@ inputs:
     required: false
     description: "Reference date (YYYY-MM-DD) from which to count days back. Defaults to now."
 
+variables:
+  # namespace/flowId of each subflow task, to link the failed one in the alert
+  subflows:
+    alert_test: quotaclimat-dev/alert-test
+    extended_perimeter: rrs-dev/extended-perimeter
+    rrs_climate_extended: rrs-dev/rrs-climate
+    rrs_insecurity_extended: rrs-dev/rrs-insecurity
+    rrs_pollution_extended: rrs-dev/rrs-pollution
+    barometre: quotaclimat-dev/barometre
+    rrs_climate: rrs-dev/rrs-climate
+    rrs_insecurity: rrs-dev/rrs-insecurity
+    rrs_pollution: rrs-dev/rrs-pollution
+
 tasks:
+  - id: alert_test
+    runIf: "{{ inputs.test_alert }}"
+    type: io.kestra.plugin.core.flow.Subflow
+    namespace: quotaclimat-dev
+    flowId: alert-test
+    wait: true
+    transmitFailed: true
+
   - id: extended_perimeter
     runIf: "{{ inputs.with_rrs }}"
     type: io.kestra.plugin.core.flow.Subflow
@@ -105,3 +130,27 @@ tasks:
     flowId: rrs-pollution
     wait: true
     transmitFailed: true
+
+# runs when a task above fails
+errors:
+  # one message per webhook of MATTERMOST_WEBHOOK_URLS (comma-separated), all sent in parallel
+  # so that a dead webhook does not prevent the others from being notified
+  - id: alert_mattermost
+    type: io.kestra.plugin.core.flow.ForEach
+    values: "{{ secret('MATTERMOST_WEBHOOK_URLS') | split(',') | toJson }}"
+    concurrencyLimit: 0
+    tasks:
+      # plain HTTP call rather than the notifications plugin (not bundled in the Kestra image)
+      - id: send
+        type: io.kestra.plugin.core.http.Request
+        uri: "{{ taskrun.value | trim }}"
+        method: POST
+        contentType: application/json
+        body: |
+          {%- set failed_steps = outputs | jq('to_entries[] | select((.value | type) == "object" and (.value.state? == "FAILED")) | .key') -%}
+          {%- set step = failed_steps | first -%}
+          {%- set subflow_link = (step is not empty and outputs[step].executionId is defined and vars.subflows[step] is defined) ? (kestra.url ~ 'ui/main/executions/' ~ vars.subflows[step] ~ '/' ~ outputs[step].executionId) : '' -%}
+          {{ {
+            'username': 'Kestra',
+            'text': '[dev] main-pipeline failed at step `' ~ (step ?? 'unknown') ~ '`.\nFailed subflow: ' ~ subflow_link ~ '\nExecution: ' ~ kestra.url ~ 'ui/main/executions/' ~ flow.namespace ~ '/' ~ flow.id ~ '/' ~ execution.id
+          } | toJson }}

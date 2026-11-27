@@ -17,11 +17,11 @@ Interactive version: [`diagrams/data_tiers.html`](diagrams/data_tiers.html). Eve
 | Source | Loaded by | Lands in |
 |---|---|---|
 | Mediatree (S3 transcripts, API) | `entrypoints/mediatree_import.sh`, `quotaclimat/data_processing/mediatree/api_import.py` | `keywords`, `stop_word`, `time_monitored` |
-| `program_metadata.json` (git) | `transform_program.py` | `program_metadata`, `channel_metadata` |
+| Program grids `quotaclimat/data_processing/mediatree/i8n/<country>/channel_program.py` and `postgres/channel_metadata.json` (git) | `create_tables()` in `postgres/schemas/models.py` (grid built by `quotaclimat/data_processing/mediatree/program_metadata.py`) | `program_metadata`, `channel_metadata` |
 | Label Studio (6 databases, one project per country, see `quotaclimat/data_ingestion/labelstudio/configs.py`) | `ingest_labelstudio.py`, first step of `entrypoints/dbt.sh` | `labelstudio_task_aggregate`, `labelstudio_task_completion_aggregate` |
-| Google Sheets (brands, sectors, programmes) | `quotaclimat/data_ingestion/external_sources/download_external_sources.py` then `dbt seed` | `ref_*` seeds (`advertising` schema) |
+| Google Sheets (brands, sectors, programmes, targets of the misinformation cases) | `quotaclimat/data_ingestion/external_sources/download_external_sources.py` then `dbt seed` | `ref_*` seeds (`advertising` schema) |
 | Versioned CSVs (misinformation theme keywords, Belgian references) | `dbt seed` | `mesinfo_theme_mots_cles` and other seeds of `seeds/themes` |
-| Mediatree ad detection and LLM classification | `entrypoints/advertising_detection.sh` and the other `advertising_*.sh` | `advertising.ad`, `ad_occurrence`, `ad_merge`, `ad_merge_occurrence`, `ad_screenshot` |
+| Mediatree ad detection and LLM classification | `entrypoints/ad_s01_run_detection.sh` and the other `advertising_*.sh` | `advertising.ad`, `ad_occurrence`, `ad_merge`, `ad_merge_occurrence`, `ad_screenshot` |
 | Factiva, Le Monde FTP, sitemaps, keyword dictionary | ingestion jobs, `transform_excel_to_json.py` | `factiva_articles`, `lemonde_ftp_articles`, `stats_factiva_articles`, `source_classification`, `sitemap_table`, `dictionary`, `keyword_macro_category` |
 
 Label Studio is read through two source tables (`task`, `task_completion`) per database. The ingestion code concatenates them (a `UNION` across databases) and writes one row per task with a `country` column and a hash id (`task_aggregate_id`), so the same task id in two countries never collides.
@@ -40,11 +40,13 @@ Everything dbt builds from raw, ready to be read by dashboards. dbt runs in `ent
 |---|---|---|
 | `task_global_completion` | `analytics` | `labelstudio_task_aggregate`, `labelstudio_task_completion_aggregate` |
 | `program` | `analytics` | `program_metadata`, Programmes sheet seed |
-| `cas_de_mesinformation` | `analytics` | `task_global_completion`, `program_metadata`, `program` |
+| `cas_affirmation_cible`, `cas_categorie_visee` | `analytics` | Cas_de_mesinfo sheet seeds, sector/category seeds |
+| `cas_de_mesinformation` | `analytics` | `task_global_completion`, `program_metadata`, `program`, `cas_affirmation_cible`, `cas_categorie_visee` |
 | `cas_theme` | `analytics` | `cas_de_mesinformation`, `mesinfo_theme_mots_cles` seed |
 | `ad_brands`, `ad_occurrence_mesinfo`, `ad_occurrence_tunnels`, `ad_tunnels`, `ad_tunnel_programs` | `advertising` | `ad`, `ad_occurrence`, brand/sector seeds, `task_global_completion`, `program` |
 | `publicites` | `analytics` | `ad_occurrence`, `program_metadata`, the advertising models above |
-| `pub_annonceur_emission_jour` | `advertising` | `publicites`, `program` |
+| `ad_brand_agencies` | `advertising` | `publicites`, Inventaire_des_annonceurs sheet seed |
+| `pub_annonceur_emission_jour` | `advertising` | `publicites`, `program`, `ad_brand_agencies` |
 | `emission_jour` | `public` | `keywords`, `time_monitored`, `program`, `cas_de_mesinformation` |
 | `environmental_shares_with_desinfo_counts`, `core_query_*`, `thematic_query_ocean`, `homepage_*` | `public` | `keywords`, `program_metadata` |
 | `dbt_objects` | `metadata` | the dbt graph |

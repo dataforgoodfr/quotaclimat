@@ -25,3 +25,25 @@ output "glitchtip_db_name" {
 output "glitchtip_db_user" {
   value = scaleway_rdb_user.glitchtip.name
 }
+
+output "glitchtip_s3_bucket" {
+  value = scaleway_object_bucket.glitchtip.name
+}
+
+output "glitchtip_s3_access_key" {
+  value = scaleway_iam_api_key.glitchtip_s3.access_key
+}
+
+output "glitchtip_s3_secret_key" {
+  value     = scaleway_iam_api_key.glitchtip_s3.secret_key
+  sensitive = true
+}
+
+# Created by the windmill user itself (grants.tf), not by a Scaleway resource
+output "windmill_db_name" {
+  value = "windmill"
+}
+
+output "windmill_db_user" {
+  value = scaleway_rdb_user.windmill.name
+}

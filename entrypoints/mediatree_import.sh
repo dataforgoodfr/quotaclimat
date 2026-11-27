@@ -4,15 +4,6 @@
 echo "Running migrations with alembic if exists"
 poetry run alembic upgrade head
 
-
-echo "update program metadata file"
-poetry run python3 transform_program.py
-if [[ $? -eq 0 ]]; then
-    echo "Command succeeded"
-else
-    echo "Command failed"
-fi
-
 echo "starting mediatree import app"
 python quotaclimat/data_processing/mediatree/api_import.py
 
@@ -21,7 +12,7 @@ poetry run python -m quotaclimat.data_ingestion.labelstudio.ingest_labelstudio
 
 echo "download reference Google Sheets as dbt seeds, then load and test them"
 poetry run python -m quotaclimat.data_ingestion.external_sources.download_external_sources
-poetry run dbt seed --full-refresh --select path:seeds/ref
+poetry run dbt seed --full-refresh --no-partial-parse --select path:seeds/ref  # see entrypoints/dbt.sh
 poetry run dbt test --select path:seeds/ref
 
 echo "load the methodology seeds versioned in the repository (keywords of the misinformation themes), then test them"
@@ -34,7 +25,10 @@ poetry run dbt run --full-refresh \
   --exclude environmental_shares_with_desinfo_counts \
   --exclude path:models/advertising \
   --exclude cas_de_mesinformation \
+  --exclude cas_affirmation_cible \
+  --exclude cas_categorie_visee \
   --exclude publicites \
+  --exclude emission_jour \
   --exclude path:models/curated
 
 echo "apply dbt models to build the analytics tables (task_global_completion in 'analytics', environmental_shares_with_desinfo_counts in 'public')."
@@ -45,8 +39,13 @@ poetry run dbt run --full-refresh --target analytics \
 echo "apply advertising dbt models and the analytics tables built on them (publicites, cas_de_mesinformation), after the analytics tables they read (misinformation distance)"
 poetry run dbt run --full-refresh \
   --select path:models/advertising \
+  --select cas_affirmation_cible \
+  --select cas_categorie_visee \
   --select cas_de_mesinformation \
   --select publicites
+
+echo "apply emission_jour (incremental: the window of the dashboards models and the days whose cases changed, see entrypoints/dbt.sh)"
+poetry run dbt run --select emission_jour
 
 echo "build and test the curated tables, last: they read the tables above"
 ./entrypoints/curated.sh

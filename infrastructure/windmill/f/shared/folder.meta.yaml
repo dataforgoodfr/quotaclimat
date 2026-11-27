@@ -1,0 +1,8 @@
+summary: "Scripts shared by the flows: Docker runner and Mattermost alert."
+display_name: shared
+owners:
+  - g/Admins
+extra_perms:
+  g/Admins: true
+  g/Devs: true
+  g/Operators: false

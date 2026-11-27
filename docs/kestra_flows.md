@@ -1,5 +1,7 @@
 # Kestra flows in detail
 
+**Production runs on Windmill**, which runs a copy of these flows with the same steps (`infrastructure/windmill/`, see [`windmill_flows.md`](windmill_flows.md)): the Kestra triggers listed below are disabled (`disabled: true`) and run at the same times as Windmill schedules. Kestra stays deployed for a rollback.
+
 This page explains, step by step, what each Kestra flow in `infrastructure/kestra/flows/` does, which code it runs and which technologies are involved. For the order in which the flows run, see the overview diagram in the root `README.md` ("Daily orchestration").
 
 **Baromètre (OME).** The baromètre measures how much TV and radio airtime covers environmental topics. The data comes from Mediatree's speech-to-text transcripts. Each day, for every channel, the ingest step calls the Mediatree API once per program slot of the schedule grid. It stores the transcripts as 2-minute chunks in gzip parquet on Scaleway S3.
@@ -36,6 +38,7 @@ Each flow has its own diagram. Read it top to bottom: every horizontal lane is o
 | [`metabase-sync`](#metabase-sync) | `quotaclimat` | `main_quotaclimat_metabasesync.yaml` | `main-pipeline` step 9, or by hand |
 | [`dbt`](#dbt) | `quotaclimat` | `main_quotaclimat_dbt.yaml` | step 4 of `barometre` and `barometre-catchup`, `dbt-analytics` |
 | [`dbt-analytics`](#dbt-analytics) | `quotaclimat` | `main_quotaclimat_dbtanalytics.yaml` | by hand |
+| [`export-report-data`](#export-report-data) | `quotaclimat` | `main_quotaclimat_exportreportdata.yaml` | by hand |
 | [`barometre-catchup`](#barometre-catchup) | `quotaclimat` | `main_quotaclimat_barometrecatchup.yaml` | cron 03:00 |
 | [`barometre-i18n`](#barometre-i18n) | `quotaclimat` | `main_quotaclimat_barometrei18n.yaml` | cron 04:07 |
 | [`pulsar-themes`](#pulsar-themes) | `rrs` | `main_rrs_pulsarthemes.yml` | cron 00:30 |
@@ -52,12 +55,12 @@ Interactive diagram: [`diagrams/infra-topology.html`](diagrams/infra-topology.ht
 
 ### How a task runs
 
-Except for `main-pipeline` (subflow calls) and the i18n Scaleway trigger (an HTTP request), every task is an `io.kestra.plugin.docker.Run`: Kestra pulls an image (`pullPolicy: ALWAYS`, so the latest pushed tag is used) from the Scaleway Container Registry and runs one entry point with environment variables. Credentials come from Kestra secrets (`{{ secret('...') }}`). Tasks in a flow run one after the other, and a failing task fails the flow.
+Except for the subflow calls (`main-pipeline`, `dbt` calls), every task is an `io.kestra.plugin.docker.Run`: Kestra pulls an image (`pullPolicy: ALWAYS`, so the latest pushed tag is used) from the Scaleway Container Registry and runs one entry point with environment variables. Credentials come from Kestra secrets (`{{ secret('...') }}`). Tasks in a flow run one after the other, and a failing task fails the flow.
 
 | Image | Built from | Used by |
 |---|---|---|
 | `namespace-barometre/quotaclimat_base:latest` | this repo (`Dockerfile`) | ingest, keyword detection, dbt in `barometre*` and `extended-perimeter` |
-| `misinformation/label-misinformation:latest` | [`dataforgoodfr/climateguard`](https://github.com/dataforgoodfr/climateguard) (`jobs/label_misinformation`) | `detect_misinformation` in `barometre`, `barometre-catchup`, `extended-perimeter` |
+| `misinformation/label-misinformation:latest` | [`dataforgoodfr/climateguard`](https://github.com/dataforgoodfr/climateguard) (`jobs/label_misinformation`) | `detect_misinformation` in `barometre`, `barometre-catchup`, `barometre-i18n`, `extended-perimeter` |
 | `rrs-prod/rrs-base:prod` | this repo (`rrs/Dockerfile`) | every task of `rrs-climate`, `rrs-insecurity` and `rrs-pollution` |
 | `rrs-prod/rrs-pulsar:prod` | this repo (`rrs/Dockerfile.pulsar`) | `pulsar-themes` |
 
@@ -90,7 +93,7 @@ The RRS flows (`rrs-climate`, `rrs-insecurity`, `rrs-pollution`, `pulsar-themes`
 | Anthropic API | RRS: Claude Haiku 4.5 for narrative clustering |
 | RAG (expert-model index) | RRS pollution: PDF source documents chunked and embedded (Mistral/e5/bge-m3) into a cosine-search index on S3, queried by the fact-checking agent as a tool call |
 | Pulsar TRAC API | Social media themes, topics and posts (GraphQL) |
-| Sentry | Error and cron monitoring of the Python jobs |
+| Sentry SDK / [GlitchTip](https://glitchtip.com) | Error, cron and log monitoring of the Python jobs. GlitchTip, hosted on the orchestrator, is Sentry-compatible: the jobs only need `SENTRY_DSN` (Kestra secret) to point at it. `SENTRY_LOGGING=true` also sends the logs. `quotaclimat/utils/sentry.py` tags events and logs with `country` (from `COUNTRY`), `service` (from `SERVICE_NAME`, else the entry script name) and sets `environment` from `ENV` |
 
 ## main-pipeline
 
@@ -117,6 +120,10 @@ Steps:
 8. `rrs_pollution`: [`rrs-pollution`](#rrs-pollution) with its defaults (`source=barometre`, RAG fact-checking and clustering on).
 9. `metabase_sync`: [`metabase-sync`](#metabase-sync) with `apply=true`, `force=true`, last so that the tables its queries read are all built.
 
+### Failure alert
+
+When a step fails, the flow-level `errors:` block posts a message to Mattermost (not for `metabase_sync`, whose `allowFailure: true` ends the run as WARNING). It is a `ForEach` over the comma-separated URLs of the `MATTERMOST_WEBHOOK_URLS` secret (incoming webhooks, one per channel), with `concurrencyLimit: 0` so that a failing webhook does not block the others. Each iteration POSTs a JSON message (`io.kestra.plugin.core.http.Request`: the notifications plugin is not bundled in the Kestra image) naming the first failed task and links to the execution of the failed subflow in the Kestra UI (`kestra.url`, set in the Kestra compose config, plus the `namespace/flowId` of the step from the flow's `subflows` variable, to update when a step is added). See `infrastructure/Readme.md`, "Failure alerts (Mattermost)". It can be tested end to end in dev (see the dev twins below).
+
 The RRS subflows receive no dates: `rrs-climate` resumes from what is already in the `rrs` DB, `rrs-insecurity` uses its own `days_back` default of 1, and `rrs-pollution`'s `filter_keywords` step likewise resumes from the latest `environmental_health` segment already in `rrs.segments` through now.
 
 ## barometre
@@ -131,21 +138,21 @@ The main OME pipeline for France (`COUNTRY=fra`): it fetches yesterday's TV/radi
 
 - **Runs:** `quotaclimat/data_processing/mediatree/s3/api_to_s3.py` in `quotaclimat_base`.
 - **What happens:** for each day of the window and each French channel, the job takes the program grid (`program_metadata`), calls the Mediatree subtitle API once per program slot (`type_sub=s2t`, up to 10 requests in parallel with `aiohttp`) and turns the responses into a dataframe of 2-minute transcript chunks. Each channel/day is written as gzip parquet to the `mediatree` bucket under `year=/month=/day=/channel=` (France has no `country=` prefix, for legacy reasons). `API_DATA_OVERWRITE=1` makes the job fetch again and overwrite a channel/day that already exists, because the Mediatree API is not always stable from one call to the next. A Ray runtime and a health-check server are started alongside.
-- **Technologies:** Mediatree API, `aiohttp`, Ray + Modin, pandas/pyarrow parquet, `boto3` to Scaleway S3, Sentry cron monitor `api-to-s3`.
+- **Technologies:** Mediatree API, `aiohttp`, Ray + Modin, pandas/pyarrow parquet, `boto3` to Scaleway S3, Sentry cron monitor `api-to-s3`. The task sets `SENTRY_DSN`, `SENTRY_LOGGING=true` and `SERVICE_NAME=api-to-s3`, so its logs and errors reach GlitchTip tagged with the service and the country.
 - **Reads:** Mediatree API (`MEDIATREE_USER`/`MEDIATREE_PASSWORD`). **Writes:** S3 `mediatree`.
 
 ### 2. `detect_keywords`: S3 to the `keywords` table
 
-- **Runs:** `entrypoints/detect_keywords.sh` in `quotaclimat_base`, which runs `alembic upgrade head`, refreshes the program metadata (`transform_program.py`) and then `quotaclimat/data_processing/mediatree/api_import.py`.
+- **Runs:** `entrypoints/detect_keywords.sh` in `quotaclimat_base`, which runs `alembic upgrade head` and then `quotaclimat/data_processing/mediatree/api_import.py` (which also loads the program grid into `program_metadata`, built from `i8n/<country>/channel_program.py` by `quotaclimat/data_processing/mediatree/program_metadata.py`).
 - **What happens:** for each day and channel, the parquet folder is read back from S3 and every chunk is matched against the keyword dictionary (climate, biodiversity, resources and their sub-categories). Validated stop words (ads and repeated phrases from the `stop_word` table) are removed from the text first. Each match gets a timestamp, and counts are computed per 20-second window, with and without "high risk false positive" keywords. Chunks without any theme are dropped. Rows are mapped to their program, given a hash id and upserted into `keywords` (`BATCH_SIZE=5000`). The number of rows read per channel/day is logged in `time_monitored`.
-- **Technologies:** Alembic, Ray + Modin (`MODIN_ENGINE=ray`), regex keyword matching, SQLAlchemy upserts. Ray uses all the CPUs of the host (`ray.init()` without `num_cpus`); `MODIN_CPUS=8` sets the number of partitions of the Modin dataframes, so the number of rows processed in parallel. `logLevel: WARN` keeps the per-row logs out of the Kestra UI.
+- **Technologies:** Alembic, Ray + Modin (`MODIN_ENGINE=ray`), regex keyword matching, SQLAlchemy upserts. The task sets `SERVICE_NAME=detect-keywords`; only `api_import.py` initialises Sentry, so the migration step before it sends nothing to GlitchTip. Ray uses all the CPUs of the host (`ray.init()` without `num_cpus`); `MODIN_CPUS=8` sets the number of partitions of the Modin dataframes, so the number of rows processed in parallel. `logLevel: WARN` keeps the per-row logs out of the Kestra UI.
 - **Reads:** S3 `mediatree`, `barometre.stop_word`, program metadata. **Writes:** `barometre.keywords`, `barometre.time_monitored`.
 
 ### 3. `detect_misinformation`: LLM screening
 
 - **Runs:** `python /app/main.py` in the `label-misinformation` image, built from the [climateguard](https://github.com/dataforgoodfr/climateguard) repo (code not in this repo).
-- **What happens:** the job reads the chunks with climate keywords from `barometre.keywords` (with the read-only user) over `days_back + 1` days, and asks Mistral (`LLM_PROVIDER=mistral`, `MODEL_NAME=mistral-small-2603`) for a binary misinformation verdict with a short reasoning. `MIN_MISINFORMATION_SCORE` does not apply to this prompt. Chunks classified as misinformation get their audio fetched from Mediatree (`/api/export/single`) and re-transcribed with Whisper, then are saved to the `climateguard` bucket (`label-misinformation-input/`). The job then calls Label Studio's storage sync, so they appear as tasks in project 6 (S3 storage id 4) for annotators. `LABEL_MISINFORMATION_OVERWRITE=1` reprocesses the window.
-- **Technologies:** Mistral API (`mistral-small-2603`), OpenAI API (Whisper), Scaleway S3, Label Studio API.
+- **What happens:** the job reads the chunks with climate keywords from `barometre.keywords` (with the read-only user) over `days_back + 1` days, and asks Mistral (`LLM_PROVIDER=mistral`, `MODEL_NAME=mistral-small-2603`) for a binary misinformation verdict with a short reasoning. The chunks of a channel are sent concurrently, at most `LLM_CONCURRENCY=10` requests at a time; a failing chunk gets score 0 and is dropped. `MIN_MISINFORMATION_SCORE` does not apply to this prompt. Chunks classified as misinformation get their audio fetched from Mediatree (`/api/export/single`) and re-transcribed with Whisper, then are saved to the `climateguard` bucket (`label-misinformation-input/`). The job then calls Label Studio's storage sync, so they appear as tasks in project 6 (S3 storage id 4) for annotators. `LABEL_MISINFORMATION_OVERWRITE=1` reprocesses the window.
+- **Technologies:** Mistral API (`mistral-small-2603`), OpenAI API (Whisper), Scaleway S3, Label Studio API. The task passes `SENTRY_DSN`, `SENTRY_LOGGING` and `SERVICE_NAME=detect-misinformation`, but the external image decides whether it uses them.
 - **Reads:** `barometre.keywords`, Mediatree export API. **Writes:** S3 `climateguard`, Label Studio project 6.
 
 ### 4. `dbt_run_transformations`: models
@@ -154,7 +161,7 @@ The main OME pipeline for France (`COUNTRY=fra`): it fetches yesterday's TV/radi
 - **What happens**, in order:
   1. `quotaclimat.data_ingestion.labelstudio.ingest_labelstudio` copies Label Studio tasks and annotations from the `labelstudio` DB into `barometre` (`labelstudio_task_aggregate`, `labelstudio_task_completion_aggregate`).
   2. `quotaclimat.data_ingestion.external_sources.download_external_sources` downloads the reference spreadsheets listed in `my_dbt_project/external_sources.yml` from the Drive folder in `EXTERNAL_SOURCES_DRIVE_FOLDER`, using the service account in `GOOGLE_SHEETS_SERVICE_ACCOUNT_JSON`. Spreadsheets readable without credentials are refused. Then `dbt seed` and `dbt test` load and check them.
-  3. `dbt run --full-refresh` builds the core models. The analytics tables and the advertising models are excluded here.
+  3. `dbt run` builds the core models. The analytics tables and the advertising models are excluded here. The incremental models of `models/dashboards` and `models/homepage` recompute only the last `DBT_LOOKBACK_WEEKS` weeks (1 by default: from the Monday of the previous week, `macros/incremental_window.sql`) and replace the rows of those weeks; with `--full-refresh` (input `full_refresh`, or automatically on the first day of each month) they are rebuilt from the whole `keywords` table, about 35 minutes. Rebuild in full after a replay of old days beyond the window, a change of the program grid or of a model.
   4. `dbt run --target analytics` builds `task_global_completion` and `environmental_shares_with_desinfo_counts`.
   5. A last `dbt run` builds the advertising models, `cas_de_mesinformation` and `publicites`, which read the analytics tables.
 - **Technologies:** dbt (Postgres adapter), Google Drive and Sheets APIs, SQLAlchemy.
@@ -185,15 +192,30 @@ Runs the dbt models of the `barometre` database, then the `curated` schema: [`ba
 | Input | Default | Effect |
 |---|---|---|
 | `only_analytics` | `false` | `true` runs `dbt.sh analytics`: the models of `models/dashboards` and `models/homepage` (the long part, computed from the whole `keywords` table) are left out and keep their last build |
+| `full_refresh` | `false` | `true` runs `dbt.sh full-refresh`: the incremental models of `models/dashboards`, `models/homepage` and `emission_jour` are rebuilt from the whole `keywords` table instead of the last weeks (`dbt.sh` also does it on the first day of each month) |
 
 ## dbt-analytics
 
 Quick rebuild, by hand, of the tables read by the Metabase questions, for instance after a change of an analytics or advertising model, or of a reference Google Sheet. Two subflows:
 
-1. `dbt_analytics`: [`dbt`](#dbt) with `only_analytics=true`. Same steps as a full run (Label Studio ingestion, seeds, analytics and advertising models, then the `curated` schema and its documentation in Metabase), without the dashboards and homepage models. `emission_jour` is still rebuilt, and reads the whole `public.keywords` table.
+1. `dbt_analytics`: [`dbt`](#dbt) with `only_analytics=true`. Same steps as a full run (Label Studio ingestion, seeds, analytics and advertising models, then the `curated` schema and its documentation in Metabase), without the dashboards and homepage models. `emission_jour` is incremental (the window of the dashboards models and the days whose cases changed, see `my_dbt_project/README.md`), in this flow as in a full run, and rebuilt in full with `full_refresh`.
 2. `metabase_sync`: [`metabase-sync`](#metabase-sync) with `apply=true`, `force=true`; its failure only marks the run as WARNING.
 
 It runs the `quotaclimat_base:latest` image, so the code must be merged and deployed first. Started during a `barometre` or `barometre-catchup` dbt run, its dbt step waits for the end of that run.
+
+## export-report-data
+
+Exports the data of a report to Google Sheets, by hand: runs the SQL queries `<tab>_sheet.sql` of the report folder `decisions/rapports/<AAAA-MM>-<sujet>/queries/` and writes each one to the tab `<tab>` of the Google Sheet named like the report (the other queries are not exported). No configuration file: naming conventions and procedure, in French, in [`decisions/rapports/export_report_data.md`](../decisions/rapports/export_report_data.md). One `io.kestra.plugin.docker.Run` task: `python -m quotaclimat.reports.export_report_data` in the `quotaclimat_base` image, so the report's queries must be merged to `main` first. Windmill copy: `f/quotaclimat/export_report_data`. (No diagram yet.)
+
+| Input | Default | Effect |
+|---|---|---|
+| `report` | (required) | Folder of the report in `decisions/rapports/`, e.g. `2027-02-pub-desinformation`. Checked by a `validator` regex, passed to the job in `REPORT_ID` (never in the command line); the job lists the reports having `_sheet` queries when the folder has none |
+| `apply` | `true` | `false` (`--check`) runs the queries and checks the spreadsheets without writing anything |
+
+- **What happens:** the job finds the spreadsheet named like the report in the folder `Rapports` (`REPORTS_DRIVE_FOLDER_NAME` to change it) of the shared Drive folder `EXTERNAL_SOURCES_DRIVE_FOLDER` (the folder of the reference data, `my_dbt_project/external_sources.yml`), and refuses it when it is readable without credentials (`ensure_not_public`, `quotaclimat/utils/google_sheets.py`, shared with the dbt reference data import). Then it runs the `_sheet` queries, each in a read-only transaction through a server-side cursor (a single `SELECT` per file, checked before), and replaces all its tabs in one `spreadsheets.batchUpdate` (all or nothing): values cleared then written from row 1, headers included, only in the columns of the result (8 columns: `A:H`; a chart or notes on their right stay as they are), formats and charts kept, missing tabs created. Charts are never edited: a chart whose range is open-ended (`A1:E`) follows the number of rows. The tab `_export` gets the date of the export (Europe/Paris), the report, the pipeline version and the row count of each tab. A failing query leaves the spreadsheet untouched and fails the run.
+- **Logs:** only names (report, spreadsheet, tab, query file) and row counts. The results are unpublished monitoring data: no row is logged, errors are reduced to their type, SQLSTATE or HTTP status (Postgres and Google error messages can quote values), and Sentry is not initialized.
+- **Technologies:** Postgres (`psycopg2`), Google Drive and Sheets APIs with the editor service account `GOOGLE_SHEETS_EDITOR_SERVICE_ACCOUNT_JSON`, shared as editor on the folder `Rapports` only.
+- **Reads:** `barometre` (any table its queries read), as `rrs-read-prod` (secrets `RRS_BAROMETRE_READ_USER`, `RRS_BAROMETRE_READ_PASSWORD`, `readonly` privilege). **Writes:** the tabs of the report's Google Sheets.
 
 ## extended-perimeter
 
@@ -330,14 +352,15 @@ A safety net that runs [`barometre`](#barometre)'s four steps every night at 03:
 
 Interactive version: [`diagrams/flows/barometre-i18n.html`](diagrams/flows/barometre-i18n.html).
 
-The OME pipeline for the other countries, every day at 04:07. Inputs: `days_back` (default 1), `start_date` (default now).
+The OME pipeline for the other countries, every day at 04:07. Inputs: `days_back` (default 1), `start_date` (default now), `countries` (multiselect, all five by default: untick all but one to run a single country), `api_data_overwrite` and `label_misinformation_overwrite` (booleans, off by default, see below).
 
-1. **`i18n_loop`** (`ForEach` over `bel`, `bel-fla`, `deu`, `esp`, `pol`, one country at a time) runs two tasks per country:
-   - `ingest_data_to_s3`: same as `barometre` step 1 with `COUNTRY` set to the loop value. Objects go to the `mediatree` bucket under `country=<name>/year=/...`, and channels and program grids come from that country's config.
+1. **`i18n_loop`** (`ForEach` over the `countries` input, `bel`, `bel-fla`, `deu`, `esp`, `pol` by default, one country at a time) runs three tasks per country, each with `allowFailure: true` so that one country failing does not stop the others (the run then ends in WARNING):
+   - `ingest_data_to_s3`: same as `barometre` step 1 with `COUNTRY` set to the loop value. `API_DATA_OVERWRITE=1` only when the `api_data_overwrite` input is on (otherwise the variable is empty, because the job tests its truthiness). Objects go to the `mediatree` bucket under `country=<name>/year=/...`, and channels and program grids come from that country's config.
    - `detect_keywords`: same as `barometre` step 2, writing to `barometre.keywords` with the country's name. Keywords are filtered on the country's language. Non-French languages are matched on spaCy lemmas plus exact forms, instead of the French regex.
-2. **`detect_misinformation`** (`ForEach` over five Scaleway job definition ids, all in parallel): a `trigger_job` HTTP POST to the Scaleway Serverless Jobs API starts one `label-misinformation-<country>` job per country (deployed from the climateguard repo, token `CLIMATESAFEGUARDS_SCW_SECRET`). Kestra does not wait for them: the polling loop is commented out, so their success or failure is not visible in this flow.
+   - `detect_misinformation`: same as `barometre` step 3, run on the Kestra VM (`label-misinformation:latest` image). `COUNTRY` is the country's full name (`belgium`, `belgium-flanders`, `germany`, `spain`, `poland`), taken from `variables.countries`, which also holds the country bucket (`safeguards-climate-<country>-prod`) and the Label Studio project and project id (the Label Studio URL is in the secret). `LABEL_MISINFORMATION_OVERWRITE=1` only when the `label_misinformation_overwrite` input is on.
+2. **`dbt_run_transformations`**: once, after all countries, the [`dbt`](#dbt) subflow (`wait: true`, `transmitFailed: true`).
 
-The dbt task is commented out in the YAML, so this flow does not rebuild the models. They are rebuilt by the next `barometre` run.
+**Per-country secrets.** The country bucket keys and Label Studio token and URL live in one Kestra secret, `I18N_COUNTRY_SECRETS`: a single-line JSON object keyed by country code, `{"bel": {"bucket_access": "...", "bucket_secret": "...", "label_studio_token": "...", "label_studio_url": "https://..."}, "bel-fla": {...}, ...}`. The task reads a key with `secret('I18N_COUNTRY_SECRETS') | jq('.["' ~ taskrun.value ~ '"].bucket_access') | first`. The other secrets (`MISTRAL_API_KEY`, `OPENAI_API_KEY`, `POSTGRES_*_READ`...) are shared with the France flows. To add a country: add its code to the `ForEach` values, an entry to `variables.countries` and a key to the JSON secret. See [`infrastructure/Readme.md`](../infrastructure/Readme.md#per-country-secret-i18n_country_secrets) for how to build and deploy the secret.
 
 ## pulsar-themes
 
@@ -356,7 +379,19 @@ Pulls social media "themes" (clusters of topics, like Pulsar's "What's the story
 
 ## Dev flows
 
-Every prod flow except `barometre-catchup`, `barometre-i18n`, `dbt` and `dbt-analytics` has a dev twin: `main_quotaclimatdev_mainpipeline.yaml` and `main_quotaclimatdev_barometre.yaml` (namespace `quotaclimat-dev`), and `main_rrsdev_*.yaml` (namespace `rrs-dev`). They run the same tasks with the `_DEV` secrets, `-dev` buckets, dev databases, `DBT_ENV=dev` and the dev Label Studio project for the extended perimeter (23 / tab 137). The dev `main-pipeline` has no schedule.
+Every prod flow except `barometre-catchup`, `barometre-i18n`, `dbt` and `dbt-analytics` has a dev twin: `main_quotaclimatdev_mainpipeline.yaml` and `main_quotaclimatdev_barometre.yaml` (namespace `quotaclimat-dev`), and `main_rrsdev_*.yaml` (namespace `rrs-dev`). They run the same tasks with the `_DEV` secrets, `-dev` buckets, dev databases, `DBT_ENV=dev` and the dev Label Studio project for the extended perimeter (23 / tab 137). The dev `main-pipeline` has no schedule. It also has the same failure alert (message prefixed with `[dev]`, same `MATTERMOST_WEBHOOK_URLS` secret) and a `test_alert` input (default `false`): with `test_alert=true` its first step, `alert_test`, runs the `alert-test` subflow (`main_quotaclimatdev_alerttest.yaml`, namespace `quotaclimat-dev`, always fails), so the run fails right away and sends the alert, whose message names `alert_test` and links to the failed `alert-test` execution. Nothing else runs. (No diagram yet for `alert-test`.)
+
+### glitchtip-log-test (dev only)
+
+`main_quotaclimatdev_glitchtiplogtest.yaml`, namespace `quotaclimat-dev`, no schedule: run it by hand to check that logs and errors reach GlitchTip. One `io.kestra.plugin.scripts.python.Script` task (Docker task runner, `python:3.12-slim`, `pip install sentry-sdk`) initialises the Sentry SDK with the `SENTRY_DSN` secret and sends a series of logs (`INFO` and `WARNING` are sent, `DEBUG` stays in the Kestra log), then triggers a division by zero that it catches and reports with `logger.error(..., exc_info=True)`: the error and its traceback reach GlitchTip and the task still succeeds. Everything carries the Kestra execution id as `run_id` (message, tag, log attribute): filter on it in GlitchTip, under Logs and Issues.
+
+| Input | Default | Effect |
+|---|---|---|
+| `country` | `test` | Value of the `country` tag and log attribute |
+| `service` | `glitchtip-log-test` | Value of the `service` tag and log attribute |
+| `send_logs` | `true` | `false` sends only the handled error, not the logs |
+
+The script is self-contained: it does not import `quotaclimat/utils/sentry.py`, so it tests GlitchTip and the DSN, not the repo's `sentry_init()`.
 
 ## Updating the diagrams
 

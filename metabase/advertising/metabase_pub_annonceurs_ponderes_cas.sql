@@ -16,20 +16,22 @@
 --       secondes de pub autour de l'émission, puis additionnés par annonceur (cas_attribues). Un annonceur qui a
 --       10 % de la pub d'une émission à 20 cas se voit attribuer 2 cas. Favorise les émissions longues (plus
 --       d'heures, plus de cas) ;
---     - true : chaque seconde de pub pèse le score de son émission, ses cas par heure consacrée à l'environnement
+--     - true : chaque seconde de pub pèse le score de son émission, ses cas par heure consacrée au climat
 --       sur la période (intensité de la mésinformation climatique, indépendante de la durée des émissions) : une
---       seconde autour d'une émission à 2 cas par heure d'environnement pèse deux fois plus qu'autour d'une
+--       seconde autour d'une émission à 2 cas par heure de climat pèse deux fois plus qu'autour d'une
 --       émission à 1 cas par heure. cas_attribues est alors la somme des secondes x score (ce n'est plus un
 --       nombre de cas, seules les parts, rangs et cumuls se lisent) ; les colonnes _cas se lisent « pondéré ».
 --   env_heures_min type Nombre, facultatif (0.5 si vide), avec ponderation_par_temps_denv seulement : émissions
---           gardées, au moins ce temps consacré à l'environnement sur la période ; en dessous le score repose sur
---           trop peu d'heures (1 cas en 6 min d'environnement donne 10 cas par heure) et l'émission est écartée de
+--           gardées, au moins ce temps consacré au climat sur la période ; en dessous le score repose sur
+--           trop peu d'heures (1 cas en 6 min de climat donne 10 cas par heure) et l'émission est écartée de
 --           tout le calcul, pub comprise
 --   theme_cas type Texte, facultatif (vide : tous les cas) : ne compter que les cas de ce thème
---          (analytics.cas_theme, ex. automobile), rattachés à leur émission par analytics.cas_de_mesinformation
+--          (analytics.cas_theme, ex. automobile : mots-clés trouvés dans l'affirmation du cas seulement),
+--          rattachés à leur émission par analytics.cas_de_mesinformation
 --   pertinence_min type Texte, facultatif (faible si vide), faible, moyenne ou forte (liste déroulante) : avec
---          theme_cas, pertinence minimale des cas du thème (faible : tous, moyenne : moyenne et forte, forte :
---          forte seulement ; une autre valeur ne renvoie rien)
+--          theme_cas, pertinence minimale des cas du thème (forte : un mot-clé fort dans l'affirmation, moyenne :
+--          seulement des mots-clés faibles ; faible ou moyenne : tous les cas du thème, forte : forte seulement ;
+--          une autre valeur ne renvoie rien)
 --   secteur, categorie type Filtre de champ sur Advertising > Pub Annonceur Emission Jour > Secteur / Categorie,
 --          sélection multiple, facultatifs (vides : pas de filtre) : n'afficher que les annonceurs qui ont de la pub
 --          dans ces secteurs / catégories (ex. Automobile, Voiture électrique). Le filtre ne choisit que les lignes
@@ -37,6 +39,13 @@
 --          seul secteur Automobile, si ses annonceurs ont 10 % de la pub, leurs part_pub_pct totalisent 10 %, pas
 --          100 %) ; un annonceur gardé l'est avec toute sa pub, y compris dans d'autres secteurs. Les courbes
 --          cumulées sautent donc les rangs des annonceurs écartés
+--   agence, groupe_agence type Filtre de champ sur Advertising > Pub Annonceur Emission Jour > Agence Media /
+--          Groupe Agence, sélection multiple, facultatifs (vides : pas de filtre) : n'afficher que les annonceurs qui
+--          ont de la pub achetée par ces agences / groupes d'agences (agence média de l'entreprise de la
+--          marque, d'après le Google Sheet Inventaire_des_annonceurs). Comme secteur et categorie, le filtre ne
+--          choisit que les lignes affichées : rangs, parts et cumuls restent calculés sur tous les annonceurs, avec
+--          ou sans agence connue ; pub_secondes_selection, pub_dans_selection_pct et part_selection_pct se lisent
+--          alors pour la pub de ces agences
 --   nb_points type Nombre, facultatif (2000 si vide) : annonceurs gardés, ceux classés dans les nb_points premiers
 --           des deux classements (rang_pub et rang_cas) ; les parts et les cumuls restent calculés sur tous les
 --           annonceurs (le dernier point n'atteint donc pas 100 %)
@@ -48,7 +57,7 @@
 --   nb_entreprises : entreprises distinctes qui ont de la pub dans la ligne (1 au niveau marque ou entreprise,
 --     les entreprises du groupe ou du secteur sinon) ;
 --   pub_secondes, part_pub_pct : sa pub rattachée à une émission (gardée) et sa part, pour comparer ;
---   pub_secondes_selection : sa pub dans les secteurs et catégories choisis (toute sa pub sans filtre) ;
+--   pub_secondes_selection : sa pub dans les secteurs, catégories et agences choisis (toute sa pub sans filtre) ;
 --   pub_dans_selection_pct : part de sa pub qui est dans ces secteurs / catégories (ex. 60 % de la pub d'un
 --     groupe est dans l'automobile) ; 100 % sans filtre ;
 --   part_selection_pct : sa part dans la pub de ces secteurs / catégories, tous annonceurs confondus (ex. le
@@ -72,13 +81,33 @@
 --     s'il est négatif) marque le rang où la deuxième courbe commence à rattraper la première ; un plateau : des
 --     annonceurs neutres (indice proche de 1) ou très petits. Il revient à 0 quand tous les annonceurs sont
 --     comptés ;
---   cas_par_heure_moyen, cas_par_heure_env_moyen : cas par heure de programme et cas par heure d'environnement des
+--   cas_par_heure_moyen, cas_par_heure_env_moyen : cas par heure de programme et cas par heure de climat des
 --     émissions de l'annonceur, moyennes pondérées par ses secondes de pub (la seconde sur les seules émissions
---     d'au moins env_heures_min heures d'environnement), quelle que soit la pondération.
+--     d'au moins env_heures_min heures de climat), quelle que soit la pondération ;
+--   agence_media, groupe_agence, fiabilite_agence : agence média de l'annonceur qui a le plus de ses secondes de
+--     pub dans la sélection (avec un filtre d'agence : l'agence choisie), son groupe et la fiabilité de
+--     l'information (confirmee, probable, indice, inconnue) ; NULL quand l'annonceur n'est pas dans le Google
+--     Sheet. À un niveau qui regroupe plusieurs entreprises (groupe, secteur), l'agence principale seulement ;
+--   autres_agences_media : les autres agences connues de l'annonceur, par secondes de pub décroissantes (NULL
+--     sans autre agence), utile aux niveaux groupe et secteur ;
+--   part_pub_agence_pct : part des secondes de pub de l'annonceur achetées par agence_media (100 : toute sa pub ;
+--     NULL quand l'agence n'est pas connue). Calculée sur toute sa pub de la période, émissions écartées par
+--     env_heures_min comprises ;
+--   perimetre_media_agence : périmètre média de l'agence d'après le Google Sheet (partiel : elle n'achète qu'une
+--     partie des médias de l'annonceur, ex. programmatique et réseaux sociaux seulement ; tout ; NULL si non dit) ;
+--   statut_agence : pour colorer les lignes du tableau (couleurs de metabase/couleurs.yml, groupe statut_agence) :
+--     partiel quand agence_media n'achète qu'une partie de la pub de la ligne (part_pub_agence_pct < 100, ex. un
+--     groupe ou un secteur dont les entreprises ont plusieurs agences) ou
+--     quand son perimetre_media_agence est partiel ; sinon fiabilite_agence (confirmee, probable, indice, inconnue) ;
+--     NULL quand l'annonceur n'est pas dans le Google Sheet.
 -- Sources (dbt) : advertising.pub_annonceur_emission_jour (secondes de pub de chaque marque autour de chaque
--- émission, par jour de la pub) et public.emission_jour (cas, heures de programme et d'environnement par
+-- émission, par jour de la pub, avec son agence média) et public.emission_jour (cas, heures de programme et de climat par
 -- émission, par jour de programme : écart possible d'une journée aux bords de la période pour les émissions qui
 -- passent minuit).
+-- Temps de climat : public.emission_jour.climat_heures, fenêtres de 20 s avec au moins un mot-clé climat
+-- (constat, causes, conséquences, atténuation, adaptation ; biodiversité et ressources exclues). Les noms en env
+-- (env_heures, cas_par_heure_env, env_heures_min...) sont gardés pour ne pas casser les graphiques et filtres des
+-- questions, ils désignent ce temps de climat.
 WITH bornes AS NOT MATERIALIZED (
     SELECT
         CAST({{debut}} AS date) AS debut,
@@ -100,9 +129,9 @@ chaines AS (
     WHERE country = 'france'
     GROUP BY channel_name
 ),
--- secondes de pub par annonceur (au niveau choisi), entreprise et émission, et si cette pub est dans les secteurs
--- et catégories choisis ; table sans alias : les filtres de champ de Metabase (secteur, categorie) la nomment en
--- entier (sans valeur, Metabase les remplace par 1 = 1)
+-- secondes de pub par annonceur (au niveau choisi), entreprise, émission et agence, et si cette pub est dans les
+-- secteurs, catégories et agences choisis ; table sans alias : les filtres de champ de Metabase (secteur, categorie,
+-- agence, groupe_agence) la nomment en entier (sans valeur, Metabase les remplace par 1 = 1)
 pub AS MATERIALIZED (
     SELECT
         CASE CAST({{niveau}} AS text)
@@ -113,10 +142,14 @@ pub AS MATERIALIZED (
         END AS annonceur,
         advertising.pub_annonceur_emission_jour.entreprise,
         advertising.pub_annonceur_emission_jour.emission_cle,
+        advertising.pub_annonceur_emission_jour.agence_media,
+        advertising.pub_annonceur_emission_jour.groupe_agence,
+        advertising.pub_annonceur_emission_jour.fiabilite_agence,
+        advertising.pub_annonceur_emission_jour.perimetre_media_agence,
         SUM(advertising.pub_annonceur_emission_jour.pub_secondes) AS pub_secondes,
-        -- NULL sans pub dans les secteurs et catégories choisis
-        SUM(advertising.pub_annonceur_emission_jour.pub_secondes) FILTER (WHERE {{secteur}} AND {{categorie}})
-            AS pub_secondes_selection
+        -- NULL sans pub dans les secteurs, catégories et agences choisis
+        SUM(advertising.pub_annonceur_emission_jour.pub_secondes)
+            FILTER (WHERE {{secteur}} AND {{categorie}} AND {{agence}} AND {{groupe_agence}}) AS pub_secondes_selection
     FROM advertising.pub_annonceur_emission_jour
     CROSS JOIN bornes b
     CROSS JOIN parametres pa
@@ -125,7 +158,7 @@ pub AS MATERIALIZED (
       AND CAST({{niveau}} AS text) IN ('marque', 'entreprise', 'groupe', 'secteur')
       AND pa.pertinence_min IN ('faible', 'moyenne', 'forte')
       AND (pa.info_continue OR NOT COALESCE(c.infocontinue, FALSE))
-    GROUP BY 1, 2, 3
+    GROUP BY 1, 2, 3, 4, 5, 6, 7
 ),
 -- avec theme_cas : cas du thème par émission sur la période (jour de programme, comme emission_jour), à partir de
 -- la pertinence minimale
@@ -143,7 +176,7 @@ cas_du_theme AS (
       AND c.jour_programme BETWEEN b.debut AND b.fin
     GROUP BY c.emission_cle
 ),
--- cas (tous, ou ceux du thème), heures de programme et d'environnement de chaque émission sur la période
+-- cas (tous, ou ceux du thème), heures de programme et de climat de chaque émission sur la période
 metriques AS (
     SELECT
         t.emission_cle,
@@ -155,7 +188,7 @@ metriques AS (
             ej.emission_cle,
             SUM(ej.nb_cas) AS nb_cas,
             SUM(ej.volume_heures) AS volume_heures,
-            SUM(ej.env_heures) AS env_heures
+            SUM(ej.climat_heures) AS env_heures
         FROM public.emission_jour ej
         CROSS JOIN bornes b
         WHERE ej.jour BETWEEN b.debut AND b.fin
@@ -164,17 +197,17 @@ metriques AS (
     CROSS JOIN parametres pa
     LEFT JOIN cas_du_theme ct ON ct.emission_cle = t.emission_cle
 ),
--- émissions gardées (pondération par le temps d'environnement : assez de temps d'environnement) et cas_attribues d'une seconde de pub autour
+-- émissions gardées (pondération par le temps de climat : assez de temps de climat) et cas_attribues d'une seconde de pub autour
 -- d'elles ; MATERIALIZED : calculé une seule fois
 emissions AS MATERIALIZED (
     SELECT
         pe.emission_cle,
         m.nb_cas,
         m.volume_heures,
-        -- score, défini seulement avec assez de temps d'environnement
+        -- score, défini seulement avec assez de temps de climat
         CASE WHEN m.env_heures >= pa.env_heures_min THEN m.nb_cas / NULLIF(m.env_heures, 0) END AS cas_par_heure_env,
         CASE WHEN pa.par_temps_env
-            -- score de l'émission (NULL sans environnement, avec env_heures_min à 0)
+            -- score de l'émission (NULL sans climat, avec env_heures_min à 0)
             THEN m.nb_cas / NULLIF(m.env_heures, 0)
             -- cas de l'émission par seconde de sa pub : x secondes de l'annonceur = ses cas attribués
             ELSE COALESCE(m.nb_cas, 0) / pe.pub_secondes_emission
@@ -201,6 +234,50 @@ par_annonceur AS (
     FROM pub pu
     JOIN emissions e ON e.emission_cle = pu.emission_cle
     GROUP BY pu.annonceur
+),
+-- agences de chaque annonceur, par secondes de pub dans la sélection puis au total
+agences AS (
+    SELECT
+        annonceur,
+        agence_media,
+        groupe_agence,
+        fiabilite_agence,
+        perimetre_media_agence,
+        SUM(pub_secondes_selection) AS pub_secondes_selection,
+        SUM(pub_secondes) AS pub_secondes
+    FROM pub
+    GROUP BY 1, 2, 3, 4, 5
+),
+-- agence principale : la plus présente dans la sélection (l'agence choisie avec un filtre d'agence), puis au total
+agence_principale AS (
+    SELECT DISTINCT ON (annonceur) annonceur, agence_media, groupe_agence, fiabilite_agence, perimetre_media_agence
+    FROM agences
+    ORDER BY annonceur, pub_secondes_selection DESC NULLS LAST, pub_secondes DESC, agence_media
+),
+autres_agences AS (
+    SELECT
+        a.annonceur,
+        STRING_AGG(a.agence_media, ', ' ORDER BY a.pub_secondes DESC, a.agence_media) AS autres_agences_media
+    FROM (
+        SELECT annonceur, agence_media, SUM(pub_secondes) AS pub_secondes
+        FROM agences
+        WHERE agence_media IS NOT NULL
+        GROUP BY 1, 2
+    ) a
+    JOIN agence_principale ap ON ap.annonceur = a.annonceur
+    WHERE a.agence_media IS DISTINCT FROM ap.agence_media
+    GROUP BY a.annonceur
+),
+-- part de la pub de l'annonceur achetée par son agence principale
+part_agence AS (
+    SELECT
+        ag.annonceur,
+        ROUND((100 * SUM(ag.pub_secondes) FILTER (WHERE ag.agence_media = ap.agence_media) / SUM(ag.pub_secondes))::numeric, 2)
+            AS part_pub_agence_pct
+    FROM agences ag
+    JOIN agence_principale ap ON ap.annonceur = ag.annonceur
+    WHERE ap.agence_media IS NOT NULL
+    GROUP BY ag.annonceur
 ),
 -- parts, rangs et cumuls sur tous les annonceurs, avant la limite
 resultat AS (
@@ -245,11 +322,26 @@ resultat AS (
 SELECT
     p.par_temps_env AS ponderation_par_temps_denv,
     p.theme AS theme_cas,
-    r.*
+    r.*,
+    ap.agence_media,
+    ap.groupe_agence,
+    ap.fiabilite_agence,
+    aa.autres_agences_media,
+    pg.part_pub_agence_pct,
+    ap.perimetre_media_agence,
+    CASE
+        WHEN ap.agence_media IS NOT NULL
+         AND (pg.part_pub_agence_pct < 100 OR ap.perimetre_media_agence = 'partiel') THEN 'partiel'
+        ELSE ap.fiabilite_agence
+    END AS statut_agence
 FROM resultat r
 CROSS JOIN parametres p
+LEFT JOIN agence_principale ap ON ap.annonceur = r.annonceur
+LEFT JOIN autres_agences aa ON aa.annonceur = r.annonceur
+LEFT JOIN part_agence pg ON pg.annonceur = r.annonceur
 WHERE r.rang_pub <= p.nb_points
   AND r.rang_cas <= p.nb_points
-  -- filtres secteur et categorie : lignes affichées seulement, valeurs calculées sur tous les annonceurs
+  -- filtres secteur, categorie, agence et groupe_agence : lignes affichées seulement, valeurs calculées sur tous
+  -- les annonceurs
   AND r.pub_secondes_selection IS NOT NULL
 ORDER BY r.rang_cas, r.rang_pub, r.annonceur

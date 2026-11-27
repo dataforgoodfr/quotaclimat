@@ -1,0 +1,38 @@
+summary: quotaclimat/dbt-analytics
+description: |-
+  Quick rebuild of the tables read by the Metabase questions, by hand: dbt
+  without the models of models/dashboards and models/homepage (the long part,
+  computed from the whole keywords table, which keeps its last build), then
+  metabase-sync. Same quotaclimat_base:latest image as barometre: the code must
+  be deployed (merged on main). The dbt step waits if another dbt run
+  (barometre, barometre-catchup) is in progress.
+value:
+  modules:
+  - id: dbt_analytics
+    summary: dbt analytics
+    value:
+      type: flow
+      path: f/quotaclimat/dbt
+      input_transforms:
+        only_analytics:
+          type: static
+          value: true
+  - id: metabase_sync
+    summary: metabase sync
+    value:
+      type: flow
+      path: f/quotaclimat/metabase_sync
+      input_transforms:
+        apply:
+          type: static
+          value: true
+        force:
+          type: static
+          value: true
+    continue_on_error: true
+schema:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  order: []
+  properties: {}
+  required: []

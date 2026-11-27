@@ -280,6 +280,18 @@ def test_run_new_run_creates_table_and_uses_presse_keywords(env):
     assert env.read_kw == [["inondation", "crue"]]
 
 
+def test_run_attaches_source_without_ctid_scan(env):
+    """Verify that the source is attached without the ctid scan, so that each daily read
+    uses the index on publication_datetime instead of going through the whole table."""
+    calls = []
+    env.mp.setattr(ta.utils, "configure_barometre_source", lambda *a, **k: calls.append(k))
+    env.add_day(D1)
+
+    ta.run()
+
+    assert calls == [{"use_ctid_scan": False}]
+
+
 def test_run_new_raises_if_table_exists(env):
     """Verify that MODE=new refuses an existing destination table: nothing is read
     and the existing rows are untouched."""

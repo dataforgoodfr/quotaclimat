@@ -83,7 +83,8 @@ def get_auth_token(password=password, user_name=USER):
         token = output['data']['access_token']
         return token 
     except Exception as err:
-        logging.error("Could not get token %s:(%s) %s" % (type(err).__name__, err))
+        logging.warning("Could not get token :(%s) %s" % (type(err).__name__, err))
+        raise
 
 # see : https://keywords.mediatree.fr/docs/#api-Subtitle-SubtitleList
 def get_param_api(token, type_sub, start_epoch, channel, end_epoch, country: CountryMediaTree):
@@ -112,6 +113,8 @@ def parse_reponse_subtitle(response_sub, channel = None, channel_program = "", c
             new_df["channel.title"] = new_df["channel"].apply(lambda x: x["title"])
             new_df["channel.radio"] = new_df["channel"].apply(lambda x: x["radio"])
             new_df.drop("channel", axis=1, inplace=True)
+            # raw API fields that have no column in the keywords table (would break the PG upsert)
+            new_df.drop(columns=["type", "index"], inplace=True, errors="ignore")
 
             logging.debug("Schema from API before formatting :\n%s", new_df.dtypes)
             pd.set_option('display.max_columns', None)
@@ -182,12 +185,13 @@ async def get_post_request(session: aiohttp.ClientSession, media_tree_token, typ
             if response.status >= 400:
                 logging.warning(f"{response.status} - Expired token ? - retrying to get a new one {content}")
                 await asyncio.to_thread(get_auth_token, password, USER)
-                raise Exception
+                raise Exception(f"Mediatree API returned {response.status} for {channel}: {content}")
 
             return parse_raw_json(content, response.status)
     except Exception as err:
-        logging.error("Retry - Could not query API :(%s) %s" % (type(err).__name__, err))
-        raise Exception
+        # warning, not error: tenacity retries this call, the final failure is logged by the caller
+        logging.warning("Retry - Could not query API :(%s) %s" % (type(err).__name__, err))
+        raise
 
 @retry(wait=wait_random_exponential(multiplier=1, max=60),stop=stop_after_attempt(7))
 async def get_df_api(session: aiohttp.ClientSession, media_tree_token, type_sub, start_epoch, channel, end_epoch, channel_program, channel_program_type, program_metadata_id, country: CountryMediaTree = FRANCE):
@@ -196,8 +200,8 @@ async def get_df_api(session: aiohttp.ClientSession, media_tree_token, type_sub,
 
         return parse_reponse_subtitle(response_sub, channel, channel_program, channel_program_type, program_metadata_id, country=country)
     except Exception as err:
-        logging.error("Retry - get_df_api:(%s) %s" % (type(err).__name__, err))
-        raise Exception
+        logging.warning("Retry - get_df_api:(%s) %s" % (type(err).__name__, err))
+        raise
     
 def refresh_token(token, date):
     if is_it_tuesday(date): # refresh token every weekday for batch import
@@ -424,7 +428,7 @@ async def get_and_save_api_data(exit_event):
                                 save_to_s3(df_res, channel, day, s3_client=s3_client, country=country, set_filename=set_filename)
 
                             except Exception as err:
-                                logging.error(f"continuing loop but met error : {err}")
+                                logging.error(f"continuing loop but met error for {channel} - {day} : ({type(err).__name__}) {err}")
                                 continue
             exit_event.set()
         except Exception as err:

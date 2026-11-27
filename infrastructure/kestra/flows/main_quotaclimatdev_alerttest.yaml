@@ -1,0 +1,17 @@
+id: alert-test
+namespace: quotaclimat-dev
+
+description: |
+  Always fails. Called by the dev `main-pipeline` when run with `test_alert=true`, to
+  check that a failing step sends the Mattermost alert (message, links to the
+  failed subflow and to the execution).
+
+labels:
+  pipeline: ome
+  environment: dev
+  scope: test
+
+tasks:
+  - id: fail
+    type: io.kestra.plugin.core.execution.Fail
+    errorMessage: "Test of the main-pipeline failure alert, expected failure"

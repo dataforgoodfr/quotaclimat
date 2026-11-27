@@ -7,7 +7,12 @@ from functools import partial
 from ..tools.fingerprint_tools.compare import FingerprintsCompare
 from ..tools.fingerprints import fingerprinter
 from ..tools.interactive_tqdm import interactive_tqdm
-from .e00_download_audio import download_all_audio_parts
+from .e00_download_audio import (
+    DOWNLOAD_BATCH_SIZE,
+    delete_audio,
+    download_jobs_audio,
+    list_audio_jobs,
+)
 from .e01_check_partition_cover import check_partition_cover
 from .e02_split_in_chunks import ChunkCreator, ChunkCreatorJob
 from .e03_already_identified_advertising import run_chunk_identification
@@ -20,6 +25,7 @@ from .e06_export_classification import (
 from .e07_export_raw_data import Report, TimingCollector, export_chunks_to_s3
 from .tools.cache import LocalCache
 from .tools.common_objects import Chunk
+from .tools.parallel import frozen_gc
 
 logger = logging.getLogger(__name__)
 
@@ -75,17 +81,11 @@ async def processor(
         f"Process is run with fingerprint_hash={fingerprint_hash} chunk_creator_hash={chunk_creator_hash}"
     )
 
-    #### Download all weeks audio segments
+    #### List the week's audio segments (downloaded later, batch by batch)
 
-    with timings.measure("audio_download"):
-        chunks_creator_jobs = await download_all_audio_parts(
-            channel=channel,
-            start_date=start_date,
-            end_date=end_date,
-        )
-        logger.info(
-            f"Downloaded {len(chunks_creator_jobs)} audio files for channel {channel} between {start_date} and {end_date}"
-        )
+    with timings.measure("audio_listing"):
+        week_audio = await list_audio_jobs(channel=channel, start_date=start_date)
+        chunks_creator_jobs = week_audio.jobs
 
     #### Check partition cover
 
@@ -96,8 +96,10 @@ async def processor(
     )
 
     #### Audio processing
+    # The job's disk cannot hold a whole week of audio: each batch of files is
+    # downloaded, split in chunks (kept in the cache), then deleted.
 
-    with timings.measure("audio_processing"):
+    with timings.measure("audio_download_and_processing"):
         with LocalCache(
             name="chunks", version=f"{fingerprint_hash}_{chunk_creator_hash}"
         ) as chunk_cache:
@@ -108,19 +110,32 @@ async def processor(
             worker = partial(
                 process_audio, cache=chunk_cache, chunk_creator=chunk_creator
             )
-            with ProcessPoolExecutor(max_workers=num_workers) as executor:
-                for was_cached in executor.map(
-                    worker,
-                    (job for job in chunks_creator_jobs),
-                ):
-                    progress.count("cached" if was_cached else "computed")
-                    progress.update(1)
+            with frozen_gc(), ProcessPoolExecutor(max_workers=num_workers) as executor:
+                for i in range(0, len(chunks_creator_jobs), DOWNLOAD_BATCH_SIZE):
+                    batch = chunks_creator_jobs[i : i + DOWNLOAD_BATCH_SIZE]
+                    to_compute = [
+                        job
+                        for job in batch
+                        if not chunk_cache.exists(job.segment.identifier + ".json")
+                    ]
+                    progress.count("cached", len(batch) - len(to_compute))
+                    ready, downloaded = await download_jobs_audio(
+                        week_audio, to_compute
+                    )
+                    progress.count("failed", len(to_compute) - len(ready))
+                    try:
+                        for was_cached in executor.map(worker, ready):
+                            progress.count("cached" if was_cached else "computed")
+                    finally:
+                        delete_audio(downloaded)
+                    progress.update(len(batch))
 
             progress.close()
 
             chunks: list[Chunk] = [
                 chunk
                 for job in chunks_creator_jobs
+                if chunk_cache.exists(job.segment.identifier + ".json")
                 for chunk in (
                     Chunk.from_dict(d)
                     for d in json.loads(
@@ -131,6 +146,9 @@ async def processor(
 
             # Sort by start time. Should already be the case, but ensure it.
             chunks.sort(key=lambda c: c.start_sec)
+            logger.info(
+                f"{len(chunks)} chunks in the {len(chunks_creator_jobs)} audio files"
+            )
 
     #### Identification of known chunks
 
@@ -139,12 +157,16 @@ async def processor(
             chunks,
             params_hash=fingerprint_hash,
             compare=fingerprints_compare,
+            reference_date=start_date,
+            num_workers=num_workers,
         )
 
     #### Chunk grouping
 
     with timings.measure("chunk_grouping"):
-        groups = group_chunks(unknown_chunks, compare=fingerprints_compare)
+        groups = group_chunks(
+            unknown_chunks, compare=fingerprints_compare, num_workers=num_workers
+        )
 
     #### Fragment classification
 
@@ -152,6 +174,10 @@ async def processor(
         fragment_classifier = FragmentsClassifier.from_channel(channel)
         fragments = fragment_classifier.run(
             groups, already_known_fragments=previously_known_fragments
+        )
+        logger.info(
+            f"{len(fragments)} fragments classified from {len(groups)} groups of chunks "
+            f"and {len(previously_known_fragments)} fragments of known ads"
         )
 
     #### Database storage

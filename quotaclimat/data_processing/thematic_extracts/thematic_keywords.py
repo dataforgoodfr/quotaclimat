@@ -1,7 +1,11 @@
 ### Fills a thematic table {thematic}_keywords_{country} (e.g. incendies_keywords_fr) with,
-### for every period of the thematic and country in thematic_jobs_config.yml (column period):
-### - chunks that contain given keywords
-### - neighbour chunks (+/- GAP) fetched in s3
+### for every period of the thematic and country in thematic_jobs_config.yml (column period),
+### one row per chunk of the keywords table that contains given keywords (primary key: id of the keywords table),
+### with the normalized plaintext of its previous and next chunks of the same channel fetched in s3
+### (closest within GAP, NULL if none): plaintext_normalized_prev / plaintext_normalized_next,
+### and their start: start_prev / start_next (to count once a chunk that is the neighbour of two thematic chunks).
+### Thematic chunk plaintexts are compared with s3 (missing chunks and mismatches counted and logged).
+### Tables created with the former structure (this_id, thematic_chunk, adjacent rows) must be dropped by hand first.
 
 ### given following environment variables
 ### - THEMATIC (mandatory): keywords and periods fetched in yaml (period start included, end excluded)
@@ -31,7 +35,7 @@ ROOT = Path(__file__).resolve().parents[3]
 load_dotenv(ROOT / ".env", override=False)
 THEMATIC_YML = ROOT / "quotaclimat" / "data_processing" / "thematic_extracts" / "thematic_jobs_config.yml"
 
-# timedelta that defines the range in which a chunk is considered adjacent to core chunk
+# timedelta that defines the range in which a s3 chunk is considered adjacent to a thematic chunk
 GAP = timedelta(minutes=2, seconds=30)
 
 SOURCE_TABLE = "public.keywords"
@@ -174,7 +178,7 @@ def run() -> None:
     ### For each period, for each day:
     ### 1. reading source table keywords
     ### 2. fetching all needed days and channels on s3
-    ### 3. extracting only thematic chunks and neighbour chunks (+/- 2 minutes)
+    ### 3. adding to each thematic chunk the plaintexts of its neighbour chunks (+/- GAP)
     ### 4. ingesting the result in destination table
     for period in periods:
         start_date = period["start"]
@@ -223,9 +227,9 @@ def run() -> None:
                 break
 
             try:
-                # 3. Extracting thematic chunks and neighbour chunks
-                logging.info("[KEYWORDS/S3] Starting selection of chunks to keep (thematic + adjacent)")
-                day_to_ingest_df, n_mismatch_day, n_missing_s3_day = kw_utils.extract_adjacent_chunks_day(
+                # 3. Adding the plaintexts of neighbour chunks
+                logging.info("[KEYWORDS/S3] Adding previous and next chunk plaintexts to thematic chunks")
+                day_to_ingest_df, n_mismatch_day, n_missing_s3_day = kw_utils.add_adjacent_plaintexts_day(
                     keywords_day_df, s3_day_df, GAP)
                 for channel, n in n_mismatch_day.items():
                     n_plaintext_mismatch[channel] = n_plaintext_mismatch.get(channel, 0) + n
@@ -233,14 +237,11 @@ def run() -> None:
                     n_missing_s3[channel] = n_missing_s3.get(channel, 0) + n
                 # COUNTRY of the job kept as a control, period id to tell periods apart in the table
                 day_to_ingest_df = day_to_ingest_df.assign(country=COUNTRY_CONF["country"], period=period["id"])
-                n_thematic_day = int(day_to_ingest_df["thematic_chunk"].sum())
-                n_adjacent_day = len(day_to_ingest_df) - n_thematic_day
                 logging.info(
-                    f"[{destination_table}] {day}: {len(day_to_ingest_df)} chunks selected for ingestion into destination "
-                    f"({n_thematic_day} thematic, {n_adjacent_day} adjacent)"
+                    f"[{destination_table}] {day}: {len(day_to_ingest_df)} thematic chunks selected for ingestion into destination"
                 )
                 counter_to_ingest += len(day_to_ingest_df)
-                n_expected_day = day_to_ingest_df["this_id"].nunique()
+                n_expected_day = day_to_ingest_df["id"].nunique()
 
                 if DRY_RUN:
                     continue
@@ -252,7 +253,7 @@ def run() -> None:
                         INSERT INTO {POSTGRES_DB}.{DESTINATION_SCHEMA}.{destination_table} BY NAME
                         SELECT *, now() AS created_at
                         FROM day_to_ingest_df
-                        ON CONFLICT (this_id) DO NOTHING
+                        ON CONFLICT (id) DO NOTHING
                     """)
 
                     # checks if n_ingest == n_to_ingest
@@ -260,7 +261,7 @@ def run() -> None:
                         SELECT count(*) FROM {POSTGRES_DB}.{DESTINATION_SCHEMA}.{destination_table}
                         WHERE start >= TIMESTAMP '{day}' AT TIME ZONE 'Europe/Paris'
                             AND start <  TIMESTAMP '{day + timedelta(days=1)}' AT TIME ZONE 'Europe/Paris'
-                            AND this_id IN (SELECT this_id FROM day_to_ingest_df)
+                            AND id IN (SELECT id FROM day_to_ingest_df)
                     """).fetchone()[0]
                     if n_in_table != n_expected_day:
                         raise RuntimeError(
@@ -295,7 +296,7 @@ def run() -> None:
         raise RuntimeError(f"Run stopped at {stopped_day}, period {period['id']} not completed")
     
     ### Checking results
-    kw_utils.check_keywords(_con, POSTGRES_DB, destination_table, DESTINATION_SCHEMA, GAP, DRY_RUN, SOURCE_TABLE,
+    kw_utils.check_keywords(_con, POSTGRES_DB, destination_table, DESTINATION_SCHEMA, DRY_RUN, SOURCE_TABLE,
                             n_plaintext_mismatch, n_missing_s3)
     
 

@@ -1,0 +1,32 @@
+summary: Post a flow failure to Mattermost
+description: 'Failure handler of the main pipelines: one message per webhook of
+  the MATTERMOST_WEBHOOK_URLS variable, with the failed step and a link to the
+  run.'
+lock: '!inline f/shared/mattermost_alert.script.lock'
+kind: script
+schema:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  order:
+    - flow_name
+    - error
+    - webhooks_secret
+  properties:
+    error:
+      type: object
+      description: The error of the failed step (error.step_id, error.message).
+      default: null
+      properties: {}
+    flow_name:
+      type: string
+      description: Name of the failed flow, shown in the message.
+      default: null
+      originalType: string
+    webhooks_secret:
+      type: string
+      description: Path of the variable listing the webhook URLs, comma-separated.
+      default: f/secrets/MATTERMOST_WEBHOOK_URLS
+      originalType: string
+  required:
+    - flow_name
+    - error

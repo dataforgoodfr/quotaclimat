@@ -45,6 +45,7 @@ poetry run dbt run --models <model_name>
 # After downloading updated Excel from shared drive:
 poetry run python3 transform_excel_to_json.py
 ```
+It writes `quotaclimat/data_processing/mediatree/keyword/keyword.json` and `macro_category.json`, loaded by `keyword.py`/`macro_category.py`. Keep large data in JSON, not in Python literals: under coverage, CPython 3.12 spends about a minute instrumenting such a module (it made the CI 1 min slower).
 
 ### Program/Channel Metadata Update
 Edit `quotaclimat/data_processing/mediatree/i8n/<country>/channel_program.py` (never delete a line: close it with `program_grid_end` and add a new one). `quotaclimat/data_processing/mediatree/program_metadata.py` builds the grid from these files; `create_tables()` loads it into `program_metadata` at each import, there is no file to regenerate.

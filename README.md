@@ -469,7 +469,10 @@ In order to maintain channel perimeter (weekday, hours) up to date, we save the 
 
 ## Keywords
 ## Produce keywords list from Excel files
-How to update `quotaclimat/data_processing/mediatree/keyword/keyword.py` from shared excel files ?
+How to update the keyword dictionary from shared excel files ?
+
+The dictionaries are `quotaclimat/data_processing/mediatree/keyword/keyword.json` (`THEME_KEYWORDS`) and `macro_category.json` (`MACRO_CATEGORIES`), loaded by `keyword.py` and `macro_category.py`. They are JSON, not Python literals: under a tracer (coverage in the CI, a debugger), CPython 3.12 takes about a minute to instrument a module of this size.
+
 Download files locally to "document-experts" from Google Drive (ask on Slack) then :
 
 Macro category sheet must be downloaded as a TSV as Dictionnaire - OME.xlsx - Catégories Transversales.tsv.

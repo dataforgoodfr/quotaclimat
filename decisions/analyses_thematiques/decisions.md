@@ -700,31 +700,36 @@ Affichage : tableau.
 
 ### 7.6 Relecture humaine des chunks et voisins, audiovisuel
 
-Base Baromètre. Contrôle de précision (§3.6), lu par la personne responsable de l'analyse : 25 chunks thématiques où l'axe choisi est détecté, dans le chunk ou ses voisins, tirés au hasard à chaque exécution, avec le texte des chunks précédent et suivant et le premier terme trouvé dans chacun. `trouve_dans` dit si le terme est dans le chunk ou seulement chez un voisin ; `keywords_found` dit pourquoi le chunk est dans le corpus. Les regex sont celles des questions d'axes, recopiées : à resynchroniser quand leurs termes changent. La variable `axe` (texte, obligatoire) s'affiche en liste déroulante statique des codes d'axe, à saisir dans les réglages de la variable : le connecteur ne sait pas la remplir. Exemple : question 2488 (inondations).
+Base Baromètre. Contrôle de précision (§3.6), lu par la personne responsable de l'analyse : 25 chunks thématiques où l'axe choisi est détecté, dans le chunk ou ses voisins, tirés au hasard à chaque exécution, avec le texte des chunks précédent et suivant et le premier terme trouvé dans chacun. `trouve_dans` dit si le terme est dans le chunk ou seulement chez un voisin ; `keywords_found` dit pourquoi le chunk est dans le corpus. La valeur `noyau` contrôle le corpus lui-même : 25 chunks thématiques quelconques, lus dans le chunk seul (voisins vides), la regex des mots du YAML (pluriels compris) ne servant qu'à afficher le terme. Les regex sont celles des questions d'axes, recopiées : à resynchroniser quand leurs termes changent. La variable `axe` (texte, obligatoire) s'affiche en liste déroulante statique des codes d'axe, à saisir dans les réglages de la variable : le connecteur ne sait pas la remplir. Exemple : question 2488 (inondations).
 
 ```sql
 -- Média : audiovisuel
 -- Question : AV - CTRL - Relecture humaine chunks et voisins par axe
 -- Description : 25 chunks thématiques <sujet> détectés pour l'axe choisi (dans le chunk ou ses voisins), tirés au hasard
 --   à chaque exécution, avec le texte des chunks précédent et suivant et le premier terme trouvé dans chacun.
+--   noyau : 25 chunks thématiques quelconques, lus dans le chunk seul (voisins vides).
 --   Regex copiées des questions d'axes : à resynchroniser si leurs termes changent.
 -- Tables : thematic_extracts.<thematique>_keywords_fr
 WITH regex(axe, motif) AS (
     -- une ligne par axe : code (valeur de la liste déroulante) et regex de la question d'axe
     VALUES
+        -- noyau : mots du YAML, pluriels compris ; sert à afficher le terme, tous les chunks thématiques sont tirés
+        ('noyau',   '\y(mot noyau 1|mot noyau 2)\y'),
         ('<axe 1>', '\y(terme 1|terme 2)\y'),
         ('<axe 2>', '\y(terme 3|terme 4)\y')
 ),
 motif AS (
     SELECT axe, motif FROM regex WHERE axe = {{axe}}
 ),
--- drapeaux de chaque chunk thématique pour l'axe choisi : chunk seul, et avec ses voisins (comme §7.3)
+-- drapeaux de chaque chunk thématique pour l'axe choisi : chunk seul, et avec ses voisins comme §7.3 (noyau : chunk seul)
 drapeaux AS (
     SELECT
         k.period, k.channel_title, k.start, k.keywords_found,
-        k.plaintext_normalized, k.plaintext_normalized_prev, k.plaintext_normalized_next,
-        k.plaintext_normalized ~ m.motif AS trouve,
-        concat_ws(' /// ', k.plaintext_normalized_prev, k.plaintext_normalized, k.plaintext_normalized_next) ~ m.motif
+        k.plaintext_normalized,
+        CASE WHEN m.axe = 'noyau' THEN NULL ELSE k.plaintext_normalized_prev END AS plaintext_normalized_prev,
+        CASE WHEN m.axe = 'noyau' THEN NULL ELSE k.plaintext_normalized_next END AS plaintext_normalized_next,
+        m.axe = 'noyau' OR k.plaintext_normalized ~ m.motif AS trouve,
+        m.axe = 'noyau' OR concat_ws(' /// ', k.plaintext_normalized_prev, k.plaintext_normalized, k.plaintext_normalized_next) ~ m.motif
             AS trouve_fenetre
     FROM thematic_extracts.<thematique>_keywords_fr k
     CROSS JOIN motif m

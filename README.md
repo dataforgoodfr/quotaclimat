@@ -314,6 +314,8 @@ The `apt-get install` layers take the current month as `APT_REFRESH` build argum
 
 The version bump on `main` changes `pyproject.toml` at every merge. So that it doesn't invalidate the cache of `poetry install`, the Dockerfiles install the dependencies from a copy of `pyproject.toml` whose version is replaced by `0.0.0` (`deps` stage); the image keeps the real `pyproject.toml`.
 
+In the runtime stage of the Dockerfiles, everything after the venv is a `COPY --link` and there is no `RUN`: each of these layers is built on its own, so a deployment that only changes the code doesn't download the venv layer from the cache, it only pushes the new code layers. The `poetry install` layer drops Poetry's download cache (`rm -rf $POETRY_CACHE_DIR`), and Poetry itself is installed into the venv in the `builder` stage (the entrypoints use `poetry run`).
+
 Learn [more here.](https://www.scaleway.com/en/docs/tutorials/use-container-registry-github-actions/)
 
 ## Monitoring

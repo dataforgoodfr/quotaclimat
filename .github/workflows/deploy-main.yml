@@ -70,6 +70,11 @@ jobs:
 
     - uses: docker/setup-buildx-action@v3
 
+    # Current month, part of the cache key of the apt-get layers (see Dockerfile)
+    - name: Compute apt refresh month
+      id: apt
+      run: echo "month=$(date -u +%Y-%m)" >> $GITHUB_OUTPUT
+
     # Layer cache stored in the registry under the buildcache tag, written and read by
     # every deployment (mode=max also caches the builder stage, where poetry install runs).
     # A cache error doesn't fail the deployment: the build just runs without cache.
@@ -78,6 +83,7 @@ jobs:
       with:
         context: .
         file: Dockerfile
+        build-args: APT_REFRESH=${{ steps.apt.outputs.month }}
         push: true
         tags: |
           ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/quotaclimat_base:${{ env.PROJECT_VERSION }}
@@ -85,16 +91,23 @@ jobs:
         cache-from: type=registry,ref=${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/quotaclimat_base:buildcache
         cache-to: type=registry,ref=${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/quotaclimat_base:buildcache,mode=max,image-manifest=true,oci-mediatypes=true,ignore-error=true
 
+    # Same Dockerfile, with ffmpeg installed before the code (runtime-media stage)
     - name: Build and push quotaclimat_with_media_tools image
       uses: docker/build-push-action@v6
       with:
         context: .
-        file: Dockerfile.with_media_tools
-        build-args: BASE_IMAGE=${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/quotaclimat_base:${{ env.PROJECT_VERSION }}
+        file: Dockerfile
+        build-args: |
+          RUNTIME=runtime-media
+          APT_REFRESH=${{ steps.apt.outputs.month }}
         push: true
         tags: |
           ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/quotaclimat_with_media_tools:${{ env.PROJECT_VERSION }}
           ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/quotaclimat_with_media_tools:latest
+        cache-from: |
+          type=registry,ref=${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/quotaclimat_with_media_tools:buildcache
+          type=registry,ref=${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/quotaclimat_base:buildcache
+        cache-to: type=registry,ref=${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/quotaclimat_with_media_tools:buildcache,mode=max,image-manifest=true,oci-mediatypes=true,ignore-error=true
 
     - name: Update import scaleway job
       uses: jawher/action-scw@v2.54.0

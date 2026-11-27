@@ -267,6 +267,8 @@ jobs:
           SHORT_SHA="${SHA:0:7}"
           echo "sanitized=${SANITIZED}" >> $GITHUB_OUTPUT
           echo "value=${SANITIZED}-${SHORT_SHA}" >> $GITHUB_OUTPUT
+          # Current month, part of the cache key of the apt-get layers (see Dockerfile)
+          echo "apt_refresh=$(date -u +%Y-%m)" >> $GITHUB_OUTPUT
 
       # Layer cache stored in the registry, next to the image (mode=max also caches
       # the builder stage, where poetry install runs). Each branch reads main's cache
@@ -277,6 +279,7 @@ jobs:
         with:
           context: .
           file: Dockerfile
+          build-args: APT_REFRESH=${{ steps.tag.outputs.apt_refresh }}
           push: true
           tags: |
             ${{ secrets.DEV_CONTAINER_REGISTRY_ENDPOINT }}/quotaclimat_base:${{ steps.tag.outputs.value }}

@@ -308,7 +308,9 @@ Every commit on the `main` branch will build an deploy to the Scaleway container
 
 Every push on any branch also builds `quotaclimat_base` and pushes it to the dev Scaleway registry, tagged `<branch>` and `<branch>-<short sha>` (job `build_and_push_docker_image` in `.github/workflows/test.yml`). Its Docker layer cache is stored in the same registry under the `buildcache-<branch>` tags: every branch reads `buildcache-main` and its own, so `poetry install` only runs again when `poetry.lock` changes. These tags can be deleted at any time, the next build just runs without cache.
 
-The deployment (`.github/workflows/deploy-main.yml`) does the same in the production registry: each image (`quotaclimat_base`, `factiva_to_s3`, `s3_factiva_to_postgre`, `lemonde_web`) has a `buildcache` tag, written and read by every deployment.
+The deployment (`.github/workflows/deploy-main.yml`) does the same in the production registry: each image (`quotaclimat_base`, `quotaclimat_with_media_tools`, `factiva_to_s3`, `s3_factiva_to_postgre`, `lemonde_web`) has a `buildcache` tag, written and read by every deployment. `quotaclimat_with_media_tools` is built from the same `Dockerfile` with `--build-arg RUNTIME=runtime-media`, which installs ffmpeg before the code so that it stays cached.
+
+The `apt-get install` layers take the current month as `APT_REFRESH` build argument (set by the workflows): the system packages are reinstalled, with their security fixes, once a month instead of staying frozen in the cache.
 
 The version bump on `main` changes `pyproject.toml` at every merge. So that it doesn't invalidate the cache of `poetry install`, the Dockerfiles install the dependencies from a copy of `pyproject.toml` whose version is replaced by `0.0.0` (`deps` stage); the image keeps the real `pyproject.toml`.
 

@@ -140,6 +140,7 @@ Secrets (API credentials) are mounted from `secrets/` directory as Docker secret
 - **Every push**: builds `quotaclimat_base` and pushes it to the dev registry (`build_and_push_docker_image`), with a BuildKit layer cache stored in that registry under `buildcache-<branch>` tags (reads `buildcache-main` + its own branch's)
 - **Main branch push**: bumps version (`poetry version patch`), builds Docker images (BuildKit layer cache in the production registry, one `buildcache` tag per image), pushes to Scaleway Container Registry, updates Scaleway serverless job definitions
 - The Dockerfiles install dependencies from a `deps` stage where the `pyproject.toml` version is replaced by `0.0.0`, so the version bump doesn't invalidate the `poetry install` cache. Keep this pattern when adding a Dockerfile.
+- `quotaclimat_with_media_tools` is built from `Dockerfile` with `--build-arg RUNTIME=runtime-media` (ffmpeg). `apt-get` layers take `APT_REFRESH` (current month, set by the workflows) so that system packages are refreshed monthly despite the cache.
 - Scaleway jobs run as serverless batch jobs (not always-on services)
 
 ## Multi-Country / i18n

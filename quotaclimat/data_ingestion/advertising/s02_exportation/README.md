@@ -80,7 +80,9 @@ For each merged ad (`merged_ads.py`):
 
 Limits: a rebuilt video is made of the videos of the pieces, cut from other broadcasts than the one of
 the layout; where two pieces overlap (up to 1 s, see `e01_merge_split_ads`), the second one starts where
-the first one ends. The log says for each rebuilt ad its layout (`journal` with the occurrence, or
+the first one ends. A step shorter than 1 ms (float residue between two pieces or at the end) is left
+out: ffmpeg reads a duration written `0.000` as "no limit", which gave an endless black step that froze
+the run and filled the memory of the job. The log says for each rebuilt ad its layout (`journal` with the occurrence, or
 `end_to_end`), and the progress counts `rebuilt` apart from `uploaded`.
 
 ## `recompute_saved_chunks` env vars

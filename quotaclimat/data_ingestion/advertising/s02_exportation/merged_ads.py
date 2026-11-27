@@ -244,11 +244,24 @@ def plan_merged_ad(
     return plan
 
 
+# Steps shorter than this are left out. Their duration would be written 0.000 in the filter, which
+# ffmpeg reads as "no limit" for `color` and `atrim`: an endless black and silent step that froze the
+# run and then filled the memory of the job. They come from float sums (0.96 + 3.5199999809 is short of
+# 4.48 by 2e-8 s, a "gap" at the end).
+MIN_STEP_SEC = 0.001
+
+
 def render_steps(segments: list[Segment], total_sec: float) -> list[Step]:
     """The steps of the rendered video, total_sec long: the segments in time order, black where none
     covers the time. Where two segments overlap, the later one starts where the earlier one ends.
+    A step shorter than MIN_STEP_SEC is left out.
     """
     steps, cursor = [], 0.0
+
+    def add(step: Step) -> None:
+        if step.duration_sec >= MIN_STEP_SEC:
+            steps.append(step)
+
     for segment in sorted(segments, key=lambda s: s.offset_sec):
         start = max(segment.offset_sec, cursor)
         end = min(segment.offset_sec + segment.duration_sec, total_sec)
@@ -257,11 +270,11 @@ def render_steps(segments: list[Segment], total_sec: float) -> list[Step]:
         if end <= start:
             continue
         if start > cursor:
-            steps.append(Step(start - cursor))
-        steps.append(Step(end - start, segment, start - segment.offset_sec))
+            add(Step(start - cursor))
+        add(Step(end - start, segment, start - segment.offset_sec))
         cursor = end
     if cursor < total_sec:
-        steps.append(Step(total_sec - cursor))
+        add(Step(total_sec - cursor))
     return steps
 
 

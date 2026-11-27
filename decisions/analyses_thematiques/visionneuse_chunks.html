@@ -172,7 +172,7 @@ function render() {
     const terms = termCols.flatMap(k => r[k].split(' | '));
     const kws = kwCols.flatMap(k => r[k].split(',').map(s => s.trim()).filter(Boolean));
     const pterms = kws.map(normKw);
-    const kwLine = kws.length ? `<div class="kw">mots inondations : ${kws.map(w => `<span>${esc(w)}</span>`).join('')}</div>` : '';
+    const kwLine = kws.length ? `<div class="kw">mots thématique : ${kws.map(w => `<span>${esc(w)}</span>`).join('')}</div>` : '';
     const meta = metaCols.filter(k => r[k] !== '').map(k => `<span>${esc(k)} <b>${esc(r[k])}</b></span>`).join('');
     // bloc ouvert : le chunk s'il contient un terme surligné, sinon les voisins qui en contiennent, sinon le chunk.
     // Les autres se déplient avec la flèche. Les mots en vert n'ouvrent pas de bloc.
@@ -182,7 +182,7 @@ function render() {
     const main = bl.filter(b => !b.side);
     const open = main.some(hit) ? main.filter(hit) : bl.some(hit) ? bl.filter(hit) : main.slice(0, 1);
     // à côté de chaque flèche : nombre de mots surlignés par couleur, visible même bloc replié
-    const counts = html => [['', 'terme', 'termes'], ['p', 'mot inondation', 'mots inondation'], ['g', 'vert', 'verts'],
+    const counts = html => [['', 'terme', 'termes'], ['p', 'mot thématique', 'mots thématique'], ['g', 'vert', 'verts'],
       ['q', 'recherche', 'recherche']].map(([c, l1, l2]) => {
       const n = (html.match(c ? new RegExp(`<mark class="${c}">`, 'g') : /<mark>/g) || []).length;
       return n ? `<span class="cnt${c ? ' ' + c : ''}">${n} ${n > 1 ? l2 : l1}</span>` : '';

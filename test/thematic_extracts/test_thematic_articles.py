@@ -81,7 +81,7 @@ class RunEnv:
         self.failing_days, self._n = set(), 0
 
         self.yml = tmp_path / "thematic.yml"
-        self.keywords = {"keywords": {"french": {"presse": ["inondation", "crue"], "audiovisuel": ["autre"]}}}
+        self.keywords = {"keywords": {"french": {"core_terms": ["inondation", "crue"]}}}
         monkeypatch.setattr(ta, "THEMATIC_YML", self.yml)
         monkeypatch.setattr(ta.duckdb, "connect", lambda *a, **k: con)
         monkeypatch.setattr(ta.utils, "configure_barometre_source", lambda *a, **k: None)
@@ -281,9 +281,9 @@ def test_run_ingests_every_period_into_one_table(env):
     ).fetchall() == [("p1", D1, 2), ("p2", D3, 2)]
 
 
-def test_run_new_run_creates_table_and_uses_presse_keywords(env):
+def test_run_new_run_creates_table_and_uses_core_terms(env):
     """Verify that a new run creates the destination table, ingests the day, and reads
-    with the keywords of the 'presse' category only."""
+    with the keywords of the 'core_terms' list."""
     env.add_day(D1)
     env.configure(start=D1, end=D2)
 

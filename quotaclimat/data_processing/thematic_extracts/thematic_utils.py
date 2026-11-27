@@ -86,9 +86,9 @@ def mask_exclusions_sql(col: str, exclusions_regex: str) -> str:
 
 
 ### KEYWORDS ###
-def get_keywords(yml_file: str, thematic: str, media_type: str, language: str) -> list[str]:
-    """Returns the keywords of a thematic, as declared under
-    [thematic]["keywords"][language][media_type] (media_type: "audiovisuel" or "presse")."""
+def get_keywords(yml_file: str, thematic: str, language: str) -> list[str]:
+    """Returns the keywords of a thematic, as declared under [thematic]["keywords"][language]["core_terms"]
+    (one list for audiovisuel and presse)."""
     with open(yml_file, "r", encoding="utf-8") as f:
         kw = yaml.safe_load(f)
         
@@ -105,12 +105,12 @@ def get_keywords(yml_file: str, thematic: str, media_type: str, language: str) -
             f"Missing language '{language}' in '{thematic}' / keywords {yml_file}. "
             f"Available keys : {list(keywords_by_language.keys())}"
         )
-    if media_type not in keywords_by_language[language]:
+    if "core_terms" not in (keywords_by_language[language] or {}):
         raise KeyError(
-            f"Missing media type '{media_type}' in '{thematic}' / keywords / '{language}' {yml_file}. "
-            f"Available keys : {list(keywords_by_language[language].keys())}"
+            f"Missing 'core_terms' in '{thematic}' / keywords / '{language}' {yml_file}. "
+            f"Available keys : {list((keywords_by_language[language] or {}).keys())}"
         )
-    return keywords_by_language[language][media_type]
+    return keywords_by_language[language]["core_terms"]
 
 
 def get_exclusions(yml_file: str, thematic: str, language: str) -> list[str]:
@@ -119,7 +119,7 @@ def get_exclusions(yml_file: str, thematic: str, language: str) -> list[str]:
     The key is optional: no key or an empty list gives [] (nothing excluded).
 
     Raises if an exclusion is not a non-empty string, or if it is equal to a keyword of the
-    language after normalization (every occurrence of that keyword would be masked)."""
+    language ("core_terms") after normalization (every occurrence of that keyword would be masked)."""
     with open(yml_file, "r", encoding="utf-8") as f:
         kw = yaml.safe_load(f)
 
@@ -130,16 +130,15 @@ def get_exclusions(yml_file: str, thematic: str, language: str) -> list[str]:
             f"Missing theme '{thematic}' {yml_file}. "
             f"Available keys : {list(kw.keys())}"
         )
-    by_media = (kw[thematic].get("keywords") or {}).get(language) or {}
-    exclusions = by_media.get("exclusions") or []
+    by_language = (kw[thematic].get("keywords") or {}).get(language) or {}
+    exclusions = by_language.get("exclusions") or []
     if not isinstance(exclusions, list):
         raise ValueError(f"Exclusions of '{thematic}' / '{language}' must be a list")
     for e in exclusions:
         if not isinstance(e, str) or not e.strip():
             raise ValueError(f"Invalid exclusion {e!r} in '{thematic}' / '{language}': non-empty text expected")
 
-    keywords = {normalize_text(k) for media, kws in by_media.items() if media != "exclusions"
-                for k in (kws or [])}
+    keywords = {normalize_text(k) for k in (by_language.get("core_terms") or [])}
     equal_to_keyword = sorted(e for e in exclusions if normalize_text(e) in keywords)
     if equal_to_keyword:
         raise ValueError(

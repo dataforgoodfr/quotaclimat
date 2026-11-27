@@ -123,7 +123,7 @@ def run() -> None:
     logging.info("[RUN] Periods: " + ", ".join(f"{p['id']} ({p['start']} -> {p['end']})" for p in periods))
 
     ## Getting kw
-    kw_list = utils.get_keywords(THEMATIC_YML, THEMATIC, MEDIA_TYPE, COUNTRY_CONF["language"])
+    kw_list = utils.get_keywords(THEMATIC_YML, THEMATIC, COUNTRY_CONF["language"])
     if not kw_list:
         raise ValueError(f"No keywords found for '{THEMATIC}' in {THEMATIC_YML}.")
     exclusions = utils.get_exclusions(THEMATIC_YML, THEMATIC, COUNTRY_CONF["language"])

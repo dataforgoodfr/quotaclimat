@@ -70,7 +70,7 @@ def has_keyword_outside_exclusions(plaintext: str | None, keywords_regex: str, e
 def drop_chunks_with_only_exclusions(keywords_day_df: pd.DataFrame, keywords: list[str],
                                      exclusions: list[str]) -> pd.DataFrame:
     """Drops the thematic chunks whose plaintext contains an exclusion expression and no keyword
-    outside exclusions (e.g. "feu" only in "cessez le feu"). keywords: the audiovisuel keywords
+    outside exclusions (e.g. "feu" only in "cessez le feu"). keywords: the "core_terms" keywords
     of the yaml, searched in the forms written there ("crue" does not find "crues").
     keywords_found and themes are left as read from the keywords table."""
     if not exclusions or keywords_day_df.empty:
@@ -300,11 +300,6 @@ def add_adjacent_plaintexts_day(keywords_day_df: pd.DataFrame, s3_day_df: pd.Dat
             plaintext_normalized=kw["plaintext"].map(utils.normalize_text),
             plaintext_normalized_prev=kw["plaintext_prev"].map(_normalize_or_none),
             plaintext_normalized_next=kw["plaintext_next"].map(_normalize_or_none),
-        )
-        logging.info(
-            f"[ADJACENT_PLAINTEXTS] {len(out)} thematic chunks: "
-            f"{out['plaintext_normalized_prev'].isna().sum()} without previous chunk, "
-            f"{out['plaintext_normalized_next'].isna().sum()} without next chunk in S3 (within {gap})"
         )
         cols = ["id", "channel_name", "channel_title", "start", "keywords_found", "themes",
                 "plaintext_normalized", "plaintext_normalized_prev", "plaintext_normalized_next",

@@ -323,6 +323,7 @@ class _SourceVideo:
     path: str
     margin_sec: float
     has_audio: bool
+    has_video: bool
     width: int | None
     height: int | None
     fps: str | None
@@ -366,6 +367,7 @@ async def _source_video(
         path,
         source_margin,
         any(s.get("codec_type") == "audio" for s in streams),
+        bool(video),
         video.get("width"),
         video.get("height"),
         video.get("r_frame_rate"),
@@ -434,20 +436,25 @@ async def render_merged_ad(
             f"anullsrc=channel_layout=stereo:sample_rate={AUDIO_SAMPLE_RATE},"
             f"atrim=duration={d}[a{k}]"
         )
+        black = (
+            f"color=c=black:s={width}x{height}:r={fps}:d={d},"
+            f"setsar=1,format=yuv420p[v{k}]"
+        )
         if step.segment is None:
-            filters.append(
-                f"color=c=black:s={width}x{height}:r={fps}:d={d},"
-                f"setsar=1,format=yuv420p[v{k}]"
-            )
+            filters.append(black)
             filters.append(silence)
         else:
             i = inputs.index(step.segment.source_ad_id)
             video = videos[step.segment.source_ad_id]
             start = f"{video.margin_sec + step.start_in_source_sec:.3f}"
-            filters.append(
-                f"[{i}:v]trim=start={start}:duration={d},setpts=PTS-STARTPTS,"
-                f"{video_format}[v{k}]"
-            )
+            if video.has_video:
+                filters.append(
+                    f"[{i}:v]trim=start={start}:duration={d},setpts=PTS-STARTPTS,"
+                    f"{video_format}[v{k}]"
+                )
+            else:
+                # a source with no video stream (an audio-only export): black under its sound
+                filters.append(black)
             if video.has_audio:
                 filters.append(
                     f"[{i}:a]atrim=start={start}:duration={d},asetpts=PTS-STARTPTS,"

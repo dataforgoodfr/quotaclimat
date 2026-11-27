@@ -331,6 +331,67 @@ def test_render_merged_ad_recursively(tmp_path):
     assert os.path.getsize(mp3) > 0
 
 
+def _make_audio_only(path, duration_sec):
+    subprocess.run(
+        [
+            "ffmpeg", "-y", "-v", "error",
+            "-f", "lavfi", "-i", f"sine=frequency=440:sample_rate=48000:duration={duration_sec}",
+            "-c:a", "aac", path,
+        ],
+        check=True,
+    )  # fmt: skip
+
+
+@needs_ffmpeg
+def test_render_merged_ad_with_an_audio_only_source(tmp_path):
+    # a source with no video stream used to make ffmpeg fail ("Stream specifier ':v' ... matches
+    # no streams"): it is now black under its sound
+    bucket_dir = tmp_path / "bucket"
+    bucket_dir.mkdir()
+    _make_video(str(bucket_dir / "a.mp4"), 2.0 + 2 * MARGIN, "red")
+    _make_audio_only(str(bucket_dir / "b.mp4"), 1.5 + 2 * MARGIN)
+    plan = MergePlan(
+        "ab",
+        3.5,
+        "end_to_end",
+        segments=[
+            Segment("a", 0.0, 2.0, "piece", DETECTION),
+            Segment("b", 2.0, 1.5, "piece", DETECTION),
+        ],
+    )
+    work_dir = tmp_path / "work"
+    work_dir.mkdir()
+    output = str(tmp_path / "ab.mp4")
+    asyncio.run(
+        render_merged_ad(
+            FakeBucket(str(bucket_dir)), plan, output, str(work_dir), MARGIN
+        )
+    )
+    assert asyncio.run(video_duration(output)) == pytest.approx(
+        3.5 + 2 * MARGIN, abs=0.1
+    )
+
+
+@needs_ffmpeg
+def test_render_merged_ad_audio_only_sources(tmp_path):
+    # every source audio-only: no reference size, the default one is used
+    bucket_dir = tmp_path / "bucket"
+    bucket_dir.mkdir()
+    _make_audio_only(str(bucket_dir / "a.mp4"), 2.0 + 2 * MARGIN)
+    plan = MergePlan(
+        "a2", 2.0, "end_to_end", segments=[Segment("a", 0.0, 2.0, "piece", DETECTION)]
+    )
+    output = str(tmp_path / "a2.mp4")
+    asyncio.run(
+        render_merged_ad(
+            FakeBucket(str(bucket_dir)), plan, output, str(tmp_path), MARGIN
+        )
+    )
+    assert asyncio.run(video_duration(output)) == pytest.approx(
+        2.0 + 2 * MARGIN, abs=0.1
+    )
+
+
 @needs_ffmpeg
 def test_render_merged_ad_fails_without_a_piece(tmp_path):
     bucket_dir = tmp_path / "bucket"

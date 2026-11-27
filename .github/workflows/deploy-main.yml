@@ -68,23 +68,33 @@ jobs:
         password: ${{ secrets.SCALEWAY_API_KEY }}
         registry: ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}
 
-    - name: Build quotaclimat_base image
-      run: docker build -f Dockerfile . -t ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/quotaclimat_base:${{ env.PROJECT_VERSION }}
+    - uses: docker/setup-buildx-action@v3
 
-    - name: Tag quotaclimat_base latest image
-      run: docker tag ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/quotaclimat_base:${{ env.PROJECT_VERSION }} ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/quotaclimat_base:latest
+    # Layer cache stored in the registry under the buildcache tag, written and read by
+    # every deployment (mode=max also caches the builder stage, where poetry install runs).
+    # A cache error doesn't fail the deployment: the build just runs without cache.
+    - name: Build and push quotaclimat_base image
+      uses: docker/build-push-action@v6
+      with:
+        context: .
+        file: Dockerfile
+        push: true
+        tags: |
+          ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/quotaclimat_base:${{ env.PROJECT_VERSION }}
+          ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/quotaclimat_base:latest
+        cache-from: type=registry,ref=${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/quotaclimat_base:buildcache
+        cache-to: type=registry,ref=${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/quotaclimat_base:buildcache,mode=max,image-manifest=true,oci-mediatypes=true,ignore-error=true
 
-    - name: Push quotaclimat_base Image
-      run: docker push --all-tags ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/quotaclimat_base
-
-    - name: Build quotaclimat_with_media_tools image
-      run: docker build -f Dockerfile.with_media_tools --build-arg BASE_IMAGE=${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/quotaclimat_base:${{ env.PROJECT_VERSION }} . -t ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/quotaclimat_with_media_tools:${{ env.PROJECT_VERSION }}
-
-    - name: Tag quotaclimat_with_media_tools latest image
-      run: docker tag ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/quotaclimat_with_media_tools:${{ env.PROJECT_VERSION }} ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/quotaclimat_with_media_tools:latest
-
-    - name: Push quotaclimat_with_media_tools Image
-      run: docker push --all-tags ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/quotaclimat_with_media_tools
+    - name: Build and push quotaclimat_with_media_tools image
+      uses: docker/build-push-action@v6
+      with:
+        context: .
+        file: Dockerfile.with_media_tools
+        build-args: BASE_IMAGE=${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/quotaclimat_base:${{ env.PROJECT_VERSION }}
+        push: true
+        tags: |
+          ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/quotaclimat_with_media_tools:${{ env.PROJECT_VERSION }}
+          ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/quotaclimat_with_media_tools:latest
 
     - name: Update import scaleway job
       uses: jawher/action-scw@v2.54.0
@@ -296,32 +306,44 @@ jobs:
           password: ${{ secrets.SCALEWAY_API_KEY }}
           registry: ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}
 
-      - name: Build factiva_to_s3 image
-        run: docker build -f Dockerfile_factiva_to_s3 . -t ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/factiva_to_s3:${{ env.PROJECT_VERSION }}
+      - uses: docker/setup-buildx-action@v3
 
-      - name: Tag factiva_to_s3 latest image
-        run: docker tag ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/factiva_to_s3:${{ env.PROJECT_VERSION }} ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/factiva_to_s3:latest
+      # Same registry layer cache as quotaclimat_base, one buildcache tag per image
+      - name: Build and push factiva_to_s3 image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile_factiva_to_s3
+          push: true
+          tags: |
+            ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/factiva_to_s3:${{ env.PROJECT_VERSION }}
+            ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/factiva_to_s3:latest
+          cache-from: type=registry,ref=${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/factiva_to_s3:buildcache
+          cache-to: type=registry,ref=${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/factiva_to_s3:buildcache,mode=max,image-manifest=true,oci-mediatypes=true,ignore-error=true
 
-      - name: Push factiva_to_s3 Image
-        run: docker push --all-tags ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/factiva_to_s3
+      - name: Build and push s3_factiva_to_postgre image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile_s3_factiva_to_postgre
+          push: true
+          tags: |
+            ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/s3_factiva_to_postgre:${{ env.PROJECT_VERSION }}
+            ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/s3_factiva_to_postgre:latest
+          cache-from: type=registry,ref=${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/s3_factiva_to_postgre:buildcache
+          cache-to: type=registry,ref=${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/s3_factiva_to_postgre:buildcache,mode=max,image-manifest=true,oci-mediatypes=true,ignore-error=true
 
-      - name: Build s3_factiva_to_postgre image
-        run: docker build -f Dockerfile_s3_factiva_to_postgre . -t ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/s3_factiva_to_postgre:${{ env.PROJECT_VERSION }}
-
-      - name: Tag s3_factiva_to_postgre latest image
-        run: docker tag ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/s3_factiva_to_postgre:${{ env.PROJECT_VERSION }} ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/s3_factiva_to_postgre:latest
-
-      - name: Push s3_factiva_to_postgre Image
-        run: docker push --all-tags ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/s3_factiva_to_postgre
-
-      - name: Build lemonde_web image
-        run: docker build -f Dockerfile_lemonde_web . -t ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/lemonde_web:${{ env.PROJECT_VERSION }}
-
-      - name: Tag lemonde_web latest image
-        run: docker tag ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/lemonde_web:${{ env.PROJECT_VERSION }} ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/lemonde_web:latest
-
-      - name: Push lemonde_web Image
-        run: docker push --all-tags ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/lemonde_web
+      - name: Build and push lemonde_web image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile_lemonde_web
+          push: true
+          tags: |
+            ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/lemonde_web:${{ env.PROJECT_VERSION }}
+            ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/lemonde_web:latest
+          cache-from: type=registry,ref=${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/lemonde_web:buildcache
+          cache-to: type=registry,ref=${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/lemonde_web:buildcache,mode=max,image-manifest=true,oci-mediatypes=true,ignore-error=true
 
       - name: Update Scaleway job definition with Factiva to S3 image
         uses: jawher/action-scw@v2.54.0

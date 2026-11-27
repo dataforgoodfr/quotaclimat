@@ -1,4 +1,12 @@
 #from https://medium.com/@albertazzir/blazing-fast-python-docker-builds-with-poetry-a78a66f5aed0
+# pyproject.toml with its version replaced by a fixed one: the version is bumped on main
+# at every merge, and it would otherwise invalidate the cache of poetry install below.
+# The real pyproject.toml is copied into the runtime image.
+FROM python:3.12.10 AS deps
+WORKDIR /app
+COPY pyproject.toml poetry.lock ./
+RUN sed -i 's/^version = .*/version = "0.0.0"/' pyproject.toml
+
 FROM python:3.12.10 as builder
 
 ENV VIRTUAL_ENV=/app/.venv
@@ -10,7 +18,7 @@ ENV POETRY_NO_INTERACTION=1 \
 
 WORKDIR /app
 
-COPY pyproject.toml poetry.lock ./
+COPY --from=deps /app/pyproject.toml /app/poetry.lock ./
 
 RUN pip install poetry==2.1.3
 

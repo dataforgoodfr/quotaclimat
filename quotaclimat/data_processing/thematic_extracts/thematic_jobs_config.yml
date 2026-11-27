@@ -56,6 +56,9 @@ incendies:
         - forêts ravagées
         - forêt ont été détruites
         - forêts ont été détruites
+      exclusions:
+        - cessez le feu
+        - cessez-le-feu
 
 inondations:
   periodes:

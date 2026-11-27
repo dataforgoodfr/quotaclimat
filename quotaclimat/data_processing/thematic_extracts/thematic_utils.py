@@ -55,6 +55,36 @@ def normalize_sql(col: str) -> str:
                     )"""
 
 
+def expressions_pattern(expressions: list[str]) -> str:
+    """Regex (python and duckdb) matching any of the expressions, normalized, as whole expressions.
+    Special characters are escaped ("c.o.p" must not match "cxoxp") and the longest expressions
+    come first: with alternation, the regex keeps the first alternative that matches, so "crue"
+    listed before "crue centennale" would hide the longer expression."""
+    normalized = {normalize_text(e) for e in expressions}
+    escaped = [re.sub(r"([.^$*+?()\[\]{}|\\])", r"\\\1", e) for e in normalized]
+    escaped = sorted(escaped, key=lambda e: (-len(e), e))
+    return r"(?i)\b(?:" + "|".join(escaped) + r")\b"
+
+
+### EXCLUSIONS ###
+# An exclusion expression (e.g. "cessez le feu") is replaced by MASK in the normalized text before
+# searching the keywords again: a chunk or an article whose keywords only appear inside exclusions is dropped.
+# MASK is not a space: no keyword can be formed by the words around the removed expression.
+MASK = " # "
+
+
+def mask_exclusions(text_normalized: str | None, exclusions_regex: str) -> str | None:
+    """Replaces every exclusion of a normalized text by MASK (None stays None)."""
+    if text_normalized is None:
+        return None
+    return re.sub(exclusions_regex, MASK, text_normalized)
+
+
+def mask_exclusions_sql(col: str, exclusions_regex: str) -> str:
+    """Duckdb expression replacing every exclusion of a normalized text column by MASK."""
+    return f"regexp_replace({col}, '{exclusions_regex}', '{MASK}', 'g')"
+
+
 ### KEYWORDS ###
 def get_keywords(yml_file: str, thematic: str, media_type: str, language: str) -> list[str]:
     """Returns the keywords of a thematic, as declared under
@@ -81,6 +111,41 @@ def get_keywords(yml_file: str, thematic: str, media_type: str, language: str) -
             f"Available keys : {list(keywords_by_language[language].keys())}"
         )
     return keywords_by_language[language][media_type]
+
+
+def get_exclusions(yml_file: str, thematic: str, language: str) -> list[str]:
+    """Returns the exclusion expressions of a thematic, as declared under
+    [thematic]["keywords"][language]["exclusions"] (shared by audiovisuel and presse).
+    The key is optional: no key or an empty list gives [] (nothing excluded).
+
+    Raises if an exclusion is not a non-empty string, or if it is equal to a keyword of the
+    language after normalization (every occurrence of that keyword would be masked)."""
+    with open(yml_file, "r", encoding="utf-8") as f:
+        kw = yaml.safe_load(f)
+
+    if kw is None:
+        raise ValueError(f"Empty file : {yml_file}")
+    if thematic not in kw:
+        raise KeyError(
+            f"Missing theme '{thematic}' {yml_file}. "
+            f"Available keys : {list(kw.keys())}"
+        )
+    by_media = (kw[thematic].get("keywords") or {}).get(language) or {}
+    exclusions = by_media.get("exclusions") or []
+    if not isinstance(exclusions, list):
+        raise ValueError(f"Exclusions of '{thematic}' / '{language}' must be a list")
+    for e in exclusions:
+        if not isinstance(e, str) or not e.strip():
+            raise ValueError(f"Invalid exclusion {e!r} in '{thematic}' / '{language}': non-empty text expected")
+
+    keywords = {normalize_text(k) for media, kws in by_media.items() if media != "exclusions"
+                for k in (kws or [])}
+    equal_to_keyword = sorted(e for e in exclusions if normalize_text(e) in keywords)
+    if equal_to_keyword:
+        raise ValueError(
+            f"Exclusions of '{thematic}' / '{language}' equal to a keyword: {equal_to_keyword}"
+        )
+    return exclusions
 
 
 ### PERIODS ###

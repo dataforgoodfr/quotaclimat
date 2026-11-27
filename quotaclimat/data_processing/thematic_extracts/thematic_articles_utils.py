@@ -5,7 +5,6 @@ from dotenv import load_dotenv
 import duckdb
 from datetime import date
 import pandas as pd
-import re
 
 import quotaclimat.data_processing.thematic_extracts.thematic_utils as utils
 
@@ -54,24 +53,25 @@ def create_thematic_articles_table(con: duckdb.DuckDBPyConnection,
 def read_factiva_articles(con: duckdb.DuckDBPyConnection,
                                     keywords_to_look_for: list[str],
                                     start_date: date, end_date: date,
-                                    source_table: str, postgres_db: str,) -> pd.DataFrame:
+                                    source_table: str, postgres_db: str,
+                                    exclusions: list[str] | None = None) -> tuple[pd.DataFrame, int]:
     """Reads factiva_articles and keeps articles whose snippet + title + body,
     normalized (lower, accents removed, apostrophes and hyphens replaced by a space so that
     "l'incendie" matches "incendie" and "Kunming-Montréal" matches "kunming montreal"),
     match at least one expression.
+    exclusions: expressions masked in that text before searching the keywords
+    (e.g. "cessez le feu" for the keyword "feu"): an article whose keywords only appear
+    inside exclusions is dropped, and keywords_found does not list them.
     keywords_found lists the distinct matches in normalized form, sorted and separated by ','.
-    Only the normalized title, snippet and body are returned (join on an to get the originals)."""
+    Only the normalized title, snippet and body are returned (join on an to get the originals).
+    Returns the articles and the number of articles dropped by the exclusions."""
     if not keywords_to_look_for:
         raise ValueError("keywords_to_look_for est vide")
 
-    expressions = [utils.normalize_text(e) for e in keywords_to_look_for]
-    # escape regex special characters so that a keyword is searched literally ("c.o.p" must not match "cxoxp")
-    expressions = [re.sub(r"([.^$*+?()\[\]{}|\\])", r"\\\1", e) for e in expressions]
-    # longest first: with alternation, the regex keeps the first alternative that matches,
-    # so "crue" listed before "crue centennale" would hide the longer expression in keywords_found
-    expressions = sorted(expressions, key=len, reverse=True)
-    # whole expressions only: word boundaries on both sides
-    pattern = r"(?i)\b(?:" + "|".join(expressions) + r")\b"
+    pattern = utils.expressions_pattern(keywords_to_look_for)
+    # copy of the text with the exclusions replaced by MASK, only used for step 2 (txt itself without exclusions)
+    txt_searched = (utils.mask_exclusions_sql("txt", utils.expressions_pattern(exclusions))
+                    if exclusions else "txt")
 
     try:
         out = con.sql(f"""
@@ -93,14 +93,28 @@ def read_factiva_articles(con: duckdb.DuckDBPyConnection,
                 -- searched text: normalizing then concatenating gives the same text as the other way round
                 SELECT *, concat_ws(' ', snippet_normalized, title_normalized, body_normalized) AS txt
                 FROM normalized
+            ),
+            searched AS (
+                -- step 1: every article with a keyword, exclusions included (search on txt, not masked)
+                -- txt_searched: masked copy, not a filter, not returned
+                SELECT *, {txt_searched} AS txt_searched
+                FROM txt
+                WHERE regexp_matches(txt, '{pattern}')
             )
             SELECT an, source_code, source_name, publication_datetime,
                 title_normalized, snippet_normalized, body_normalized, word_count,
-                array_to_string(list_sort(list_distinct(regexp_extract_all(txt, '{pattern}'))), ',') AS keywords_found
-            FROM txt
-            WHERE regexp_matches(txt, '{pattern}')
+                -- keywords found outside exclusions only
+                array_to_string(list_sort(list_distinct(regexp_extract_all(txt_searched, '{pattern}'))), ',') AS keywords_found,
+                -- step 2 (flag): no keyword left once the exclusions are masked
+                NOT regexp_matches(txt_searched, '{pattern}') AS only_exclusions
+            FROM searched
         """).df()
-        return out
+        # step 2: drop the flagged articles, then the flag column (the output keeps its columns)
+        n_excluded = int(out["only_exclusions"].sum())
+        if n_excluded:
+            logging.info(f"[{source_table}] {start_date}: {n_excluded} articles dropped "
+                         "(keywords only inside exclusions)")
+        return out[~out["only_exclusions"]].drop(columns="only_exclusions").reset_index(drop=True), n_excluded
     except Exception as e:
         logging.error(f"[{source_table}] ERROR READING FACTIVA ARTICLES:")
         logging.error(e)
@@ -126,8 +140,10 @@ def get_max_start_from_thematic_articles(con: duckdb.DuckDBPyConnection, postgre
 
 
 def check_articles(con: duckdb.DuckDBPyConnection, postgres_db: str, destination_table: str,
-                   schema: str = "public") -> pd.DataFrame:
-    """Report on the whole destination table: number of articles per media (source_code, source_name)."""
+                   schema: str = "public", n_excluded: int = 0) -> pd.DataFrame:
+    """Report on the whole destination table: number of articles per media (source_code, source_name).
+    n_excluded: articles dropped by the exclusions during this run (a resumed run does not count
+    the days ingested before)."""
     try:
         report = con.sql(f"""
             SELECT source_code, source_name, count(*) AS n_articles
@@ -141,6 +157,7 @@ def check_articles(con: duckdb.DuckDBPyConnection, postgres_db: str, destination
 
     logging.info(
         f"[CHECK] {destination_table}: {int(report['n_articles'].sum())} articles on {len(report)} media\n"
+        f"articles dropped, keywords only inside exclusions (this run): {n_excluded}\n"
         f"{report.to_string(index=False)}"
     )
     return report

@@ -51,11 +51,25 @@ def _add_article(con, an, ts, title="t", snippet="", body="", word_count=150,
 
 
 def _read(con, keywords, start=D1, end=D2):
-    return art_utils.read_factiva_articles(con, keywords, start, end, SOURCE, DB)
+    out, _ = art_utils.read_factiva_articles(con, keywords, start, end, SOURCE, DB)
+    return out
 
 
 def _ans(df):
     return set(df["an"])
+
+
+def test_read_exclusions(con):
+    """Verify that an article with an exclusion and a keyword is kept, and one with only an exclusion is dropped."""
+    _add_article(con, "kept", "2025-03-10 10:00:00", body="le cessez-le-feu et un feu de forêt")
+    _add_article(con, "dropped", "2025-03-10 10:00:00", body="le cessez-le-feu tient")
+    _add_article(con, "dropped_twice", "2025-03-10 10:00:00",
+                 body="le cessez-le-feu tient, mais le cessez-le-feu reste fragile")
+
+    out, n_excluded = art_utils.read_factiva_articles(con, ["feu"], D1, D2, SOURCE, DB, exclusions=["cessez le feu"])
+
+    assert _ans(out) == {"kept"}
+    assert n_excluded == 2
 
 
 class RunEnv:
@@ -110,13 +124,13 @@ class RunEnv:
         self.add_article(day)
         self.add_article(day)
 
-    def _fake_read(self, _con, kw_list, start, end, source_table, postgres_db):
+    def _fake_read(self, _con, kw_list, start, end, source_table, postgres_db, exclusions=None):
         self.read_days.append(start)
         self.read_kw.append(kw_list)
         if start in self.failing_days:
             raise RuntimeError(f"read failed for {start}")
         rows = [r for r in self.articles if start <= r["publication_datetime"].date() < end]
-        return pd.DataFrame(rows, columns=OUT_COLS)
+        return pd.DataFrame(rows, columns=OUT_COLS), 0
 
     def create_destination(self):
         art_utils.create_thematic_articles_table(

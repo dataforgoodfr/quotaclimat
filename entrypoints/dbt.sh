@@ -38,7 +38,7 @@ poetry run python -m quotaclimat.data_ingestion.external_sources.download_extern
 poetry run dbt seed --full-refresh --no-partial-parse --select path:seeds/ref
 poetry run dbt test --select path:seeds/ref
 
-echo "load the methodology seeds versioned in the repository (keywords of the misinformation themes), then test them"
+echo "load the methodology seeds versioned in the repository (Belgian chemical pollution keywords and channels), then test them"
 poetry run dbt seed --full-refresh --select path:seeds/themes
 poetry run dbt test --select path:seeds/themes
 
@@ -53,7 +53,6 @@ poetry run dbt run "${full_refresh[@]}" --vars "$lookback_vars" "${skip_dashboar
 --exclude publicites \
 --exclude emission_jour \
 --exclude pub_annonceur_emission_jour \
---exclude cas_theme \
 --exclude path:models/curated
 
 echo "apply dbt models to build the analytics tables (task_global_completion in 'analytics', environmental_shares_with_desinfo_counts in 'public')."
@@ -61,15 +60,14 @@ poetry run dbt run --full-refresh --target analytics \
 --select task_global_completion \
 --select environmental_shares_with_desinfo_counts
 
-echo "apply advertising dbt models and the analytics tables built on them (publicites, cas_de_mesinformation), after the analytics tables they read (misinformation distance), then the daily aggregates built on them (pub_annonceur_emission_jour) and the themes of the cases (cas_theme)"
+echo "apply advertising dbt models and the analytics tables built on them (publicites, cas_de_mesinformation), after the analytics tables they read (misinformation distance), then the daily aggregates built on them (pub_annonceur_emission_jour)"
 poetry run dbt run --full-refresh \
 --select path:models/advertising \
 --select cas_affirmation_cible \
 --select cas_categorie_visee \
 --select cas_de_mesinformation \
 --select publicites \
---select pub_annonceur_emission_jour \
---select cas_theme
+--select pub_annonceur_emission_jour
 
 # incremental like models/dashboards: the days of the same window (DBT_LOOKBACK_WEEKS) and the days whose cases changed
 # (see the model), after cas_de_mesinformation; rebuilt in full with "full-refresh" and on the first day of each month

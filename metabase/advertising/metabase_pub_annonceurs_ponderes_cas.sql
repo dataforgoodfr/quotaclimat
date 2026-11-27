@@ -25,13 +25,6 @@
 --           gardées, au moins ce temps consacré au climat sur la période ; en dessous le score repose sur
 --           trop peu d'heures (1 cas en 6 min de climat donne 10 cas par heure) et l'émission est écartée de
 --           tout le calcul, pub comprise
---   theme_cas type Texte, facultatif (vide : tous les cas) : ne compter que les cas de ce thème
---          (analytics.cas_theme, ex. automobile : mots-clés trouvés dans l'affirmation du cas seulement),
---          rattachés à leur émission par analytics.cas_de_mesinformation
---   pertinence_min type Texte, facultatif (faible si vide), faible, moyenne ou forte (liste déroulante) : avec
---          theme_cas, pertinence minimale des cas du thème (forte : un mot-clé fort dans l'affirmation, moyenne :
---          seulement des mots-clés faibles ; faible ou moyenne : tous les cas du thème, forte : forte seulement ;
---          une autre valeur ne renvoie rien)
 --   secteur, categorie type Filtre de champ sur Advertising > Pub Annonceur Emission Jour > Secteur / Categorie,
 --          sélection multiple, facultatifs (vides : pas de filtre) : n'afficher que les annonceurs qui ont de la pub
 --          dans ces secteurs / catégories (ex. Automobile, Voiture électrique). Le filtre ne choisit que les lignes
@@ -118,9 +111,7 @@ parametres AS (
         COALESCE([[CAST({{ponderation_par_temps_denv}} AS boolean),]] FALSE) AS par_temps_env,
         COALESCE([[CAST({{inclure_info_continue}} AS boolean),]] TRUE) AS info_continue,
         COALESCE([[CAST({{env_heures_min}} AS numeric),]] 0.5) AS env_heures_min,
-        COALESCE([[CAST({{nb_points}} AS integer),]] 2000) AS nb_points,
-        NULLIF(COALESCE([[CAST({{theme_cas}} AS text),]] ''), '') AS theme,
-        COALESCE([[CAST({{pertinence_min}} AS text),]] 'faible') AS pertinence_min
+        COALESCE([[CAST({{nb_points}} AS integer),]] 2000) AS nb_points
 ),
 -- chaînes d'information en continu
 chaines AS (
@@ -156,31 +147,14 @@ pub AS MATERIALIZED (
     LEFT JOIN chaines c ON c.channel_name = advertising.pub_annonceur_emission_jour.channel_name
     WHERE advertising.pub_annonceur_emission_jour.jour BETWEEN b.debut AND b.fin
       AND CAST({{niveau}} AS text) IN ('marque', 'entreprise', 'groupe', 'secteur')
-      AND pa.pertinence_min IN ('faible', 'moyenne', 'forte')
       AND (pa.info_continue OR NOT COALESCE(c.infocontinue, FALSE))
     GROUP BY 1, 2, 3, 4, 5, 6, 7
 ),
--- avec theme_cas : cas du thème par émission sur la période (jour de programme, comme emission_jour), à partir de
--- la pertinence minimale
-cas_du_theme AS (
-    SELECT c.emission_cle, COUNT(*) AS nb_cas
-    FROM analytics.cas_de_mesinformation c
-    JOIN analytics.cas_theme t ON t.task_aggregate_id = c.task_aggregate_id
-    CROSS JOIN bornes b
-    CROSS JOIN parametres pa
-    WHERE pa.theme IS NOT NULL
-      AND t.theme = pa.theme
-      AND array_position(ARRAY['faible', 'moyenne', 'forte'], t.pertinence)
-          >= array_position(ARRAY['faible', 'moyenne', 'forte'], pa.pertinence_min)
-      AND c.emission_cle IS NOT NULL
-      AND c.jour_programme BETWEEN b.debut AND b.fin
-    GROUP BY c.emission_cle
-),
--- cas (tous, ou ceux du thème), heures de programme et de climat de chaque émission sur la période
+-- cas, heures de programme et de climat de chaque émission sur la période
 metriques AS (
     SELECT
         t.emission_cle,
-        CASE WHEN pa.theme IS NULL THEN t.nb_cas ELSE COALESCE(ct.nb_cas, 0) END AS nb_cas,
+        t.nb_cas,
         t.volume_heures,
         t.env_heures
     FROM (
@@ -194,8 +168,6 @@ metriques AS (
         WHERE ej.jour BETWEEN b.debut AND b.fin
         GROUP BY ej.emission_cle
     ) t
-    CROSS JOIN parametres pa
-    LEFT JOIN cas_du_theme ct ON ct.emission_cle = t.emission_cle
 ),
 -- émissions gardées (pondération par le temps de climat : assez de temps de climat) et cas_attribues d'une seconde de pub autour
 -- d'elles ; MATERIALIZED : calculé une seule fois
@@ -321,7 +293,6 @@ resultat AS (
 )
 SELECT
     p.par_temps_env AS ponderation_par_temps_denv,
-    p.theme AS theme_cas,
     r.*,
     ap.agence_media,
     ap.groupe_agence,

@@ -1013,40 +1013,6 @@ models:
       - name: nb_affirmations
         description: Claims of the case attacking the category.
 
-  - name: cas_theme
-    description: >
-      In the analytics schema. Themes of the validated misinformation cases of the French channels, found by
-      keywords (seed mesinfo_theme_mots_cles) in the claim written by the annotator only, not in the explanation
-      nor the transcript, which often speak of something else. One row per case and theme with at least one
-      keyword in the claim. A shortlist to review by hand before any external use.
-    columns:
-      - name: task_aggregate_id
-        description: Label Studio task of the case (cas_de_mesinformation.task_aggregate_id).
-        tests:
-          - not_null
-      - name: theme
-        description: Theme of the keywords.
-        tests:
-          - not_null
-          - accepted_values:
-              arguments:
-                values: ['automobile']
-      - name: pertinence
-        description: >
-          forte (strong keyword in the claim), moyenne (weak keywords only in the claim). faible is no longer
-          given (it was a weak keyword in the explanation only).
-        tests:
-          - not_null
-          - accepted_values:
-              arguments:
-                values: ['forte', 'moyenne']
-      - name: mots_cles_affirmation
-        description: Keywords found in the claim.
-      - name: mots_cles_explication
-        description: >
-          Always NULL: the explanation is no longer read. Kept so that the queries reading the column do not
-          break.
-
   - name: dbt_objects
     description: >
       One row per table or view built by this dbt project (models and seeds), read from the dbt graph and

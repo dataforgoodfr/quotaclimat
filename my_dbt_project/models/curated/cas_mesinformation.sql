@@ -9,8 +9,7 @@
 
 {#- curated.cas_mesinformation: one row per validated misinformation case (analytics.cas_de_mesinformation, all
     countries), with French column names, the time in Paris time, the speakers and the correction translated,
-    the channel attributes of curated.chaine, the emission of curated.emission_jour (French channels) and the
-    themes of analytics.cas_theme (French channels, every pertinence). Left out: the detection internals (LLM
+    the channel attributes of curated.chaine, and the emission of curated.emission_jour (French channels). Left out: the detection internals (LLM
     model, reason and score), the Label Studio project and annotation fields, the annotators' comments.
     Documented in _curated.yml. -#}
 {%- set locuteurs = [
@@ -24,15 +23,7 @@
     'Journalist': 'journaliste', 'Commentator': 'chroniqueur', 'Guest': 'invité', 'Politician': 'personnalité politique',
     'Audience': 'public', 'Unknown': 'inconnu',
 } -%}
-{%- set themes = ['automobile'] -%}
-WITH themes AS (
-    SELECT task_aggregate_id, string_agg(theme, ', ' ORDER BY theme) AS themes
-    {%- for theme in themes %},
-    bool_or(theme = '{{ theme }}') AS est_theme_{{ theme }}
-    {%- endfor %}
-    FROM {{ ref('cas_theme') }}
-    GROUP BY task_aggregate_id
-),
+WITH
 -- speakers chosen by the annotator, comma separated in Label Studio ('Guest,Journalist')
 locuteurs AS (
     SELECT
@@ -74,12 +65,7 @@ SELECT
         ELSE 'non renseignée'
     END)::text AS correction,
     COALESCE(NULLIF(trim(m.data_item_plaintext_whisper), ''), m.data_item_plaintext)::text AS transcription,
-    NULLIF(m.data_item_url_mediatree, '')::text AS lien_extrait,
-    th.themes::text AS themes
-{%- for theme in themes %},
-    COALESCE(th.est_theme_{{ theme }}, FALSE) AS est_theme_{{ theme }}
-{%- endfor %}
+    NULLIF(m.data_item_url_mediatree, '')::text AS lien_extrait
 FROM {{ ref('cas_de_mesinformation') }} m
 LEFT JOIN {{ ref('chaine') }} c ON c.chaine_id = m.data_item_channel_name
 LEFT JOIN locuteurs lo ON lo.task_aggregate_id = m.task_aggregate_id
-LEFT JOIN themes th ON th.task_aggregate_id = m.task_aggregate_id

@@ -456,7 +456,7 @@ def load_test_external_sources():
 
 @pytest.fixture(scope="module", autouse=True)
 def run_analytics(create_test_roles, create_advertising_tables, load_test_external_sources):
-    logging.info("Load the methodology seeds versioned in the repository, read by cas_theme.")
+    logging.info("Load the methodology seeds versioned in the repository, read by the Metabase dashboards.")
     run_dbt_command(["seed", "--full-refresh", "--select", "path:seeds/themes"])
     run_dbt_command(["test", "--select", "path:seeds/themes"])
     logging.info("Run dbt for the thematics model once before related tests.")
@@ -481,8 +481,6 @@ def run_analytics(create_test_roles, create_advertising_tables, load_test_extern
             "emission_jour",
             "--exclude",
             "pub_annonceur_emission_jour",
-            "--exclude",
-            "cas_theme",
             "--exclude",
             "path:models/curated",
             "--full-refresh",
@@ -519,8 +517,6 @@ def run_analytics(create_test_roles, create_advertising_tables, load_test_extern
             "emission_jour",
             "--select",
             "pub_annonceur_emission_jour",
-            "--select",
-            "cas_theme",
             # the advertising test rows are dated 2000-01-01, before the real analysis start date
             "--vars",
             '{"ad_analysis_start_date": "2000-01-01"}',
@@ -841,54 +837,6 @@ def test_cas_categorie_visee(db_connection):
         """)
         assert cur.fetchone()[0] == 2
 
-
-def test_cas_theme(db_connection):
-    """Themes of the cases by keywords in the claim only: forte (a strong keyword) or moyenne (weak ones only)."""
-    with db_connection.cursor() as cur:
-        cur.execute("""
-            INSERT INTO analytics.cas_de_mesinformation (task_aggregate_id, country, claims, explanations,
-                                                         data_item_plaintext_whisper)
-            VALUES
-                -- strong keyword in the claim, accents and plural
-                ('pytest_theme_fort', 'france', 'Les voitures électriques polluent plus que les thermiques', NULL,
-                 NULL),
-                -- strong keyword in the explanation or the transcript only: the context of the debate, left out
-                ('pytest_theme_contexte', 'france', 'Les ENR coûtent cher', 'Comme pour les véhicules électriques',
-                 'les ENR, et la voiture électrique, coûtent cher'),
-                -- car alone, Crit'Air with a typographic apostrophe
-                ('pytest_theme_critair', 'france', 'Les véhicules Crit’Air 3 ne polluent pas', NULL, NULL),
-                -- weak keyword in the claim
-                ('pytest_theme_faible_affirmation', 'france', 'On ne sait pas recycler les batteries', NULL, NULL),
-                -- weak keyword in the explanation only: left out
-                ('pytest_theme_faible_explication', 'france', 'Les ENR coûtent cher', 'stockage par batteries', NULL),
-                -- VE: upper case only; "ve" inside a word does not count
-                ('pytest_theme_ve', 'france', 'Le VE est cher', NULL, NULL),
-                ('pytest_theme_rien', 'france', 'Le reve est nave', 'trouvé dans la cave', NULL),
-                -- other countries left out
-                ('pytest_theme_belgique', 'belgium', 'Les voitures électriques polluent', NULL, NULL)
-        """)
-    db_connection.commit()
-    try:
-        run_dbt_command(["run", "--select", "cas_theme"])
-        with db_connection.cursor() as cur:
-            cur.execute("""
-                SELECT task_aggregate_id, theme, pertinence, mots_cles_affirmation, mots_cles_explication
-                FROM analytics.cas_theme
-                WHERE task_aggregate_id LIKE 'pytest_theme_%'
-                ORDER BY task_aggregate_id
-            """)
-            rows = cur.fetchall()
-    finally:
-        with db_connection.cursor() as cur:
-            cur.execute("DELETE FROM analytics.cas_de_mesinformation WHERE task_aggregate_id LIKE 'pytest_theme_%'")
-        db_connection.commit()
-        run_dbt_command(["run", "--select", "cas_theme"])
-    assert rows == [
-        ("pytest_theme_critair", "automobile", "forte", "Crit'Air, voiture", None),
-        ("pytest_theme_faible_affirmation", "automobile", "moyenne", "batterie", None),
-        ("pytest_theme_fort", "automobile", "forte", "voiture, voiture électrique", None),
-        ("pytest_theme_ve", "automobile", "moyenne", "VE", None),
-    ]
 
 def test_emission_jour_environment(db_connection):
     """Keyword segments to the emission of their ingestion program on the air, within the ingestion margins."""
@@ -1650,7 +1598,7 @@ def test_ensure_not_public_refuses_public_spreadsheet(permission_ids, status, he
 def test_advertising_models_schema(db_connection):
     """The advertising models and the reference seeds are built in the advertising schema (+schema,
     generate_schema_name), program, publicites and cas_de_mesinformation in the analytics schema (schema config),
-    emission_jour, environmental_shares_with_desinfo_counts and the seeds mesinfo_theme_mots_cles,
+    emission_jour, environmental_shares_with_desinfo_counts and the seeds
     pollution_chimique_mots_cles and chaine_communaute_belgique in the public schema, pub_annonceur_emission_jour in the advertising schema, the other models and seeds stay in the target
     schema."""
     with db_connection.cursor() as cur:
@@ -1662,7 +1610,7 @@ def test_advertising_models_schema(db_connection):
                 'ad_tunnel_programs', 'ref_ome_secteurs', 'ref_programmes_emissions_infos_en_continue',
                 'core_query_environmental_shares', 'task_global_completion', 'keywords', 'program',
                 'publicites', 'cas_de_mesinformation', 'emission_jour', 'environmental_shares_with_desinfo_counts',
-                'mesinfo_theme_mots_cles', 'pub_annonceur_emission_jour', 'pollution_chimique_mots_cles',
+                'pub_annonceur_emission_jour', 'pollution_chimique_mots_cles',
                 'chaine_communaute_belgique'
             )
               -- curated.emission_jour: see test_curated_documented_in_postgres
@@ -1683,7 +1631,6 @@ def test_advertising_models_schema(db_connection):
         # built by the --target analytics run, schema='public'
         ("public", "environmental_shares_with_desinfo_counts"),
         ("public", "keywords"),
-        ("public", "mesinfo_theme_mots_cles"),
         ("public", "pollution_chimique_mots_cles"),
         ("analytics", "program"),
         ("advertising", "pub_annonceur_emission_jour"),
@@ -1855,7 +1802,7 @@ def test_url_encode_matches_python(db_connection, text):
 
 
 def test_curated_cas_mesinformation(db_connection):
-    """Every validated case, in Paris time, with its speakers, themes (every pertinence) and emission."""
+    """Every validated case, in Paris time, with its speakers and emission."""
     with db_connection.cursor() as cur:
         cur.execute("SELECT COUNT(*) FROM analytics.cas_de_mesinformation")
         cases = cur.fetchone()[0]
@@ -1863,16 +1810,15 @@ def test_curated_cas_mesinformation(db_connection):
         assert cur.fetchone()[0] == cases > 0
         cur.execute("""
             SELECT debut_paris, chaine_nom, pays, emission_jour_id, locuteurs, est_dit_par_invite,
-                est_dit_par_journaliste, correction, themes, est_theme_automobile
+                est_dit_par_journaliste, correction
             FROM curated.cas_mesinformation
             WHERE chaine_id = 'sud-radio' AND jour = '2025-04-02'
         """)
         rows = cur.fetchall()
-    # 2025-04-02 09:10 UTC; automobile: "les voitures crit'air 3" in the claim
+    # 2025-04-02 09:10 UTC
     assert rows == [(
         datetime.datetime(2025, 4, 2, 11, 10), "Sud Radio", "France",
         "sud-radio|programme|Mettez-vous d'accord|false|2025-04-02", "invité", True, False, "non renseignée",
-        "automobile", True,
     )]
 
 
@@ -1937,7 +1883,6 @@ def test_fixture_seeds_disabled_in_production():
     `dbt build` without --select only loads the seeds meant for production (seeds/ref, seeds/themes)."""
     prod_seeds = list_enabled_seeds(DBT_ENV="prod", DBT_ENABLE_FIXTURE_SEEDS=None)
     assert all(path.startswith(("seeds/ref/", "seeds/themes/")) for path in prod_seeds), prod_seeds
-    assert "seeds/themes/mesinfo_theme_mots_cles.csv" in prod_seeds
     assert "seeds/themes/pollution_chimique_mots_cles.csv" in prod_seeds
     assert "seeds/themes/chaine_communaute_belgique.csv" in prod_seeds
 

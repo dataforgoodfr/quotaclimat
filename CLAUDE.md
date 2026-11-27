@@ -240,8 +240,8 @@ Les codes couleur des objets affichés (crises, maillons de la chaîne causale..
 
 ## Tables dbt lues par les requêtes
 
-- `analytics` : `program`, `cas_de_mesinformation`, `cas_theme`, `cas_affirmation_cible`, `cas_categorie_visee`, `publicites`, `task_global_completion`, `dbt_objects`.
-- `public` : `emission_jour`, `environmental_shares_with_desinfo_counts`, `mesinfo_theme_mots_cles` (seed), `pollution_chimique_mots_cles` et `chaine_communaute_belgique` (seeds, tableaux de bord « Belgique - Pollution chimique »).
+- `analytics` : `program`, `cas_de_mesinformation`, `cas_affirmation_cible`, `cas_categorie_visee`, `publicites`, `task_global_completion`, `dbt_objects`.
+- `public` : `emission_jour`, `environmental_shares_with_desinfo_counts`, `pollution_chimique_mots_cles` et `chaine_communaute_belgique` (seeds, tableaux de bord « Belgique - Pollution chimique »).
 - `advertising` : `pub_annonceur_emission_jour`, `ad_*`, seeds `ref_*`.
 - `curated` : `chaine`, `publicite`, `cas_mesinformation`, `emission_jour` (voir « Schéma curated »).
 
@@ -251,8 +251,6 @@ Un nouveau modèle (hors `curated`) demande trois choses :
 - sa place dans les `dbt run` de `entrypoints/dbt.sh` et `entrypoints/mediatree_import.sh`, quand il dépend des modèles advertising.
 
 Un modèle qui change de schéma laisse l'ancienne table en place : le signaler, avec le `DROP` à faire à la main.
-
-Les mots-clés des thèmes de cas (`my_dbt_project/seeds/themes/mesinfo_theme_mots_cles.csv`, des expressions régulières) sont versionnés et modifiés dans le code, pas dans un Google Sheet.
 
 ## Schéma curated
 
@@ -283,7 +281,7 @@ Le schéma `curated` (`my_dbt_project/models/curated/`) ne contient que des tabl
 - **`config.meta`** : `libelle` (nom affiché dans Metabase) pour le modèle et chaque colonne ; pour une colonne numérique, `unite` et `agregation` (`somme`, `moyenne` ou `aucune`) ; `type_metabase` (type sémantique : `type/PK`, `type/FK`, `type/Category`...) ; `cle_etrangere: table.colonne` pour une jointure vers une autre table de `curated`.
 - **`data_type`** de chaque colonne : le contrat dbt (`contract: enforced`) fait échouer le build si une colonne change de nom ou de type. Caster dans le SQL (`::text`, `::double precision`).
 - **Tests** : une clé `type/PK` avec `unique` et `not_null` ; `relationships` pour chaque `cle_etrangere` ; `not_null` et `accepted_values` dès que possible.
-- Une liste (thèmes, locuteurs) s'accompagne d'un booléen par valeur (`est_theme_automobile`, `est_dit_par_invite`) pour compter sans découper de texte.
+- Une liste (thèmes, locuteurs) s'accompagne d'un booléen par valeur (`est_dit_par_invite`) pour compter sans découper de texte.
 - Pas de chiffre qui change avec les données (« 9 % des diffusions ») dans une description.
 - `my_dbt_project/pytest_tests/test_curated_conventions.py` vérifie ces règles sur le manifeste dbt.
 - Une description rédigée par Claude porte des choix de méthode : la faire relire par un expert du sujet, et le dire dans la PR.

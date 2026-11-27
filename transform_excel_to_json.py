@@ -8,9 +8,9 @@ import pandas as pd
 from quotaclimat.data_ingestion.scrap_sitemap import get_consistent_hash
 
 
-output_file = "quotaclimat/data_processing/mediatree/keyword/keyword.py"
+output_file = "quotaclimat/data_processing/mediatree/keyword/keyword.json"
 output_file_macro_category = (
-    "quotaclimat/data_processing/mediatree/keyword/macro_category.py"
+    "quotaclimat/data_processing/mediatree/keyword/macro_category.json"
 )
 
 
@@ -450,14 +450,9 @@ for theme in themes:
 with open(output_file, "w", encoding="utf-8") as f:
     logging.info(f"Json written  - {len(theme_keywords)} themes inside {output_file}")
     print(f"Json written {len(theme_keywords)} in {output_file}")
-    f.write("# Auto-generated from Excel file\n")
-    f.write(
-        "THEME_KEYWORDS = "
-        + json.dumps(theme_keywords, ensure_ascii=False, indent=4)
-        .replace("null", "None")
-        .replace("true", "True")
-        .replace(" false,", "False,")
-    )
+    # JSON, not a Python literal: see quotaclimat/data_processing/mediatree/keyword/keyword.py
+    json.dump(theme_keywords, f, ensure_ascii=False, indent=4)
+    f.write("\n")
 
 
 french_macro_categories_processor = MacroCategoryProcessor(
@@ -501,11 +496,5 @@ with open(output_file_macro_category, "w", encoding="utf-8") as f:
         f"Json written  - {len(macro_categories)} keywords inside {output_file_macro_category}"
     )
     print(f"Json written {len(macro_categories)} in {output_file_macro_category}")
-    f.write("# Auto-generated from Excel file\n")
-    f.write(
-        "MACRO_CATEGORIES = "
-        + json.dumps(macro_categories, ensure_ascii=False, indent=4)
-        .replace("null", "None")
-        .replace("true", "True")
-        .replace("false", "False")
-    )
+    json.dump(macro_categories, f, ensure_ascii=False, indent=4)
+    f.write("\n")

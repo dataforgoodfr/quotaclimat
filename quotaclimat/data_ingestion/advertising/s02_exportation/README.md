@@ -69,7 +69,8 @@ For each merged ad (`merged_ads.py`):
    was merged from (`ads/<source_ad_id>/raw.mp4`), placed as they were broadcast in the most recent
    occurrence of the merged ad that still has its journal rows (`advertising.ad_merge_occurrence`): the
    pieces, and the short segments absorbed between them. The time covered by no source video (gap
-   between two pieces, absorbed segment without video) is black and silent. Without journal rows
+   between two pieces, absorbed segment without video) is black and silent; a source video with no
+   video stream (audio only) is black under its sound. Without journal rows
    (deleted by a reprocessing of the detection), the pieces are put end to end. The video lasts the
    duration of the merged ad, cut or padded with black at the end, with the export margin
    (`MARGIN_ON_MEDIA_EXPORT`) of black before and after; the mp3 is made from it. The margin of each

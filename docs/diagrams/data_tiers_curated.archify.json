@@ -303,14 +303,6 @@
         {
           "name": "lien_extrait",
           "type": "text"
-        },
-        {
-          "name": "themes",
-          "type": "text"
-        },
-        {
-          "name": "est_theme_automobile",
-          "type": "boolean"
         }
       ],
       "sources": [

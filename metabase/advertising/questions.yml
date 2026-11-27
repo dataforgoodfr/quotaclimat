@@ -28,8 +28,6 @@ queries:
       inclure_info_continue: {type: boolean, default: true, required: true}
       env_heures_min: {type: number}
       nb_points: {type: number}
-      theme_cas: {type: text}
-      pertinence_min: {type: text, values: [faible, moyenne, forte]}
       secteur: {type: dimension, field: advertising.pub_annonceur_emission_jour.secteur, widget: string/=}
       categorie: {type: dimension, field: advertising.pub_annonceur_emission_jour.categorie, widget: string/=}
       agence: {type: dimension, field: advertising.pub_annonceur_emission_jour.agence_media, widget: string/=}
@@ -44,7 +42,7 @@ queries:
                  groupe_agence: [WPP]}
         min_rows: 1
       - params: {debut: 2025-01-01, fin: 2025-12-31, niveau: marque, inclure_info_continue: false, nb_points: 10,
-                 theme_cas: automobile, pertinence_min: moyenne, secteur: [Automobile],
+                 secteur: [Automobile],
                  categorie: [Voiture électrique]}
         min_rows: 1
 

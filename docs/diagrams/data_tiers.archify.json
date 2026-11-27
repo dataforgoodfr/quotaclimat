@@ -448,25 +448,6 @@
       ]
     },
     {
-      "id": "r_theme",
-      "type": "database",
-      "label": "public.mesinfo_theme_mots_cles",
-      "pos": [
-        1590,
-        614
-      ],
-      "size": [
-        232,
-        46
-      ],
-      "sources": [
-        {
-          "path": "my_dbt_project/seeds/themes/_themes_seeds.yml",
-          "label": "table"
-        }
-      ]
-    },
-    {
       "id": "r_fa",
       "type": "database",
       "label": "public.factiva_articles",
@@ -633,25 +614,6 @@
       "sources": [
         {
           "path": "my_dbt_project/models/analytics/cas_de_mesinformation.sql",
-          "label": "dbt model"
-        }
-      ]
-    },
-    {
-      "id": "y_cth",
-      "type": "backend",
-      "label": "analytics.cas_theme",
-      "pos": [
-        80,
-        946
-      ],
-      "size": [
-        159,
-        46
-      ],
-      "sources": [
-        {
-          "path": "my_dbt_project/models/analytics/cas_theme.sql",
           "label": "dbt model"
         }
       ]
@@ -1096,7 +1058,6 @@
         "r_sec",
         "r_cat",
         "r_inv",
-        "r_theme",
         "r_fa",
         "r_lm",
         "r_sf",
@@ -1113,7 +1074,6 @@
       "wraps": [
         "y_tgc",
         "y_cdm",
-        "y_cth",
         "y_prog",
         "y_ej",
         "y_env",
@@ -1235,10 +1195,6 @@
           895
         ]
       ]
-    },
-    {
-      "from": "y_cdm",
-      "to": "y_cth"
     },
     {
       "from": "r_kw",
@@ -1372,11 +1328,6 @@
           1597
         ]
       ]
-    },
-    {
-      "from": "y_cth",
-      "to": "c_cas",
-      "variant": "emphasis"
     },
     {
       "from": "y_ej",

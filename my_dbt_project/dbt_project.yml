@@ -96,7 +96,7 @@ seeds:
       +schema: advertising
       +grants: *advertising_grants
 
-    # methodology seeds versioned in the repository, read by the analytics models,
+    # methodology seeds versioned in the repository, read by Metabase dashboards,
     # always loaded with `dbt seed --full-refresh --select path:seeds/themes`
     themes:
       +schema: public

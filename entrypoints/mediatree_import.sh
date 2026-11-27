@@ -15,7 +15,7 @@ poetry run python -m quotaclimat.data_ingestion.external_sources.download_extern
 poetry run dbt seed --full-refresh --no-partial-parse --select path:seeds/ref  # see entrypoints/dbt.sh
 poetry run dbt test --select path:seeds/ref
 
-echo "load the methodology seeds versioned in the repository (keywords of the misinformation themes), then test them"
+echo "load the methodology seeds versioned in the repository (Belgian chemical pollution keywords and channels), then test them"
 poetry run dbt seed --full-refresh --select path:seeds/themes
 poetry run dbt test --select path:seeds/themes
 
